@@ -1,0 +1,46 @@
+# Local files and folders
+secrets
+.env
+odbc.ini
+
+# folders
+.dbx/*
+
+# Standard R files
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+renv
+
+### Python ###
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+.ipynb_checkpoints
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+site/
+
+# keep all .gitkeep files and their parent folders
+!.gitkeep
