@@ -15,7 +15,7 @@ def transform_crs(df: gpd.GeoDataFrame, target_epsg: int = 27700) -> gpd.GeoData
     """
     epsg = df.crs.to_epsg()
     if epsg != target_epsg:
-        df = df.to_crs(epsg=27700)
+        df = df.to_crs(epsg=target_epsg)
         LOG.info(f"Converted CRS from EPSG:{epsg} to EPSG:{target_epsg}")
     return df
 
