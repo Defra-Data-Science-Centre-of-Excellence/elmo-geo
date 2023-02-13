@@ -1,13 +1,13 @@
 """Module for joining large geospatial datasets using spark"""
 
-from typing import Optional, List
+from typing import List, Optional
 
-from pyspark.sql.functions import expr, col, round
 from pyspark.sql.dataframe import DataFrame as SparkDataFrame
+from pyspark.sql.functions import col, expr, round
 from pyspark.sql.session import SparkSession
+from sedona.core.spatialOperator import JoinQuery
 from sedona.register import SedonaRegistrator
 from sedona.utils.adapter import Adapter
-from sedona.core.spatialOperator import JoinQuery
 
 
 def _get_column_names(df_left: SparkDataFrame, df_right: SparkDataFrame) -> List[str]:

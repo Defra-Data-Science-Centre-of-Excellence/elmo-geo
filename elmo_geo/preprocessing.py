@@ -1,6 +1,6 @@
 import geopandas as gpd
-from shapely.validation import make_valid
 from pyspark.sql.session import SparkSession
+from shapely.validation import make_valid
 
 from elmo_geo.log import LOG
 
@@ -42,10 +42,11 @@ def make_geometry_valid(df: gpd.GeoDataFrame, geometry_col: str = "geometry") ->
     Raises:
         AssertionError: If the geometry fix did not work
     """
-    invalid = df[geometry_col].is_valid == False
+    invalid = df[geometry_col].is_valid is False
     if invalid.sum() > 0:
         LOG.info(
-            f"Found {invalid.sum():,.0f} invalid geometries of {invalid.size:,.0f} ({invalid.mean():.2%})"
+            f"Found {invalid.sum():,.0f} invalid geometries of "
+            f"{invalid.size:,.0f} ({invalid.mean():.2%})"
         )
         df[geometry_col] = df[geometry_col].map(make_valid)
         assert df[geometry_col].is_valid.all()

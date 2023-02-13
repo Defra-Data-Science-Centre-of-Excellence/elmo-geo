@@ -1,12 +1,12 @@
-from typing import Tuple, List
+from typing import List, Tuple
 
-import xarray as xr
 import geopandas as gpd
+import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
-import matplotlib.pyplot as plt
-from matplotlib.ticker import PercentFormatter, FuncFormatter
+import xarray as xr
 from matplotlib.colors import ListedColormap
+from matplotlib.ticker import FuncFormatter, PercentFormatter
 
 from elmo_geo.log import LOG
 

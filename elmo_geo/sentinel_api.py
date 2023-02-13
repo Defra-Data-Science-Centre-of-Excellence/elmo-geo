@@ -1,6 +1,6 @@
-import urllib3
 from contextlib import contextmanager
 
+import urllib3
 from sentinelsat import SentinelAPI
 
 from elmo_geo.log import LOG

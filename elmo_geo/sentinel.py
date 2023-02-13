@@ -1,16 +1,16 @@
+import glob
 import os
 import re
-import glob
-import zipfile
 import shutil
+import zipfile
 from typing import List, Optional, Tuple
 
-from bs4 import BeautifulSoup
 import geopandas as gpd
-import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
-from matplotlib.ticker import PercentFormatter
+import matplotlib.pyplot as plt
 import seaborn as sns
+from bs4 import BeautifulSoup
+from matplotlib.ticker import PercentFormatter
 
 from elmo_geo.log import LOG
 
@@ -280,7 +280,8 @@ def get_image_usefulness(path: str) -> float:
 def get_image_radiometric_offset(path: str, band: str) -> float:
     """Return the radiometric offset for the image band so that it can be reversed.
     A radimetric offset of -1000 was applied to PB04.00 products (post Jan 25th 2022).
-    This offset results in lower NDVI values and so we want to reverse it to align with previous data.
+    This offset results in lower NDVI values and so we want to reverse it to align with previous
+    data.
     Parameters:
         path: full path to the dataset folder
         band: a string reprasenting the band in question
@@ -327,7 +328,8 @@ def plot_products(
     fig, ax = plt.subplots(figsize=(20, 6))
     fig.suptitle(title, x=0.12, ha="left", fontsize="xx-large")
     fig.supxlabel(
-        "Note: Usefulness is defined as the sum of estimated vegetation and bare ground cover in %.",
+        "Note: Usefulness is defined as the sum of estimated vegetation and"
+        "bare ground cover in %.",
         x=0.12,
         ha="left",
     )

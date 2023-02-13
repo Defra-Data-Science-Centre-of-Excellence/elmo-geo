@@ -1,11 +1,11 @@
-from typing import Dict, Set, Union
 import shutil
+from typing import Dict, Set, Union
 
+import matplotlib.pyplot as plt
+import numpy as np
+import seaborn as sns
 import xarray as xr
 from xarray.core.dataarray import DataArray
-import numpy as np
-import matplotlib.pyplot as plt
-import seaborn as sns
 
 from elmo_geo.log import LOG
 

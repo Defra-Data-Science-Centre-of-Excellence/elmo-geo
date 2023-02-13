@@ -1,4 +1,5 @@
-"""Functions for performing joins on vector intersections - depreciated in favour of joins.spatial_join()"""
+"""Functions for performing joins on vector intersections - depreciated in favour of
+joins.spatial_join()"""
 
 import pyspark.sql.functions as F
 from pyspark.sql.session import SparkSession
@@ -78,7 +79,8 @@ def intersect_parcels(
         .withColumn("proportion", F.col("intersection_area") / F.col("parcel_area"))
         # generate parition col from first 4 chars of BNG
         .withColumn("partition", F.substring("id_parcel", pos=1, len=4))
-        # group up the result and sum the proportions incase multiple polygons intersect with the parcel
+        # group up the result and sum the proportions incase multiple polygons intersect
+        # with the parcel
         .groupBy("id_parcel", "partition", *feature_cols)
         .sum("proportion")
         # rename - as groupby unhelpfully renames the col...

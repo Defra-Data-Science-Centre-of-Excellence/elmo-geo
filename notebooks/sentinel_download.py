@@ -13,10 +13,10 @@
 
 import datetime
 
-from sentinelsat import SentinelAPI, LTATriggered
+from sentinelsat import LTATriggered, SentinelAPI
 
+from elmo_geo.sentinel import extract_all_sentinel_data, is_downloaded, plot_products
 from elmo_geo.sentinel_api import sentinel_api_session
-from elmo_geo.sentinel import is_downloaded, plot_products, extract_all_sentinel_data
 
 tiles = [
     "30UUA",  # 2023 2022
