@@ -29,7 +29,7 @@ pip install dbx
 Login to Azure CLI:
 
 ```{bash}
-az login --tenant bce3d7d1-cbbd-481e-8c81-eaecfc38b551 --use-device-code --allow--no-subscriptions
+az login --tenant bce3d7d1-cbbd-481e-8c81-eaecfc38b551 --use-device-code --allow-no-subscriptions
 ```
 
 Login to databricks by authenticating with ADD:
