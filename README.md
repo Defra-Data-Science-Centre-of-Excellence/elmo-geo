@@ -48,7 +48,7 @@ databricks clusters list
 
 ### Using _dbx sync_
 
-Note: Databricks have a VS COde extension that would replace the need for dbx.
+Note: Databricks have a VS Code extension that would replace the need for dbx.
 This is in preview and does not currently support authentication via ADD and so cannot be used without the ability to generate a Databricks auth token.
 
 Add a repo/folder on databricks to sync to:
