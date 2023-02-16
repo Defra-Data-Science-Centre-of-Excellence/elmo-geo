@@ -73,3 +73,11 @@ Add the following lines to the top of your entry notebook to enable hot reloadin
 ```
 
 When you startup your machine again you will need to rerun the databricks authentication steps. These tasks been added to the makefile to simplify things. Just run `make dbx`!
+
+## Installing dependencies
+
+To install the package and all required development dependencies:
+
+```{bash}
+pip install -e .[dev]
+```

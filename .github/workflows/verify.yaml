@@ -23,7 +23,7 @@ jobs:
 
       - name: Install verify dependencies
         run: |
-          pip install -r requirements.txt
+          pip install .[test]
 
       - name: Run verify
         run: |
