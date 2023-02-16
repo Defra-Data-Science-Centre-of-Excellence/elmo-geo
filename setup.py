@@ -41,7 +41,6 @@ setup(
     description=__description__,
     version=__version__,
     packages=find_packages(exclude=["*.tests", "*.tests.*", "tests.*", "tests"]),
-    package_data={"elmo": ["_conf/**/*.yaml", "_cache/.gitkeep"]},
     install_requires=REQUIRED_PACKAGES,
     extras_require={"test": TEST_PACKAGES, "dev": DEV_PACKAGES},
 )
