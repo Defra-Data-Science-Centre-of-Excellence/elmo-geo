@@ -33,12 +33,13 @@ month_fm = f"{year-1}-11"
 month_to = f"{year}-02"
 
 
-files = [f for f in os.listdir(path_surveys)]
+files = [f for f in os.listdir(path_surveys) if f.startswith("SFI_") and f.endswith(".csv")]
 print(f"Found {len(files)} matching files")
 
 # COMMAND ----------
 
-files_paths = [f"{path_surveys.replace('/dbfs','')}/{f}" for f in files]
+files_paths = [
+    f"{path_surveys.replace('/dbfs','')}/{f}"  for f in files]
 files_iter = iter(files_paths)
 df = spark.read.csv(next(files_iter), header=True, inferSchema=True).select(
                 'Farm-FieldRLR_Number',

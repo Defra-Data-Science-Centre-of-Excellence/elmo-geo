@@ -97,6 +97,23 @@ sm.stats.linear_rainbow(res)
 
 # COMMAND ----------
 
+if res.params[1] > 0:
+    comment_corr = "This means that it is a positive carroelation."
+elif res.params[1] < 0:
+    comment_corr = "This means that it is a negative carroelation."
+
+if res.pvalues[1] <= 0.05:
+    comment_coef_1 = "This means we can reject the hypothesis that states"
+elif res.pvalues[1] > 0.05:
+    comment_coef_1 = "This means we can accept the hypothesis that states"
+
+print(f"The model parameters are {res.params[0]} + {res.params[1]} NDVI"+
+      f"{comment_corr} The p alues for NDVI and intercept are {res.pvalues[1]}"
+      f" and {res.pvalues[0]} respectively. "
+)
+
+# COMMAND ----------
+
 # MAGIC %md
 # MAGIC The above model we are creating is:
 # MAGIC
