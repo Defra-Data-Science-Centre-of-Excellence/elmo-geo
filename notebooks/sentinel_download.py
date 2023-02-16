@@ -13,8 +13,6 @@
 
 import datetime
 
-from sentinelsat import LTATriggered, SentinelAPI
-
 from elmo_geo.sentinel import extract_all_sentinel_data, is_downloaded, plot_products
 from elmo_geo.sentinel_api import sentinel_api_session
 
@@ -72,16 +70,19 @@ with sentinel_api_session() as api:
 # add some columns and summarise
 df["usefulpercentage"] = df.notvegetatedpercentage + df.vegetationpercentage
 df["useful"] = df.usefulpercentage.rank(ascending=False) <= top_n
-df["downloaded"] = df.filename.apply(
-    is_downloaded
-)  # this will only look for unzipped downloads - use extract_all_sentinel_data() to be sure they are all unzipped
+# this will only look for unzipped downloads
+# use extract_all_sentinel_data() to be sure they are all unzipped
+df["downloaded"] = df.filename.apply(is_downloaded)
 print(df.groupby(["useful", "downloaded"])["filename"].count())
 
 # COMMAND ----------
 
 fig, _ = plot_products(
     df,
-    title=f"Sentinel 2A products for tile {tile} between {date_from:%d/%m/%Y} and {date_to:%d/%m/%Y}",
+    title=(
+        f"Sentinel 2A products for tile {tile} between {date_from:%d/%m/%Y}"
+        f" and {date_to:%d/%m/%Y}"
+    ),
     show_nmax=top_n,
 )
 fig.show()
@@ -97,18 +98,7 @@ with sentinel_api_session() as api:
     api.download_all(
         to_download,
         directory_path="/dbfs/mnt/lab/unrestricted/sentinel/",
-        # max_attempts = 1,
-        # lta_retry_delay=0,
     )
-    # offline = 0
-    # for product in to_download:
-    #     try:
-    #         api.download(product, directory_path='/dbfs/mnt/lab/unrestricted/sentinel/', checksum =False)
-    #     except LTATriggered:
-    #         api.trigger_offline_retrieval(product)
-    #         offline += 1
-    # if offline:
-    #     print(f"LTA retrieval triggered for {offline} products")
 
 # COMMAND ----------
 
