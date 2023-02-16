@@ -16,12 +16,12 @@ REQUIRED_PACKAGES = [
     "rioxarray>=0.13.3",
     "sentinelsat>=1.1.1",
     "bs4",
+    "pyogrio",
 ]
 
 TEST_PACKAGES = [
     "black>=23.1.0",
     "flake8>=6.0.0",
-    "Flake8-pyproject>=1.2.2",
     "isort>=5.12.0",
     "pytest>=7.2.1",
 ]

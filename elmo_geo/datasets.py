@@ -41,9 +41,9 @@ class Dataset:
         if not self.path_read:
             raise ValueError("`path_read` must be defined")
         if self.path_polygons is None:
-            self.path_polygons = f"/mnt/lab/unrestricted/elmo/{self.name}/polygons.parquet"
+            self.path_polygons = f"/mnt/lab/unrestricted/elm/elmo/{self.name}/polygons.parquet"
         if self.path_output is None:
-            self.path_output = f"/mnt/lab/unrestricted/elmo/{self.name}/output.parquet"
+            self.path_output = f"/mnt/lab/unrestricted/elm/elmo/{self.name}/output.parquet"
         if self.keep_cols is None:
             self.keep_cols = []
         if self.rename_cols is None:
@@ -159,7 +159,7 @@ flood_risk_areas = Dataset(
 
 ewco_red_squirrel = Dataset(
     name="ewco_red_squirrel",
-    path_read="/dbfs/mnt/lab/unrestricted/elmo/ewco_red_squirrel/"
+    path_read="/dbfs/mnt/lab/unrestricted/elm/elmo/ewco_red_squirrel/"
     "EWCO_Biodiversity_-_Priority_Species_-_Red_Squirrel_-_Woodland_Creation.shp",
     keep_cols=["geometry", "status", "cswcm_pnts", "ewco_val", "sitename", "cat"],
     output_coltypes={
@@ -172,7 +172,7 @@ ewco_red_squirrel = Dataset(
 
 ewco_priority_habitat_network = Dataset(
     name="ewco_priority_habitat_network",
-    path_read="/dbfs/mnt/lab/unrestricted/elmo/ewco_priority_habitat_network/"
+    path_read="/dbfs/mnt/lab/unrestricted/elm/elmo/ewco_priority_habitat_network/"
     "EWCO_Biodiversity_Priority_Habitat_Network.shp",
     keep_cols=["geometry", "csht_pnts", "cswcm_pnts", "ewco_val", "cat"],
     output_coltypes={
@@ -184,7 +184,7 @@ ewco_priority_habitat_network = Dataset(
 
 ewco_close_to_settlements = Dataset(
     name="ewco_close_to_settlements",
-    path_read="/dbfs/mnt/lab/unrestricted/elmo/ewco_close_to_settlements/EWCO_-_NfC_Social.shp",
+    path_read="/dbfs/mnt/lab/unrestricted/elm/elmo/ewco_close_to_settlements/EWCO_-_NfC_Social.shp",
     keep_cols=["geometry", "status"],
     output_coltypes={"status": "category"},
 )
