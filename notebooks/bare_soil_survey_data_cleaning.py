@@ -13,7 +13,6 @@
 # COMMAND ----------
 
 import os
-import pandas as pd
 import geopandas as gpd
 from pyspark.sql import functions as F
 from xarray.core.dataarray import DataArray
