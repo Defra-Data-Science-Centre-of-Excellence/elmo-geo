@@ -16,7 +16,11 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from matplotlib.ticker import PercentFormatter
 import statsmodels.api as sm
+<<<<<<< HEAD
 from patsy import dmatrices  # to create design matrices
+=======
+from patsy import dmatrices # to create design matrices
+>>>>>>> 6ec7aa16415f48bfaa8cf3a84ef9f14c05851190
 
 
 from functools import partial
@@ -24,6 +28,7 @@ from scipy.stats import kstest, shapiro, norm
 
 # COMMAND ----------
 
+<<<<<<< HEAD
 year = 2023
 source_data = (
     f"dbfs/mnt/lab/unrestricted/elm/elmo/baresoil/survey_data/survey_NDVI_dataset_{year}.csv"
@@ -32,6 +37,13 @@ source_data = (
 # COMMAND ----------
 
 pdf = pd.DataFrame(source_data).drop(["point_geometry", "polygon_geometry"], axis=1)
+=======
+source_data = "/dbfs/mnt/unrestricted/elm/elmo/baresoil/survey_data/clean_survey_NDVI.csv"
+
+# COMMAND ----------
+
+pdf = pd.DataFrame(source_data).drop(['point_geometry', 'polygon_geometry'], axis=1)
+>>>>>>> 6ec7aa16415f48bfaa8cf3a84ef9f14c05851190
 pdf = pdf.dropna()
 print(pdf.head(2))
 pdf.describe()
@@ -52,7 +64,11 @@ g = sns.jointplot(
     xlim=(0, 1),
     ylim=(0, 1),
     color="#00A33b",
+<<<<<<< HEAD
     palette="husl",
+=======
+    palette='husl',
+>>>>>>> 6ec7aa16415f48bfaa8cf3a84ef9f14c05851190
     space=0.05,
 )
 g.ax_joint.xaxis.set_major_formatter(PercentFormatter(xmax=1))
@@ -63,21 +79,40 @@ g.ax_joint.set_ylabel("Assessed bare ground")
 
 # COMMAND ----------
 
+<<<<<<< HEAD
 y, X = dmatrices("bareground_percent_survey ~NDVI", data=pdf, return_type="dataframe")
 
 mod = sm.GLS(y, X)  # Describe model - ordinart least squares
 res = mod.fit()  # Fit model - fits model onto data
+=======
+y, X = dmatrices('bareground_percent_survey ~NDVI',
+                 data=pdf,
+                 return_type='dataframe'
+                 )
+
+mod = sm.GLS(y, X)    # Describe model - ordinart least squares
+res = mod.fit()       # Fit model - fits model onto data
+>>>>>>> 6ec7aa16415f48bfaa8cf3a84ef9f14c05851190
 print(res.summary())
 
 # COMMAND ----------
 
+<<<<<<< HEAD
 sns.residplot(x="NDVI", y="bareground_percent_survey", data=pdf)
+=======
+sns.residplot(x='NDVI', y='bareground_percent_survey', data=pdf)
+>>>>>>> 6ec7aa16415f48bfaa8cf3a84ef9f14c05851190
 
 
 # COMMAND ----------
 
+<<<<<<< HEAD
 a = sm.qqplot(pdf["NDVI"], line="s")
 a.suptitle("NDVI QQ plot")
+=======
+a = sm.qqplot(pdf['NDVI'], line='s')
+a.suptitle('NDVI QQ plot')
+>>>>>>> 6ec7aa16415f48bfaa8cf3a84ef9f14c05851190
 
 
 # COMMAND ----------
