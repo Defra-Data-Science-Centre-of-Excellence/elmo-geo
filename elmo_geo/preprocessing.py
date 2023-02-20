@@ -42,7 +42,7 @@ def make_geometry_valid(df: gpd.GeoDataFrame, geometry_col: str = "geometry") ->
     Raises:
         AssertionError: If the geometry fix did not work
     """
-    invalid = df[geometry_col].is_valid is False
+    invalid = ~df[geometry_col].is_valid
     if invalid.sum() > 0:
         LOG.info(
             f"Found {invalid.sum():,.0f} invalid geometries of "

@@ -11,7 +11,3 @@ exclude = '''(
 
 [tool.isort]
 profile = "black"
-
-[tool.flake8]
-max-line-length = 100
-per-file-ignores = "__init__.py:F401"
