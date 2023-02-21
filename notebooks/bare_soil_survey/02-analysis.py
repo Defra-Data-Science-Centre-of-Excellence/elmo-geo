@@ -10,17 +10,16 @@
 
 # COMMAND ----------
 
+from functools import partial
+
 import matplotlib.pyplot as plt
-from matplotlib.ticker import PercentFormatter
 import numpy as np
 import pandas as pd
-from patsy import dmatrices  # to create design matrices
 import seaborn as sns
 import statsmodels.api as sm
-
-
-from functools import partial
-from scipy.stats import kstest, shapiro, norm
+from matplotlib.ticker import PercentFormatter
+from patsy import dmatrices  # to create design matrices
+from scipy.stats import kstest, norm, shapiro
 
 # COMMAND ----------
 
