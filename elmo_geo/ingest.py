@@ -51,5 +51,5 @@ def ingest(path_in:str, path_out:str, **kwargs) -> SparkDataFrame:
   df = (read_file(path_in, **kwargs)
     .pipe(st_fromgdf)
   )
-  df.write.parquet(path_out)
+  df.write.format('geoparquet').save(path_out)
   return df
