@@ -20,7 +20,7 @@ def st_fromwkb(col:str='geometry', force2d:bool=False, from_crs:int=None, to_crs
     geom = f'ST_Transform({geom}, "EPSG:{from_crs}", "EPSG:{to_crs}")'
   if precision is not None:
     geom = f'ST_PrecisionReduce({geom}, {precision})'
-    simplify = min(simplify, 1/precision)
+    simplify = min(simplify, 10**-precision)
     geom = f'ST_SimplifyPreserveTopology({geom}, {simplify})'
   elif simplify is not None:
     geom = f'ST_SimplifyPreserveTopology({geom}, {simplify})'
