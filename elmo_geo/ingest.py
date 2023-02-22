@@ -38,16 +38,16 @@ def st_fromgdf(gdf:GeoDataFrame, col:str='geometry', **kwargs) -> SparkDataFrame
   )
 
 
-def ingest(path_in:str, path_out:str) -> SparkDataFrame:
+def ingest(path_in:str, path_out:str, **kwargs) -> SparkDataFrame:
   '''Read any GDAL readable GIS dataframe, and save it as parquet for fast future access.
   '''
-  kwargs = {
+  kwargs.update({
     'force2d': True,
     'from_crs': None,
     'to_crs': 27700,
     'precision': 3,
     'simplify': None,
-  }
+  })
   df = (read_file(path_in, **kwargs)
     .pipe(st_fromgdf)
   )
