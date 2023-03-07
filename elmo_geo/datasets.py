@@ -43,9 +43,13 @@ class Dataset:
         if not self.path_read:
             raise ValueError("`path_read` must be defined")
         if self.path_polygons is None:
-            self.path_polygons = f"/mnt/lab/unrestricted/elm/elmo/{self.name}/polygons.parquet"
+            self.path_polygons = (
+                f"/mnt/lab/unrestricted/elm/elmo/{self.name}" + "/{version}/polygons.parquet"
+            )
         if self.path_output is None:
-            self.path_output = f"/mnt/lab/unrestricted/elm/elmo/{self.name}/output.parquet"
+            self.path_output = (
+                f"/mnt/lab/unrestricted/elm/elmo/{self.name}" + "/{version}/output.parquet"
+            )
         if self.keep_cols is None:
             self.keep_cols = []
         if self.rename_cols is None:
@@ -181,7 +185,7 @@ ewco_priority_habitat_network = Dataset(
     name="ewco_priority_habitat_network",
     path_read=(
         "/dbfs/mnt/lab/unrestricted/elm_data/ewco/priority_habitat_network/"
-        "{version}/EWCO_Biodiversity___Priority_Habitat_Network.shp",
+        "{version}/EWCO_Biodiversity___Priority_Habitat_Network.shp"
     ),
     versions=["2022_10_06"],
     keep_cols=["geometry", "csht_pnts", "cswcm_pnts", "ewco_val", "cat"],
@@ -195,8 +199,7 @@ ewco_priority_habitat_network = Dataset(
 ewco_nfc_social = Dataset(
     name="ewco_nfc_social",
     path_read=(
-        "/dbfs/mnt/lab/unrestricted/elm_data/ewco/ewco_nfc_social/"
-        "{version}/EWCO___NfC_Social.shp"
+        "/dbfs/mnt/lab/unrestricted/elm_data/ewco/nfc_social/{version}/EWCO___NfC_Social.shp"
     ),
     versions=["2022_03_14"],
     keep_cols=["geometry", "status"],
@@ -210,8 +213,8 @@ ewco_water_quality = Dataset(
         "{version}/EWCO__E2_80_93_Water_Quality.shp"
     ),
     versions=["2023_02_27"],
-    # keep_cols=["geometry", "status"],
-    # output_coltypes={"status": "category"},
+    keep_cols=["geometry", "cat"],
+    output_coltypes={"cat": "category"},
 )
 
 ewco_flood_risk_management = Dataset(
@@ -221,8 +224,9 @@ ewco_flood_risk_management = Dataset(
         "{version}/EWCO___Flood_Risk_Management.shp"
     ),
     versions=["2023_02_24"],
-    # keep_cols=["geometry", "status"],
-    # output_coltypes={"status": "category"},
+    keep_cols=["geometry", "LANDSCAPE"],
+    rename_cols={"LANDSCAPE": "cat"},
+    output_coltypes={"cat": "category"},
 )
 
 ewco_keeping_rivers_cool_riparian_buffers = Dataset(
@@ -232,8 +236,7 @@ ewco_keeping_rivers_cool_riparian_buffers = Dataset(
         "{version}/EWCO___Keeping_Rivers_Cool_Riparian_Buffers.shp"
     ),
     versions=["2023_03_03"],
-    # keep_cols=["geometry", "status"],
-    # output_coltypes={"status": "category"},
+    keep_cols=["geometry", "OBJECTID"],
 )
 
 ewco_nfc_ammonia_emmissions = Dataset(
@@ -243,8 +246,8 @@ ewco_nfc_ammonia_emmissions = Dataset(
         "{version}/EWCO___NfC_Ammonia_Emissions_Capture_for_SSSI_Protection.shp"
     ),
     versions=["2022_03_14"],
-    # keep_cols=["geometry", "status"],
-    # output_coltypes={"status": "category"},
+    keep_cols=["geometry", "status", "pnts"],
+    output_coltypes={"status": "category"},
 )
 
 
@@ -262,7 +265,10 @@ datasets = [
     flood_risk_areas,
     ewco_red_squirrel,
     ewco_priority_habitat_network,
-    ewco_close_to_settlements,
+    ewco_nfc_social,
     ewco_water_quality,
+    ewco_flood_risk_management,
+    ewco_keeping_rivers_cool_riparian_buffers,
+    ewco_nfc_ammonia_emmissions,
 ]
 """A list of all defined datasets"""
