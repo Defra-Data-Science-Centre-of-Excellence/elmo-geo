@@ -23,6 +23,7 @@ class Dataset:
             strings to `"category"`, defaults to `{}`
         read_kwargs: Arguments to pass to geopandas for reading the data in e.g. specifying an
             engine
+        versions: Versions available - will be string formatted into path_read
     """
 
     name: str
@@ -33,6 +34,7 @@ class Dataset:
     rename_cols: Optional[Dict[str, str]] = None
     output_coltypes: Optional[Dict[str, str]] = None
     read_kwargs: Optional[Dict[str, Any]] = None
+    versions: Optional[List[str]] = None
 
     def __post_init__(self):
         """Set the default values where undefined"""
@@ -52,6 +54,8 @@ class Dataset:
             self.output_coltypes = {}
         if self.read_kwargs is None:
             self.read_kwargs = {}
+        if self.versions is None:
+            self.versions = []
 
 
 national_park = Dataset(
@@ -159,8 +163,11 @@ flood_risk_areas = Dataset(
 
 ewco_red_squirrel = Dataset(
     name="ewco_red_squirrel",
-    path_read="/dbfs/mnt/lab/unrestricted/elm/elmo/ewco_red_squirrel/"
-    "EWCO_Biodiversity_-_Priority_Species_-_Red_Squirrel_-_Woodland_Creation.shp",
+    path_read=(
+        "/dbfs/mnt/lab/unrestricted/elm_data/ewco/red_squirrel/"
+        "{version}/EWCO_Biodiversity___Priority_Species___Red_Squirrel___Woodland_Creation.shp"
+    ),
+    versions=["2022_10_18"],
     keep_cols=["geometry", "status", "cswcm_pnts", "ewco_val", "sitename", "cat"],
     output_coltypes={
         "sitename": "category",
@@ -172,8 +179,11 @@ ewco_red_squirrel = Dataset(
 
 ewco_priority_habitat_network = Dataset(
     name="ewco_priority_habitat_network",
-    path_read="/dbfs/mnt/lab/unrestricted/elm/elmo/ewco_priority_habitat_network/"
-    "EWCO_Biodiversity_Priority_Habitat_Network.shp",
+    path_read=(
+        "/dbfs/mnt/lab/unrestricted/elm_data/ewco/priority_habitat_network/"
+        "{version}/EWCO_Biodiversity___Priority_Habitat_Network.shp",
+    ),
+    versions=["2022_10_06"],
     keep_cols=["geometry", "csht_pnts", "cswcm_pnts", "ewco_val", "cat"],
     output_coltypes={
         "cat": "category",
@@ -182,11 +192,59 @@ ewco_priority_habitat_network = Dataset(
     },
 )
 
-ewco_close_to_settlements = Dataset(
-    name="ewco_close_to_settlements",
-    path_read="/dbfs/mnt/lab/unrestricted/elm/elmo/ewco_close_to_settlements/EWCO_-_NfC_Social.shp",
+ewco_nfc_social = Dataset(
+    name="ewco_nfc_social",
+    path_read=(
+        "/dbfs/mnt/lab/unrestricted/elm_data/ewco/ewco_nfc_social/"
+        "{version}/EWCO___NfC_Social.shp"
+    ),
+    versions=["2022_03_14"],
     keep_cols=["geometry", "status"],
     output_coltypes={"status": "category"},
+)
+
+ewco_water_quality = Dataset(
+    name="ewco_water_quality",
+    path_read=(
+        "/dbfs/mnt/lab/unrestricted/elm_data/ewco/water_quality/"
+        "{version}/EWCO__E2_80_93_Water_Quality.shp"
+    ),
+    versions=["2023_02_27"],
+    # keep_cols=["geometry", "status"],
+    # output_coltypes={"status": "category"},
+)
+
+ewco_flood_risk_management = Dataset(
+    name="ewco_flood_risk_management",
+    path_read=(
+        "/dbfs/mnt/lab/unrestricted/elm_data/ewco/flood_risk_management/"
+        "{version}/EWCO___Flood_Risk_Management.shp"
+    ),
+    versions=["2023_02_24"],
+    # keep_cols=["geometry", "status"],
+    # output_coltypes={"status": "category"},
+)
+
+ewco_keeping_rivers_cool_riparian_buffers = Dataset(
+    name="ewco_keeping_rivers_cool_riparian_buffers",
+    path_read=(
+        "/dbfs/mnt/lab/unrestricted/elm_data/ewco/keeping_rivers_cool_riparian_buffers/"
+        "{version}/EWCO___Keeping_Rivers_Cool_Riparian_Buffers.shp"
+    ),
+    versions=["2023_03_03"],
+    # keep_cols=["geometry", "status"],
+    # output_coltypes={"status": "category"},
+)
+
+ewco_nfc_ammonia_emmissions = Dataset(
+    name="ewco_nfc_ammonia_emmissions",
+    path_read=(
+        "/dbfs/mnt/lab/unrestricted/elm_data/ewco/nfc_ammonia_emmissions/"
+        "{version}/EWCO___NfC_Ammonia_Emissions_Capture_for_SSSI_Protection.shp"
+    ),
+    versions=["2022_03_14"],
+    # keep_cols=["geometry", "status"],
+    # output_coltypes={"status": "category"},
 )
 
 
@@ -205,5 +263,6 @@ datasets = [
     ewco_red_squirrel,
     ewco_priority_habitat_network,
     ewco_close_to_settlements,
+    ewco_water_quality,
 ]
 """A list of all defined datasets"""
