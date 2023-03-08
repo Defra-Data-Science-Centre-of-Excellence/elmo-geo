@@ -368,8 +368,9 @@ red_squirrel = Dataset(
         Version(
             name="2022_10_18",
             path_read=(
-                "/dbfs/mnt/lab/unrestricted/elm_data/ewco/red_squirrel/"
-                "2022_10_18/EWCO_Biodiversity___Priority_Species___Red_Squirrel___Woodland_Creation.shp"
+                "/dbfs/mnt/lab/unrestricted/elm_data/ewco/red_squirrel"
+                "/2022_10_18"
+                "/EWCO_Biodiversity___Priority_Species___Red_Squirrel___Woodland_Creation.shp"
             ),
         ),
     ],
