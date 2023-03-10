@@ -99,6 +99,8 @@ df_feature = (
     .withColumn("geometry", expr("ST_MakeValid(geometry)"))
     .withColumn("geometry", expr(f"ST_SubdivideExplode(geometry, {max_vertices})"))
 )
+df_feature.display()
+
 # COMMAND ----------
 
 # intersect the two datasets
@@ -118,11 +120,11 @@ df_feature = (
 # show results
 result = spark.read.parquet(dataset.path_output.format(version=version))
 count = result.count()
-print(f"Rows: {count:,.0f}")
+LOG.info(f"Rows: {count:,.0f}")
 # check proportion is never > 1 - if it is might mean duplicate features int he dataset
 proportion_over_1 = (result.toPandas().proportion > 1.0).sum()
 if proportion_over_1:
-    print(
+    LOG.info(
         f"{proportion_over_1:,.0f} parcels have a feature "
         f"overlapping by a proportion > 1 ({proportion_over_1/count:%})"
     )
@@ -148,6 +150,7 @@ for col, newtype in dataset.output_coltypes.items():
 pandas_df.to_parquet(path_parquet)
 pandas_df.to_feather(path_feather)
 pandas_df.to_csv(path_csv, index=False)
+displayHTML(download_link(spark, path_parquet))
 displayHTML(download_link(spark, path_feather))
 displayHTML(download_link(spark, path_csv))
 
