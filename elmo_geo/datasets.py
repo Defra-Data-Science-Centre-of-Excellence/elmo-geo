@@ -99,14 +99,6 @@ national_park = Dataset(
                 "/SNAPSHOT_2023_02_14_national_parks/National_Parks_England.shp"
             ),
         ),
-        Version(
-            name="2023_03_07",
-            path_read=(
-                "/dbfs/mnt/base/unrestricted/source_defra_data_services_platform"
-                "/dataset_national_parks/format_SHP_national_parks"
-                "/SNAPSHOT_2023_03_07_national_parks/National_Parks_England.shp"
-            ),
-        ),
     ],
     keep_cols=["geometry", "name"],
     rename_cols={"name": "national_park_name"},
@@ -132,14 +124,6 @@ ramsar = Dataset(
                 "/dbfs/mnt/base/unrestricted/source_defra_data_services_platform"
                 "/dataset_ramsar/format_SHP_ramsar/"
                 "SNAPSHOT_2023_02_14_ramsar/Ramsar_England.shp"
-            ),
-        ),
-        Version(
-            name="2023_03_07",
-            path_read=(
-                "/dbfs/mnt/base/unrestricted/source_defra_data_services_platform"
-                "/dataset_ramsar/format_SHP_ramsar/"
-                "SNAPSHOT_2023_03_07_ramsar/Ramsar_England.shp"
             ),
         ),
     ],
@@ -207,16 +191,6 @@ sssi = Dataset(
                 "/Sites_of_Special_Scientific_Interest_England.shp"
             ),
         ),
-        Version(
-            name="2023_03_07",
-            path_read=(
-                "/dbfs/mnt/base/unrestricted/source_defra_data_services_platform"
-                "/dataset_sites_of_special_scientific_interest"
-                "/format_SHP_sites_of_special_scientific_interest"
-                "/SNAPSHOT_2023_03_07_sites_of_special_scientific_interest"
-                "/Sites_of_Special_Scientific_Interest_England.shp"
-            ),
-        ),
     ],
     keep_cols=["geometry", "sssi_name", "status"],
     rename_cols={"status": "sssi_status"},
@@ -245,16 +219,6 @@ aonb = Dataset(
                 "/dataset_areas_of_outstanding_natural_beauty"
                 "/format_SHP_areas_of_outstanding_natural_beauty"
                 "/SNAPSHOT_2023_02_14_areas_of_outstanding_natural_beauty"
-                "/Areas_of_Outstanding_Natural_Beauty_England.shp"
-            ),
-        ),
-        Version(
-            name="2023_03_07",
-            path_read=(
-                "/dbfs/mnt/base/unrestricted/source_defra_data_services_platform"
-                "/dataset_areas_of_outstanding_natural_beauty"
-                "/format_SHP_areas_of_outstanding_natural_beauty"
-                "/SNAPSHOT_2023_03_07_areas_of_outstanding_natural_beauty"
                 "/Areas_of_Outstanding_Natural_Beauty_England.shp"
             ),
         ),
