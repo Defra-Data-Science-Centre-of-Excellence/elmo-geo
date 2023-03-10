@@ -12,48 +12,58 @@
 # COMMAND ----------
 
 import geopandas as gpd
-from pyspark.sql.functions import expr
+from pyspark.sql.functions import expr, concat
 from sedona.register import SedonaRegistrator
 
 from elmo_geo.datasets import datasets
 from elmo_geo.io import download_link
 from elmo_geo.joins import spatial_join
-from elmo_geo.preprocessing import preprocess_dataset
+from elmo_geo.preprocessing import transform_crs, make_geometry_valid, geometry_to_wkb
+from elmo_geo.log import LOG
 
 SedonaRegistrator.registerAll(spark)
 
 # COMMAND ----------
 
-names = [f"{d.name}/{v}" for d in datasets for v in d.versions]
+names = sorted([f"{d.source}/{d.name}/{v.name}" for d in datasets for v in d.versions])
 dbutils.widgets.dropdown("dataset", names[-1], names)
-name, version = dbutils.widgets.get("dataset").split("/")
+_, name, version = dbutils.widgets.get("dataset").split("/")
 dataset = next(d for d in datasets if d.name == name)
 [print(k, v, sep=":\t") for k, v in dataset.__dict__.items()]
-path_parcels = "/mnt/lab/unrestricted/elm/elmo/parcels/polygons.parquet"
+path_parcels = "dbfs:/mnt/lab/unrestricted/elm_data/rpa/reference_parcels/2023_02_07.parquet"
 target_epsg = 27700
 n_partitions = 200
 simplify_tolerence: float = 0.5  # metres
 max_vertices: int = 256  # per polygon (row)
+path_read = next(v.path_read for v in dataset.versions if v.name == version)
 
 # COMMAND ----------
 
 # take a look at the raw data
-gpd.read_file(dataset.path_read.format(version=version), engine="pyogrio", rows=8)
+gpd.read_file(path_read, engine="pyogrio", rows=8)
 
 # COMMAND ----------
 
 # process the dataset
-preprocess_dataset(
-    spark=spark,
-    path_read=dataset.path_read.format(version=version),
-    path_write=dataset.path_polygons.format(version=version),
-    keep_cols=dataset.keep_cols,
-    rename_cols=dataset.rename_cols,
-    target_epsg=target_epsg,
-    n_partitions=n_partitions,
-    geometry_col="geometry",
-    **dataset.read_kwargs,
+df = (
+    gpd.read_file(path_read, engine="pyogrio")
+    .explode(index_parts=False)
+    .pipe(transform_crs, target_epsg=27700)
+    .filter(dataset.keep_cols, axis="columns")
+    .rename(columns=dataset.rename_cols)
+    .pipe(make_geometry_valid)
+    .pipe(geometry_to_wkb)
 )
+
+LOG.info(f"Dataset has {df.size:,.0f} rows")
+LOG.info(f"Dataset has the following columns: {df.columns.tolist()}")
+(
+    spark.createDataFrame(df)
+    .repartition(n_partitions)
+    .write.format("parquet")
+    .save(dataset.path_polygons.format(version=version), mode="overwrite")
+)
+LOG.info(f"Saved preprocessed dataset to {dataset.path_polygons.format(version=version)}")
 
 # COMMAND ----------
 
@@ -63,19 +73,22 @@ df.display()
 
 # COMMAND ----------
 
-# further process the parcels dataset to ensure validity, simplify the vertices to a tolerence,
+# process the parcels dataset to ensure validity, simplify the vertices to a tolerence,
 # and subdivide large geometries
 df_parcels = (
     spark.read.parquet(path_parcels)
-    .withColumn("geometry", expr("ST_GeomFromWKB(hex(geometry))"))
+    .withColumn("id_parcel", concat("SHEET_ID", "PARCEL_ID"))
+    .withColumn("geometry", expr("ST_GeomFromWKB(wkb_geometry)"))
     .withColumn("geometry", expr("ST_MakeValid(geometry)"))
     .withColumn("geometry", expr(f"ST_SimplifyPreserveTopology(geometry, {simplify_tolerence})"))
     .withColumn("geometry", expr("ST_Force_2D(geometry)"))
     .withColumn("geometry", expr("ST_MakeValid(geometry)"))
-    .withColumnRenamed("id", "id_parcel")
+    .select("id_parcel", "geometry")
 )
+df_parcels.display()
+# COMMAND ----------
 
-# further process the feature dataset to ensure validity, simplify the vertices to a tolerence,
+# process the feature dataset to ensure validity, simplify the vertices to a tolerence,
 # and subdivide large geometries
 df_feature = (
     spark.read.parquet(dataset.path_polygons.format(version=version))
@@ -86,6 +99,7 @@ df_feature = (
     .withColumn("geometry", expr("ST_MakeValid(geometry)"))
     .withColumn("geometry", expr(f"ST_SubdivideExplode(geometry, {max_vertices})"))
 )
+# COMMAND ----------
 
 # intersect the two datasets
 (
