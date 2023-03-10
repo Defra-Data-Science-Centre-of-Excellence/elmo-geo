@@ -12,14 +12,14 @@
 # COMMAND ----------
 
 import geopandas as gpd
-from pyspark.sql.functions import expr, concat
+from pyspark.sql.functions import concat, expr
 from sedona.register import SedonaRegistrator
 
 from elmo_geo.datasets import datasets
 from elmo_geo.io import download_link
 from elmo_geo.joins import spatial_join
-from elmo_geo.preprocessing import transform_crs, make_geometry_valid, geometry_to_wkb
 from elmo_geo.log import LOG
+from elmo_geo.preprocessing import geometry_to_wkb, make_geometry_valid, transform_crs
 
 SedonaRegistrator.registerAll(spark)
 
