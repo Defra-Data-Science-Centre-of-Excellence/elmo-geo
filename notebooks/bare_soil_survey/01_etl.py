@@ -1,10 +1,3 @@
-# Databricks notebook source
-# %load_ext autoreload
-# %autoreload 2
-# %pip install -qU git+https://github.com/aw-west-defra/cdap_geo.git
-# %pip install contextily
-
-# COMMAND ----------
 # MAGIC %md # Bare Soil Survey Data Cleaning
 # MAGIC We have received survey data so we can evaluate
 # MAGIC model analysis. We would like to see whether
@@ -15,6 +8,13 @@
 # MAGIC point of survey and NDVI calculated for point vfrom Sentinel 2 data.
 # MAGIC - overlay points to see which parcels have survey points located inside
 # MAGIC - Find NDVI calculated for each point
+
+# COMMAND ----------
+
+# %load_ext autoreload
+# %autoreload 2
+# %pip install -qU git+https://github.com/aw-west-defra/cdap_geo.git
+# %pip install contextily
 
 # COMMAND ----------
 
