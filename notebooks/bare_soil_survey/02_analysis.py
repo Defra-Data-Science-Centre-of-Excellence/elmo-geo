@@ -1,11 +1,3 @@
-# Databricks notebook source
-
-# %load_ext autoreload
-# %autoreload 2
-# %pip install -U statsmodels
-
-# COMMAND ----------
-
 # MAGIC %md # Bare Soil Survey Analysis
 # MAGIC We have received survey data so we can evaluate model analysis.
 # MAGIC We have cleaned the data in the bare_soil_survey_data_cleaning nottebook.
@@ -13,6 +5,12 @@
 # MAGIC In this notwbook, we will:
 # MAGIC - Make a regression model for the data
 # MAGIC - Use statistical methods to analyse the model
+
+# COMMAND ----------
+
+# %load_ext autoreload
+# %autoreload 2
+# %pip install -U statsmodels
 
 # COMMAND ----------
 
