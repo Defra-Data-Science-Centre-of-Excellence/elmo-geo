@@ -189,6 +189,16 @@ ewco_close_to_settlements = Dataset(
     output_coltypes={"status": "category"},
 )
 
+tiles = Dataset(
+    name="tiles",
+    path_read="/dbfs/mnt/lab/unrestricted/elm/elmo/baresoil/tiles.parquet",
+    path_polygons="mnt/lab/unrestricted/elm/elmo/baresoil/tile_polygons.parquet",
+    path_output="mnt/lab/unrestricted/elm/elmo/baresoil/parcel2023.parquet",
+    keep_cols=["geometry", "Name"],
+    rename_cols={"name": "tile"},
+    output_coltypes={"tile": "string"},
+)
+
 
 datasets = [
     national_park,
@@ -205,5 +215,6 @@ datasets = [
     ewco_red_squirrel,
     ewco_priority_habitat_network,
     ewco_close_to_settlements,
+    tiles,
 ]
 """A list of all defined datasets"""
