@@ -8,6 +8,7 @@
 # COMMAND ----------
 
 import geopandas as gpd
+import pyspark.sql.functions as F
 from pyspark.sql.functions import expr
 from sedona.register import SedonaRegistrator
 
@@ -26,7 +27,36 @@ target_epsg = 27700
 n_partitions = 200
 simplify_tolerence: float = 0.5  # metres
 max_vertices: int = 256  # per polygon (row)
-
+required_tiles = [
+    "30UUA",
+    "30UUB",
+    "30UVA",
+    "30UVB",
+    "30UVC",
+    "30UVD",
+    "30UVE",
+    "30UVF",
+    "30UVG",
+    "30UWB",
+    "30UWC",
+    "30UWD",
+    "30UWE",
+    "30UWF",
+    "30UWG",
+    "30UXB",
+    "30UXC",
+    "30UXD",
+    "30UXE",
+    "30UXF",
+    "30UXG",
+    "30UYB",
+    "30UYC",
+    "30UYD",
+    "30UYE",
+    "31UCT",
+    "31UDT",
+    "31UDU",
+]
 dataset = next(d for d in datasets if d.name == name)
 print(dataset)
 
@@ -72,15 +102,7 @@ df_parcels = (
 
 # further process the feature dataset to ensure validity, simplify the vertices to a tolerence,
 # and subdivide large geometries
-df_feature = (
-    spark.read.parquet(dataset.path_polygons)
-    # .withColumn("geometry", expr("ST_GeomFromWKB(hex(geometry))"))
-    # .withColumn("geometry", expr("ST_MakeValid(geometry)"))
-    # .withColumn("geometry", expr(f"ST_SimplifyPreserveTopology(geometry, {simplify_tolerence})"))
-    # .withColumn("geometry", expr("ST_Force_2D(geometry)"))
-    # .withColumn("geometry", expr("ST_MakeValid(geometry)"))
-    # .withColumn("geometry", expr(f"ST_SubdivideExplode(geometry, {max_vertices})"))
-)
+df_feature = spark.read.parquet(dataset.path_polygons).filter(F.col("tile").isin(required_tiles))
 
 # intersect the two datasets
 (
