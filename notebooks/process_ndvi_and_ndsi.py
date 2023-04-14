@@ -18,9 +18,9 @@ from elmo_geo.best_pixel import (
 from elmo_geo.raster import to_raster
 from elmo_geo.sentinel import (
     get_winter_datasets,
-    sort_datasets_by_time,
     sentinel_tiles,
     sentinel_years,
+    sort_datasets_by_time,
 )
 
 # COMMAND ----------
