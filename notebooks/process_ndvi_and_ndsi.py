@@ -25,7 +25,8 @@ from elmo_geo.sentinel import (
 
 # COMMAND ----------
 
-dbutils.widgets.dropdown("tile", sentinel_tiles[0], sentinel_tiles)
+tiles_formatted = [f"T{tile}" for tile in sentinel_tiles]
+dbutils.widgets.dropdown("tile", tiles_formatted[0], tiles_formatted)
 dbutils.widgets.dropdown("year", sentinel_years[-1], sentinel_years)
 
 tile = dbutils.widgets.get("tile")
