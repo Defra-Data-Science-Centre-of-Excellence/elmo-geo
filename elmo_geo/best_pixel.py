@@ -15,8 +15,8 @@ from elmo_geo.sentinel import (
     find_sentinel_bands,
     find_sentinel_qi_data,
     get_image_radiometric_offset,
-    sort_datasets_by_usefulness,
     sort_datasets_by_time,
+    sort_datasets_by_usefulness,
 )
 
 
