@@ -14,6 +14,44 @@ from matplotlib.ticker import PercentFormatter
 
 from elmo_geo.log import LOG
 
+sentinel_tiles = [
+    "30UUA",
+    "30UUB",
+    "30UVA",
+    "30UVB",
+    "30UVC",
+    "30UVD",
+    "30UVE",
+    "30UVF",
+    "30UVG",
+    "30UWB",
+    "30UWC",
+    "30UWD",
+    "30UWE",
+    "30UWF",
+    "30UWG",
+    "30UXB",
+    "30UXC",
+    "30UXD",
+    "30UXE",
+    "30UXF",
+    "30UXG",
+    "30UYB",
+    "30UYC",
+    "30UYD",
+    "30UYE",
+    "31UCT",
+    "31UDT",
+    "31UDU",
+]
+sentinel_years = [
+    "2019",
+    "2020",
+    "2021",
+    "2022",
+    "2023",
+]
+
 
 def get_tile(filename: str) -> str:
     """Extract tile name from Sentinel filename
@@ -419,3 +457,17 @@ def plot_products(
     ax.set_xlabel("Image date")
     sns.despine(left=True, top=True, right=True, bottom=True)
     return fig, ax
+
+
+def sort_datasets_by_time(datasets: List[str]) -> List[str]:
+    """
+    Sorting datasets by highest date to lowest date.
+    Using regex, we have isolated is date in yyyymmdd form from the file name
+    """
+    regex = r"(?!_)([0-9]{8})(T[0-9]{6}_N?)"
+    ds_names_sorted = sorted(
+        datasets,  # list to sort
+        key=lambda x: re.search(regex, x).group(1),  # sort by date
+        reverse=True,  # decending order
+    )
+    return ds_names_sorted
