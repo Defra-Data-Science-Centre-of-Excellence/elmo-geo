@@ -25,8 +25,12 @@ from elmo_geo.sentinel import (
 
 # COMMAND ----------
 
-tile = f"T{sentinel_tiles[0]}"  # "T30UUA"
-year = int(sentinel_years[-1])  # 2023
+dbutils.widgets.dropdown("tile", sentinel_tiles[0], sentinel_tiles)
+dbutils.widgets.dropdown("year", sentinel_years[-1], sentinel_years)
+
+tile = dbutils.widgets.get("tile")
+year = int(dbutils.widgets.get("year"))
+
 datasets = get_winter_datasets(year, tile)
 datasets = sort_datasets_by_time(datasets)[:7]
 datasets
