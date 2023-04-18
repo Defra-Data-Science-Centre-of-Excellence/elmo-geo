@@ -232,7 +232,7 @@ def find_sentinel_data(
     regex = re.compile(regex)
     files = os.listdir(root_dir)
     result = [x for x in files if regex.match(x) is not None]
-    # LOG.info(f"Found the following datasets: {result}")
+    LOG.info(f"Found the following datasets: {result}")
     return [f"{root_dir}/{x}" for x in result]
 
 
@@ -277,7 +277,7 @@ def find_sentinel_bands(
     regex = re.compile(f".*{band}_{resolution}m.jp2")
     files = os.listdir(resolution_dir)
     result = [x for x in files if regex.match(x) is not None]
-    # LOG.info(f"Found the following bands: {result}")
+    LOG.info(f"Found the following bands: {result}")
     return [f"{resolution_dir}/{x}" for x in result]
 
 
