@@ -1,4 +1,4 @@
-from typing import Callable, List
+from typing import Callable, List, Optional
 
 import numpy as np
 import rioxarray as rxr
@@ -15,8 +15,10 @@ from elmo_geo.sentinel import (
     find_sentinel_bands,
     find_sentinel_qi_data,
     get_image_radiometric_offset,
-    sort_datasets_by_time,
-    sort_datasets_by_usefulness,
+)
+from rich.progress import (
+    BarColumn,
+    Progress,
 )
 
 
@@ -106,9 +108,10 @@ def finally_ndvi_cloud_prob(ds: xr.Dataset) -> xr.Dataset:
 
 def get_clean_image(
     datasets: List[str],
+    sorting_algorithm: Callable[[List[str]], List[str]],
     process_func: Callable[[str], xr.Dataset],
     replace_func: Callable[[xr.Dataset, xr.Dataset], xr.Dataset],
-    finally_func: Callable[[xr.Dataset], xr.Dataset],
+    finally_func: Optional[Callable[[xr.Dataset], xr.Dataset]] = None,
 ) -> xr.Dataset:
     """Generate a clean dataset for a tile/granule by backfilling other datasets
     Requires injection of three dependant functions to process each dataset,
@@ -124,27 +127,35 @@ def get_clean_image(
             `cloud_prob`, and `tci` depending on the injected functions.
     """
 
-    # sort by decending order of usefulness
-    datasets = sort_datasets_by_usefulness(datasets)
+    # sort by the function chosen
+    datasets = sorting_algorithm(datasets)
     iter_datasets = iter(datasets)
     # Process the first dataset
     ds = process_func(next(iter_datasets))
     crs = ds.rio.crs
 
-    for dataset in iter_datasets:
-        # Process the next dataset
-        ds_new = process_func(dataset)
-        # Replace selected pixels from ds with those from ds_new
-        ds = replace_func(ds, ds_new)
+    # Define custom progress bar
+    progress_bar = Progress(
+        BarColumn(),
+    )
 
-    # Finally tidy up and summarise
-    ds = finally_func(ds)
+    # Use custom progress bar
+    with progress_bar as p:
+        for dataset in p.track(iter_datasets):
+            # Process the next dataset
+            ds_new = process_func(dataset)
+            # Replace selected pixels from ds with those from ds_new
+            ds = replace_func(ds, ds_new)
+            # Finally tidy up and summarise
+            if finally_func is not None:
+                ds = finally_func(ds)
     return ds.rio.write_crs(crs)
 
 
 # New functions for NDVI processing
 def process_ndvi_and_ndsi(dataset: str, inc_tci: bool = False) -> xr.Dataset:
-    """Read in required bands and calculate NDVI and ndsi
+    """
+    Read in required bands and calculate NDVI and NDSI
     Parameters:
         dataset: The path of the dataset directory
         inc_tci: Whether or not to include the true color image `tci` - used for
@@ -159,12 +170,13 @@ def process_ndvi_and_ndsi(dataset: str, inc_tci: bool = False) -> xr.Dataset:
     required_bands = [
         {"name": "red", "resolution": 10, "band": "B04"},  # for NDVI
         {"name": "nir", "resolution": 10, "band": "B08"},  # for NDVI
-        {"name": "green", "resolution": 20, "band": "B03"},  # for NDSI
+        {"name": "green", "resolution": 10, "band": "B03"},  # for NDSI
         {"name": "swir", "resolution": 20, "band": "B11"},  # for NDSI
     ]
     # necessary data to be returned
     return_vars = [
         "ndvi",
+        "ndsi",
     ]
     # in case we want to output the true colour image
     if inc_tci:
@@ -190,7 +202,6 @@ def process_ndvi_and_ndsi(dataset: str, inc_tci: bool = False) -> xr.Dataset:
         ds[band["name"]] = apply_offset(ds[band["name"]], offset)
 
     # reproject 20m bands to 10m resolution
-    ds["green"] = ds["green"].rio.reproject_match(ds["red"])
     ds["swir"] = ds["swir"].rio.reproject_match(ds["red"])
 
     ds = dict(
@@ -203,57 +214,22 @@ def process_ndvi_and_ndsi(dataset: str, inc_tci: bool = False) -> xr.Dataset:
     ds["ndvi"] = normalised_diff(ds["nir"], ds["red"])
     ds["ndsi"] = normalised_diff(ds["swir"], ds["green"])
 
-    # filtering out where there are clouds before pixel swapping in later function
-    ds["ndvi"] = xr.where(
-        ds["ndsi"] < 0.30,
-        np.nan,
-        ds["ndvi"],
-        keep_attrs=True,
-    )
     return ds[return_vars]
 
 
 # new function - replace ndsi/null values
 def replace_ndvi_low_ndsi(ds: xr.Dataset, ds_new: xr.Dataset) -> xr.Dataset:
     """
-    Replacing null values with next image in the ordered list of dataets.
+    Replacing cpotential cloud pixel or null values with next image in the ordered list of dataets.
+    We are using a threshold here (0.3) to identify if pixels are cloud. We have researched and
+    found that the best way to isolate cloud pixel with the NDSI logic is aboutr 30%, we found the
+    NDSI value in the proces_ndvi_And_ndsi function and now we are using the threshold to isolate
+    cloud pixels.
     """
     ds = xr.where(
-        (ds["ndvi"].isnull()),  # if pixel is null
+        (ds["ndsi"] < 0.3) | (ds["ndvi"].isnull()),  # if pixel is cloud or pixel is null
         ds_new,  # then take new value
         ds,  # else keep old value
         keep_attrs=True,
     )
     return ds
-
-
-def get_clean_image2(
-    datasets: List[str],
-    process_func: Callable[[str], xr.Dataset],
-    replace_func: Callable[[xr.Dataset, xr.Dataset], xr.Dataset],
-) -> xr.Dataset:
-    """Generate a clean dataset for a tile/granule by backfilling other datasets
-    Requires injection of two dependant functions to process each dataset then
-    replace pixels from one with the next.
-    Parameters:
-        datasets: A list of paths to downloaded Sentinel granules
-        process_func: The function to read in each dataset from the path and process it
-        replace_func: The function with logic to replace some pixels in the first
-            dataset with pixels from the next
-    Returns:
-        A dataset with arrays for `ndvi`, and potentially other metrics such as
-            `tci` depending on the injected functions.
-    """
-    # sort images by decending order of time
-    datasets = sort_datasets_by_time(datasets)
-    iter_datasets = iter(datasets)
-    # Process the first dataset
-    ds = process_func(next(iter_datasets))
-    crs = ds.rio.crs
-
-    for dataset in iter_datasets:
-        # Process the next dataset
-        ds_new = process_func(dataset)
-        # Replace selected pixels from ds with those from ds_new
-        ds = replace_func(ds, ds_new)
-    return ds.rio.write_crs(crs)
