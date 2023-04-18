@@ -1,8 +1,7 @@
 # Databricks notebook source
 # MAGIC %load_ext autoreload
 # MAGIC %autoreload 2
-# MAGIC %pip install rich
-# MAGIC %pip install -U sentinelsat numpy==1.22.0 beautifulsoup4 lxml
+# MAGIC %pip install -U beautifulsoup4 lxml
 
 # COMMAND ----------
 
@@ -44,7 +43,6 @@ ds = get_clean_image(
     process_func=process_ndvi_and_ndsi,
     replace_func=replace_ndvi_low_ndsi,
 )
-
 
 # COMMAND ----------
 
