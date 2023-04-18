@@ -56,7 +56,7 @@ def trim_band(band: DataArray, val: int, na_val=np.nan) -> DataArray:
 
 def set_nodata(band: DataArray, val: Union[int, float], nodataval=np.nan) -> DataArray:
     """Set val values in a band to na_val"""
-    # LOG.info(f"Setting no data `{val}` values to `{nodataval}`")
+    LOG.info(f"Setting no data `{val}` values to `{nodataval}`")
 
     if val != nodataval:
         band.data = xr.where(band == val, nodataval, band, keep_attrs=True)
