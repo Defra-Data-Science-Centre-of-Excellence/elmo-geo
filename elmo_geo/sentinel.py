@@ -161,7 +161,7 @@ def find_sentinel_data(
     DEFAULT_LOCATION = "/dbfs/mnt/lab/unrestricted/sentinel"
     PATH_STR = (
         ".*{mission}_{product}_{year}{month}{day}T{hour}{minute}{second}"
-        "_{pdgs}_{orbit}_{tile}_{discrim}.SAFE"
+        "_{pdgs}_{orbit}_T{tile}_{discrim}.SAFE"
     )
 
     if root_dir is None:
@@ -210,7 +210,7 @@ def find_sentinel_data(
         orbit = r".{4}"
 
     if tile is None:
-        tile = r".{6}"
+        tile = r".{5}"
 
     if discrim is None:
         discrim = r".{15}"
@@ -232,7 +232,7 @@ def find_sentinel_data(
     regex = re.compile(regex)
     files = os.listdir(root_dir)
     result = [x for x in files if regex.match(x) is not None]
-    LOG.info(f"Found the following datasets: {result}")
+    # LOG.info(f"Found the following datasets: {result}")
     return [f"{root_dir}/{x}" for x in result]
 
 
@@ -277,7 +277,7 @@ def find_sentinel_bands(
     regex = re.compile(f".*{band}_{resolution}m.jp2")
     files = os.listdir(resolution_dir)
     result = [x for x in files if regex.match(x) is not None]
-    LOG.info(f"Found the following bands: {result}")
+    # LOG.info(f"Found the following bands: {result}")
     return [f"{resolution_dir}/{x}" for x in result]
 
 
@@ -465,9 +465,10 @@ def sort_datasets_by_time(datasets: List[str]) -> List[str]:
     Using regex, we have isolated is date in yyyymmdd form from the file name
     """
     regex = r"(?!_)([0-9]{8})(T[0-9]{6}_N?)"
+    # sorts dataset by decending date
     ds_names_sorted = sorted(
-        datasets,  # list to sort
-        key=lambda x: re.search(regex, x).group(1),  # sort by date
-        reverse=True,  # decending order
+        datasets,
+        key=lambda x: re.search(regex, x).group(1),
+        reverse=True,
     )
     return ds_names_sorted
