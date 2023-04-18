@@ -1,25 +1,30 @@
 # Databricks notebook source
 # MAGIC %load_ext autoreload
 # MAGIC %autoreload 2
-# MAGIC %pip install -Uq seaborn dask psutil folium mapclassify
+# MAGIC %pip install -Uq beautifulsoup4 rich lxml
 
 # COMMAND ----------
 
 from elmo_geo.bare_soil import calc_bare_soil_percent
+from elmo_geo.datasets import datasets
 from elmo_geo.log import LOG
 from elmo_geo.plot_bare_soil_dist import plot_bare_soil_dist
 from elmo_geo.sentinel import sentinel_tiles, sentinel_years
 
 # COMMAND ----------
 
-
+# hard coded only because we need to isolate the processed version for now!
+versions = sorted([f"{v.name}" for d in datasets for v in d.versions])
+dbutils.widgets.dropdown("parcel version", "2023_02_07", versions)
 dbutils.widgets.dropdown("tile", sentinel_tiles[0], sentinel_tiles)
 dbutils.widgets.dropdown("year", sentinel_years[-1], sentinel_years)
 
+version = dbutils.widgets.get("version")
 tile = dbutils.widgets.get("tile")
 year = int(dbutils.widgets.get("year"))
 
-path_parcels = "dbfs:/mnt/lab/unrestricted/elm/sentinel/tiles/2023_01_01/parcels.parquet"
+
+path_parcels = f"dbfs:/mnt/lab/unrestricted/elm/sentinel/tiles/{version}/parcels.parquet"
 month_fm = f"{year-1}-11"
 month_to = f"{year}-02"
 path_ndvi = (
@@ -68,10 +73,10 @@ df
 result = spark.read.parquet(path_output).toPandas()
 print(result.bare_soil_percent.describe())
 fig, ax = plot_bare_soil_dist(
-    data=result.bare_soil_percent
+    data=result.bare_soil_percent,
     title=(
         f"Distribution of parcels in tile T{tile} by bare soil "
-        f"cover November {year-1} - February {year}",
+        f"cover November {year-1} - February {year}"
     ),
 )
 fig.show()
