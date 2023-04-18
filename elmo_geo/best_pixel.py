@@ -16,10 +16,6 @@ from elmo_geo.sentinel import (
     find_sentinel_qi_data,
     get_image_radiometric_offset,
 )
-from rich.progress import (
-    BarColumn,
-    Progress,
-)
 
 
 def process_ndvi_cloud_prob(dataset: str, inc_tci: bool = False) -> xr.Dataset:
@@ -134,21 +130,14 @@ def get_clean_image(
     ds = process_func(next(iter_datasets))
     crs = ds.rio.crs
 
-    # Define custom progress bar
-    progress_bar = Progress(
-        BarColumn(),
-    )
-
-    # Use custom progress bar
-    with progress_bar as p:
-        for dataset in p.track(iter_datasets):
-            # Process the next dataset
-            ds_new = process_func(dataset)
-            # Replace selected pixels from ds with those from ds_new
-            ds = replace_func(ds, ds_new)
-            # Finally tidy up and summarise
-            if finally_func is not None:
-                ds = finally_func(ds)
+    for dataset in iter_datasets:
+        # Process the next dataset
+        ds_new = process_func(dataset)
+        # Replace selected pixels from ds with those from ds_new
+        ds = replace_func(ds, ds_new)
+        # Finally tidy up and summarise
+        if finally_func is not None:
+            ds = finally_func(ds)
     return ds.rio.write_crs(crs)
 
 
