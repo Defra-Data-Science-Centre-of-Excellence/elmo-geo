@@ -452,7 +452,7 @@ tiles = Dataset(
     source="sentinel",
     versions=[
         Version(
-            name="2023_01_01",
+            name="2023_02_07",
             path_read=("/dbfs/mnt/lab/unrestricted/elm/elmo/baresoil/tiles.parquet"),
         ),
     ],
