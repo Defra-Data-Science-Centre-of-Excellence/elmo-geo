@@ -17,9 +17,10 @@ SedonaRegistrator.registerAll(spark)
 
 # COMMAND ----------
 
-path_tile = "dbfs:/mnt/lab/unrestricted/elm/sentinel/tiles/2023_01_01/output.parquet"
-path_geoms = "dbfs:/mnt/lab/unrestricted/elm_data/rpa/reference_parcels/2023_02_07.parquet"
-path_output = "dbfs:/mnt/lab/unrestricted/elm/sentinel/tiles/2023_01_01/parcels.parquet"
+version = "2023_02_07"
+path_tile = f"dbfs:/mnt/lab/unrestricted/elm/sentinel/tiles/{version}/output.parquet"
+path_geoms = f"dbfs:/mnt/lab/unrestricted/elm_data/rpa/reference_parcels/{version}.parquet"
+path_output = f"dbfs:/mnt/lab/unrestricted/elm/sentinel/tiles/{version}/parcels.parquet"
 simplify_tolerence: float = 0.5  # metres
 max_vertices: int = 256  # per polygon (row)
 
