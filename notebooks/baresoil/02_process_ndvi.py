@@ -32,7 +32,12 @@ tile = dbutils.widgets.get("tile")
 year = int(dbutils.widgets.get("year"))
 
 datasets = get_winter_datasets(year, tile)
-datasets = sort_datasets_by_time(datasets)[:6]
+images = [str(n) for n in range(len(datasets))]
+
+dbutils.widgets.dropdown("number of images to use", images[-1], images)
+
+images_to_use = int(dbutils.widgets.get("number of images to use"))
+datasets = sort_datasets_by_time(datasets)[:images_to_use]
 datasets
 
 # COMMAND ----------
