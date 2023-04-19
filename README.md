@@ -35,8 +35,8 @@ az login --tenant bce3d7d1-cbbd-481e-8c81-eaecfc38b551 --use-device-code --allow
 Login to databricks by authenticating with ADD:
 
 ```{bash}
-export DATABRICKS_AAD_TOKEN=$(az account get-access-token --resource 2ff814a6-3304-4ab8-85cb-cd0e6f879c1d | jq -r .accessToken)
-export DATABRICKS_HOST=https://adb-7393756451346106.6.azuredatabricks.net/
+DATABRICKS_AAD_TOKEN=$(az account get-access-token --resource 2ff814a6-3304-4ab8-85cb-cd0e6f879c1d | jq -r .accessToken) \
+DATABRICKS_HOST=https://adb-7393756451346106.6.azuredatabricks.net/ \
 databricks configure --jobs-api-version 2.1 --host $DATABRICKS_HOST --aad-token
 ```
 
