@@ -38,10 +38,10 @@ datasets
 # COMMAND ----------
 
 ds = get_clean_image(
-    sorting_algorithm=sort_datasets_by_time,
     datasets=datasets,
     process_func=process_ndvi_and_ndsi,
     replace_func=replace_ndvi_low_ndsi,
+    sorting_algorithm=sort_datasets_by_time,
 )
 
 # COMMAND ----------
