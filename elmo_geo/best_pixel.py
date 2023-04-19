@@ -15,6 +15,7 @@ from elmo_geo.sentinel import (
     find_sentinel_bands,
     find_sentinel_qi_data,
     get_image_radiometric_offset,
+    sort_datasets_by_usefulness,
 )
 
 
@@ -104,10 +105,10 @@ def finally_ndvi_cloud_prob(ds: xr.Dataset) -> xr.Dataset:
 
 def get_clean_image(
     datasets: List[str],
-    sorting_algorithm: Callable[[List[str]], List[str]],
     process_func: Callable[[str], xr.Dataset],
     replace_func: Callable[[xr.Dataset, xr.Dataset], xr.Dataset],
     finally_func: Optional[Callable[[xr.Dataset], xr.Dataset]] = None,
+    sorting_algorithm: Optional[Callable[[List[str]], List[str]]] = sort_datasets_by_usefulness,
 ) -> xr.Dataset:
     """Generate a clean dataset for a tile/granule by backfilling other datasets
     Requires injection of three dependant functions to process each dataset,
