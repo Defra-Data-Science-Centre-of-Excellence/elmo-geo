@@ -204,6 +204,11 @@ def process_ndvi_and_ndsi(dataset: str, inc_tci: bool = False) -> xr.Dataset:
     ds["ndvi"] = normalised_diff(ds["nir"], ds["red"])
     ds["ndsi"] = normalised_diff(ds["swir"], ds["green"])
 
+    ds["ndvi"] = xr.where(
+        ds["ndsi"] < 0.3,
+        np.nan,
+        ds["ndvi"],
+    )
     return ds[return_vars]
 
 
@@ -217,7 +222,7 @@ def replace_ndvi_low_ndsi(ds: xr.Dataset, ds_new: xr.Dataset) -> xr.Dataset:
     cloud pixels.
     """
     ds = xr.where(
-        (ds["ndsi"] < 0.3) | (ds["ndvi"].isnull()),  # if pixel is cloud or pixel is null
+        (ds["ndvi"].isnull()),  # pixel is null
         ds_new,  # then take new value
         ds,  # else keep old value
         keep_attrs=True,
