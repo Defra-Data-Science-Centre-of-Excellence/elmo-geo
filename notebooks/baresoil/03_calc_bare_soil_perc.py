@@ -8,16 +8,14 @@
 import os
 
 from elmo_geo.bare_soil import calc_bare_soil_percent
-from elmo_geo.datasets import datasets
 from elmo_geo.log import LOG
 from elmo_geo.plot_bare_soil_dist import plot_bare_soil_dist
 from elmo_geo.sentinel import sentinel_tiles, sentinel_years
 
 # COMMAND ----------
 
-# hard coded only because we need to isolate the processed version for now!
 versions = [v for v in os.listdir("/dbfs/mnt/lab/unrestricted/elm/sentinel/tiles")]
-dbutils.widgets.dropdown("parcel version", "2023_02_07", versions)
+dbutils.widgets.dropdown("parcel version", versions[-1], versions)
 dbutils.widgets.dropdown("tile", sentinel_tiles[0], sentinel_tiles)
 dbutils.widgets.dropdown("year", sentinel_years[-1], sentinel_years)
 
