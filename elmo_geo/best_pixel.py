@@ -1,4 +1,4 @@
-from typing import Callable, List
+from typing import Callable, List, Optional
 
 import numpy as np
 import rioxarray as rxr
@@ -107,7 +107,8 @@ def get_clean_image(
     datasets: List[str],
     process_func: Callable[[str], xr.Dataset],
     replace_func: Callable[[xr.Dataset, xr.Dataset], xr.Dataset],
-    finally_func: Callable[[xr.Dataset], xr.Dataset],
+    finally_func: Optional[Callable[[xr.Dataset], xr.Dataset]] = None,
+    sorting_algorithm: Optional[Callable[[List[str]], List[str]]] = sort_datasets_by_usefulness,
 ) -> xr.Dataset:
     """Generate a clean dataset for a tile/granule by backfilling other datasets
     Requires injection of three dependant functions to process each dataset,
@@ -123,8 +124,8 @@ def get_clean_image(
             `cloud_prob`, and `tci` depending on the injected functions.
     """
 
-    # sort by decending order of usefulness
-    datasets = sort_datasets_by_usefulness(datasets)
+    # sort by the function chosen
+    datasets = sorting_algorithm(datasets)
     iter_datasets = iter(datasets)
     # Process the first dataset
     ds = process_func(next(iter_datasets))
@@ -135,7 +136,90 @@ def get_clean_image(
         ds_new = process_func(dataset)
         # Replace selected pixels from ds with those from ds_new
         ds = replace_func(ds, ds_new)
-
-    # Finally tidy up and summarise
-    ds = finally_func(ds)
+        # Finally tidy up and summarise
+        if finally_func is not None:
+            ds = finally_func(ds)
     return ds.rio.write_crs(crs)
+
+
+# New functions for NDVI processing
+def process_ndvi_and_ndsi(dataset: str, inc_tci: bool = False) -> xr.Dataset:
+    """
+    Read in required bands and calculate NDVI and NDSI
+    Parameters:
+        dataset: The path of the dataset directory
+        inc_tci: Whether or not to include the true color image `tci` - used for
+            validation but is slower
+    Returns:
+        A dataset with arrays for `ndvi`, and sometimes `tci`.
+    """
+
+    LOG.info(f"Processing: {dataset}")
+
+    # preprocess bands
+    required_bands = [
+        {"name": "red", "resolution": 10, "band": "B04"},  # for NDVI
+        {"name": "nir", "resolution": 10, "band": "B08"},  # for NDVI
+        {"name": "green", "resolution": 10, "band": "B03"},  # for NDSI
+        {"name": "swir", "resolution": 20, "band": "B11"},  # for NDSI
+    ]
+    # necessary data to be returned
+    return_vars = [
+        "ndvi",
+        "ndsi",
+    ]
+    # in case we want to output the true colour image
+    if inc_tci:
+        required_bands.append({"name": "tci", "resolution": 10, "band": "TCI"})
+        return_vars.append("tci")
+
+    # finding data for each required_band
+    band_paths = {
+        b["name"]: find_sentinel_bands(
+            dataset,
+            resolution=b["resolution"],
+            band=b["band"],
+        )[0]
+        for b in required_bands
+    }
+
+    # read the bands into a dict
+    ds = {k: rxr.open_rasterio(v).squeeze() for k, v in band_paths.items()}
+
+    # adjust for radiometric offsets
+    for band in required_bands:
+        offset = get_image_radiometric_offset(dataset, band["band"])
+        ds[band["name"]] = apply_offset(ds[band["name"]], offset)
+
+    # reproject 20m bands to 10m resolution
+    ds["swir"] = ds["swir"].rio.reproject_match(ds["red"])
+
+    ds = dict(
+        (k, set_nodata(v, 0).astype("float64") / 10000.0) if k not in ("tci") else (k, v)
+        for k, v in ds.items()
+    )
+    ds = xr.Dataset(data_vars=ds)
+
+    # Calc NDVI and NDSI
+    ds["ndvi"] = normalised_diff(ds["nir"], ds["red"])
+    ds["ndsi"] = normalised_diff(ds["swir"], ds["green"])
+
+    return ds[return_vars]
+
+
+# new function - replace ndsi/null values
+def replace_ndvi_low_ndsi(ds: xr.Dataset, ds_new: xr.Dataset) -> xr.Dataset:
+    """
+    Replacing cpotential cloud pixel or null values with next image in the ordered list of dataets.
+    We are using a threshold here (0.3) to identify if pixels are cloud. We have researched and
+    found that the best way to isolate cloud pixel with the NDSI logic is aboutr 30%, we found the
+    NDSI value in the proces_ndvi_And_ndsi function and now we are using the threshold to isolate
+    cloud pixels.
+    """
+    ds = xr.where(
+        (ds["ndsi"] < 0.3) | (ds["ndvi"].isnull()),  # if pixel is cloud or pixel is null
+        ds_new,  # then take new value
+        ds,  # else keep old value
+        keep_attrs=True,
+    )
+    return ds

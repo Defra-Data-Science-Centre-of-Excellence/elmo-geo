@@ -1,7 +1,7 @@
 # Databricks notebook source
 # MAGIC %load_ext autoreload
-# MAGIC %autoreload
-# MAGIC %pip install -U sentinelsat numpy==1.22.0 beautifulsoup4 lxml
+# MAGIC %autoreload 2
+# MAGIC %pip install -U beautifulsoup4 lxml
 
 # COMMAND ----------
 
@@ -11,32 +11,43 @@ import rioxarray as rxr
 import seaborn as sns
 
 from elmo_geo.best_pixel import (
-    finally_ndvi_cloud_prob,
     get_clean_image,
-    process_ndvi_cloud_prob,
-    replace_ndvi_cloud_prob,
+    process_ndvi_and_ndsi,
+    replace_ndvi_low_ndsi,
 )
 from elmo_geo.raster import to_raster
-from elmo_geo.sentinel import get_winter_datasets, sort_datasets_by_usefulness
+from elmo_geo.sentinel import (
+    get_winter_datasets,
+    sentinel_tiles,
+    sentinel_years,
+    sort_datasets_by_time,
+)
 
 # COMMAND ----------
 
-list_of_tiles = ["30UWC", "30UYC", "30UYD", "30UVF", "30UWD", "30UXD", "30UWE", "30UXE", "30UXF"]
-tile = f"T{list_of_tiles[0]}"  # "T30UUB"
-year = 2023
+dbutils.widgets.dropdown("tile", sentinel_tiles[0], sentinel_tiles)
+dbutils.widgets.dropdown("year", sentinel_years[-1], sentinel_years)
+
+tile = dbutils.widgets.get("tile")
+year = int(dbutils.widgets.get("year"))
+
 datasets = get_winter_datasets(year, tile)
-datasets = sort_datasets_by_usefulness(datasets)
+images = [str(n) for n in range(len(datasets))]
+
+dbutils.widgets.dropdown("number of images to use", images[-1], images)
+
+images_to_use = int(dbutils.widgets.get("number of images to use"))
+datasets = sort_datasets_by_time(datasets)[:images_to_use]
 datasets
 
 # COMMAND ----------
 
 ds = get_clean_image(
     datasets=datasets,
-    process_func=process_ndvi_cloud_prob,
-    replace_func=replace_ndvi_cloud_prob,
-    finally_func=finally_ndvi_cloud_prob,
+    process_func=process_ndvi_and_ndsi,
+    replace_func=replace_ndvi_low_ndsi,
+    sorting_algorithm=sort_datasets_by_time,
 )
-
 
 # COMMAND ----------
 
@@ -48,7 +59,7 @@ ndvi.rio.set_nodata(NODATA_VAL)
 ndvi = ndvi.astype("f")  # smallest compatible float type
 month_fm = f"{year-1}-11"
 month_to = f"{year}-02"
-path = f"/dbfs/mnt/lab/unrestricted/elm/elmo/baresoil/ndvi/{tile}-{month_fm}-{month_to}.tif"
+path = f"/dbfs/mnt/lab/unrestricted/elm/elmo/baresoil/ndvi/T{tile}-{month_fm}-{month_to}.tif"
 to_raster(ndvi, path)
 
 # COMMAND ----------
@@ -62,8 +73,6 @@ ndvi.plot.imshow(
 )
 ax.set_axis_off()
 ax.set_title("")
-# ax.set_facecolor("black")
-# fig.set_facecolor("black")
 footnote = f"Processed from Sentinel 2 imagery from November {year-1} to February {year}."
 fig.suptitle(f"{tile}, winter {year}", x=0, y=1.01, ha="left", fontsize="large")
 fig.supxlabel(footnote, x=0, y=-0.01, ha="left", fontsize="small")
