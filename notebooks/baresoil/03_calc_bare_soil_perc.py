@@ -19,7 +19,7 @@ dbutils.widgets.dropdown("parcel version", versions[-1], versions)
 dbutils.widgets.dropdown("tile", sentinel_tiles[0], sentinel_tiles)
 dbutils.widgets.dropdown("year", sentinel_years[-1], sentinel_years)
 
-version = dbutils.widgets.get("version")
+version = dbutils.widgets.get("parcel version")
 tile = dbutils.widgets.get("tile")
 year = int(dbutils.widgets.get("year"))
 
