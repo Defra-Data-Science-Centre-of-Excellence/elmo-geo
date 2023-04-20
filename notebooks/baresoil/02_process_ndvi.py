@@ -34,11 +34,19 @@ year = int(dbutils.widgets.get("year"))
 datasets = get_winter_datasets(year, tile)
 images = [str(n) for n in range(len(datasets))]
 
-dbutils.widgets.dropdown("number of images to use", images[-4], images)
+dbutils.widgets.dropdown("number of images to use", images[round(len(images) / 2)], images)
 
 images_to_use = int(dbutils.widgets.get("number of images to use"))
 datasets = sort_datasets_by_time(datasets)[:images_to_use]
 datasets
+
+# COMMAND ----------
+
+print(
+    f"The tile selected: {tile}\n"
+    f"The year selected: {year}\n"
+    f"The number of images to combine will be: {images_to_use}"
+)
 
 # COMMAND ----------
 
