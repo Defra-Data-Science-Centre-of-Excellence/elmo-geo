@@ -21,6 +21,7 @@ from elmo_geo.sentinel import (
     sentinel_tiles,
     sentinel_years,
     sort_datasets_by_time,
+    sort_datasets_by_usefulness,
 )
 
 # COMMAND ----------
@@ -37,7 +38,7 @@ images = [str(n) for n in range(len(datasets))]
 dbutils.widgets.dropdown("number of images to use", images[round(len(images) / 2)], images)
 
 images_to_use = int(dbutils.widgets.get("number of images to use"))
-datasets = sort_datasets_by_time(datasets)[:images_to_use]
+datasets = sort_datasets_by_usefulness(datasets)[:images_to_use]
 datasets
 
 # COMMAND ----------
