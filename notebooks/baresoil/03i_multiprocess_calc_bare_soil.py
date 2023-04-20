@@ -6,7 +6,7 @@
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC # Run `prcoess_ndvi` using multiprocessing
+# MAGIC # Run `calc_bare_soil_perc` using multiprocessing
 # MAGIC
 # MAGIC Running this notebook will end up running a notebook for multiple tiles and
 # MAGIC years (comment out tiles and years where appropriate).
@@ -21,7 +21,8 @@ from elmo_geo.log import LOG
 from elmo_geo.sentinel import sentinel_tiles, sentinel_years
 
 
-def run_with_retry(notebook: str, timeout_seconds: int = 800, max_retries: int = 1):
+# timeout_seconds - 1 hour
+def run_with_retry(notebook: str, timeout_seconds: int = 3600, max_retries: int = 1):
     def _run_with_retry(args):
         num_retries = 0
         LOG.info(f"Starting {args}")
@@ -30,7 +31,7 @@ def run_with_retry(notebook: str, timeout_seconds: int = 800, max_retries: int =
                 return dbutils.notebook.run(
                     path=notebook, timeout_seconds=timeout_seconds, arguments=args
                 )
-            except Exception as e:
+            except Exception:
                 if num_retries > max_retries:
                     LOG.warning(f"Ran out of retries for {args}")
                     return
@@ -42,9 +43,9 @@ def run_with_retry(notebook: str, timeout_seconds: int = 800, max_retries: int =
     return _run_with_retry
 
 
-tiles = sentinel_tiles[:2]  # "30UUA", "30UUB" only
-years = sentinel_years[3:]  # 2022, 2023 only
-
+# must use slicing to keep lists as lists
+tiles = sentinel_tiles[:2]  # len(sentinel_tiles) = 28
+years = sentinel_years[4:]  # len(sentinel_years) = 5
 notebook = "03_calc_bare_soil_perc"
 
 print(
@@ -56,7 +57,7 @@ print(
 # COMMAND ----------
 
 if len(years) == 1 and len(tiles) == 1:
-    iteems = {"year": years[0], "tile": tiles[0]}
+    print(f"Use {notebook} notebook to run with {years} and {tiles}")
 elif len(years) == 1:
     items = ({"year": years[0], "tile": t} for t in tiles)
 elif len(tiles) == 1:
