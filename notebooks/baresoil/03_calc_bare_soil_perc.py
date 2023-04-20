@@ -23,7 +23,7 @@ version = dbutils.widgets.get("parcel version")
 tile = dbutils.widgets.get("tile")
 year = int(dbutils.widgets.get("year"))
 
-
+print(f" The tile selected: {tile}\n The year selected: {year}")
 path_parcels = f"dbfs:/mnt/lab/unrestricted/elm/sentinel/tiles/{version}/parcels.parquet"
 month_fm = f"{year-1}-11"
 month_to = f"{year}-02"
@@ -32,7 +32,7 @@ path_ndvi = (
         tile=tile, month_fm=month_fm, month_to=month_to
     )
 )
-ndvi_thresh = 0.25  # 0.15 0.2 0.25 0.3 0.35 0.4 0.6 0.7
+ndvi_thresh = 0.25
 # raster resolution - reproject to higher resolutions than 10m to speed up (but loose accuracy)
 resolution = None
 simplify = None  # geometry simplification tolerence - set this to speed up (but loose accuracy)
