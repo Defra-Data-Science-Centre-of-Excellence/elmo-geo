@@ -118,6 +118,7 @@ def get_clean_image(
         replace_func: The function with logic to replace some pixels in the first
             dataset with pixels from the next
         finally_func: The function to do any final actions
+        soting_algorithm: A function to sort the list of datasets before it is processed
     Returns:
         A dataset with arrays for `ndvi`, and potentially other metrics such as
             `cloud_prob`, and `tci` depending on the injected functions.
@@ -145,13 +146,17 @@ def get_clean_image(
 # New functions for NDVI processing
 def process_ndvi_and_ndsi(dataset: str, inc_tci: bool = False) -> xr.Dataset:
     """
-    Read in required bands and calculate NDVI and NDSI
+    Read in required bands and calculate NDVI and NDSI. Storing NDSI as a bool to improve memory.
+    We are using a threshold here (0.3) to identify if pixels are cloud. We have researched and
+    found that the best way to isolate cloud pixel with the NDSI logic is aboutr 30%, we found the
+    NDSI value in the proces_ndvi_And_ndsi function and now we are using the threshold to isolate
+    cloud pixels.
     Parameters:
         dataset: The path of the dataset directory
         inc_tci: Whether or not to include the true color image `tci` - used for
             validation but is slower
     Returns:
-        A dataset with arrays for `ndvi`, and sometimes `tci`.
+        A dataset with arrays for `ndvi`, `ndsi`, and sometimes `tci`.
     """
 
     LOG.info(f"Processing: {dataset}")
@@ -203,12 +208,13 @@ def process_ndvi_and_ndsi(dataset: str, inc_tci: bool = False) -> xr.Dataset:
     # Calc NDVI and NDSI
     ds["ndvi"] = normalised_diff(ds["nir"], ds["red"])
     ds["ndsi"] = normalised_diff(ds["swir"], ds["green"])
-
-    ds["ndvi"] = xr.where(
-        ds["ndsi"] < 0.3,
-        np.nan,
-        ds["ndvi"],
+    ds["ndsi"] = xr.where(
+        ds["ndsi"] < 0.27,
+        True,
+        False,
+        keep_attrs=True,
     )
+
     return ds[return_vars]
 
 
@@ -216,11 +222,13 @@ def process_ndvi_and_ndsi(dataset: str, inc_tci: bool = False) -> xr.Dataset:
 def replace_ndvi_low_ndsi(ds: xr.Dataset, ds_new: xr.Dataset) -> xr.Dataset:
     """
     Replacing cpotential cloud pixel or null values with next image in the ordered list of dataets.
-    We are using a threshold here (0.3) to identify if pixels are cloud. We have researched and
-    found that the best way to isolate cloud pixel with the NDSI logic is aboutr 30%, we found the
-    NDSI value in the proces_ndvi_And_ndsi function and now we are using the threshold to isolate
-    cloud pixels.
     """
+    ds = xr.where(
+        (ds["ndsi"]),  # pixel is cloud
+        ds_new,  # then take new value
+        ds,  # else keep old value
+        keep_attrs=True,
+    )
     ds = xr.where(
         (ds["ndvi"].isnull()),  # pixel is null
         ds_new,  # then take new value
