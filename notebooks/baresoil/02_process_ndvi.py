@@ -1,7 +1,7 @@
 # Databricks notebook source
 # MAGIC %load_ext autoreload
 # MAGIC %autoreload 2
-# MAGIC %pip install -U beautifulsoup4 lxml
+# MAGIC %pip install -U beautifulsoup4 lxml psutil
 
 # COMMAND ----------
 
@@ -15,6 +15,7 @@ from elmo_geo.best_pixel import (
     process_ndvi_and_ndsi,
     replace_ndvi_low_ndsi,
 )
+from elmo_geo.log import LOG
 from elmo_geo.raster import to_raster
 from elmo_geo.sentinel import (
     get_winter_datasets,
@@ -33,20 +34,21 @@ tile = dbutils.widgets.get("tile")
 year = int(dbutils.widgets.get("year"))
 
 datasets = get_winter_datasets(year, tile)
-images = [str(n) for n in range(len(datasets))]
+n_datasets = [str(n) for n in range(len(datasets))]
+initial_n_datasets = "6" if len(n_datasets) > 6 else str(len(n_datasets))
 
-dbutils.widgets.dropdown("number of images to use", images[round(len(images) / 2)], images)
+dbutils.widgets.dropdown("number of datasets to use", initial_n_datasets, n_datasets)
 
-images_to_use = int(dbutils.widgets.get("number of images to use"))
-datasets = sort_datasets_by_usefulness(datasets)[:images_to_use]
+n_datasets_filtered = int(dbutils.widgets.get("number of datasets to use"))
+datasets = sort_datasets_by_usefulness(datasets)[:n_datasets_filtered]
 datasets
 
 # COMMAND ----------
 
-print(
+LOG.info(
     f"The tile selected: {tile}\n"
     f"The year selected: {year}\n"
-    f"The number of images to combine will be: {images_to_use}"
+    f"The number of images to combine will be: {n_datasets_filtered}"
 )
 
 # COMMAND ----------
