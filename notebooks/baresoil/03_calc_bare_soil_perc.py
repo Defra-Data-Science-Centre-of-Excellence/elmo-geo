@@ -23,7 +23,7 @@ version = dbutils.widgets.get("parcel version")
 tile = dbutils.widgets.get("tile")
 year = int(dbutils.widgets.get("year"))
 
-print(f" The tile selected: {tile}\n The year selected: {year}")
+LOG.info(f" The tile selected: {tile}\n The year selected: {year}")
 path_parcels = f"dbfs:/mnt/lab/unrestricted/elm/sentinel/tiles/{version}/parcels.parquet"
 month_fm = f"{year-1}-11"
 month_to = f"{year}-02"
