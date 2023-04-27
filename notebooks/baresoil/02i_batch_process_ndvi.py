@@ -1,14 +1,14 @@
 # Databricks notebook source
-# MAGIC %load_ext autoreload
-# MAGIC %autoreload 2
-# MAGIC %pip install -U beautifulsoup4 lxml
+# MAGIC %md
+# MAGIC # Run `02_process_ndvi` using batch processing
+# MAGIC
+# MAGIC Running this notebook will end up running a notebook for multiple tiles and years
 
 # COMMAND ----------
 
-# MAGIC %md
-# MAGIC # Run `02_prcoess_ndvi` using batch processing
-# MAGIC
-# MAGIC Running this notebook will end up running a notebook for multiple tiles and years
+# MAGIC %load_ext autoreload
+# MAGIC %autoreload 2
+# MAGIC %pip install -U beautifulsoup4 lxml
 
 # COMMAND ----------
 
