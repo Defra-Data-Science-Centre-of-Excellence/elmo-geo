@@ -8,7 +8,7 @@ spark = SparkSession.getActiveSession()
 dbutils = DBUtils(spark)
 
 
-def run_with_retry(notebook: str, timeout_seconds: int = 3600, max_retries: int = 1):
+def run_with_retry(notebook: str, timeout_seconds: int = 8000, max_retries: int = 3):
     """
     This function runs a notebook that is in the elmo-geo git repo.
     Parameters:
@@ -20,21 +20,17 @@ def run_with_retry(notebook: str, timeout_seconds: int = 3600, max_retries: int 
     """
 
     def _run_with_retry(args):
-        num_retries = 0
         LOG.info(f"Starting {args}")
-        while True:
+        for n in range(max_retries):
             try:
                 return dbutils.notebook.run(
                     path=notebook, timeout_seconds=timeout_seconds, arguments=args
                 )
-            except Exception as e:
-                if num_retries > max_retries:
+            except Exception:
+                if n > max_retries:
                     LOG.warning(f"Ran out of retries for {args}")
-                    LOG.info(e)
                     return
                 else:
                     LOG.warning(f"Retrying error for {args}")
-                    num_retries += 1
-        LOG.info(f"Finished {args}")
 
     return _run_with_retry
