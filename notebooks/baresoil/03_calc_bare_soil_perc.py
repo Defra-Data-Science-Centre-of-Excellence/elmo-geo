@@ -43,6 +43,10 @@ path_output = (
         tile=tile, month_fm=month_fm, month_to=month_to
     )
 )  # -{ndvi_thresh} , ndvi_thresh=ndvi_thresh
+path_save_figure = (
+    f"/dbfs/mnt/lab/unrestricted/elm/elmo/baresoil/figures/T{tile}-"
+    f"{month_fm}-{month_to}-baresoil-disribution.png"
+)
 spark.conf.set("spark.sql.execution.arrow.maxRecordsPerBatch", str(batch_size))
 
 # COMMAND ----------
@@ -71,7 +75,7 @@ df
 # COMMAND ----------
 
 result = spark.read.parquet(path_output).toPandas()
-print(result.bare_soil_percent.describe())
+LOG.info(result.bare_soil_percent.describe())
 fig, ax = plot_bare_soil_dist(
     data=result.bare_soil_percent,
     title=(
@@ -79,6 +83,7 @@ fig, ax = plot_bare_soil_dist(
         f"cover November {year-1} - February {year}"
     ),
 )
+fig.savefig(path_save_figure)
 fig.show()
 
 # COMMAND ----------
