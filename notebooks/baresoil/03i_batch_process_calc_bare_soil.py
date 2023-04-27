@@ -1,15 +1,16 @@
 # Databricks notebook source
-# MAGIC %load_ext autoreload
-# MAGIC %autoreload 2
-# MAGIC %pip install -U beautifulsoup4 lxml
-
-# COMMAND ----------
-
 # MAGIC %md
 # MAGIC # Run `03_calc_bare_soil_perc` using batch processing
 # MAGIC
 # MAGIC Running this notebook will end up running a notebook for multiple tiles and
 # MAGIC years.
+
+# COMMAND ----------
+
+# MAGIC %load_ext autoreload
+# MAGIC %autoreload 2
+# MAGIC %pip install -U beautifulsoup4 lxml
+
 # COMMAND ----------
 
 import itertools
