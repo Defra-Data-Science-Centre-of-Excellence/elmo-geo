@@ -24,25 +24,24 @@ dbutils.widgets.multiselect("years", sentinel_years[-1], sentinel_years)
 
 # COMMAND ----------
 
-tiles: list = sentinel_tiles[:]
 years: list = [str(n) for n in dbutils.widgets.get("years").split(",")]
 notebook = "02_process_ndvi"
 
 LOG.info(
-    f"The tiles that are selected are: {tiles}\n"
+    f"The tiles that are selected are: {sentinel_tiles}\n"
     f"The years selected are: {years}\n"
     f"The notebook selected is: {notebook}"
 )
 
 # COMMAND ----------
 
-items = ({"year": y, "tile": t} for y, t in itertools.product(years, tiles))
+items = ({"year": y, "tile": t} for y, t in itertools.product(years, sentinel_tiles))
 
 n_cpu = os.cpu_count()
 LOG.info(f"Running on {n_cpu:,.0f} processes")
 with ThreadPool(processes=n_cpu) as pool:
     pool.map_async(
-        run_with_retry(notebook=notebook, timeout_seconds=2000),  # 33 mins
+        run_with_retry(notebook=notebook),
         # cross product to get all combinations of tile and year
         items,
     ).get()
