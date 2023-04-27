@@ -135,7 +135,6 @@ def get_clean_image(
         ds_new = process_func(dataset)
         # Replace selected pixels from ds with those from ds_new
         ds = replace_func(ds, ds_new)
-        del ds_new
     # Finally tidy up and summarise
     if finally_func is not None:
         ds = finally_func(ds)
@@ -208,7 +207,7 @@ def process_ndvi_and_ndsi(dataset: str, inc_tci: bool = False) -> xr.Dataset:
 
 # new function - replace ndsi/null values
 def replace_ndvi_low_ndsi(
-    ds: xr.Dataset, ds_new: xr.Dataset, ndsi_threshold: int = 0.27
+    ds: xr.Dataset, ds_new: xr.Dataset, ndsi_threshold: float = 0.27
 ) -> xr.Dataset:
     """
     Replacing cpotential cloud pixel or null values with next image in the ordered list of dataets.
