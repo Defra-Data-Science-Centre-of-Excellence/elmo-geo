@@ -34,8 +34,8 @@ tile = dbutils.widgets.get("tile")
 year = int(dbutils.widgets.get("year"))
 
 datasets = get_winter_datasets(year, tile)
-n_datasets = [str(n) for n in range(len(datasets))]
-initial_n_datasets = "6" if len(n_datasets) > 6 else str(len(n_datasets))
+n_datasets = [str(n) for n in range(1, min(6, len(datasets)) + 1)]
+initial_n_datasets = n_datasets[-1]
 
 dbutils.widgets.dropdown("number of datasets to use", initial_n_datasets, n_datasets)
 
@@ -71,6 +71,10 @@ ndvi = ndvi.astype("f")  # smallest compatible float type
 month_fm = f"{year-1}-11"
 month_to = f"{year}-02"
 path = f"/dbfs/mnt/lab/unrestricted/elm/elmo/baresoil/ndvi/T{tile}-{month_fm}-{month_to}.tif"
+path_save_figure = (
+    f"/dbfs/mnt/lab/unrestricted/elm/elmo/baresoil/figures/T{tile}-"
+    f"{month_fm}-{month_to}-ndvi-figure.png"
+)
 to_raster(ndvi, path)
 
 # COMMAND ----------
@@ -87,6 +91,7 @@ ax.set_title("")
 footnote = f"Processed from Sentinel 2 imagery from November {year-1} to February {year}."
 fig.suptitle(f"{tile}, winter {year}", x=0, y=1.01, ha="left", fontsize="large")
 fig.supxlabel(footnote, x=0, y=-0.01, ha="left", fontsize="small")
+fig.savefig(path_save_figure)
 fig.show()
 
 # COMMAND ----------
