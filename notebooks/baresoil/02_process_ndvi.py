@@ -71,10 +71,7 @@ ndvi = ndvi.astype("f")  # smallest compatible float type
 month_fm = f"{year-1}-11"
 month_to = f"{year}-02"
 path = f"/dbfs/mnt/lab/unrestricted/elm/elmo/baresoil/ndvi/T{tile}-{month_fm}-{month_to}.tif"
-path_save_figure = (
-    f"/dbfs/mnt/lab/unrestricted/elm/elmo/baresoil/figures/T{tile}-"
-    f"{month_fm}-{month_to}-ndvi-figure.png"
-)
+path_save_figure = f"/dbfs/mnt/lab/unrestricted/elm/elmo/baresoil/figures/ndvi_{tile}_{year}.png"
 to_raster(ndvi, path)
 
 # COMMAND ----------
