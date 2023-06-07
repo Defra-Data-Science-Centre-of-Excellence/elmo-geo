@@ -44,9 +44,9 @@ path_output = (
     )
 )  # -{ndvi_thresh} , ndvi_thresh=ndvi_thresh
 path_save_figure = (
-    f"/dbfs/mnt/lab/unrestricted/elm/elmo/baresoil/figures/T{tile}-"
-    f"{month_fm}-{month_to}-baresoil-disribution.png"
+    f"/dbfs/mnt/lab/unrestricted/elm/elmo/baresoil/figures/hist_bare_{tile}_{year}.png"
 )
+
 spark.conf.set("spark.sql.execution.arrow.maxRecordsPerBatch", str(batch_size))
 
 # COMMAND ----------
