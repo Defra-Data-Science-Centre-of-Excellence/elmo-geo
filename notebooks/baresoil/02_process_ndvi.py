@@ -1,7 +1,7 @@
 # Databricks notebook source
 # MAGIC %load_ext autoreload
 # MAGIC %autoreload 2
-# MAGIC %pip install -U beautifulsoup4 lxml
+# MAGIC %pip install -U beautifulsoup4 lxml psutil
 
 # COMMAND ----------
 
@@ -15,12 +15,14 @@ from elmo_geo.best_pixel import (
     process_ndvi_and_ndsi,
     replace_ndvi_low_ndsi,
 )
+from elmo_geo.log import LOG
 from elmo_geo.raster import to_raster
 from elmo_geo.sentinel import (
     get_winter_datasets,
     sentinel_tiles,
     sentinel_years,
     sort_datasets_by_time,
+    sort_datasets_by_usefulness,
 )
 
 # COMMAND ----------
@@ -32,13 +34,22 @@ tile = dbutils.widgets.get("tile")
 year = int(dbutils.widgets.get("year"))
 
 datasets = get_winter_datasets(year, tile)
-images = [str(n) for n in range(len(datasets))]
+n_datasets = [str(n) for n in range(1, min(6, len(datasets)) + 1)]
+initial_n_datasets = n_datasets[-1]
 
-dbutils.widgets.dropdown("number of images to use", images[-1], images)
+dbutils.widgets.dropdown("number of datasets to use", initial_n_datasets, n_datasets)
 
-images_to_use = int(dbutils.widgets.get("number of images to use"))
-datasets = sort_datasets_by_time(datasets)[:images_to_use]
+n_datasets_filtered = int(dbutils.widgets.get("number of datasets to use"))
+datasets = sort_datasets_by_usefulness(datasets)[:n_datasets_filtered]
 datasets
+
+# COMMAND ----------
+
+LOG.info(
+    f"The tile selected: {tile}\n"
+    f"The year selected: {year}\n"
+    f"The number of images to combine will be: {n_datasets_filtered}"
+)
 
 # COMMAND ----------
 
@@ -60,6 +71,7 @@ ndvi = ndvi.astype("f")  # smallest compatible float type
 month_fm = f"{year-1}-11"
 month_to = f"{year}-02"
 path = f"/dbfs/mnt/lab/unrestricted/elm/elmo/baresoil/ndvi/T{tile}-{month_fm}-{month_to}.tif"
+path_save_figure = f"/dbfs/mnt/lab/unrestricted/elm/elmo/baresoil/figures/ndvi_{tile}_{year}.png"
 to_raster(ndvi, path)
 
 # COMMAND ----------
@@ -76,6 +88,7 @@ ax.set_title("")
 footnote = f"Processed from Sentinel 2 imagery from November {year-1} to February {year}."
 fig.suptitle(f"{tile}, winter {year}", x=0, y=1.01, ha="left", fontsize="large")
 fig.supxlabel(footnote, x=0, y=-0.01, ha="left", fontsize="small")
+fig.savefig(path_save_figure)
 fig.show()
 
 # COMMAND ----------

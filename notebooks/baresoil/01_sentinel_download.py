@@ -13,40 +13,15 @@
 
 import datetime
 
-from elmo_geo.sentinel import extract_all_sentinel_data, is_downloaded, plot_products
+from elmo_geo.sentinel import (
+    extract_all_sentinel_data,
+    is_downloaded,
+    plot_products,
+    sentinel_tiles,
+)
 from elmo_geo.sentinel_api import sentinel_api_session
 
-tiles = [
-    "30UUA",  # 2023 2022
-    "30UUB",  # 2023 2022
-    "30UVA",  # 2023 2022
-    "30UVB",  # 2023 ...
-    "30UVC",  # 2023 ...
-    "30UVD",  # 2023
-    "30UVE",  # 2023
-    "30UVF",  # 2023
-    "30UVG",  # 2023
-    "30UWB",  # 2023
-    "30UWC",  # 2023
-    "30UWD",  # 2023
-    "30UWE",  # 2023
-    "30UWF",  # 2023
-    "30UWG",  # 2023
-    "30UXB",  # 2023
-    "30UXC",  # 2023
-    "30UXD",  # 2023
-    "30UXE",  # 2023
-    "30UXF",  # 2023
-    "30UXG",  # 2023
-    "30UYB",  # 2023
-    "30UYC",  # 2023
-    "30UYD",  # 2023
-    "30UYE",  # 2023
-    "31UCT",  # 2023
-    "31UDT",  # 2023
-    "31UDU",  # 2023
-]
-tile = "30UVC"
+tile = sentinel_tiles[0]
 year = 2022
 date_from = datetime.datetime(year=year - 1, month=11, day=1)
 date_to = datetime.datetime(year=year, month=2, day=28)
@@ -59,6 +34,7 @@ keep_cols = [
     "notvegetatedpercentage",
     "vegetationpercentage",
     "geometry",
+    "size",
 ]
 
 with sentinel_api_session() as api:
@@ -68,7 +44,15 @@ with sentinel_api_session() as api:
 # COMMAND ----------
 
 # add some columns and summarise
-df["usefulpercentage"] = df.notvegetatedpercentage + df.vegetationpercentage
+# df["usefulpercentage"] = df.notvegetatedpercentage + df.vegetationpercentage
+df["size"] = [
+    round(float(i.split(" ")[0])) / 1000
+    if i.split(" ")[1] == "MB"
+    else round(float(i.split(" ")[0]))
+    for i in df["size"]
+]
+# mimicking updated usefulness (if size is small then not all image is there)
+df["usefulpercentage"] = (df.notvegetatedpercentage + df.vegetationpercentage) * df["size"]
 df["useful"] = df.usefulpercentage.rank(ascending=False) <= top_n
 # this will only look for unzipped downloads
 # use extract_all_sentinel_data() to be sure they are all unzipped
