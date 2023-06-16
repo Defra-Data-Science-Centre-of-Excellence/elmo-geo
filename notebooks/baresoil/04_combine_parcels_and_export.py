@@ -17,7 +17,7 @@ import os
 import re
 
 import matplotlib.pyplot as plt
-import pandas as pd  # QE F401
+import pandas as pd  # noqa F401
 import seaborn as sns
 from matplotlib.ticker import PercentFormatter
 
