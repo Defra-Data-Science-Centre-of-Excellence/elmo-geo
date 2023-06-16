@@ -2,9 +2,15 @@ import os
 import shutil
 import zipfile
 
+from pyspark.dbutils import DBUtils
+from pyspark.sql import SparkSession
 from pyspark.sql.session import SparkSession
 
 from elmo_geo.log import LOG
+
+# Define SparkSession and dbutils
+spark = SparkSession.getActiveSession()
+dbutils = DBUtils(spark)
 
 
 def download_link(spark: SparkSession, path: str) -> str:
@@ -47,3 +53,10 @@ def extract_file(from_path: str, to_path: str):
     LOG.info("Deleting zip file")
     os.remove(to_path + filename)
     LOG.info("Done!")
+
+
+def _read_file(year, path):
+    """Reading parquiet files for comare_years notebook"""
+    return spark.read.parquet(path.format(year=year)).withColumnRenamed(
+        "bare_soil_percent", str(year)
+    )
