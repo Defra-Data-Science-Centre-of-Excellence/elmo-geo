@@ -95,8 +95,8 @@ sns.set_context("talk")
 fig, ax = plt.subplots(figsize=(12, 6), constrained_layout=True)
 dfp.bare_soil_percent.plot.hist(ax=ax, bins=100, log=True, xlabel="f")
 ax.xaxis.set_major_formatter(PercentFormatter(xmax=1))
-ax.set_xlabel("Proportion of bare soil")
-ax.set_xlabel("Parcel count")
+ax.set_xlabel("PArcel count")
+ax.set_xlabel("Bare soil percent")
 fig.suptitle(
     f"Distribution of parcels by bare soil cover November {year -1} - February {year}",
     x=0,
