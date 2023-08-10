@@ -15,8 +15,10 @@
 # COMMAND ----------
 
 import geopandas as gpd
+import matplotlib.pyplot as plt
 import pandas as pd
 import pyspark.sql.functions as F
+import seaborn as sns
 from pyspark.sql.functions import concat, expr
 from sedona.register import SedonaRegistrator
 
@@ -171,5 +173,30 @@ pandas_df["bins"] = pd.cut(
 )
 proportion_df = pandas_df.groupby(by="bins").count()
 proportion_df
+
+# COMMAND ----------
+
+
+# visualising
+pdf = df_parcels.toPandas()
+resultpd = result.toPandas()
+
+counts = resultpd.groupby("id_parcel").proportion.count().value_counts()
+before = set(pdf.id_parcel.values)
+after = set(resultpd.id_parcel.values)
+missing = before.difference(after)
+counts[0] = len(missing)
+counts = counts.sort_index()
+
+sns.set_theme(context="notebook", style="white", palette="husl")
+fig, ax = plt.subplots(figsize=(6, 4), constrained_layout=True)
+colours = sns.color_palette("husl", n_colors=len(counts)).as_hex()
+bc = ax.barh(counts.index, counts, color=colours, alpha=0.8)
+ax.invert_yaxis()
+sns.despine(left=True, right=True, top=True, bottom=True)
+ax.bar_label(bc, [f"{c:,.0f}" for c in counts])
+ax.set_xticklabels([])
+ax.set_title("Parcel count by number of tile intersections", loc="left", fontsize="large")
+fig.show()
 
 # COMMAND ----------
