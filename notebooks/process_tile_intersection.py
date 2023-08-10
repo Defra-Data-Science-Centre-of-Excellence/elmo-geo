@@ -133,6 +133,7 @@ result = spark.read.parquet(dataset.path_output.format(version=version))
 
 # COMMAND ----------
 
+# adding geometries back into the dataset
 result = result.filter(result.proportion > 0.99).select("tile", "id_parcel")
 df = (
     result.join(df_parcels, ["id_parcel"], "left")
