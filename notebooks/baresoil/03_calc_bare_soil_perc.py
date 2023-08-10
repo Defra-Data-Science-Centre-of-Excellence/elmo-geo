@@ -14,17 +14,16 @@ from elmo_geo.sentinel import sentinel_tiles, sentinel_years
 
 # COMMAND ----------
 
-# hard coded only because we need to isolate the processed version for now!
 versions = [v for v in os.listdir("/dbfs/mnt/lab/unrestricted/elm/sentinel/tiles")]
-dbutils.widgets.dropdown("parcel version", "2023_02_07", versions)
+dbutils.widgets.dropdown("parcel version", versions[-1], versions)
 dbutils.widgets.dropdown("tile", sentinel_tiles[0], sentinel_tiles)
 dbutils.widgets.dropdown("year", sentinel_years[-1], sentinel_years)
 
-version = dbutils.widgets.get("version")
+version = dbutils.widgets.get("parcel version")
 tile = dbutils.widgets.get("tile")
 year = int(dbutils.widgets.get("year"))
 
-
+LOG.info(f" The tile selected: {tile}\n The year selected: {year}")
 path_parcels = f"dbfs:/mnt/lab/unrestricted/elm/sentinel/tiles/{version}/parcels.parquet"
 month_fm = f"{year-1}-11"
 month_to = f"{year}-02"
@@ -33,7 +32,7 @@ path_ndvi = (
         tile=tile, month_fm=month_fm, month_to=month_to
     )
 )
-ndvi_thresh = 0.25  # 0.15 0.2 0.25 0.3 0.35 0.4 0.6 0.7
+ndvi_thresh = 0.25
 # raster resolution - reproject to higher resolutions than 10m to speed up (but loose accuracy)
 resolution = None
 simplify = None  # geometry simplification tolerence - set this to speed up (but loose accuracy)
@@ -44,6 +43,10 @@ path_output = (
         tile=tile, month_fm=month_fm, month_to=month_to
     )
 )  # -{ndvi_thresh} , ndvi_thresh=ndvi_thresh
+path_save_figure = (
+    f"/dbfs/mnt/lab/unrestricted/elm/elmo/baresoil/figures/hist_bare_{tile}_{year}.png"
+)
+
 spark.conf.set("spark.sql.execution.arrow.maxRecordsPerBatch", str(batch_size))
 
 # COMMAND ----------
@@ -72,7 +75,7 @@ df
 # COMMAND ----------
 
 result = spark.read.parquet(path_output).toPandas()
-print(result.bare_soil_percent.describe())
+LOG.info(result.bare_soil_percent.describe())
 fig, ax = plot_bare_soil_dist(
     data=result.bare_soil_percent,
     title=(
@@ -80,6 +83,7 @@ fig, ax = plot_bare_soil_dist(
         f"cover November {year-1} - February {year}"
     ),
 )
+fig.savefig(path_save_figure)
 fig.show()
 
 # COMMAND ----------

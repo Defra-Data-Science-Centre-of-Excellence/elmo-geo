@@ -15,7 +15,6 @@ from elmo_geo.sentinel import (
     find_sentinel_bands,
     find_sentinel_qi_data,
     get_image_radiometric_offset,
-    sort_datasets_by_usefulness,
 )
 
 
@@ -108,10 +107,10 @@ def get_clean_image(
     process_func: Callable[[str], xr.Dataset],
     replace_func: Callable[[xr.Dataset, xr.Dataset], xr.Dataset],
     finally_func: Optional[Callable[[xr.Dataset], xr.Dataset]] = None,
-    sorting_algorithm: Optional[Callable[[List[str]], List[str]]] = sort_datasets_by_usefulness,
+    sorting_algorithm: Optional[Callable[[List[str]], List[str]]] = None,
 ) -> xr.Dataset:
     """Generate a clean dataset for a tile/granule by backfilling other datasets
-    Requires injection of three dependant functions to process each dataset,
+    Requires injection of at least two dependant functions to process each dataset,
     replace pixels from one with the next, and do some final clean up.
     Parameters:
         datasets: A list of paths to downloaded Sentinel granules
@@ -119,39 +118,39 @@ def get_clean_image(
         replace_func: The function with logic to replace some pixels in the first
             dataset with pixels from the next
         finally_func: The function to do any final actions
+        soting_algorithm: A function to sort the list of datasets before it is processed
     Returns:
         A dataset with arrays for `ndvi`, and potentially other metrics such as
-            `cloud_prob`, and `tci` depending on the injected functions.
+            `tci` depending on the injected functions.
     """
-
     # sort by the function chosen
-    datasets = sorting_algorithm(datasets)
+    if sorting_algorithm is not None:
+        datasets = sorting_algorithm(datasets)
     iter_datasets = iter(datasets)
     # Process the first dataset
     ds = process_func(next(iter_datasets))
     crs = ds.rio.crs
-
-    for dataset in iter_datasets:
+    for num, dataset in enumerate(iter_datasets, 1):
         # Process the next dataset
         ds_new = process_func(dataset)
         # Replace selected pixels from ds with those from ds_new
         ds = replace_func(ds, ds_new)
-        # Finally tidy up and summarise
-        if finally_func is not None:
-            ds = finally_func(ds)
+    # Finally tidy up and summarise
+    if finally_func is not None:
+        ds = finally_func(ds)
     return ds.rio.write_crs(crs)
 
 
 # New functions for NDVI processing
 def process_ndvi_and_ndsi(dataset: str, inc_tci: bool = False) -> xr.Dataset:
     """
-    Read in required bands and calculate NDVI and NDSI
+    Read in required bands and calculate NDVI and NDSI.
     Parameters:
         dataset: The path of the dataset directory
         inc_tci: Whether or not to include the true color image `tci` - used for
             validation but is slower
     Returns:
-        A dataset with arrays for `ndvi`, and sometimes `tci`.
+        A dataset with arrays for `ndvi`, `ndsi`, and sometimes `tci`.
     """
 
     LOG.info(f"Processing: {dataset}")
@@ -203,21 +202,24 @@ def process_ndvi_and_ndsi(dataset: str, inc_tci: bool = False) -> xr.Dataset:
     # Calc NDVI and NDSI
     ds["ndvi"] = normalised_diff(ds["nir"], ds["red"])
     ds["ndsi"] = normalised_diff(ds["swir"], ds["green"])
-
     return ds[return_vars]
 
 
 # new function - replace ndsi/null values
-def replace_ndvi_low_ndsi(ds: xr.Dataset, ds_new: xr.Dataset) -> xr.Dataset:
+def replace_ndvi_low_ndsi(
+    ds: xr.Dataset,
+    ds_new: xr.Dataset,
+    ndsi_threshold: float = 0.32,
+) -> xr.Dataset:
     """
     Replacing cpotential cloud pixel or null values with next image in the ordered list of dataets.
-    We are using a threshold here (0.3) to identify if pixels are cloud. We have researched and
+    We are using a threshold here (0.32) to identify if pixels are cloud. We have researched and
     found that the best way to isolate cloud pixel with the NDSI logic is aboutr 30%, we found the
     NDSI value in the proces_ndvi_And_ndsi function and now we are using the threshold to isolate
     cloud pixels.
     """
     ds = xr.where(
-        (ds["ndsi"] < 0.3) | (ds["ndvi"].isnull()),  # if pixel is cloud or pixel is null
+        (ds["ndsi"] < ndsi_threshold) | (ds["ndvi"].isnull()),  # pixel is cloud or is null
         ds_new,  # then take new value
         ds,  # else keep old value
         keep_attrs=True,

@@ -310,7 +310,8 @@ def get_image_usefulness(path: str) -> float:
     data = BeautifulSoup(data, "xml")
     vegetation = float(data.find("VEGETATION_PERCENTAGE").contents[0])
     bare_soil = float(data.find("NOT_VEGETATED_PERCENTAGE").contents[0])
-    usefulness = (vegetation + bare_soil) / 100
+    no_data = float(data.find("NODATA_PIXEL_PERCENTAGE").contents[0])
+    usefulness = ((vegetation + bare_soil) * (100 - no_data)) / 10000
     LOG.info(f"Dataset {path} has a usefulness of {usefulness:.2%}")
     return usefulness
 
