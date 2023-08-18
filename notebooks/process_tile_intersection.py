@@ -176,8 +176,7 @@ proportion_df
 
 # COMMAND ----------
 
-
-# visualising
+# visualising counting how many parcels are in a number of tiles
 pdf = df_parcels.toPandas()
 resultpd = result.toPandas()
 
