@@ -19,11 +19,11 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import pyspark.sql.functions as F
 import seaborn as sns
-from pyspark.sql.functions import concat, expr
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import col, concat, expr
 from sedona.register import SedonaRegistrator
 
 from elmo_geo.datasets import tiles
-from elmo_geo.joins import spatial_join
 from elmo_geo.log import LOG
 from elmo_geo.preprocessing import geometry_to_wkb, make_geometry_valid, transform_crs
 from elmo_geo.sentinel import sentinel_tiles
