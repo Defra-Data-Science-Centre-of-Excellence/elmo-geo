@@ -10,7 +10,7 @@
 
 # MAGIC %load_ext autoreload
 # MAGIC %autoreload 2
-# MAGIC %pip install  beautifulsoup4 lxml
+# MAGIC %pip install beautifulsoup4 lxml
 
 # COMMAND ----------
 
@@ -28,15 +28,16 @@ from elmo_geo.log import LOG
 from elmo_geo.preprocessing import geometry_to_wkb, make_geometry_valid, transform_crs
 from elmo_geo.sentinel import sentinel_tiles
 
+spark = SparkSession.getActiveSession()
 SedonaRegistrator.registerAll(spark)
 
 # COMMAND ----------
 
 names = sorted([f"{v.name}" for v in tiles.versions])
 dbutils.widgets.dropdown("version", names[-1], names)
-version = dbutils.widgets.get("dataset")
-dataset = tiles.copy()
-[print(k, v, sep=":\t") for k, v in dataset.__dict__.items()]
+version = dbutils.widgets.get("version")
+
+[print(k, v, sep=":\t") for k, v in tiles.__dict__.items()]
 path_parcels = "dbfs:/mnt/lab/unrestricted/elm_data/rpa/reference_parcels/2023_02_07.parquet"
 path_output = f"dbfs:/mnt/lab/unrestricted/elm/sentinel/tiles/{version}/parcels.parquet"
 target_epsg = 27700
@@ -49,7 +50,6 @@ required_tiles = sentinel_tiles.copy()
 # COMMAND ----------
 
 # take a look at the raw data
-# gpd.read_file(path_read, engine="pyogrio", rows=8)
 pdf = pd.read_parquet(path_read)
 gdf = gpd.GeoDataFrame(
     pdf, geometry=gpd.GeoSeries.from_wkb(pdf["geometry"], crs=target_epsg), crs=target_epsg
@@ -62,8 +62,8 @@ gdf
 df = (
     gdf.explode(index_parts=False)
     .pipe(transform_crs, target_epsg=27700)
-    .filter(dataset.keep_cols, axis="columns")
-    .rename(columns=dataset.rename_cols)
+    .filter(tiles.keep_cols, axis="columns")
+    .rename(columns=tiles.rename_cols)
     .pipe(make_geometry_valid)
     .pipe(geometry_to_wkb)
 )
@@ -74,20 +74,19 @@ LOG.info(f"Dataset has the following columns: {df.columns.tolist()}")
     spark.createDataFrame(df)
     .repartition(n_partitions)
     .write.format("parquet")
-    .save(dataset.path_polygons.format(version=version), mode="overwrite")
+    .save(tiles.path_polygons.format(version=version), mode="overwrite")
 )
-LOG.info(f"Saved preprocessed dataset to {dataset.path_polygons.format(version=version)}")
+LOG.info(f"Saved preprocessed dataset to {tiles.path_polygons.format(version=version)}")
 
 # COMMAND ----------
 
 # take a look at the processed data
-df = spark.read.parquet(dataset.path_polygons.format(version=version))
+df = spark.read.parquet(tiles.path_polygons.format(version=version))
 df.display()
 
 # COMMAND ----------
 
-# process the parcels dataset to ensure validity, simplify the vertices to a tolerence,
-# and subdivide large geometries
+# process the parcels dataset to ensure validity, simplify the vertices to a tolerence
 df_parcels = (
     spark.read.parquet(path_parcels)
     .withColumn("id_parcel", concat("SHEET_ID", "PARCEL_ID"))
@@ -97,66 +96,57 @@ df_parcels = (
     .withColumn("geometry", expr("ST_Force_2D(geometry)"))
     .withColumn("geometry", expr("ST_MakeValid(geometry)"))
     .select("id_parcel", "geometry")
+    .repartition(10000)
 )
 df_parcels.display()
+
 # COMMAND ----------
 
 # process the feature dataset to ensure validity, simplify the vertices to a tolerence,
 # and subdivide large geometries
 df_feature = (
-    spark.read.parquet(dataset.path_polygons.format(version=version))
+    spark.read.parquet(tiles.path_polygons.format(version=version))
     .withColumn("geometry", expr("ST_GeomFromWKB(hex(geometry))"))
     .withColumn("geometry", expr("ST_MakeValid(geometry)"))
     .withColumn("geometry", expr(f"ST_SimplifyPreserveTopology(geometry, {simplify_tolerence})"))
     .withColumn("geometry", expr("ST_Force_2D(geometry)"))
     .withColumn("geometry", expr("ST_MakeValid(geometry)"))
-    .withColumn("geometry", expr(f"ST_SubdivideExplode(geometry, {max_vertices})"))
     .filter(F.col("tile").isin(required_tiles))
+    .repartition(1)
 )
 df_feature.display()
 
 # COMMAND ----------
 
-# intersect the two datasets
+# Intersection using SQL as there are a small number of tiles
+df_parcels.createOrReplaceTempView("parcels")
+df_feature.createOrReplaceTempView("feature")
+
 (
-    spatial_join(
-        df_left=df_parcels,
-        df_right=df_feature,
-        spark=spark,
-        num_partitions=10000,
+    spark.sql(
+        """
+        SELECT parcels.id_parcel, feature.tile, parcels.geometry, feature.geometry AS geom_feature
+        FROM parcels, feature
+        WHERE ST_INTERSECTS(parcels.geometry, feature.geometry)
+        """
     )
-    .write.format("parquet")
-    .save(dataset.path_output.format(version=version), mode="overwrite")
-)
-
-# COMMAND ----------
-
-result = spark.read.parquet(dataset.path_output.format(version=version))
-
-# COMMAND ----------
-
-# adding geometries back into the dataset
-result = result.filter(result.proportion > 0.99).select("tile", "id_parcel")
-df = (
-    result.join(df_parcels, ["id_parcel"], "left")
+    .repartition("tile")
+    .withColumn("area_parcel", expr("ST_Area(geometry)"))
+    .withColumn("int_geometry", expr("ST_INTERSECTION(geometry, geom_feature)"))
+    .withColumn("area_intersection", expr("ST_Area(int_geometry)"))
+    .withColumn("proportion", col("area_intersection") / col("area_parcel"))
+    .filter("proportion > 0.90")
     .select("id_parcel", "tile", "geometry")
     .withColumn("geometry", expr("ST_AsBinary(geometry)"))
+    .write.format("parquet")
+    .save(tiles.path_output.format(version=version), mode="overwrite")
 )
-df.write.format("parquet").save(path_output, mode="overwrite")
-display(df)
 
 # COMMAND ----------
 
-# show results
+result = spark.read.parquet(tiles.path_output.format(version=version))
 count = result.count()
 LOG.info(f"Rows: {count:,.0f}")
-# check proportion is never > 1 - if it is might mean duplicate features int he dataset
-proportion_over_1 = (result.toPandas().proportion > 1.0).sum()
-if proportion_over_1:
-    LOG.info(
-        f"{proportion_over_1:,.0f} parcels overlap tiles "
-        f" by a proportion > 1 ({proportion_over_1/count:%})"
-    )
 result.display()
 
 # COMMAND ----------
