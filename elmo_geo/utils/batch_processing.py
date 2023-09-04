@@ -34,3 +34,7 @@ def run_with_retry(notebook: str, timeout_seconds: int = 8000, max_retries: int 
                     LOG.warning(f"Retrying error for {args}")
 
     return _run_with_retry
+
+
+# thread_map = Pool().map()
+# spark_map = sc.parallelize().map()

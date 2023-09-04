@@ -47,3 +47,4 @@ def extract_file(from_path: str, to_path: str):
     LOG.info("Deleting zip file")
     os.remove(to_path + filename)
     LOG.info("Done!")
+

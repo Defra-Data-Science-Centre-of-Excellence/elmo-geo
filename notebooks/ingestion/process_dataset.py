@@ -1,3 +1,5 @@
+
+
 # Databricks notebook source
 # MAGIC %md
 # MAGIC # Processing vector data and calculating intersections with land parcels

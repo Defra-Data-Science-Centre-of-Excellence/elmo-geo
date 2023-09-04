@@ -2,14 +2,14 @@
 import logging
 import os
 from dataclasses import dataclass
-
 from rich.logging import RichHandler
 
+
 logging.basicConfig(
-    level=logging.INFO,
-    format="%(message)s",
-    datefmt="[%X.%f]",
-    handlers=[RichHandler(show_path=False)],  # silenced as noisy and messy
+    level = logging.INFO,
+    format = "%(message)s",
+    datefmt = "[%X.%f]",
+    handlers = [RichHandler(show_path=False)],  # silenced as noisy and messy
 )
 
 
@@ -35,16 +35,11 @@ def get_logger() -> logging.Logger:
 
 LOG = get_logger()
 
-# silence py4j logging mess by setting its log level back to ERROR
-logging.getLogger("py4j.java_gateway").setLevel(logging.ERROR)
-
 
 @dataclass
 class DataError(Exception):
     """Error raised when data is not what is expected"""
-
     msg: str = ""
-
     def __post_init__(self):
         LOG.error(self.msg)
 
@@ -52,8 +47,9 @@ class DataError(Exception):
 @dataclass
 class PartitionError(Exception):
     """Error raised when dataframe partitions are not as expected"""
-
     msg: str = ""
-
     def __post_init__(self):
         LOG.error(self.msg)
+
+
+logging.getLogger("py4j.java_gateway").setLevel(logging.ERROR)  # silence py4j logging mess by setting its log level back to ERROR

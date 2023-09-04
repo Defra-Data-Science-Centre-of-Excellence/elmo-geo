@@ -1,20 +1,12 @@
-"""Functions for processing geospatial data using GeoVector cluster for ELMO"""
+'''ELM Spatial Eligibility'''
 
-import subprocess
+# import subprocess
 
-requires = [
-    # "numpy",
-    "rich",
-    # "pandas",
-    # "shapely",
-    # "geopandas",
-    # "rasterio",
-    # "xarray",
-    # "dbruntime",
-    # "folium",
-    # "matplotlib",
-    # "mapclassify",
-    # "seaborn",
-]
+# requirements = open('../requirements.txt').read().split()
+# subprocess.run(["pip", "install"] + requirements)
 
-subprocess.run(["pip", "install"] + requires)
+
+from elm_se.utils.log import LOG
+from elm_se.utils.register import register
+
+register(spark)
