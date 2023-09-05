@@ -29,7 +29,10 @@ path = f"/mnt/lab/unrestricted/elm/elmo/baresoil/output-{year}.parquet"
 df = spark.read.parquet(path).toPandas()
 fig, ax = plot_bare_soil_dist(
     data=df.bare_soil_percent,
-    title=f"Distribution of parcels in England by bare soil cover November {year-1} - February {year}",
+    title=(
+        "Distribution of parcels in England by bare soil cover "
+        f"November {year-1} - February {year}"
+    ),
 )
 fig.show()
 
@@ -56,7 +59,10 @@ predicate = lambda col: col.startswith("ha_arable_")
 wfm["arable"] = wfm[filter(predicate, wfm.columns)].sum(axis=1) > 0
 fig, ax = plot_bare_soil_dist(
     data=wfm.loc[wfm.arable, "bare_soil_percent"],
-    title=f"Distribution of arable parcels in England by bare soil cover November {year-1} - February {year}",
+    title=(
+        "Distribution of arable parcels in England by bare soil cover "
+        f"November {year-1} - February {year}"
+    ),
 )
 fig.show()
 
@@ -72,7 +78,10 @@ predicate = lambda col: col in [
 wfm["improved_grassland"] = wfm[filter(predicate, wfm.columns)].sum(axis=1) > 0
 fig, ax = plot_bare_soil_dist(
     data=wfm.loc[wfm.improved_grassland, "bare_soil_percent"],
-    title=f"Distribution of improved grassland parcels in England by bare soil cover November {year-1} - February {year}",
+    title=(
+        "Distribution of improved grassland parcels in England by bare soil "
+        f"cover November {year-1} - February {year}"
+    ),
 )
 fig.show()
 
