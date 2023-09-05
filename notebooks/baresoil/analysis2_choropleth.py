@@ -16,10 +16,12 @@
 
 import geopandas as gpd
 import mapclassify
-import seaborn as sns
 import matplotlib.pyplot as plt
-from matplotlib.ticker import PercentFormatter, FuncFormatter
 import numpy as np
+import seaborn as sns
+from matplotlib.ticker import FuncFormatter, PercentFormatter  # noqa F401
+
+from elmo_geo.sentinel import sentinel_years
 
 dbutils.widgets.dropdown("year", sentinel_years[-1], sentinel_years)
 
@@ -28,7 +30,11 @@ dbutils.widgets.dropdown("year", sentinel_years[-1], sentinel_years)
 year = int(dbutils.widgets.get("year"))
 path = f"/mnt/lab/unrestricted/elm/elmo/baresoil/output-{year}.parquet"
 path_nca = "dbfs:/mnt/lab/unrestricted/elm/elmo/national_character_areas/output.parquet"
-path_nca_poly = "/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_national_character_areas/format_SHP_national_character_areas/LATEST_national_character_areas/National_Character_Areas___Natural_England.shp"
+path_nca_poly = (
+    "/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/"
+    "dataset_national_character_areas/format_SHP_national_character_areas/"
+    "LATEST_national_character_areas/National_Character_Areas___Natural_England.shp"
+)
 
 
 # COMMAND ----------
@@ -152,13 +158,16 @@ axes[1, 1].bar_label(
 axes[1, 1].get_xaxis().set_visible(False)
 sns.despine(left=True, top=True, right=True, bottom=True)
 fig.suptitle(
-    f"Mean bare soil % for land parcels in England by National Character Area, November {year-1} - February {year}",
+    (
+        f"Mean bare soil % for land parcels in England by National "
+        f"Character Area, November {year-1} - February {year}"
+    ),
     x=0,
     ha="left",
     fontsize="x-large",
 )
 fig.supxlabel(
-    f"Source: Sentinel-2 L2A imagery, bare soil defined where NDVI<0.25",
+    "Source: Sentinel-2 L2A imagery, bare soil defined where NDVI<0.25",
     x=0,
     ha="left",
     fontsize="small",
