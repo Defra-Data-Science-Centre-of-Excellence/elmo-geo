@@ -53,10 +53,3 @@ def extract_file(from_path: str, to_path: str):
     LOG.info("Deleting zip file")
     os.remove(to_path + filename)
     LOG.info("Done!")
-
-
-def _read_file(year, path):
-    """Reading parquiet files for comare_years notebook"""
-    return spark.read.parquet(path.format(year=year)).withColumnRenamed(
-        "bare_soil_percent", str(year)
-    )
