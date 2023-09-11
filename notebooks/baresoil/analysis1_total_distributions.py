@@ -54,6 +54,16 @@ wfm
 
 # COMMAND ----------
 
+
+# function to grab a subsection of wfm  parcels (used in baseline_analysis)
+def add_bool_col(df, col_list, new_col_name):
+    """Adds a boolean column to dataframe."""
+    df[new_col_name] = df[filter(col_list, df.columns)].sum(axis=1) > 0
+    return df
+
+
+# COMMAND ----------
+
 # arable soils analysis
 predicate = lambda col: col.startswith("ha_arable_")
 wfm["arable"] = wfm[filter(predicate, wfm.columns)].sum(axis=1) > 0
