@@ -13,7 +13,7 @@
 
 # COMMAND ----------
 
-from elmo_geo.io import _read_file, download_link
+from elmo_geo.io import download_link
 from elmo_geo.log import LOG
 from elmo_geo.sentinel import sentinel_years
 
@@ -21,7 +21,15 @@ dbutils.widgets.multiselect("years", sentinel_years[-1], sentinel_years)
 
 # COMMAND ----------
 
-years: list = [str(n) for n in dbutils.widgets.get("years").split(",")]
+
+def _read_file(year, path):
+    """Reading parquet files for comare_years notebook"""
+    return spark.read.parquet(path.format(year=year)).withColumnRenamed(
+        "bare_soil_percent", str(year)
+    )
+
+
+years: list = [str(n) for n in sorted(dbutils.widgets.get("years").split(","))]
 if len(years) < 2:
     raise ValueError("Please select at least two years to run")
 path = "/mnt/lab/unrestricted/elm/elmo/baresoil/output-{year}.parquet"
