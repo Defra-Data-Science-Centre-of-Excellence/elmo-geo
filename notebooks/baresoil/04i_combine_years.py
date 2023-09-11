@@ -17,7 +17,7 @@ from elmo_geo.io import download_link
 from elmo_geo.log import LOG
 from elmo_geo.sentinel import sentinel_years
 
-dbutils.widgets.multiselect("years", sentinel_years[-1], sentinel_years)
+dbutils.widgets.multiselect("years", sentinel_years, sentinel_years)
 
 # COMMAND ----------
 
