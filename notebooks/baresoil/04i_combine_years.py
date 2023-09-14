@@ -17,7 +17,11 @@ from elmo_geo.io import download_link
 from elmo_geo.log import LOG
 from elmo_geo.sentinel import sentinel_years
 
-dbutils.widgets.multiselect("years", sentinel_years[-1], sentinel_years)
+# ensuring we can multiselect all years from the initial stage
+all_string = "All"
+years_to_choose = sentinel_years.copy()
+years_to_choose.append(all_string)
+dbutils.widgets.multiselect("years", all_string, years_to_choose)
 
 # COMMAND ----------
 
@@ -30,6 +34,8 @@ def _read_file(year, path):
 
 
 years: list = [str(n) for n in sorted(dbutils.widgets.get("years").split(","))]
+if all_string in years:
+    years = sorted(sentinel_years)
 if len(years) < 2:
     raise ValueError("Please select at least two years to run")
 path = "/mnt/lab/unrestricted/elm/elmo/baresoil/output-{year}.parquet"
