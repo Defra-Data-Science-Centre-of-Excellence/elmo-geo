@@ -4,12 +4,11 @@ import zipfile
 
 from pyspark.dbutils import DBUtils
 from pyspark.sql import SparkSession
-from pyspark.sql.session import SparkSession  # noqa F811
 
 from elmo_geo.log import LOG
 
 # Define SparkSession and dbutils
-spark = SparkSession.getActiveSession()  # noqa F811
+spark = SparkSession.getActiveSession()
 dbutils = DBUtils(spark)
 
 
