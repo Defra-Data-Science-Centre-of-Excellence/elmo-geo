@@ -19,13 +19,13 @@
 
 # COMMAND ----------
 
-import sys; sys.path.append('../')  # if elm_se is not attached
-import elm_se
-elm_se.register(spark)
-from elm_se import F
-from elm_se.types import SparkDataFrame
-from elm_se.io import load_missing
-from elm_se.st import join
+from pyspark.sql import functions as F
+
+import elmo_geo
+elmo_geo.register(spark)
+from elm_se.utils.types import SparkDataFrame
+from elm_se.io.io2 import load_missing
+from elm_se.st.st import join
 from math import ceil
 
 

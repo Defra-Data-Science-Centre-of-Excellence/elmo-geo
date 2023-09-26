@@ -146,21 +146,20 @@ sf_relict_segments_out
 
 # COMMAND ----------
 
-from elm_se import st, io
-from elm_se.register import register_sedona
-from pyspark.sql import functions as F
-from pyspark.sql import SparkSession
-
-spark = SparkSession.builder.getOrCreate()  # Spark is already created 
-register_sedona(spark)
-
-from pyspark.sql import types as T
 import shapely
 from shapely.geometry import LineString
 from shapely import from_wkb, from_wkt
 import numpy as np
 import pandas as pd
 import geopandas as gpd
+from pyspark.sql import functions as F
+from pyspark.sql import types as T
+
+from elmo_geo import register
+from elmo_geo.st import st
+from elmo_geo.io import io2 as io
+register()
+
 
 # COMMAND ----------
 

@@ -1,15 +1,12 @@
 # Databricks notebook source
-import sys
-sys.path.append('../')
-import elm_se
-elm_se.register()
-
 from pyspark.sql import (
   functions as F,
   types as T,
   Window,
 )
 
+import elmo_geo
+elmo_geo.register()
 
 # COMMAND ----------
 
@@ -31,7 +28,7 @@ sdf = (spark.read.parquet(sf)
   .repartition(2000, 'SHEET_ID')
   .select(
     F.concat('SHEET_ID', 'PARCEL_ID').alias('id_parcel'),
-    elm_se.io.load_geometry('geometry').alias('geometry'),
+    elmo_geo.io.io2.load_geometry('geometry').alias('geometry'),
   )
 )
 

@@ -18,9 +18,9 @@
 import sys
 sys.path.append('../')
 
-import elm_se
-elm_se.register()
-F = elm_se.F
+import elmo_geo
+elmo_geo.register()
+from pyspark.sql import functions as F
 
 import geopandas as gpd
 
@@ -150,8 +150,8 @@ None
 
 # COMMAND ----------
 
-import elm_se
-elm_se.register()
+import elmo_geo
+elmo_geo.register()
 import contextily as ctx
 
 sf_wall = 'dbfs:/mnt/lab/unrestricted/elm_data/osm/wall.parquet'
@@ -172,8 +172,8 @@ import pandas as pd
 import shapely
 import geopandas as gpd
 import contextily as ctx
-import elm_se
-elm_se.register()
+import elmo_geo
+elmo_geo.register()
 
 def setup_plot():
   fig, ax = plt.subplots(figsize=(16,9))

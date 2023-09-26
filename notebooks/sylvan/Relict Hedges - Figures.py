@@ -24,16 +24,14 @@ from shapely.geometry import Polygon
 from shapely import from_wkt, from_wkb
 from typing import Tuple
 
-from elm_se import st, io, register, types
-from pyspark.sql import SparkSession
+from elmo_geo import register
+from elmo_geo.st import st
+from elmo_geo.io import io2 as io
+from elmo_geo.utils import types
+
 from pyspark.sql import functions as F
 
-spark = SparkSession.builder.getOrCreate()
-from sedona.register import SedonaRegistrator
-SedonaRegistrator.registerAll(spark)
-#sedona.SedonaContext.create(spark)
-#sedona.spark.SedonaContext.create(spark)
-#register(spark)
+register()
 
 # COMMAND ----------
 

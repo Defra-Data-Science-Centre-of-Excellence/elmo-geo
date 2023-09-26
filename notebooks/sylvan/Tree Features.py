@@ -101,19 +101,14 @@ import pandas as pd
 import geopandas as gpd
 from shapely.geometry import Polygon
 from shapely import from_wkt
-
-#from elm_se.log import LOG
-from log import LOG
-from tree_features import *
-
 from pyspark.sql import functions as F
-from pyspark.sql import SparkSession
-from sedona.register import SedonaRegistrator
+
+from elmo_geo import LOG, register
+from tree_features import *
 
 # COMMAND ----------
 
-spark = SparkSession.builder.getOrCreate()
-SedonaRegistrator.registerAll(spark)
+register()
 
 # COMMAND ----------
 

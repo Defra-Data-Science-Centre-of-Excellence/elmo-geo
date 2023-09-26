@@ -16,14 +16,8 @@ import geopandas as gpd
 from shapely.geometry import Polygon
 from shapely import from_wkt
 
-from log import LOG
-from joins import spatial_join
-from tree_features_old import *
-
 from pyspark.sql import functions as F
-from pyspark.sql import SparkSession
 from pyspark.sql.types import StructType, StructField, StringType, FloatType, StringType
-from sedona.register import SedonaRegistrator
 
 # COMMAND ----------
 
@@ -36,8 +30,12 @@ from matplotlib.ticker import FuncFormatter, PercentFormatter
 
 # COMMAND ----------
 
-spark = SparkSession.builder.getOrCreate()
-SedonaRegistrator.registerAll(spark)
+from elmo_geo import LOG
+from elmo_geo.st.joins import spatial_join
+from tree_features import *
+
+from elmo_geo import register
+register()
 
 # COMMAND ----------
 

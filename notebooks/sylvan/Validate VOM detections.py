@@ -31,15 +31,14 @@ import pandas as pd
 import geopandas as gpd
 from shapely.geometry import Polygon
 from shapely import from_wkt, from_wkb
-
-from elm_se import st, io, types
-from elm_se.register import register_sedona
-from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
-from pyspark.sql.dataframe import DataFrame as SparkDataFrame
 
-spark = SparkSession.builder.getOrCreate()
-register_sedona(spark)
+from elmo_geo import register
+from elmo_geo.utils.types import SparkDataFrame
+from elmo_geo.st import st
+from elmo_geo.io import io2 as io
+from elmo_geo.utils import types
+register()
 
 # COMMAND ----------
 
