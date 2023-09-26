@@ -1,5 +1,4 @@
-from elm_se.types import *
-from elm_se.variable import *
+from elm_se.utils.types import *
 import os
 import shutil
 import requests

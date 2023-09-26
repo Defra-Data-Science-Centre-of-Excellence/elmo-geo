@@ -4,7 +4,7 @@ from elm_se.utils import run
 
 
 def convert_file(f_in, f_out, layer):
-	run('{CONDA_FOLDER}ogr2ogr -progress -t_srs EPSG:27700 {f_out} {f_in} {layer}')
+	run('/databricks/minconda/bin/ogr2ogr -progress -t_srs EPSG:27700 {f_out} {f_in} {layer}')
 
 
 def to_gpq1(sdf:SparkDataFrame, sf_out:str):
@@ -34,12 +34,5 @@ def to_gpq3(sdf, sf_out):
 	)
 
 
-
-# Ed
-# DataSet = chip at 1km > calc geohash > order by geohash > parition by batchsize
-
-# aw: .parquet/sindex=SP(01)(23)
-# ed: .parquet/part_0  # metadata geohash=[gcde, gcdf]
-
-
-# ORDER BY geohash
+# Default to Variable BNG Index Partitioned
+to_gpq = to_gpq1

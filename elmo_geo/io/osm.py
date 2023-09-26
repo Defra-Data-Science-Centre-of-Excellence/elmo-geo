@@ -3,7 +3,7 @@ import osmnx
 
 
 def download_osm(place, tags):
-  raise NotImplementedError, 'dl_osm'
+  raise NotImplementedError, 'download_osm'
 
 
 
