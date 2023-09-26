@@ -1,11 +1,5 @@
-from pyspark.dbutils import DBUtils
-from pyspark.sql import SparkSession
-
-from elmo_geo.log import LOG
-
-# Define SparkSession and dbutils
-spark = SparkSession.getActiveSession()
-dbutils = DBUtils(spark)
+from elmo_geo import LOG
+from elmo_geo.utils.dbr import dbutils
 
 
 def run_with_retry(notebook: str, timeout_seconds: int = 8000, max_retries: int = 3):

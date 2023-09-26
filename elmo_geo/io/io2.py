@@ -1,4 +1,4 @@
-from elm_se.types import *
+from elmo_geo.utils.types import *
 import os
 import shutil
 import requests
@@ -7,9 +7,8 @@ import pyogrio
 import geopandas
 import pyarrow.parquet
 from pyspark.sql import functions as F
-from pyspark.sql import SparkSession
 
-BATCHSIZE = 10_000
+from elmo_geo.utils.settings import BATCHSIZE
 
 
 # Convertion between Types

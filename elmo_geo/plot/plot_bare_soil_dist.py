@@ -5,7 +5,8 @@ import pandas as pd
 import seaborn as sns
 from matplotlib.ticker import FuncFormatter, PercentFormatter
 
-from elmo_geo.log import LOG
+from elmo_geo import LOG
+
 
 dark_style = {
     "axes.facecolor": "black",
