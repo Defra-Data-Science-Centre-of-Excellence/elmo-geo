@@ -1,5 +1,7 @@
+from elmo_geo.utils.dbr import display
+from elmo_geo.utils.types import SparkDataFrame
 from pyspark.sql import functions as F
-from databricks.sdk.runtime import display
+
 
 
 def gtypes(sdf:SparkDataFrame, col:str='geometry'):

@@ -1,22 +1,22 @@
-from elmo_geo.log import LOG
-from elmo_geo.types import *
-from elmo_geo.variables import *
-from elmo_geo.io import load_missing
-
+# from .log import LOG  # Not Used
+from .types import SparkDataFrame
+from .io import load_missing
 from pyspark.sql import functions as F
-
 from sedona.core.spatialOperator import JoinQuery
 from sedona.utils.adapter import Adapter
 
 
-def sjoin_with_tree(sdf_left, sdf_right, */,
+
+def sjoin_with_tree(
+  sdf_left: SparkDataFrame,
+  sdf_right: SparkDataFrame,
 	partitioning: str = 'KDBTREE',
 	num_partitions: int = 200,
 	partition_right: bool = False,
 	index_type: str = 'RTREE',
 	use_index: bool = True,
 	consider_boundary_itersection: bool = True,
-):
+) -> SparkDataFrame:
 	# RDD
 	rdd_left = Adapter.toSpatialRdd(sdf_left, 'geometry')
 	rdd_right = Adapter.toSpatialRdd(sdf_right, 'geometry')
@@ -39,10 +39,12 @@ def sjoin_with_tree(sdf_left, sdf_right, */,
 	return Adapter.toDf(spatialPairRDD=rdd, sparkSession=spark)
 
 
+
 def sjoin(left:SparkDataFrame, right:SparkDataFrame, distance:float=0) -> SparkDataFrame:
-	'''Spatial Join
-	# left = left.select('id_left', 'geometry', 'sindex')
-	# right = right.select('id_right', 'geometry', 'sindex')
+	'''Spatial Join, only returning keys
+	Only suitable for minimal SparkDataFrames
+	left.select('id_left', 'geometry')
+	right.select('id_right', 'geometry')
 	'''
 	# Distance Join
 	if 0 < distance:
@@ -62,14 +64,17 @@ def sjoin(left:SparkDataFrame, right:SparkDataFrame, distance:float=0) -> SparkD
 	return sdf
 
 
-def join(sdf_left:SparkDataFrame, sdf_right:SparkDataFrame, how:str='inner', lsuffix:str='_left', rsuffix:str='_right', distance:float=0) -> SparkDataFrame:
+def join(sdf_left:SparkDataFrame, sdf_right:SparkDataFrame, how:str='full', lsuffix:str='_left', rsuffix:str='_right', distance:float=0) -> SparkDataFrame:
 	'''Spatial Join with how
-	how can be inner/full/left/right, no implementation for outer/outer_left/outer_right/
+	how: {full, inner, left, right} 
 	'''
 	# ID
 	sdf_left = sdf_left.withColumn('id_left', F.monotonically_increasing_id())
 	sdf_right = sdf_right.withColumn('id_right', F.monotonically_increasing_id())
 	# How
+  how_outer = ['outer', 'outer_left', 'outer_right', 'anti', 'anti_left', 'anti_right']
+  if how in how_outer:
+		raise NotImplementedError(how_outer)
 	how_left = 'full' if how in ['left', 'full'] else 'inner'
 	how_right = 'full' if how in ['right', 'full'] else 'inner'
 	# Spatial Join

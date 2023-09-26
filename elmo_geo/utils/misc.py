@@ -1,3 +1,4 @@
+from elmo_geo.utils.log import LOG
 import subprocess
 
 
