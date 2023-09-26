@@ -9,15 +9,12 @@ import rioxarray as rxr
 import seaborn as sns
 import xarray as xr
 from matplotlib.ticker import PercentFormatter
-from pyspark.sql import SparkSession
 from rioxarray.exceptions import NoDataInBounds, OneDimensionalRaster
 from shapely.geometry import Polygon
 from xarray.core.dataarray import DataArray
 
 from elmo_geo.log import LOG
-
-# Define SparkSession and SparkContext
-spark = SparkSession.getActiveSession()
+from elmo_geo.utils.dbr import spark
 
 
 def summarise_bare_soil(df: pd.DataFrame):
