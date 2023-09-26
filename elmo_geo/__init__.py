@@ -1,23 +1,10 @@
-"""Functions for processing geospatial data using GeoVector cluster for ELMO"""
+__name__ = 'elmo_geo'
+
 
 import subprocess
 
-requires = [
-    # "numpy",
-    "rich",
-    # "pandas",
-    # "shapely",
-    # "geopandas",
-    # "rasterio",
-    # "xarray",
-    # "dbruntime",
-    # "folium",
-    # "matplotlib",
-    # "mapclassify",
-    # "seaborn",
-]
-
-subprocess.run(["pip", "install"] + requires)
+requirements = open('../requirements.txt').read().split()
+subprocess.run(["pip", "install"] + requirements)
 
 
 from elmo_geo.utils.log import LOG
