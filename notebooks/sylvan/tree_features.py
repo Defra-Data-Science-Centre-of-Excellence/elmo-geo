@@ -17,7 +17,8 @@ from pyspark.sql import functions as F
 from elmo_geo import LOG, register
 from elmo_geo.st.joins import spatial_join
 #from elmo_geo.st.st import sjoin
-from elmo_geo.utils.types import SparkDataFrame
+from elmo_geo.utils.types import SparkDataFrame, SparkSession
+from elmo_geo.utils.dbr import spark
 register()
 
 #

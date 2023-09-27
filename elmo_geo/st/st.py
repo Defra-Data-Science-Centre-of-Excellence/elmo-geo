@@ -1,4 +1,4 @@
-from elom_geo.utils.types import *
+from elmo_geo.utils.types import *
 from pyspark.sql import functions as F
 from elmo_geo.io.io2 import load_missing
 

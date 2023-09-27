@@ -33,7 +33,7 @@ from elmo_geo.io.io2 import *
 
 # COMMAND ----------
 
-from elmo_geo.io.joins import spatial_join
+from elmo_geo.st.joins import spatial_join
 from tree_features import get_hedgerow_trees_features
 
 # COMMAND ----------
