@@ -23,9 +23,9 @@ from pyspark.sql import functions as F
 
 import elmo_geo
 elmo_geo.register(spark)
-from elm_se.utils.types import SparkDataFrame
-from elm_se.io.io2 import load_missing
-from elm_se.st.st import join
+from elmo_geo.utils.types import SparkDataFrame
+from elmo_geo.io.io2 import load_missing
+from elmo_geo.st.st import join
 from math import ceil
 
 
