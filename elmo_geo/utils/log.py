@@ -37,7 +37,7 @@ LOG = get_logger()
 
 # silence py4j logging mess by setting its log level back to ERROR
 logging.getLogger("py4j.java_gateway").setLevel(logging.ERROR)
-
+logging.getLogger("py4j").setLevel(logging.ERROR)
 
 @dataclass
 class DataError(Exception):
