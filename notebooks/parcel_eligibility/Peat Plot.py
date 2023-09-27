@@ -3,10 +3,9 @@
 
 # COMMAND ----------
 
-import elm_se
-elm_se.register()
-F = elm_se.F
-
+import elmo_geo
+elmo_geo.register()
+from pyspark.sql import functions as F
 import geopandas as gpd
 import contextily as ctx
 

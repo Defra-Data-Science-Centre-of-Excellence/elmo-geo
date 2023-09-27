@@ -7,8 +7,9 @@
 
 # COMMAND ----------
 
-from elm_se import F
-from elm_se.st import join
+from pyspark.sql import functions as F
+
+from elmo_geo.st.st import join
 
 # COMMAND ----------
 

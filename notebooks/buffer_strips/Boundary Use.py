@@ -61,14 +61,11 @@
 
 # COMMAND ----------
 
-import sys
-sys.path.append('../')
-
-import elm_se
-elm_se.register()
-F = elm_se.F
-
 import pandas as pd
+
+import elmo_geo
+elmo_geo.register()
+from pyspark.sql import functions as F
 
 # COMMAND ----------
 

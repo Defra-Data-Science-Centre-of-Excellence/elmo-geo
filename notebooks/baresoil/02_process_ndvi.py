@@ -10,14 +10,14 @@ import numpy as np
 import rioxarray as rxr
 import seaborn as sns
 
-from elmo_geo.best_pixel import (
+from elmo_geo.r.best_pixel import (
     get_clean_image,
     process_ndvi_and_ndsi,
     replace_ndvi_low_ndsi,
 )
-from elmo_geo.log import LOG
-from elmo_geo.raster import to_raster
-from elmo_geo.sentinel import (
+from elmo_geo import LOG
+from elmo_geo.r.raster import to_raster
+from elmo_geo.r.sentinel import (
     get_winter_datasets,
     sentinel_tiles,
     sentinel_years,

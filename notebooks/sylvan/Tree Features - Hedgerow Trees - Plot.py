@@ -14,18 +14,8 @@ import pandas as pd
 import geopandas as gpd
 from shapely.geometry import Polygon
 
-from joins import spatial_join
-from tree_features import get_hedgerow_trees_features
-
 from pyspark.sql import functions as F
-from pyspark.sql import SparkSession
 from pyspark.sql.types import StructType, StructField, StringType, FloatType, StringType
-from sedona.register import SedonaRegistrator
-
-# COMMAND ----------
-
-from elm_se.log import LOG
-from elm_se.io import *
 
 # COMMAND ----------
 
@@ -38,8 +28,18 @@ from matplotlib.ticker import FuncFormatter, PercentFormatter
 
 # COMMAND ----------
 
-spark = SparkSession.builder.getOrCreate()
-SedonaRegistrator.registerAll(spark)
+from elmo_geo import LOG, register
+from elmo_geo.io.io2 import *
+
+# COMMAND ----------
+
+from elmo_geo.st.joins import spatial_join
+from tree_features import get_hedgerow_trees_features
+
+# COMMAND ----------
+
+
+register()
 
 # COMMAND ----------
 

@@ -16,9 +16,9 @@ import itertools
 import os
 from multiprocessing.pool import ThreadPool
 
-from elmo_geo.batch_processing import run_with_retry
-from elmo_geo.log import LOG
-from elmo_geo.sentinel import sentinel_tiles, sentinel_years
+from elmo_geo.utils.batch_processing import run_with_retry
+from elmo_geo import LOG
+from elmo_geo.r.sentinel import sentinel_tiles, sentinel_years
 
 dbutils.widgets.multiselect("years", sentinel_years[-1], sentinel_years)
 
@@ -56,5 +56,3 @@ with ThreadPool(processes=n_cpu) as pool:
         items,
     ).get()
 
-
-# COMMAND ----------
