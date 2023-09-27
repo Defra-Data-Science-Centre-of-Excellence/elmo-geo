@@ -38,6 +38,7 @@ LOG = get_logger()
 # silence py4j logging mess by setting its log level back to ERROR
 logging.getLogger("py4j").setLevel(logging.ERROR)
 
+
 @dataclass
 class DataError(Exception):
     """Error raised when data is not what is expected"""

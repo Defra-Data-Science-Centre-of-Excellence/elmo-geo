@@ -10,15 +10,15 @@ from pyspark.sql import functions as F
 
 from elmo_geo.utils.settings import BATCHSIZE
 from elmo_geo.utils.types import (
+    BaseGeometry,
     GeoDataFrame,
+    Geometry,
+    GeoSeries,
     PandasDataFrame,
+    SedonaType,
     SparkDataFrame,
     SparkSession,
-    SedonaType,
     Union,
-    GeoSeries,
-    Geometry,
-    BaseGeometry,
 )
 
 # Convertion between Types
