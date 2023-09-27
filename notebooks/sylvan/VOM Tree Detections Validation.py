@@ -23,6 +23,12 @@
 
 # COMMAND ----------
 
+# MAGIC %md
+# MAGIC
+# MAGIC ## Setup
+
+# COMMAND ----------
+
 import os
 import sys
 import re
@@ -119,16 +125,16 @@ def filter_out_itersecting_features(inDF, filterFeaturesDF, id_col = 'tree_id'):
     )
     return notIntersectDF
 
-def validate_tree_detections_tile(sdf_vom_td: SparkDataFrame, sdf_tow: SparkDataFrame, sdf_nfi: SparkDataFrame) -> tuple:
+def validate_tree_detections_tile(sdf_vom_td: SparkDataFrame, sdf_tow: SparkDataFrame, sdf_nfi: SparkDataFrame, vom_td_canopy_geom:str, tow_canopy_geom:str) -> tuple:
     # Exclude woodland
     # - TOW methodology states that tree height polygons within 10m of NFI woodland polygons are removed
     # - replicate this by buffering nfi polygons by 10m and intersecting with tree top points
     # - TOW also imposes a minimum tree area of 20m2 threshold for lone trees and 50m2 for hedgerows. This is not currently accounted for when excluding VOM tree detections. 
-    sdf_nfi = sdf_nfi.withColumn("geometry_genbuf", F.expr("ST_Buffer(geometry_generalised, 10)"))
+    sdf_nfi = sdf_nfi.withColumn("geometry_genbuf", F.expr("ST_Buffer(geometry, 10)"))
     sdf_notNfiTrees = disjoint_filter(sdf_vom_td, sdf_nfi, left_geometry = "top_point", right_geometry = "geometry_genbuf")
 
     # Calculate overlap
-    result = calculate_tree_crown_areas(sdf_notNfiTrees, sdf_tow, left_geometry = 'crown_poly_raster', right_geometry = 'geometry_generalised')
+    result = calculate_tree_crown_areas(sdf_notNfiTrees, sdf_tow, left_geometry = vom_td_canopy_geom, right_geometry = tow_canopy_geom)
     return result
 
 def validate_tree_detections(tile_name:str, tile_wkt:str, sdf_vom_td:SparkDataFrame,  sdf_nfi:SparkDataFrame, sdf_tow:SparkDataFrame) -> pd.DataFrame:
@@ -160,17 +166,17 @@ def validate_tree_detections(tile_name:str, tile_wkt:str, sdf_vom_td:SparkDataFr
     df_res = pd.DataFrame([result], columns = ['vom_crown_area', 'tow_crown_area', 'true_positive', 'approximation'])
     return  df_res
 
-def validate_tree_detections_string_filter(tile_name:str, sdf_vom_td:SparkDataFrame,  sdf_nfi:SparkDataFrame, sdf_tow:SparkDataFrame) -> pd.DataFrame:
+def validate_tree_detections_string_filter(tile_name:str, sdf_vom_td:SparkDataFrame,  sdf_nfi:SparkDataFrame, sdf_tow:SparkDataFrame, vom_td_canopy_geom:str="geometry", tow_canopy_geom:str="geometry") -> pd.DataFrame:
     '''
     '''
     # Filter data to just the tile
-    tile_filter = F.expr(f"(major_grid={tile_name[:2]}) and (tile_name={tile_name})")
-    sdf_vom_tile = sdf_vom.filter(tile_filter)
+    tile_filter = F.expr(f"(major_grid='{tile_name[:2]}') and (tile_name='{tile_name}')")
+    sdf_vom_tile = sdf_vom_td.filter(tile_filter)
     sdf_tow_tile = sdf_tow.filter(tile_filter)
     sdf_nfi_tile = sdf_nfi.filter(tile_filter)
 
     # validate the detections for this tile
-    result = validate_tree_detections_tile(sdf_vom_tile, sdf_tow_tile, sdf_nfi_tile)
+    result = validate_tree_detections_tile(sdf_vom_tile, sdf_tow_tile, sdf_nfi_tile, vom_td_canopy_geom, tow_canopy_geom)
     return pd.DataFrame([result], columns = ['vom_crown_area', 'tow_crown_area', 'true_positive', 'approximation'])
 
 
@@ -196,8 +202,8 @@ output_trees_path = f"dbfs:/mnt/lab/unrestricted/elm/elmo/tree_features/tree_det
 tow_sp_parquet_output = "dbfs:/mnt/lab/unrestricted/elm_data/forest_research/TOW_SP_England_26062023.parquet"
 tow_lidar_parquet_output = "dbfs:/mnt/lab/unrestricted/elm_data/forest_research/TOW_LiDAR_England_26062023.parquet"
 nfi_path = "dbfs:/mnt/lab/unrestricted/elm_data/source_forestry_commission_open_data/dataset_national_forest_inventory_woodland_england/SNAPSHOT_2022_10_19_national_forest_inventory_woodland_england_2020/National_Forest_Inventory_Woodland_England_2020.parquet"
-os_gb_grid_path = "os_bng_grids.gpkg"
-countries_path = "Countries_December_2022_GB_BUC.gpkg"
+os_gb_grid_path = "/dbfs/mnt/lab/unrestricted/elm_data/ordnance_survey/os_bng_grids.gpkg"
+countries_path = "/dbfs/FileStore/Countries_December_2022_GB_BUC.gpkg"
 
 # paths for inputs filters to sample validation areas
 sf_vom_sub = f"dbfs:/mnt/lab/unrestricted/elm/elmo/tree_features/tree_detection_validation/vom_td_{tree_detection_timestamp}_validation_sample.parquet"
@@ -209,34 +215,7 @@ validation_results_path = "/dbfs/mnt/lab/unrestricted/elm/elmo/hrtrees/tree_dete
 
 # COMMAND ----------
 
-simplify_tollerance = 2
-
-sdf_vom = (spark.read.parquet(output_trees_path)
-           .withColumn("geometry_orig", io.load_geometry("crown_poly_raster", encoding_fn='ST_GeomFromText'))
-           .withColumn("geometry", F.expr(f"ST_SimplifyPreserveTopology(geometry_orig, {simplify_tollerance})"))
-           .withColumn("top_point", io.load_geometry("top_point", encoding_fn="ST_GeomFromText"))
-           .repartition(1_000)
-)
-sdf_nfi = (spark.read.parquet(nfi_path)
-         .withColumn("geometry_orig", io.load_geometry("wkt", encoding_fn="ST_GeomFromText"))
-         .withColumn("geometry", F.expr(f"ST_SimplifyPreserveTopology(geometry_orig, {simplify_tollerance})"))
-         .repartition(1_000)
-)
-
-sdf_tow_li = spark.read.parquet(tow_lidar_parquet_output)
-sdf_tow_sp = spark.read.parquet(tow_sp_parquet_output)
-sdf_tow = (sdf_tow_li
-              .union(
-                  sdf_tow_sp.select(*list(sdf_tow_li.columns))
-                  )
-              .withColumn("geometry_orig", io.load_geometry("geometry"))
-              .withColumn("geometry", F.expr(f"ST_SimplifyPreserveTopology(geometry_orig, {simplify_tollerance})"))
-              .partition(1_000)
-)
-
-# COMMAND ----------
-
-# DBTITLE 1,Sample tiles to validate and filter datasets to these tiles
+# DBTITLE 1,Sample tiles to validate
 seed = 1
 grid_size = 5 # size of bng gridd tile to use. 5 -> 5km x 5km
 area_of_england = 130_000 #km2
@@ -256,14 +235,48 @@ df_sampled_tiles = gdf_tiles.groupby('major_grid', group_keys=False).apply(lambd
 
 # COMMAND ----------
 
+# MAGIC %md
+# MAGIC
+# MAGIC ## Filter datasets to sampled tiles
+
+# COMMAND ----------
+
+# DBTITLE 1,Filter datase to these tiles
+simplify_tollerance = 2
+
+sdf_vom = (spark.read.parquet(output_trees_path)
+           .withColumn("geometry_orig", io.load_geometry("crown_poly_raster", encoding_fn='ST_GeomFromText'))
+           .withColumn("geometry", F.expr(f"ST_SimplifyPreserveTopology(geometry_orig, {simplify_tollerance})"))
+           .withColumn("top_point", io.load_geometry("top_point", encoding_fn="ST_GeomFromText"))
+           .repartition(10_000)
+)
+sdf_nfi = (spark.read.parquet(nfi_path)
+         .withColumn("geometry_orig", io.load_geometry("wkt", encoding_fn="ST_GeomFromText"))
+         .withColumn("geometry", F.expr(f"ST_SimplifyPreserveTopology(geometry_orig, {simplify_tollerance})"))
+         .repartition(1_000)
+)
+
+sdf_tow_li = spark.read.parquet(tow_lidar_parquet_output)
+sdf_tow_sp = spark.read.parquet(tow_sp_parquet_output)
+sdf_tow = (sdf_tow_li
+              .union(
+                  sdf_tow_sp.select(*list(sdf_tow_li.columns))
+                  )
+              .withColumn("geometry_orig", io.load_geometry("geometry"))
+              .withColumn("geometry", F.expr(f"ST_SimplifyPreserveTopology(geometry_orig, {simplify_tollerance})"))
+              .repartition(10_000)
+)
+
+# COMMAND ----------
+
 # DBTITLE 1,Intersect sample tiles with data for validation
 sdf_sampled_tiles = (spark.createDataFrame(df_sampled_tiles).repartition(10, 'major_grid', 'tile_name')
                      .withColumn("geometry", io.load_geometry("geometry"))
 )
 
-sdf_vom_sample = st.sjoin(sdf_vom, sdf_sampled_tiles, lsuffix='', rsuffix='_tile', spark=spark).partition(1000, 'major_grid', 'tile_name')
-sdf_nfi_sample = st.sjoin(sdf_nfi, sdf_sampled_tiles, lsuffix='', rsuffix='_tile', spark=spark).partition(1000, 'major_grid', 'tile_name')
-sdf_tow_sample = st.sjoin(sdf_nfi, sdf_sampled_tiles, lsuffix='', rsuffix='_tile', spark=spark).partition(1000, 'major_grid', 'tile_name')
+sdf_vom_sample = st.sjoin(sdf_vom, sdf_sampled_tiles, lsuffix='', rsuffix='_tile', spark=spark).repartition(1_000, 'major_grid', 'tile_name')
+sdf_nfi_sample = st.sjoin(sdf_nfi, sdf_sampled_tiles, lsuffix='', rsuffix='_tile', spark=spark).repartition(1_000, 'major_grid', 'tile_name')
+sdf_tow_sample = st.sjoin(sdf_nfi, sdf_sampled_tiles, lsuffix='', rsuffix='_tile', spark=spark).repartition(1_000, 'major_grid', 'tile_name')
 
 # COMMAND ----------
 
@@ -275,6 +288,12 @@ sdf_tow_sample = st.sjoin(sdf_nfi, sdf_sampled_tiles, lsuffix='', rsuffix='_tile
 sdf_vom_sample.write.mode("overwrite").parquet(sf_vom_sub)
 sdf_nfi_sample.write.mode("overwrite").parquet(sf_nfi_sub)
 sdf_tow_sample.write.mode("overwrite").parquet(sf_tow_sub)
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC
+# MAGIC ## Sampled data and run validation
 
 # COMMAND ----------
 
@@ -303,7 +322,7 @@ for ix, row in df_sampled_tiles.iterrows():
     df_res['tile_name'] = row['tile_name']
     df_res['tile_geom'] = row['geometry']
     df_res['tree_detections_data'] = output_trees_path
-    df_red['method'] = f'stratified_sample_seed_{seed}'
+    df_res['method'] = f'stratified_sample_seed_{seed}'
     df_res_all = pd.concat([df_res_all, df_res])
 
 df_res_all['precision'] = df_res_all['true_positive'] / df_res_all['vom_crown_area']
