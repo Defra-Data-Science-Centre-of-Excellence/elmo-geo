@@ -1,5 +1,7 @@
+from multiprocessing.pool import Pool
+
 from elmo_geo import LOG
-from elmo_geo.utils.dbr import dbutils
+from elmo_geo.utils.dbr import dbutils, sc
 
 
 def run_with_retry(notebook: str, timeout_seconds: int = 8000, max_retries: int = 3):
@@ -30,17 +32,19 @@ def run_with_retry(notebook: str, timeout_seconds: int = 8000, max_retries: int 
     return _run_with_retry
 
 
+def map_for(fn: callable, lst: iter) -> list:
+    """Breaks on first element of loop"""
+    for i in lst:
+        return fn(i)
 
-def map_for(fn:callable, lst:iter) -> list:
-  '''Breaks on first element of loop'''
-  for i in lst:
-    return fn(i)
 
-def map_single(fn:callable, lst:iter) -> list:
-  return list(map(fn, list))
+def map_single(fn: callable, lst: iter) -> list:
+    return list(map(fn, list))
 
-def map_parallelised(fn:callable, lst:iter) -> list:
-  return list(Pool().map(fn, lst))
 
-def map_distributed(fn:callable, lst:iter) -> list:
-  return listsc.parallelize(lst).map(fn).collect()
+def map_parallelised(fn: callable, lst: iter) -> list:
+    return list(Pool().map(fn, lst))
+
+
+def map_distributed(fn: callable, lst: iter) -> list:
+    return sc.parallelize(lst).map(fn).collect()

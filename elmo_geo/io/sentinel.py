@@ -37,4 +37,4 @@ def sentinel_api_session(*args, **kwargs):
 
 
 def download_sentinel():
-    raise NotImplementedError('download_sentinel')
+    raise NotImplementedError("download_sentinel")
