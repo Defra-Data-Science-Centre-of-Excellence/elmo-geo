@@ -16,13 +16,14 @@
 # COMMAND ----------
 
 import sys
+
 sys.path.append('../')
 
 import elmo_geo
-elmo_geo.register()
-from pyspark.sql import functions as F
 
+elmo_geo.register()
 import geopandas as gpd
+from pyspark.sql import functions as F
 
 # COMMAND ----------
 
@@ -59,8 +60,9 @@ gdf
 
 # COMMAND ----------
 
-import shapely
 import geopandas as gpd
+import shapely
+
 
 def to_polygon(x):
   if isinstance(x, shapely.MultiLineString):
@@ -91,11 +93,11 @@ m
 # COMMAND ----------
 
 from time import perf_counter
-import matplotlib.pyplot as plt
-import seaborn as sns
-import pandas as pd
-import geopandas as gpd
 
+import geopandas as gpd
+import matplotlib.pyplot as plt
+import pandas as pd
+import seaborn as sns
 
 gdf = (gpd.read_parquet('/dbfs/tmp/awest/boundaries.parquet')
   .melt('id_parcel', var_name='layer', value_name='geometry')
@@ -151,6 +153,7 @@ None
 # COMMAND ----------
 
 import elmo_geo
+
 elmo_geo.register()
 import contextily as ctx
 
@@ -166,13 +169,15 @@ None
 
 # COMMAND ----------
 
-import numpy as np
+import contextily as ctx
+import geopandas as gpd
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 import shapely
-import geopandas as gpd
-import contextily as ctx
+
 import elmo_geo
+
 elmo_geo.register()
 
 def setup_plot():

@@ -8,10 +8,10 @@ from fiona import listlayers
 
 # COMMAND ----------
 
-f_parcels_base = '/dbfs/mnt/base/unrestricted/source_rpa_spatial_data_mart/dataset_rpa_reference_parcels/format_GPKG_rpa_reference_parcels/SNAPSHOT_2023_02_07_rpa_reference_parcels/reference_parcels.zip/reference_parcels.gpkg'
-sf_parcels_pq = 'dbfs:/mnt/lab/unrestricted/elm_data/rpa/reference_parcels/2023_02_07.parquet'
-sf_parcels = 'dbfs:/mnt/lab/unrestricted/elm/parcels.parquet'
-sf_wfm = 'dbfs:/mnt/lab/unrestricted/elm/wfm/v3.parquet'
+f_parcels_base = "/dbfs/mnt/base/unrestricted/source_rpa_spatial_data_mart/dataset_rpa_reference_parcels/format_GPKG_rpa_reference_parcels/SNAPSHOT_2023_02_07_rpa_reference_parcels/reference_parcels.zip/reference_parcels.gpkg"
+sf_parcels_pq = "dbfs:/mnt/lab/unrestricted/elm_data/rpa/reference_parcels/2023_02_07.parquet"
+sf_parcels = "dbfs:/mnt/lab/unrestricted/elm/parcels.parquet"
+sf_wfm = "dbfs:/mnt/lab/unrestricted/elm/wfm/v3.parquet"
 
 # COMMAND ----------
 
@@ -33,21 +33,22 @@ display(df_parcels_base)
 
 # COMMAND ----------
 
-df_parcels = (spark.read.parquet(sf_wfm)
-  .select(
-    'id_business',
-    'id_parcel',
-  )
-  .join(
-    (spark.read.parquet(sf_parcels_pq)
-      .select(
-        F.concat('SHEET_ID', 'PARCEL_ID').alias('id_parcel'),
-        'geometry',
-      )
-    ),
-    how='left',
-    on='id_parcel'
-  )
+df_parcels = (
+    spark.read.parquet(sf_wfm)
+    .select(
+        "id_business",
+        "id_parcel",
+    )
+    .join(
+        (
+            spark.read.parquet(sf_parcels_pq).select(
+                F.concat("SHEET_ID", "PARCEL_ID").alias("id_parcel"),
+                "geometry",
+            )
+        ),
+        how="left",
+        on="id_parcel",
+    )
 )
 
 

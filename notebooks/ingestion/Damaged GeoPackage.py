@@ -1,7 +1,7 @@
 # Databricks notebook source
 # MAGIC %md
 # MAGIC # Which GeoPackage files are damaged?
-# MAGIC `files` is a list all the geopackages in `base` plus a demo working in `tmp`.  
+# MAGIC `files` is a list all the geopackages in `base` plus a demo working in `tmp`.
 # MAGIC `test_gpkg_is_damaged` tries to read the metadata, this should take ~1 second for any file size.
 # MAGIC
 # MAGIC
@@ -12,41 +12,47 @@
 
 import signal
 from glob import glob
-from pyogrio import read_info
-from random import shuffle
 from multiprocessing import Pool
+from random import shuffle
+
 import pandas as pd
+from pyogrio import read_info
 
 
 class timeout:
-  def __init__(self, seconds=3, error_message='Timeout'):
-    self.seconds = seconds
-    self.error_message = error_message
-  def handle_timeout(self, signum, frame):
-    raise TimeoutError(self.error_message)
-  def __enter__(self):
-    signal.signal(signal.SIGALRM, self.handle_timeout)
-    signal.alarm(self.seconds)
-  def __exit__(self, type, value, traceback):
-    signal.alarm(0)
+    def __init__(self, seconds=3, error_message="Timeout"):
+        self.seconds = seconds
+        self.error_message = error_message
+
+    def handle_timeout(self, signum, frame):
+        raise TimeoutError(self.error_message)
+
+    def __enter__(self):
+        signal.signal(signal.SIGALRM, self.handle_timeout)
+        signal.alarm(self.seconds)
+
+    def __exit__(self, type, value, traceback):
+        signal.alarm(0)
 
 
 def test_gpkg_is_damaged(filepath):
-  with timeout():
-    try:
-      read_info(filepath)['features']
-      print(filepath)
-    except:
-      pass
+    with timeout():
+        try:
+            read_info(filepath)["features"]
+            print(filepath)
+        except:
+            pass
 
 
-files = glob('/dbfs/mnt/base/unrestricted/source_*/dataset_*/format_GPKG_*/**/*.gpkg', recursive=True)
-files.extend(glob('/dbfs/tmp/**/*.gpkg', recursive=True))  # Should always pass
+files = glob(
+    "/dbfs/mnt/base/unrestricted/source_*/dataset_*/format_GPKG_*/**/*.gpkg", recursive=True
+)
+files.extend(glob("/dbfs/tmp/**/*.gpkg", recursive=True))  # Should always pass
 
 
 # COMMAND ----------
 
-success = '''
+success = """
 /dbfs/mnt/base/unrestricted/source_rpa_spatial_data_mart/dataset_community_forests/format_GPKG_community_forests/SNAPSHOT_2021_03_15_community_forests/refdata_owner.community_forest.gpkg
 /dbfs/mnt/base/unrestricted/source_rpa_spatial_data_mart/dataset_england_boundary/format_GPKG_england_boundary/SNAPSHOT_2021_03_03_england_boundary/refdata_owner.eng_boundary.gpkg
 /dbfs/mnt/base/unrestricted/source_rpa_spatial_data_mart/dataset_registered_common_land_bps_layer/format_GPKG_registered_common_land_bps_layer/SNAPSHOT_2021_03_05_registered_common_land_bps_layer/RCL.gpkg
@@ -98,7 +104,11 @@ success = '''
 /dbfs/mnt/base/unrestricted/source_rpa_spatial_data_mart/dataset_historic_common_land/format_GPKG_historic_common_land/LATEST_historic_common_land/common_land_historic.gpkg
 /dbfs/mnt/base/unrestricted/source_rpa_spatial_data_mart/dataset_england_boundary/format_GPKG_england_boundary/LATEST_england_boundary/refdata_owner.england_boundary_line.zip/refdata_owner.england_boundary_line/refdata_owner.england_boundary_line.gpkg
 /dbfs/tmp/awest/rpa-efa_hedge-2023_06_27.gpkg
-'''.split('\n')[1:-1]
+""".split(
+    "\n"
+)[
+    1:-1
+]
 
 
 success
@@ -115,21 +125,28 @@ results
 
 # COMMAND ----------
 
-df = pd.concat([
-  pd.DataFrame({
-    'filepath': list(set(success)),
-    'is_damaged': False,
-  }),
-  pd.DataFrame({
-    'filepath': list(set(todo)),
-    'is_damaged': True,
-  }),
-])
+df = pd.concat(
+    [
+        pd.DataFrame(
+            {
+                "filepath": list(set(success)),
+                "is_damaged": False,
+            }
+        ),
+        pd.DataFrame(
+            {
+                "filepath": list(set(todo)),
+                "is_damaged": True,
+            }
+        ),
+    ]
+)
 
-df.to_csv(f'/dbfs/tmp/damaged_gpkg_@3s.csv')
+df.to_csv(f"/dbfs/tmp/damaged_gpkg_@3s.csv")
 display(df)
 
 # COMMAND ----------
 
-df.query('is_damaged==True')['filepath'].str.split('/').str[5].unique().tolist(),\
-df.query('is_damaged==True')['filepath'].str.split('/').str[6].unique().tolist()
+df.query("is_damaged==True")["filepath"].str.split("/").str[5].unique().tolist(), df.query(
+    "is_damaged==True"
+)["filepath"].str.split("/").str[6].unique().tolist()

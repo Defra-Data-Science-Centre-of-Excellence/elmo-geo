@@ -1,20 +1,18 @@
 # Databricks notebook source
-from pyspark.sql import (
-  functions as F,
-  types as T,
-  Window,
-)
+from pyspark.sql import Window
+from pyspark.sql import functions as F
+from pyspark.sql import types as T
 
 import elmo_geo
+
 elmo_geo.register()
 
 # COMMAND ----------
 
 
-
 # COMMAND ----------
 
-LETTERS = 'ABCDEFGHJKLMNOPQRSTUVWXYZ'  # string.ascii_uppercase.replace('I', '')
+LETTERS = "ABCDEFGHJKLMNOPQRSTUVWXYZ"  # string.ascii_uppercase.replace('I', '')
 MINX = -10_000_000
 MINY = -10_000_000
 GRID = 5_000_000, 5_000
@@ -23,13 +21,14 @@ XA = 0, 0
 
 # COMMAND ----------
 
-sf = 'dbfs:/mnt/lab/unrestricted/elm_data/rpa/reference_parcels/2023_06_03.geoparquet'
-sdf = (spark.read.parquet(sf)
-  .repartition(2000, 'SHEET_ID')
-  .select(
-    F.concat('SHEET_ID', 'PARCEL_ID').alias('id_parcel'),
-    elmo_geo.io.io2.load_geometry('geometry').alias('geometry'),
-  )
+sf = "dbfs:/mnt/lab/unrestricted/elm_data/rpa/reference_parcels/2023_06_03.geoparquet"
+sdf = (
+    spark.read.parquet(sf)
+    .repartition(2000, "SHEET_ID")
+    .select(
+        F.concat("SHEET_ID", "PARCEL_ID").alias("id_parcel"),
+        elmo_geo.io.io2.load_geometry("geometry").alias("geometry"),
+    )
 )
 
 # sf = 'dbfs:/tmp/awest/tmp.parquet'
@@ -40,20 +39,29 @@ display(sdf)
 # COMMAND ----------
 
 # DBTITLE 1,GeoHash Partitioning
-sf = 'dbfs:/tmp/awest/tmp.parquet'
-sdf = (spark.read.parquet(sf)
-  .withColumn('sindex', F.expr('ST_GeoHash(ST_FlipCoordinates(ST_Transform(geometry, "EPSG:27700", "EPSG:4326")), 4)'))
-  .withColumn('sindex_batch', (F.row_number().over(Window.partitionBy('sindex').orderBy('sindex')) / 10_000).cast('int'))
-  .repartition('sindex', 'sindex_batch')
+sf = "dbfs:/tmp/awest/tmp.parquet"
+sdf = (
+    spark.read.parquet(sf)
+    .withColumn(
+        "sindex",
+        F.expr(
+            'ST_GeoHash(ST_FlipCoordinates(ST_Transform(geometry, "EPSG:27700", "EPSG:4326")), 4)'
+        ),
+    )
+    .withColumn(
+        "sindex_batch",
+        (F.row_number().over(Window.partitionBy("sindex").orderBy("sindex")) / 10_000).cast("int"),
+    )
+    .repartition("sindex", "sindex_batch")
 )
 
-sdf.select('sindex', 'sindex_batch').distinct().count()
+sdf.select("sindex", "sindex_batch").distinct().count()
 
 # COMMAND ----------
 
 from glob import glob
 
-glob('/dbfs/mnt/base/unrestricted/source_*[!bluesky]/**/*.csv', recursive=True)
+glob("/dbfs/mnt/base/unrestricted/source_*[!bluesky]/**/*.csv", recursive=True)
 
 # COMMAND ----------
 

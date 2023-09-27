@@ -5,15 +5,16 @@
 
 from pyspark.sql import functions as F
 from sedona.register import SedonaRegistrator
-SedonaRegistrator.registerAll(spark)
-from cdap_geo.sedona import st_fromwkb
 
+SedonaRegistrator.registerAll(spark)
 from io import StringIO
+
 import pandas as pd
+from cdap_geo.sedona import st_fromwkb
 
 # COMMAND ----------
 
-csv = ''',id_parcel,check_total_hedge,check_order_water,check_total_water
+csv = """,id_parcel,check_total_hedge,check_order_water,check_total_water
 323,TA39187988,False,True,True
 384,SP59443982,False,True,True
 901,SX12875955,False,True,True
@@ -6313,48 +6314,52 @@ csv = ''',id_parcel,check_total_hedge,check_order_water,check_total_water
 2005215,SK26072446,False,True,True
 2005497,NY04110101,False,True,True
 2372249,SE49861837,,False,True
-'''
+"""
 
 # COMMAND ----------
 
-f21 = 'dbfs:/mnt/lab/unrestricted/elm_data/rpa/reference_parcels/2021_03_16.parquet'
-f23 = 'dbfs:/mnt/lab/unrestricted/elm_data/rpa/reference_parcels/2023_02_07.parquet'
+f21 = "dbfs:/mnt/lab/unrestricted/elm_data/rpa/reference_parcels/2021_03_16.parquet"
+f23 = "dbfs:/mnt/lab/unrestricted/elm_data/rpa/reference_parcels/2023_02_07.parquet"
 
 # COMMAND ----------
 
-df21 = (spark.read.parquet(f21)
-  .withColumn('geometry', st_fromwkb('wkb_geometry', 27700))
-  .select(
-    F.concat('SHEET_ID', 'PARCEL_ID').alias('id_parcel'),
-    F.expr('ST_Area(geometry)').alias('sqm_area_2021'),
-  )
+df21 = (
+    spark.read.parquet(f21)
+    .withColumn("geometry", st_fromwkb("wkb_geometry", 27700))
+    .select(
+        F.concat("SHEET_ID", "PARCEL_ID").alias("id_parcel"),
+        F.expr("ST_Area(geometry)").alias("sqm_area_2021"),
+    )
 )
 
-df23 = (spark.read.parquet(f23)
-  .withColumn('geometry', st_fromwkb('wkb_geometry', 27700))
-  .select(
-    F.concat('SHEET_ID', 'PARCEL_ID').alias('id_parcel'),
-    F.expr('ST_Area(geometry)').alias('sqm_area_2023'),
-  )
+df23 = (
+    spark.read.parquet(f23)
+    .withColumn("geometry", st_fromwkb("wkb_geometry", 27700))
+    .select(
+        F.concat("SHEET_ID", "PARCEL_ID").alias("id_parcel"),
+        F.expr("ST_Area(geometry)").alias("sqm_area_2023"),
+    )
 )
 
 # COMMAND ----------
 
-df = (df21
-  .join(df23, on='id_parcel', how='outer')
-  .select(
-    'id_parcel',
-    F.expr('(sqm_area_2023 - sqm_area_2021)/10000').alias('ha_diff')
-  )
-).toPandas().set_index('id_parcel')
+df = (
+    (
+        df21.join(df23, on="id_parcel", how="outer").select(
+            "id_parcel", F.expr("(sqm_area_2023 - sqm_area_2021)/10000").alias("ha_diff")
+        )
+    )
+    .toPandas()
+    .set_index("id_parcel")
+)
 
 
-df.dropna().sort_values('ha_diff')
+df.dropna().sort_values("ha_diff")
 
 # COMMAND ----------
 
-ds = df['diff']
-ds = ds[(ds!=0) & (ds.abs()<3*ds.std())]
+ds = df["diff"]
+ds = ds[(ds != 0) & (ds.abs() < 3 * ds.std())]
 ds.hist(bins=20, density=True)
 
 # COMMAND ----------
@@ -6363,18 +6368,18 @@ pd.read_csv(StringIO(csv))
 
 # COMMAND ----------
 
-df_tests = pd.read_csv(StringIO(csv)).set_index('id_parcel')[['check_total_hedge']]
-df2 = df.join(df_tests, how='outer')
+df_tests = pd.read_csv(StringIO(csv)).set_index("id_parcel")[["check_total_hedge"]]
+df2 = df.join(df_tests, how="outer")
 
 df2
 
 # COMMAND ----------
 
-df_tests = pd.read_csv(StringIO(csv)).set_index('id_parcel')[['check_total_hedge']]
-df2 = df.join(df_tests, how='inner')
+df_tests = pd.read_csv(StringIO(csv)).set_index("id_parcel")[["check_total_hedge"]]
+df2 = df.join(df_tests, how="inner")
 
 df2.dropna()
 
 # COMMAND ----------
 
-df2[(df2['check_total_hedge']==False) & (df2['ha_diff']!=0)]['ha_diff'].hist(bins=20)
+df2[(df2["check_total_hedge"] == False) & (df2["ha_diff"] != 0)]["ha_diff"].hist(bins=20)

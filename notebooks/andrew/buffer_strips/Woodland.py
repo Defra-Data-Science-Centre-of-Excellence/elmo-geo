@@ -4,6 +4,7 @@
 # COMMAND ----------
 
 import os
+
 import geopandas as gpd
 from cdap_geo.os import OSTileProvider
 
@@ -92,12 +93,13 @@ print(bng(100_000, 1_299_000))
 
 # COMMAND ----------
 
-from osdatahub import Extent, FeaturesAPI
-from pandas import DataFrame as PandasDataFrame
 from geopandas import GeoDataFrame
 from geopandas.io.arrow import _geopandas_to_arrow
+from osdatahub import Extent, FeaturesAPI
+from pandas import DataFrame as PandasDataFrame
 from pyarrow.dataset import write_dataset
 from tqdm import tqdm
+
 
 def log(x:float, b:float) -> float:
   if x < b:
@@ -178,9 +180,10 @@ help(sc.parallelize)
 # COMMAND ----------
 
 from os.path import join
+from time import sleep
 from urllib.error import URLError
 from urllib.request import urlopen
-from time import sleep
+
 from pyspark.sql import SparkSession
 
 spark = SparkSession.getActiveSession()
@@ -204,6 +207,7 @@ def download_files(urls, path, num_retries=3, retry_delay=60):
 
 from os import mkdir
 from shutil import rmtree
+
 
 def test_download_files():
   urls = ['https://example.com/file1.csv', 'https://example.com/file2.csv']

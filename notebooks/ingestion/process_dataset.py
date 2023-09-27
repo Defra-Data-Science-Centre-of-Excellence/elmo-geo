@@ -17,7 +17,11 @@ from pyspark.sql.functions import concat, expr
 from elmo_geo import LOG, register
 from elmo_geo.datasets.datasets import datasets
 from elmo_geo.io.io import download_link
-from elmo_geo.io.preprocessing import geometry_to_wkb, make_geometry_valid, transform_crs
+from elmo_geo.io.preprocessing import (
+    geometry_to_wkb,
+    make_geometry_valid,
+    transform_crs,
+)
 from elmo_geo.st.joins import spatial_join
 
 register()

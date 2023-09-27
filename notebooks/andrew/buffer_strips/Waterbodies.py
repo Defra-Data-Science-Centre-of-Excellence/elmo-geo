@@ -5,19 +5,20 @@
 
 import os
 
-import pandas as pd
 import geopandas as gpd
-
 import osmnx as ox
+import pandas as pd
+
 ox.settings.cache_folder = '/dbfs/tmp/'
 
-from osdatahub.FeaturesAPI import FeaturesAPI
 from osdatahub import Extent
+from osdatahub.FeaturesAPI import FeaturesAPI
 from osdatahub.filters import is_like
+
 key = 'WxgUdETn6cy58WZkfwZ7wdMVLlt5eDsX'
 
-import matplotlib.pyplot as plt
 import contextily as cx
+import matplotlib.pyplot as plt
 
 crs = 27700
 mask = ox.geocode_to_gdf('Northumberland').to_crs(crs)

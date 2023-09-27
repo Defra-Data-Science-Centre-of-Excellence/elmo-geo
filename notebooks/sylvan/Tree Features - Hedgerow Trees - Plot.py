@@ -4,37 +4,37 @@
 # COMMAND ----------
 
 import os
-import sys
 import re
+import sys
 from itertools import chain
-from typing import List, Optional, Iterator, Tuple
+from typing import Iterator, List, Optional, Tuple
 
+import contextily as ctx
+import geopandas as gpd
+import matplotlib as mpl
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import geopandas as gpd
-from shapely.geometry import Polygon
-
-from pyspark.sql import functions as F
-from pyspark.sql.types import StructType, StructField, StringType, FloatType, StringType
-
-# COMMAND ----------
-
-import matplotlib.pyplot as plt
 import seaborn as sns
-import matplotlib as mpl
-import contextily as ctx
-
 from matplotlib.ticker import FuncFormatter, PercentFormatter
-
-# COMMAND ----------
+from pyspark.sql import functions as F
+from pyspark.sql.types import FloatType, StringType, StructField, StructType
+from shapely.geometry import Polygon
+from tree_features import get_hedgerow_trees_features
 
 from elmo_geo import LOG, register
 from elmo_geo.io.io2 import *
+from elmo_geo.st.joins import spatial_join
 
 # COMMAND ----------
 
-from elmo_geo.st.joins import spatial_join
-from tree_features import get_hedgerow_trees_features
+
+
+# COMMAND ----------
+
+
+# COMMAND ----------
+
 
 # COMMAND ----------
 

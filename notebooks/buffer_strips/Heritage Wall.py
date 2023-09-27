@@ -13,24 +13,23 @@ from elmo_geo.st.st import join
 
 # COMMAND ----------
 
-sf_parcel = 'dbfs:/mnt/lab/unrestricted/elm/buffer_strips/parcels.parquet'
-sf_wall = 'dbfs:/mnt/lab/unrestricted/elm_data/osm/wall.parquet'
+sf_parcel = "dbfs:/mnt/lab/unrestricted/elm/buffer_strips/parcels.parquet"
+sf_wall = "dbfs:/mnt/lab/unrestricted/elm_data/osm/wall.parquet"
 
-sdf_parcel = spark.read.parquet(sf_parcel).withColumn('geometry', fix_wkb())
-sdf_wall = spark.read.parquet(sf_wall).withColumn('geometry', fix_wkb())
+sdf_parcel = spark.read.parquet(sf_parcel).withColumn("geometry", fix_wkb())
+sdf_wall = spark.read.parquet(sf_wall).withColumn("geometry", fix_wkb())
 
 # COMMAND ----------
-
 
 
 # COMMAND ----------
 
 sdf = join(
-  spark.read.parquet(sf_parcel),
-  spark.read.parquet(sf_wall),
-  lsuffix = '_parcel',
-  rsuffix = '_wall',
-  distance = 12,
+    spark.read.parquet(sf_parcel),
+    spark.read.parquet(sf_wall),
+    lsuffix="_parcel",
+    rsuffix="_wall",
+    distance=12,
 )
 
 display(sdf)
