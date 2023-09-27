@@ -17,6 +17,7 @@ from shapely.ops import transform
 
 from elmo_geo.sentinel import sentinel_tiles
 
+# sentinel 2 tile geometries
 path_source = "/dbfs/mnt/lab/unrestricted/elm_data/sentinel/sentinel_2_index_shapefile.shp"
 path_destination = "/dbfs/mnt/lab/unrestricted/elm/elmo/baresoil/tiles.parquet"
 
