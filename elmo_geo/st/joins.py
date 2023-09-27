@@ -6,8 +6,7 @@ from pyspark.sql.functions import col, expr, round
 from sedona.core.spatialOperator import JoinQuery
 from sedona.utils.adapter import Adapter
 
-from elmo_geo.utils.types import SparkSession, SparkDataFrame
-
+from elmo_geo.utils.types import SparkDataFrame, SparkSession
 
 
 def _get_column_names(df_left: SparkDataFrame, df_right: SparkDataFrame) -> List[str]:

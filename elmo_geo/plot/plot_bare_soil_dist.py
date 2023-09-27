@@ -7,7 +7,6 @@ from matplotlib.ticker import FuncFormatter, PercentFormatter
 
 from elmo_geo import LOG
 
-
 dark_style = {
     "axes.facecolor": "black",
     "axes.edgecolor": "white",

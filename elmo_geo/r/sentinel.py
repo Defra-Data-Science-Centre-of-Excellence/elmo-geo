@@ -14,7 +14,6 @@ from matplotlib.ticker import PercentFormatter
 
 from elmo_geo import LOG
 
-
 sentinel_tiles = [
     "29UPR",  # Scilly Isles (Added Late)
     "30UUA",
