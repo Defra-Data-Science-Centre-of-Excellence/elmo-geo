@@ -29,7 +29,7 @@ from elmo_geo.io.preprocessing import (
     make_geometry_valid,
     transform_crs,
 )
-from elmo_geo.r.sentinel import sentinel_tiles
+from elmo_geo.rs.sentinel import sentinel_tiles
 
 register()
 

@@ -15,7 +15,7 @@
 import geopandas as gpd
 from shapely.ops import transform
 
-from elmo_geo.r.sentinel import sentinel_tiles
+from elmo_geo.rs.sentinel import sentinel_tiles
 
 path_source = "/dbfs/mnt/lab/unrestricted/elm_data/sentinel/sentinel_2_index_shapefile.shp"
 path_destination = "/dbfs/mnt/lab/unrestricted/elm/elmo/baresoil/tiles.parquet"

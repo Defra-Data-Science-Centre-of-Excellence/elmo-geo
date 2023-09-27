@@ -8,8 +8,8 @@ freeze:
 	pip freeze --exclude-editable | grep -v "file:///" > requirements.txt
 
 fmt:
-	isort elmo_geo
-	black elmo_geo
+	isort .
+	black .
 
 verify:
 	isort --check-only .

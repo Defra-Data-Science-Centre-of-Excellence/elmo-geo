@@ -14,7 +14,7 @@
 import datetime
 
 from elmo_geo.io.sentinel_api import sentinel_api_session
-from elmo_geo.r.sentinel import (
+from elmo_geo.rs.sentinel import (
     extract_all_sentinel_data,
     is_downloaded,
     plot_products,
