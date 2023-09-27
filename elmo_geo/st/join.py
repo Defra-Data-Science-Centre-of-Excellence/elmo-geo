@@ -1,13 +1,14 @@
-# from .log import LOG  # Not Used
-from .types import SparkDataFrame
-from .io import load_missing
 from pyspark.sql import functions as F
 from sedona.core.spatialOperator import JoinQuery
 from sedona.utils.adapter import Adapter
 
+# from elmo_geo import LOG
+from elmo_geo.utils.types import SparkDataFrame
+from elmo_geo.io import load_missing
 
 
-def sjoin_with_tree(
+
+def sjoin_rdd(
   sdf_left: SparkDataFrame,
   sdf_right: SparkDataFrame,
 	partitioning: str = 'KDBTREE',
@@ -17,6 +18,8 @@ def sjoin_with_tree(
 	use_index: bool = True,
 	consider_boundary_itersection: bool = True,
 ) -> SparkDataFrame:
+	'''Spatial Join using RDD
+	'''
 	# RDD
 	rdd_left = Adapter.toSpatialRdd(sdf_left, 'geometry')
 	rdd_right = Adapter.toSpatialRdd(sdf_right, 'geometry')
@@ -39,8 +42,11 @@ def sjoin_with_tree(
 	return Adapter.toDf(spatialPairRDD=rdd, sparkSession=spark)
 
 
-
-def sjoin(left:SparkDataFrame, right:SparkDataFrame, distance:float=0) -> SparkDataFrame:
+def sjoin_sql(
+	sdf_left: SparkDataFrame,
+	sdf_right: SparkDataFrame,
+	distance: float = 0,
+) -> SparkDataFrame:
 	'''Spatial Join, only returning keys
 	Only suitable for minimal SparkDataFrames
 	left.select('id_left', 'geometry')
@@ -48,10 +54,10 @@ def sjoin(left:SparkDataFrame, right:SparkDataFrame, distance:float=0) -> SparkD
 	'''
 	# Distance Join
 	if 0 < distance:
-		left.withColumn('geometry', F.expr('ST_MakeValid(ST_Buffer(geometry, {distance}))'))
+		sdf_left.withColumn('geometry', F.expr('ST_MakeValid(ST_Buffer(geometry, {distance}))'))
 	# Add to SQL
-	left.createOrReplaceTempView('left')
-	right.createOrReplaceTempView('right')
+	sdf_left.createOrReplaceTempView('left')
+	sdf_right.createOrReplaceTempView('right')
 	# Join
 	sdf = spark.sql(f'''
 		SELECT id_left, id_right
@@ -64,9 +70,18 @@ def sjoin(left:SparkDataFrame, right:SparkDataFrame, distance:float=0) -> SparkD
 	return sdf
 
 
-def join(sdf_left:SparkDataFrame, sdf_right:SparkDataFrame, how:str='full', lsuffix:str='_left', rsuffix:str='_right', distance:float=0) -> SparkDataFrame:
-	'''Spatial Join with how
-	how: {full, inner, left, right} 
+def join(
+	sdf_left: SparkDataFrame,
+	sdf_right: SparkDataFrame,
+	how: str = 'inner',
+	lsuffix: str = '_left',
+	rsuffix: str = '_right',
+	sjoin: callable = sjoin_sql,
+	sjoin_kwargs: dict = {},
+) -> SparkDataFrame:
+	'''Spatial Join with how, and optional method
+	how: {inner, full, left, right}
+	sjoin: {elmo_geo.st.join.sjoin_sql, elmo_geo.st.join.sjoin_rdd}
 	'''
 	# ID
 	sdf_left = sdf_left.withColumn('id_left', F.monotonically_increasing_id())
@@ -81,7 +96,7 @@ def join(sdf_left:SparkDataFrame, sdf_right:SparkDataFrame, how:str='full', lsuf
 	sdf =	sjoin(
 		sdf_left.select('id_left', 'geometry'),
 		sdf_right.select('id_right', 'geometry'),
-		distance = distance,
+		**sjoin_kwargs,
 	)
 	# Rename
 	for col in sdf_left.columns:
@@ -90,10 +105,26 @@ def join(sdf_left:SparkDataFrame, sdf_right:SparkDataFrame, how:str='full', lsuf
 			sdf_right = sdf_right.withColumnRenamed(col, col+rsuffix)
 	geometry_left = f'left.geometry{lsuffix}'
 	geometry_right = f'right.geometry{rsuffix}'
+	# Regular Join
 	return (sdf
 		.join(sdf_left.drop('geometry'), how=how_left, on='id_left')
 		.join(sdf_right.drop('geometry'), how=how_right, on='id_right')
 		.withColumn('geometry'+lsuffix, load_missing('geometry'+lsuffix))
 		.withColumn('geometry'+rsuffix, load_missing('geometry'+rsuffix))
 		.drop('id_left', 'id_right')
+	)
+
+
+def overlap(
+	sdf_left: SparkDataFrame,
+	sdf_right: SparkDataFrame,
+	lsuffix: str = '_left',
+	rsuffix: str = '_right',
+  **kwargs
+):
+	g_left, g_right = 'geometry'+lsuffix, 'geometry'+rsuffix
+	return (join(sdf_left, sdf_right, lsuffix=lsuffix, rsuffix=lsuffix, **kwargs)
+	  .withColumn('geometry', F.expr(f'ST_Intersection({g_left}, {g_right})'))
+		.withColumn('proportion', F.expr(f'ST_Area(geometry) / ST_Area({g_left})'))  # TODO: groupby
+		.drop(g_left, g_right)
 	)
