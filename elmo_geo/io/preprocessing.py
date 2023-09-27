@@ -1,8 +1,8 @@
 import geopandas as gpd
-from pyspark.sql.session import SparkSession
 from shapely.validation import make_valid
 
-from elmo_geo.log import LOG
+from elmo_geo import LOG
+from elmo_geo.utils.types import SparkSession
 
 
 def transform_crs(df: gpd.GeoDataFrame, target_epsg: int = 27700) -> gpd.GeoDataFrame:

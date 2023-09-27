@@ -7,7 +7,7 @@ import seaborn as sns
 import xarray as xr
 from xarray.core.dataarray import DataArray
 
-from elmo_geo.log import LOG
+from elmo_geo import LOG
 
 
 def to_raster(da: DataArray, path: str):

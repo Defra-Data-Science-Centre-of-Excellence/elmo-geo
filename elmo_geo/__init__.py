@@ -18,3 +18,7 @@ requires = [
 ]
 
 subprocess.run(["pip", "install"] + requires)
+
+
+from elmo_geo.utils.log import LOG
+from elmo_geo.utils.register import register

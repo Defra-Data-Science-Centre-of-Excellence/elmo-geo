@@ -12,7 +12,8 @@ import seaborn as sns
 from bs4 import BeautifulSoup
 from matplotlib.ticker import PercentFormatter
 
-from elmo_geo.log import LOG
+from elmo_geo import LOG
+
 
 sentinel_tiles = [
     "29UPR",  # Scilly Isles (Added Late)

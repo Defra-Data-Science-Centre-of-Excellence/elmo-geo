@@ -3,7 +3,7 @@ from contextlib import contextmanager
 import urllib3
 from sentinelsat import SentinelAPI
 
-from elmo_geo.log import LOG
+from elmo_geo import LOG
 
 urllib3.disable_warnings()
 

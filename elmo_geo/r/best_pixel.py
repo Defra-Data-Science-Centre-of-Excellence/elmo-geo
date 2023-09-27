@@ -4,14 +4,14 @@ import numpy as np
 import rioxarray as rxr
 import xarray as xr
 
-from elmo_geo.log import LOG
-from elmo_geo.raster import (
+from elmo_geo import LOG
+from elmo_geo.r.raster import (
     apply_offset,
     normalised_diff,
     set_nodata,
     summarise_cloud_cover,
 )
-from elmo_geo.sentinel import (
+from elmo_geo.r.sentinel import (
     find_sentinel_bands,
     find_sentinel_qi_data,
     get_image_radiometric_offset,

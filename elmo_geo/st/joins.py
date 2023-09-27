@@ -2,12 +2,12 @@
 
 from typing import List, Optional
 
-from pyspark.sql.dataframe import DataFrame as SparkDataFrame
 from pyspark.sql.functions import col, expr, round
-from pyspark.sql.session import SparkSession
 from sedona.core.spatialOperator import JoinQuery
-from sedona.register import SedonaRegistrator
 from sedona.utils.adapter import Adapter
+
+from elmo_geo.utils.types import SparkSession, SparkDataFrame
+
 
 
 def _get_column_names(df_left: SparkDataFrame, df_right: SparkDataFrame) -> List[str]:
@@ -71,8 +71,6 @@ def spatial_join(
         - Adjust the `num_partitions` to suit the datasets
         - Ensure there is a `geometry` column in both dataframes
     """
-
-    SedonaRegistrator.registerAll(spark)
 
     # convert to RDD
     rdd_left = Adapter.toSpatialRdd(df_left, "geometry")

@@ -2,9 +2,9 @@
 joins.spatial_join()"""
 
 import pyspark.sql.functions as F
-from pyspark.sql.session import SparkSession
 
-from .log import LOG
+from elmo_geo import LOG
+from elmo_geo.utils.types import SparkSession
 
 
 def intersect_parcels(
