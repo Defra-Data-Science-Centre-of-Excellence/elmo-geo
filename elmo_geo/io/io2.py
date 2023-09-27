@@ -9,7 +9,17 @@ import requests
 from pyspark.sql import functions as F
 
 from elmo_geo.utils.settings import BATCHSIZE
-from elmo_geo.utils.types import *
+from elmo_geo.utils.types import (
+    GeoDataFrame,
+    PandasDataFrame,
+    SparkDataFrame,
+    SparkSession,
+    SedonaType,
+    Union,
+    GeoSeries,
+    Geometry,
+    BaseGeometry,
+)
 
 # Convertion between Types
 
@@ -161,7 +171,7 @@ def is_ingested(f_in: str, f_out: str, spark: SparkSession = None) -> SparkDataF
             sdf = spark.read.parquet(dbfs(f_out, True))
             if info.get("features") == sdf.count():
                 return True
-        except:
+        except Exception:
             pass
         shutil.rmtree(f_out)
     return False
@@ -170,7 +180,7 @@ def is_ingested(f_in: str, f_out: str, spark: SparkSession = None) -> SparkDataF
 def read_vector_file(f, **kwargs):
     try:
         df = geopandas.read_file(f, engine="pyogrio")
-    except:
+    except Exception:
         df = geopandas.read_file(f, engine="fiona")
     # Handle Timezones
     for k, v in df.dtypes.items():
@@ -221,12 +231,12 @@ def paths_arcgis(url, batch):
     a = "/arcgis/rest/services/"
     b = "/FeatureServer/0/query?"
     f0, f1 = url.split(b)
-    name = f0.split(a)[1]
+    name = f0.split(a)[1]  # noqa:F841
     f0 += b
     f_count = f0 + "where=1%3D1&returnCountOnly=true&f=json"
     count = requests.get(f_count).json()["count"]
     paths = []
-    for l in range(1, count, batch):
+    for l in range(1, count, batch):  # noqa:E741
         u = min(l + batch, count)
         r = "objectIds=" + ",".join(str(x) for x in range(l, u)) + "&"
         path = f0 + r + f1
@@ -239,7 +249,7 @@ def read_arcgis(url, batch=200):
     ArcGIS REST API defaults to limit downloading to 200 features at a time.
     This function serially reads so exceptionally large datasets may cause OutOfMemoryError.
     Distributedly reading often causes TimeoutError.
-    [Example Datasets](https://github.com/aw-west-defra/cdap_geo/blob/755b89c83ccde5cd27772a2068dfacd342661f09/cdap_geo/remotes.py#L62)
+    [Example Datasets](https://github.com/aw-west-defra/cdap_geo/blob/755b89c83ccde5cd27772a2068dfacd342661f09/cdap_geo/remotes.py#L62)  # noqa:E501
     """
     paths = paths_arcgis(url, batch)
     # for fs in paths[::BATCHSIZE // batch]:

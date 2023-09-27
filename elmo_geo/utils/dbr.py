@@ -1,6 +1,6 @@
 try:
-    from databricks.sdk.runtime import dbutils, display, sc, spark
-except:
+    from databricks.sdk.runtime import dbutils, spark
+except Exception:
     from pyspark.dbutils import DBUtils
     from pyspark.sql import SparkSession
 

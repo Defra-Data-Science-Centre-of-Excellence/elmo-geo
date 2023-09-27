@@ -30,7 +30,6 @@ from elmo_geo.st.joins import spatial_join
 # COMMAND ----------
 
 
-
 # COMMAND ----------
 
 
@@ -38,42 +37,60 @@ register()
 
 # COMMAND ----------
 
-parcel_buffer_distance=2
+parcel_buffer_distance = 2
 
 timestamp = "202308040848"
 
-hedgerows_path = "dbfs:/mnt/lab/unrestricted/elm_data/rural_payments_agency/efa_hedges/2022_06_24.parquet"
+hedgerows_path = (
+    "dbfs:/mnt/lab/unrestricted/elm_data/rural_payments_agency/efa_hedges/2022_06_24.parquet"
+)
 
-hedges_length_path = "dbfs:/mnt/lab/unrestricted/elm/elmo/hedgerows_and_water/hedgerows_and_water.csv"
+hedges_length_path = (
+    "dbfs:/mnt/lab/unrestricted/elm/elmo/hedgerows_and_water/hedgerows_and_water.csv"
+)
 
 parcels_path = "dbfs:/mnt/lab/unrestricted/elm_data/rpa/reference_parcels/2023_02_07.parquet"
 
-path_output_template = ( "dbfs:/mnt/lab/unrestricted/elm/elmo/"
-                "hrtrees/tree_detections/"
-                "tree_detections_{timestamp}.parquet"
-            )
+path_output_template = (
+    "dbfs:/mnt/lab/unrestricted/elm/elmo/"
+    "hrtrees/tree_detections/"
+    "tree_detections_{timestamp}.parquet"
+)
 
-hrtrees_output_template = ( "dbfs:/mnt/lab/unrestricted/elm/elmo/"
-                "hrtrees/hrtrees_{timestamp}.parquet"
-            )
+hrtrees_output_template = (
+    "dbfs:/mnt/lab/unrestricted/elm/elmo/" "hrtrees/hrtrees_{timestamp}.parquet"
+)
 
-parcel_hrtrees_template = ( "dbfs:/mnt/lab/unrestricted/elm/elmo/"
-                "hrtrees/parel_hrtrees_count_{timestamp}.parquet"
-            )
+parcel_hrtrees_template = (
+    "dbfs:/mnt/lab/unrestricted/elm/elmo/" "hrtrees/parel_hrtrees_count_{timestamp}.parquet"
+)
 
-#output_trees_path = path_output_template.format(mtc='SP_SU', timestamp=timestamp)
-#output_trees_path= path_output_template.format(mtc="SP65", timestamp="0000")
-output_trees_path= path_output_template.format(timestamp=timestamp)
+# output_trees_path = path_output_template.format(mtc='SP_SU', timestamp=timestamp)
+# output_trees_path= path_output_template.format(mtc="SP65", timestamp="0000")
+output_trees_path = path_output_template.format(timestamp=timestamp)
 hrtrees_path_output = hrtrees_output_template.format(timestamp=timestamp)
 parcel_hrtrees_output = parcel_hrtrees_template.format(timestamp=timestamp)
 
-output_hrtrees_per_parcel_path =  "/dbfs/mnt/lab/unrestricted/elm/elmo/hrtrees/hrtrees_per_parcel.csv"
+output_hrtrees_per_parcel_path = (
+    "/dbfs/mnt/lab/unrestricted/elm/elmo/hrtrees/hrtrees_per_parcel.csv"
+)
 
 tile_to_visualise = "SP65nw"
 
 # COMMAND ----------
 
-gcols = ['parcel_geom', 'perimeter_geom', 'perimeter_geom_buf', 'interior_geom', 'top_point', 'crown_poly_raster', 'geom_right', 'geom_left', "crown_perim_intersection"]
+gcols = [
+    "parcel_geom",
+    "perimeter_geom",
+    "perimeter_geom_buf",
+    "interior_geom",
+    "top_point",
+    "crown_poly_raster",
+    "geom_right",
+    "geom_left",
+    "crown_perim_intersection",
+]
+
 
 def make_geoms(df, gcols):
     for c in gcols:
@@ -84,14 +101,16 @@ def make_geoms(df, gcols):
                 continue
     return df
 
+
 def toPandasGeoToText(df, gcols):
     for c in gcols:
         if c in df.columns:
             df = df.withColumn(c, F.expr(f"ST_AsText({c})"))
-    
+
     dfp = df.toPandas()
 
     return make_geoms(dfp, gcols)
+
 
 # COMMAND ----------
 
@@ -119,12 +138,12 @@ parcelsDF = parcelsDF.filter(f"SHEET_ID like '{tile_to_visualise[:2]}%'")
 
 # COMMAND ----------
 
-'''
+"""
 output_trees_path = path_output_template.format(mtc='SP_SU', timestamp=timestamp)
 treesDFAlt = spark.read.parquet(output_trees_path)
 treesDFAlt = treesDFAlt.filter(f"chm_path like '%{tile_to_visualise}%'")
 treesDFAlt.count()
-'''
+"""
 
 # COMMAND ----------
 
@@ -138,17 +157,23 @@ treesDF.count(), treesDF.select("crown_poly_raster").distinct().count()
 
 # COMMAND ----------
 
-parcelsDF = parcelsDF.withColumn("SHEET_PARCEL_ID", F.concat("SHEET_ID","PARCEL_ID"))
+parcelsDF = parcelsDF.withColumn("SHEET_PARCEL_ID", F.concat("SHEET_ID", "PARCEL_ID"))
 
 non_geo_cols = parcelsDF.columns
 
-parcelsDF = parcelsDF.withColumn("parcel_geom", F.expr("ST_MakeValid(ST_GeomFromWKB(wkb_geometry))"))
+parcelsDF = parcelsDF.withColumn(
+    "parcel_geom", F.expr("ST_MakeValid(ST_GeomFromWKB(wkb_geometry))")
+)
 parcelsDF = parcelsDF.withColumn("perimeter_geom", F.expr("ST_MakeValid(ST_Boundary(parcel_geom))"))
 parcelsDF = parcelsDF.withColumn("perimeter_length", F.expr("ST_Length(perimeter_geom)"))
 
-parcel_buffer_distance=2
-parcelsDF = parcelsDF.withColumn("perimeter_geom_buf", F.expr(f"ST_Buffer(perimeter_geom,{parcel_buffer_distance})"))
-parcelsDF = parcelsDF.withColumn("interior_geom", F.expr("ST_MakeValid(ST_Difference(parcel_geom, perimeter_geom_buf))"))
+parcel_buffer_distance = 2
+parcelsDF = parcelsDF.withColumn(
+    "perimeter_geom_buf", F.expr(f"ST_Buffer(perimeter_geom,{parcel_buffer_distance})")
+)
+parcelsDF = parcelsDF.withColumn(
+    "interior_geom", F.expr("ST_MakeValid(ST_Difference(parcel_geom, perimeter_geom_buf))")
+)
 
 # COMMAND ----------
 
@@ -156,9 +181,7 @@ parcelsDF.count()
 
 # COMMAND ----------
 
-df_parcels = (parcelsDF
-              .filter(F.col("SHEET_PARCEL_ID")=="SP37379069")
-)
+df_parcels = parcelsDF.filter(F.col("SHEET_PARCEL_ID") == "SP37379069")
 display(df_parcels)
 
 # COMMAND ----------
@@ -168,14 +191,18 @@ df_parcels
 
 # COMMAND ----------
 
-dfplot = df_parcels.loc[ df_parcels['SHEET_PARCEL_ID']=="SP37379069"]
-dfplot = gpd.GeoDataFrame(dfplot, geometry='parcel_geom')
+dfplot = df_parcels.loc[df_parcels["SHEET_PARCEL_ID"] == "SP37379069"]
+dfplot = gpd.GeoDataFrame(dfplot, geometry="parcel_geom")
 
-f, ax = plt.subplots(figsize = (10,10))
+f, ax = plt.subplots(figsize=(10, 10))
 
-dfplot['parcel_geom'].plot(ax=ax, facecolor='blue', edgecolor='k', linewidth=0.5, alpha=0.7)
-dfplot.set_geometry('perimeter_geom_buf').plot(ax=ax, facecolor='green', edgecolor='k', linewidth=0.5, alpha=0.7)
-dfplot.set_geometry('interior_geom').plot(ax=ax, facecolor='yellow', edgecolor='k', linewidth=0.5, alpha=0.7)
+dfplot["parcel_geom"].plot(ax=ax, facecolor="blue", edgecolor="k", linewidth=0.5, alpha=0.7)
+dfplot.set_geometry("perimeter_geom_buf").plot(
+    ax=ax, facecolor="green", edgecolor="k", linewidth=0.5, alpha=0.7
+)
+dfplot.set_geometry("interior_geom").plot(
+    ax=ax, facecolor="yellow", edgecolor="k", linewidth=0.5, alpha=0.7
+)
 
 # COMMAND ----------
 
@@ -189,56 +216,64 @@ treesDF = treesDF.withColumn("geometry", F.expr("ST_Point(top_x, top_y)"))
 
 # COMMAND ----------
 
-crowns = treesDF.select("crown_poly_raster").withColumn("geometry", F.expr("ST_GeomFromWKT(crown_poly_raster)"))
+crowns = treesDF.select("crown_poly_raster").withColumn(
+    "geometry", F.expr("ST_GeomFromWKT(crown_poly_raster)")
+)
 treesPointsDF = treesDF.drop("crown_poly_raster")
 
 treesAlignedDF = spatial_join(
-                    crowns,
-                    treesPointsDF,
-                    spark,
-                    partitioning = None,
-                    partition_right = False,
-                    useIndex = True,
-                    considerBoundaryIntersection = False, # returns tree geometries contained within parcel geoms (since trees are point geoms using 'True' should produce the result)
-                    calculate_proportion = False
+    crowns,
+    treesPointsDF,
+    spark,
+    partitioning=None,
+    partition_right=False,
+    useIndex=True,
+    considerBoundaryIntersection=False,  # returns tree geometries contained within parcel geoms (since trees are point geoms using 'True' should produce the result)
+    calculate_proportion=False,
 )
 
 # COMMAND ----------
 
 # Filter to just select geoms in a bounding box
-xmin=460650
-xmax=460800
-ymin=256950
-ymax=257100
+xmin = 460650
+xmax = 460800
+ymin = 256950
+ymax = 257100
 
 # Define a bounding box to filter data by
-bbox_coords = [(xmin, ymin), (xmax, ymin), (xmax, ymax), (xmin, ymax), (xmin, ymin) ]
+bbox_coords = [(xmin, ymin), (xmax, ymin), (xmax, ymax), (xmin, ymax), (xmin, ymin)]
 bbox = Polygon(bbox_coords)
-gdfbb = gpd.GeoDataFrame({'geometry':[bbox]}, crs='EPSG:27700').to_crs("EPSG:3857")
+gdfbb = gpd.GeoDataFrame({"geometry": [bbox]}, crs="EPSG:27700").to_crs("EPSG:3857")
 
 spark.sql(f"select ST_GeomFromWKT('{bbox.wkt}')")
 
 # COMMAND ----------
 
-treesDFSub = treesDF.filter(F.expr(f"""
+treesDFSub = treesDF.filter(
+    F.expr(
+        f"""
                                 ST_Contains(
                                     ST_GeomFromWKT('{bbox.wkt}'),geometry
                                 )
-                                """)
-                         )
+                                """
+    )
+)
 
-parcelsDFSub = parcelsDF.filter(F.expr(f"""
+parcelsDFSub = parcelsDF.filter(
+    F.expr(
+        f"""
                                 ST_Contains(
                                     ST_GeomFromWKT('{bbox.wkt}'),parcel_geom
                                 )
-                                """)
-                         )
+                                """
+    )
+)
 
-df_trees = toPandasGeoToText(treesDFSub, ['geometry'])
+df_trees = toPandasGeoToText(treesDFSub, ["geometry"])
 df_parcels = toPandasGeoToText(parcelsDFSub, gcols)
 
-#df_trees = treesDFSub.toPandas()
-#df_parcels = parcelsDFSub.toPandas()
+# df_trees = treesDFSub.toPandas()
+# df_parcels = parcelsDFSub.toPandas()
 
 
 df_trees.shape, df_parcels.shape
@@ -516,107 +551,116 @@ df_int_results = interiorTreesFeaturesDF.toPandas()
 # COMMAND ----------
 
 '''
-parcelsDF = parcelsDF.withColumn("geometry", F.col("interior_geom")) # parcel interior, with buffered perimeter removed
-treesDF = treesDF.withColumn("geometry", F.col("top_point")) # tree top coordinate
+parcelsDF = parcelsDF.withColumn(
+    "geometry", F.col("interior_geom")
+)  # parcel interior, with buffered perimeter removed
+treesDF = treesDF.withColumn("geometry", F.col("top_point"))  # tree top coordinate
 
 iTreesDF = spatial_join(
-                parcelsDF,
-                treesDF,
-                spark,
-                partitioning = None,
-                partition_right = False,
-                useIndex = True,
-                considerBoundaryIntersection = False, # returns tree geometries contained within parcel geoms (since trees are point geoms using 'True' should produce the result)
-                calculate_proportion = False
+    parcelsDF,
+    treesDF,
+    spark,
+    partitioning=None,
+    partition_right=False,
+    useIndex=True,
+    considerBoundaryIntersection=False,  # returns tree geometries contained within parcel geoms (since trees are point geoms using 'True' should produce the result)
+    calculate_proportion=False,
 )
 
 df_iTreesDF = iTreesDF.toPandas()
 gdf_int_results = gpd.GeoDataFrame(df_iTreesDF)
 gdf_int_results = make_geoms(gdf_int_results, gcols)
-'''
+
 
 # COMMAND ----------
 
-data = df_int_results.iloc[ np.random.choice(df_int_results.index, 1)].values
+data = df_int_results.iloc[np.random.choice(df_int_results.index, 1)].values
 
-f, ax = plt.subplots(figsize=(12,12))
+f, ax = plt.subplots(figsize=(12, 12))
 for i, (parcel_id, ntrees) in enumerate(data):
-
-    df_parcels = (parcelsDF
-              .filter(F.col("SHEET_PARCEL_ID")==parcel_id)
-              .toPandas()
-    )
+    df_parcels = parcelsDF.filter(F.col("SHEET_PARCEL_ID") == parcel_id).toPandas()
     df_parcels = make_geoms(df_parcels, gcols)
-    gdf_parcels = gpd.GeoDataFrame(df_parcels, geometry='perimeter_geom')
-    xmin,ymin,xmax,ymax = gdf_parcels.total_bounds
+    gdf_parcels = gpd.GeoDataFrame(df_parcels, geometry="perimeter_geom")
+    xmin, ymin, xmax, ymax = gdf_parcels.total_bounds
 
-    bbox_coords = [(xmin, ymin), (xmax, ymin), (xmax, ymax), (xmin, ymax), (xmin, ymin) ]
+    bbox_coords = [(xmin, ymin), (xmax, ymin), (xmax, ymax), (xmin, ymax), (xmin, ymin)]
     bbox = Polygon(bbox_coords)
-    gdfbbox = gpd.GeoDataFrame({'geometry':[bbox]}, geometry="geometry")
+    gdfbbox = gpd.GeoDataFrame({"geometry": [bbox]}, geometry="geometry")
 
-    df_trees = (treesDF
-                .filter(F.expr(f"""
+    df_trees = treesDF.filter(
+        F.expr(
+            f"""
                                 ST_Contains(
                                     ST_GeomFromWKT('{bbox.wkt}'),top_point
                                 )
-                                """))
-                .toPandas()
-                )
+                                """
+        )
+    ).toPandas()
     df_trees = make_geoms(df_trees, gcols)
-    gdf_trees = gpd.GeoDataFrame(df_trees, geometry='top_point')
+    gdf_trees = gpd.GeoDataFrame(df_trees, geometry="top_point")
 
-    gdf_parcels.set_geometry('interior_geom').plot(ax=ax, facecolor='lightblue', edgecolor=None, linewidth=0.5, alpha=0.7)
-    gdf_parcels.set_geometry('perimeter_geom').plot(ax=ax, edgecolor='red', linewidth=1.0, alpha=1)
+    gdf_parcels.set_geometry("interior_geom").plot(
+        ax=ax, facecolor="lightblue", edgecolor=None, linewidth=0.5, alpha=0.7
+    )
+    gdf_parcels.set_geometry("perimeter_geom").plot(ax=ax, edgecolor="red", linewidth=1.0, alpha=1)
 
-    gdf_trees.set_geometry('crown_poly_raster').plot(ax=ax, facecolor='grey', edgecolor=None, linewidth=0.5, alpha=0.7)
-    gdf_trees.set_geometry('top_point').plot(ax=ax, edgecolor=None, linewidth=0.5)
+    gdf_trees.set_geometry("crown_poly_raster").plot(
+        ax=ax, facecolor="grey", edgecolor=None, linewidth=0.5, alpha=0.7
+    )
+    gdf_trees.set_geometry("top_point").plot(ax=ax, edgecolor=None, linewidth=0.5)
 
-    gdf_trees_int = gdf_trees.loc[ gdf_trees['top_point'].map(lambda g: g.intersects(gdf_parcels.interior_geom.values[0]))]
-    gdf_trees_int.set_geometry('top_point').plot(ax=ax, facecolor='lime')
+    gdf_trees_int = gdf_trees.loc[
+        gdf_trees["top_point"].map(lambda g: g.intersects(gdf_parcels.interior_geom.values[0]))
+    ]
+    gdf_trees_int.set_geometry("top_point").plot(ax=ax, facecolor="lime")
 
     ax.set_axis_off()
     ax.set_title(f"{ntrees} trees in parcel interior")
 
 # COMMAND ----------
 
-data = df_int_results.iloc[ np.random.choice(df_int_results.index, 6)].values
+data = df_int_results.iloc[np.random.choice(df_int_results.index, 6)].values
 
-f, axs = plt.subplots(2,3,figsize=(40,30))
-axs = axs.reshape(1,-1)[0]
+f, axs = plt.subplots(2, 3, figsize=(40, 30))
+axs = axs.reshape(1, -1)[0]
 for i, (parcel_id, ntrees) in enumerate(data):
-    ax=axs[i]
+    ax = axs[i]
 
-    df_parcels = (parcelsDF
-              .filter(F.col("SHEET_PARCEL_ID")==parcel_id)
-              .toPandas()
-    )
+    df_parcels = parcelsDF.filter(F.col("SHEET_PARCEL_ID") == parcel_id).toPandas()
     df_parcels = make_geoms(df_parcels, gcols)
-    gdf_parcels = gpd.GeoDataFrame(df_parcels, geometry='perimeter_geom')
-    xmin,ymin,xmax,ymax = gdf_parcels.total_bounds
+    gdf_parcels = gpd.GeoDataFrame(df_parcels, geometry="perimeter_geom")
+    xmin, ymin, xmax, ymax = gdf_parcels.total_bounds
 
-    bbox_coords = [(xmin, ymin), (xmax, ymin), (xmax, ymax), (xmin, ymax), (xmin, ymin) ]
+    bbox_coords = [(xmin, ymin), (xmax, ymin), (xmax, ymax), (xmin, ymax), (xmin, ymin)]
     bbox = Polygon(bbox_coords)
-    gdfbbox = gpd.GeoDataFrame({'geometry':[bbox]}, geometry="geometry")
+    gdfbbox = gpd.GeoDataFrame({"geometry": [bbox]}, geometry="geometry")
 
-    df_trees = (treesDF
-                .filter(F.expr(f"""
+    df_trees = treesDF.filter(
+        F.expr(
+            f"""
                                 ST_Contains(
                                     ST_GeomFromWKT('{bbox.wkt}'),top_point
                                 )
-                                """))
-                .toPandas()
-                )
+                                """
+        )
+    ).toPandas()
     df_trees = make_geoms(df_trees, gcols)
-    gdf_trees = gpd.GeoDataFrame(df_trees, geometry='top_point')
+    gdf_trees = gpd.GeoDataFrame(df_trees, geometry="top_point")
 
-    gdf_parcels.set_geometry('interior_geom').plot(ax=ax, facecolor='lightblue', edgecolor=None, linewidth=0.5, alpha=0.7)
-    gdf_parcels.set_geometry('perimeter_geom').plot(ax=ax, edgecolor='red', linewidth=1.0, alpha=1)
+    gdf_parcels.set_geometry("interior_geom").plot(
+        ax=ax, facecolor="lightblue", edgecolor=None, linewidth=0.5, alpha=0.7
+    )
+    gdf_parcels.set_geometry("perimeter_geom").plot(ax=ax, edgecolor="red", linewidth=1.0, alpha=1)
 
-    gdf_trees.set_geometry('crown_poly_raster').plot(ax=ax, facecolor='grey', edgecolor=None, linewidth=0.5, alpha=0.7)
-    gdf_trees.set_geometry('top_point').plot(ax=ax, edgecolor=None, linewidth=0.5)
+    gdf_trees.set_geometry("crown_poly_raster").plot(
+        ax=ax, facecolor="grey", edgecolor=None, linewidth=0.5, alpha=0.7
+    )
+    gdf_trees.set_geometry("top_point").plot(ax=ax, edgecolor=None, linewidth=0.5)
 
-    gdf_trees_int = gdf_trees.loc[ gdf_trees['top_point'].map(lambda g: g.intersects(gdf_parcels.interior_geom.values[0]))]
-    gdf_trees_int.set_geometry('top_point').plot(ax=ax, facecolor='lime')
+    gdf_trees_int = gdf_trees.loc[
+        gdf_trees["top_point"].map(lambda g: g.intersects(gdf_parcels.interior_geom.values[0]))
+    ]
+    gdf_trees_int.set_geometry("top_point").plot(ax=ax, facecolor="lime")
 
     ax.set_axis_off()
     ax.set_title(f"{ntrees} trees in parcel interior")
@@ -639,12 +683,9 @@ parcelsDF = parcelsDF.filter(f"SHEET_ID like '{tile_to_visualise[:2]}%'")
 
 # COMMAND ----------
 
-parcelTreeFeaturesDF = get_parcel_perimeter_and_interior_tree_features(spark,
-                                                                       treesDF,
-                                                                       parcelsDF,
-                                                                       parcel_buffer_distance,
-                                                                       double_count=False
-                                                                       )
+parcelTreeFeaturesDF = get_parcel_perimeter_and_interior_tree_features(
+    spark, treesDF, parcelsDF, parcel_buffer_distance, double_count=False
+)
 
 
 # COMMAND ----------
@@ -687,7 +728,7 @@ wbDF.createOrReplaceTempView("waterbodies")
 
 # MAGIC %sql
 # MAGIC
-# MAGIC select * from 
+# MAGIC select * from
 # MAGIC (select description, count(*)
 # MAGIC from waterbodies
 # MAGIC group by description) as d
@@ -713,15 +754,19 @@ display(wbDF)
 
 # Create geometries
 river_buffer_distance = 2
-wbDF = wbDF.withColumn("geometry_water_buffered", F.expr(f"ST_Buffer(geometry_water, {river_buffer_distance})"))
+wbDF = wbDF.withColumn(
+    "geometry_water_buffered", F.expr(f"ST_Buffer(geometry_water, {river_buffer_distance})")
+)
 
 wbDF = wbDF.withColumn("SHEET_PAREL_ID", F.col("id_parcel"))
 
 # COMMAND ----------
 
 # Select only waterbodies of interest
-waterbodies_exclude = ['Sea']
-wbDF = wbDF.filter(f"""description not in ({",".join("'{}'".format(i) for i in waterbodies_exclude)})""")
+waterbodies_exclude = ["Sea"]
+wbDF = wbDF.filter(
+    f"""description not in ({",".join("'{}'".format(i) for i in waterbodies_exclude)})"""
+)
 
 # COMMAND ----------
 
@@ -729,41 +774,37 @@ wbDF.count()
 
 # COMMAND ----------
 
-#treesDF = treesDF.withColumn("top_point", F.expr("ST_GeomFromWKT(top_point)"))
-treesDF = treesDF.withColumn("geometry", F.col("top_point")) # tree top coordinate
-wbDF = wbDF.withColumn("geometry", F.col("geometry_water_buffered")) # buffered hedge linestring
+# treesDF = treesDF.withColumn("top_point", F.expr("ST_GeomFromWKT(top_point)"))
+treesDF = treesDF.withColumn("geometry", F.col("top_point"))  # tree top coordinate
+wbDF = wbDF.withColumn("geometry", F.col("geometry_water_buffered"))  # buffered hedge linestring
 
-wbTreesDF, wbTreesPerParcelDF, counts = get_waterbody_trees_features(spark,
-                                                                    treesDF,
-                                                                    wbDF,
-                                                                    double_count=True)
+wbTreesDF, wbTreesPerParcelDF, counts = get_waterbody_trees_features(
+    spark, treesDF, wbDF, double_count=True
+)
 
 # COMMAND ----------
 
 # Test refactored method by running hedgerows intersection
-hedgerows_path = "dbfs:/mnt/lab/unrestricted/elm_data/rural_payments_agency/efa_hedges/2022_06_24.parquet"
+hedgerows_path = (
+    "dbfs:/mnt/lab/unrestricted/elm_data/rural_payments_agency/efa_hedges/2022_06_24.parquet"
+)
 hrDF = spark.read.parquet(hedgerows_path)
 hrDF = hrDF.filter(f"REF_PARCEL_SHEET_ID like '{tile_to_visualise[:2]}%'")
-hrDF = hrDF.withColumn('SHEET_PARCEL_ID', F.concat("REF_PARCEL_SHEET_ID", "REF_PARCEL_PARCEL_ID"))
+hrDF = hrDF.withColumn("SHEET_PARCEL_ID", F.concat("REF_PARCEL_SHEET_ID", "REF_PARCEL_PARCEL_ID"))
 
-hedgerow_buffer_distance=2
-hrDF = (hrDF
-        .withColumn("wkb" , F.col("geometry"))
-        .withColumn("buffered_geom", F.expr(f"ST_Buffer(ST_GeomFromWKB(wkb), {hedgerow_buffer_distance})"))
+hedgerow_buffer_distance = 2
+hrDF = hrDF.withColumn("wkb", F.col("geometry")).withColumn(
+    "buffered_geom", F.expr(f"ST_Buffer(ST_GeomFromWKB(wkb), {hedgerow_buffer_distance})")
 )
 
 treesDF = treesDF.withColumn("top_point", F.expr("ST_GeomFromWKT(top_point)"))
 
-hrTreesDF, hrTreesPerParcelDF, counts = get_hedgerow_trees_features(spark,
-                                                                    treesDF,
-                                                                    hrDF,
-                                                                    double_count=True
-                                                                    )
+hrTreesDF, hrTreesPerParcelDF, counts = get_hedgerow_trees_features(
+    spark, treesDF, hrDF, double_count=True
+)
 
 # COMMAND ----------
 
 counts
 
 # COMMAND ----------
-
-

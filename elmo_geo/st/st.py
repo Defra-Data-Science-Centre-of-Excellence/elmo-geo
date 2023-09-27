@@ -1,7 +1,7 @@
 from pyspark.sql import functions as F
 
 from elmo_geo.io.io2 import load_missing
-from elmo_geo.utils.types import *
+from elmo_geo.utils.types import SparkDataFrame
 
 
 def bng_index(sdf: SparkDataFrame, resolution: int = 3) -> SparkDataFrame:

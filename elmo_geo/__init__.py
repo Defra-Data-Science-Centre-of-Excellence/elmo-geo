@@ -2,6 +2,9 @@
 
 import subprocess
 
+from elmo_geo.utils.log import LOG
+from elmo_geo.utils.register import register
+
 requires = [
     # "numpy",
     "rich",
@@ -18,7 +21,3 @@ requires = [
 ]
 
 subprocess.run(["pip", "install"] + requires)
-
-
-from elmo_geo.utils.log import LOG
-from elmo_geo.utils.register import register
