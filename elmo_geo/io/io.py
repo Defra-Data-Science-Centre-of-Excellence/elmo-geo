@@ -3,10 +3,10 @@ import shutil
 import zipfile
 
 from elmo_geo import LOG
-from elmo_geo.utils.types import SparkSession
+from elmo_geo.utils.dbr import spark
 
 
-def download_link(spark: SparkSession, path: str) -> str:
+def download_link(path: str) -> str:
     """Returns html for a download link
     Parameters:
         path: Path to the file to be downloaded, must be in the format `/dbfs/` not `dbfs:/`.
