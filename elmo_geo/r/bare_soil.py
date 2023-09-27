@@ -13,7 +13,7 @@ from rioxarray.exceptions import NoDataInBounds, OneDimensionalRaster
 from shapely.geometry import Polygon
 from xarray.core.dataarray import DataArray
 
-from elmo_geo.log import LOG
+from elmo_geo import LOG
 from elmo_geo.utils.dbr import spark
 
 
