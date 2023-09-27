@@ -4,11 +4,10 @@ joins.spatial_join()"""
 import pyspark.sql.functions as F
 
 from elmo_geo import LOG
-from elmo_geo.utils.types import SparkSession
+from elmo_geo.utils.dbr import spark
 
 
 def intersect_parcels(
-    spark: SparkSession,
     path_read: str,
     path_write: str,
     path_parcels: str,

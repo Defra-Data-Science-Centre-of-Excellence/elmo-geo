@@ -65,7 +65,7 @@ def chipped_index(sdf:SparkDataFrame, grid:SparkDataFrame) -> SparkDataFrame:
 
 def index(sdf,
 	method: str = 'BNG',
-	resolution: str = None
+	resolution: str = None,
 	index_join: callable = centroid_index,
 ):
 	'''Index a SparkDataFrame

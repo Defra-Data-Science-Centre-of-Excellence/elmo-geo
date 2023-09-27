@@ -1,4 +1,9 @@
-from elm_se.utils.types import *
+from elm_se.utils.types import (
+  SparkSession, Union,
+  DataFame, SparkDataFrame, PandasDataFrame, GeoDataFrame,
+  Series, SparkSeries, PandasSeries, GeoSeries,
+  Geometry, SedonaType
+)
 import os
 import shutil
 import requests
@@ -10,13 +15,13 @@ from pyspark.sql import functions as F
 
 
 
-def GeoDataFrame_to_PandasDataFrame(df:GeoDataFrame) -> PandasDataFrame:
+def _GeoDataFrame_to_PandasDataFrame(df:GeoDataFrame) -> PandasDataFrame:
   return df.to_wkb()
 
-def PandasDataFrame_to_SparkDataFrame(df:PandasDataFrame, spark:SparkSession=None) -> SparkDataFrame:
+def _PandasDataFrame_to_SparkDataFrame(df:PandasDataFrame, spark:SparkSession=None) -> SparkDataFrame:
   return spark.createDataFrame(df)
 
-def GeoDataFrame_to_SparkDataFrame(gdf:GeoDataFrame) -> SparkDataFrame:
+def _GeoDataFrame_to_SparkDataFrame(gdf:GeoDataFrame) -> SparkDataFrame:
   return (gdf
     .pipe(GeoDataFrame_to_PandasDataFrame)
     .pipe(PandasDataFrame_to_SparkDataFrame)
@@ -36,7 +41,10 @@ def SparkDataFrame_to_GeoDataFrame(df:SparkDataFrame, column:str, crs:Union[int,
     .pipe(PandasDataFrame_to_GeoDataFrame, column=column, crs=crs)
   )
 
+
 def to_gdf(x:Union[SparkDataFrame,Geometry], column:str='geometry', crs:Union[int,str]=27700) -> GeoDataFrame:
+  '''Convert anything-ish to GeoDataFrame
+  '''
   if isinstance(x, GeoDataFrame):
     gdf = x
   elif isinstance(x, SparkDataFrame):
@@ -52,6 +60,8 @@ def to_gdf(x:Union[SparkDataFrame,Geometry], column:str='geometry', crs:Union[in
   return gdf
 
 def to_sdf(x: Union[SparkDataFrame, Geometry], crs:Union[int,str]=None) -> SparkDataFrame:
+  '''Convert anything-ish to SparkDataFrame
+  '''
   if isinstance(x, SparkDataFrame):
     sdf = x
   elif isinstance(x, PandasDataFrame):

@@ -1,9 +1,7 @@
 from shapely.ops import transform
 import pandas as pd
 import geopandas as gpd
-from pyspark.sql import functions as F
-
-from elmo_geo.utils.types import T
+from pyspark.sql import functions as F, types as T
 
 
 

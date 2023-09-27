@@ -79,7 +79,7 @@ def join(
 	sjoin: callable = sjoin_sql,
 	sjoin_kwargs: dict = {},
 ) -> SparkDataFrame:
-	'''Spatial Join with how, and optional method
+	'''Spatial Join with how
 	how: {inner, full, left, right}
 	sjoin: {elmo_geo.st.join.sjoin_sql, elmo_geo.st.join.sjoin_rdd}
 	'''
@@ -125,6 +125,12 @@ def overlap(
 	g_left, g_right = 'geometry'+lsuffix, 'geometry'+rsuffix
 	return (join(sdf_left, sdf_right, lsuffix=lsuffix, rsuffix=lsuffix, **kwargs)
 	  .withColumn('geometry', F.expr(f'ST_Intersection({g_left}, {g_right})'))
-		.withColumn('proportion', F.expr(f'ST_Area(geometry) / ST_Area({g_left})'))  # TODO: groupby
+		# TODO: groupby
+		.withColumn('proportion', F.expr(f'ST_Area(geometry) / ST_Area({g_left})'))
 		.drop(g_left, g_right)
 	)
+
+
+
+sdf = elmo_geo.st.join.overlap(left, right)
+
