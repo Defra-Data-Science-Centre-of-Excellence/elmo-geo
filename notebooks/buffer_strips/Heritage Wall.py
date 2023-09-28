@@ -7,17 +7,16 @@
 
 # COMMAND ----------
 
-from pyspark.sql import functions as F
-
-from elmo_geo.st.st import join
+from elmo_geo.io import load_missing
+from elmo_geo.st import join
 
 # COMMAND ----------
 
 sf_parcel = "dbfs:/mnt/lab/unrestricted/elm/buffer_strips/parcels.parquet"
 sf_wall = "dbfs:/mnt/lab/unrestricted/elm_data/osm/wall.parquet"
 
-sdf_parcel = spark.read.parquet(sf_parcel).withColumn("geometry", fix_wkb())
-sdf_wall = spark.read.parquet(sf_wall).withColumn("geometry", fix_wkb())
+sdf_parcel = spark.read.parquet(sf_parcel).withColumn("geometry", load_missing())
+sdf_wall = spark.read.parquet(sf_wall).withColumn("geometry", load_missing())
 
 # COMMAND ----------
 

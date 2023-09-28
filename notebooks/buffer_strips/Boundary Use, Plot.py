@@ -15,15 +15,20 @@
 
 # COMMAND ----------
 
-import sys
+from time import perf_counter
 
-sys.path.append("../")
+import contextily as ctx
+import geopandas as gpd
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import seaborn as sns
+import shapely
+from pyspark.sql import functions as F
 
 import elmo_geo
 
 elmo_geo.register()
-import geopandas as gpd
-from pyspark.sql import functions as F
 
 # COMMAND ----------
 
@@ -59,9 +64,6 @@ gdf
 
 # COMMAND ----------
 
-import geopandas as gpd
-import shapely
-
 
 def to_polygon(x):
     if isinstance(x, shapely.MultiLineString):
@@ -92,12 +94,6 @@ m
 
 # COMMAND ----------
 
-from time import perf_counter
-
-import geopandas as gpd
-import matplotlib.pyplot as plt
-import pandas as pd
-import seaborn as sns
 
 gdf = (
     gpd.read_parquet("/dbfs/tmp/awest/boundaries.parquet")
@@ -160,16 +156,10 @@ plt.xticks(rotation=45)
 None
 
 # COMMAND ----------
-
-import elmo_geo
-
-elmo_geo.register()
-import contextily as ctx
-
 sf_wall = "dbfs:/mnt/lab/unrestricted/elm_data/osm/wall.parquet"
 
 sdf = spark.read.parquet(sf_wall)
-gdf = elm_se.io.to_gdf(sdf, crs=27700)
+gdf = elmo_geo.io.to_gdf(sdf, crs=27700)
 
 ax = gdf.plot(figsize=(9, 16), color="k")
 ctx.add_basemap(ax=ax, crs=gdf.crs.to_string(), attribution=None)
@@ -177,17 +167,6 @@ ax.axis("off")
 None
 
 # COMMAND ----------
-
-import contextily as ctx
-import geopandas as gpd
-import matplotlib.pyplot as plt
-import numpy as np
-import pandas as pd
-import shapely
-
-import elmo_geo
-
-elmo_geo.register()
 
 
 def setup_plot():
@@ -209,14 +188,14 @@ def setup_plot():
 sf_neighbour = "dbfs:/mnt/lab/unrestricted/elm/elm_se/neighbouring_land_use_geometries.parquet"
 sf_boundary = "dbfs:/mnt/lab/unrestricted/elm/elm_se/boundary_use_geometries.parquet"
 
-gdf_neighbour = elm_se.io.SparkDataFrame_to_PandasDataFrame(
+gdf_neighbour = elmo_geo.io.convert.SparkDataFrame_to_PandasDataFrame(
     spark.read.parquet(sf_neighbour).filter('id_parcel == "SK46495469"')
 )
 for col in gdf_neighbour.columns[1:]:
     gdf_neighbour[col] = gpd.GeoSeries.from_wkb(gdf_neighbour[col], crs=27700)
 gdf_neighbour = gpd.GeoDataFrame(gdf_neighbour, geometry="geometry_boundary", crs=27700)
 
-gdf_boundary = elm_se.io.to_gdf(
+gdf_boundary = elmo_geo.io.to_gdf(
     spark.read.parquet(sf_boundary).filter('id_parcel == "SK46495469"'), column="geometry_boundary"
 )
 
@@ -324,7 +303,9 @@ sdf_peatland = spark.read.parquet(sf_peatland).withColumn(
     "geometry", F.expr(f"COALESCE(ST_GeomFromWKB(geometry), {null})")
 )
 
-sdf = elm_se.st.sjoin(sdf_parcel, sdf_peatland, lsuffix="_parcel", rsuffix="_peatland", distance=12)
+sdf = elmo_geo.st.join(
+    sdf_parcel, sdf_peatland, lsuffix="_parcel", rsuffix="_peatland", distance=12
+)
 
 display(sdf)
 sdf.count()
@@ -370,7 +351,7 @@ sdf.count()
 
 # plot ditches and peatland
 
-gdf_neighbour = elm_se.io.SparkDataFrame_to_PandasDataFrame(
+gdf_neighbour = elmo_geo.io.convert.SparkDataFrame_to_PandasDataFrame(
     spark.read.parquet(sf_neighbour).filter("elg_ditch AND peatland")
 )
 

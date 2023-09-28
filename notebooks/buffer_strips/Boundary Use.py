@@ -98,7 +98,7 @@ sdf_parcel = spark.read.parquet(sf_parcel).select(
 
 buf = 12
 sdf_adj = (
-    elm_se.st.sjoin(
+    elmo_geo.st.join(
         sdf_parcel,
         sdf_parcel,
         distance=12,
@@ -118,11 +118,18 @@ sdf_adj.count()
 # COMMAND ----------
 
 # DBTITLE 1,Neighbouring Land Use
-st_union = lambda col: F.expr(
-    f"ST_MakeValid(ST_SimplifyPreserveTopology(ST_PrecisionReduce(ST_MakeValid(ST_Union_Aggr({col})), 3), 0)) AS {col}"
-)
-# cross_compliance = lambda col, buf: F.expr(f'ST_MakeValid(CASE WHEN ST_GeometryType({col})!="ST_Polygon" THEN {col} ELSE ST_Buffer({col}, {buf}) END)')
-cross_compliance = lambda col, buf: F.expr(f"ST_MakeValid(ST_Buffer({col}, {buf}))")
+
+
+def st_union(col):
+    return F.expr(
+        f"ST_MakeValid(ST_SimplifyPreserveTopology(ST_PrecisionReduce(ST_MakeValid(ST_Union_Aggr({col})), 3), 0)) AS {col}"
+    )
+
+
+def cross_compliance(col, buf):
+    return F.expr(f"ST_MakeValid(ST_Buffer({col}, {buf}))")
+    # F.expr(f'ST_MakeValid(CASE WHEN ST_GeometryType({col})!="ST_Polygon" THEN {col} ELSE ST_Buffer({col}, {buf}) END)')
+
 
 sdf_parcel = spark.read.parquet(sf_parcel).select(
     "id_parcel",
@@ -165,7 +172,7 @@ sdf_neighbour = (
     .select(
         "id_parcel",
         *[
-            elm_se.io.load_missing(col).alias(col)
+            elmo_geo.io.load_missing(col).alias(col)
             for col in [
                 "geometry_boundary",
                 "geometry_adj",
@@ -188,23 +195,26 @@ sdf_neighbour.count()
 
 # DBTITLE 1,Boundary Use (geometries)
 # Splitting Usage Method
-boundary_use = lambda sdf, use, buf: (
-    sdf.withColumn("tmp", F.expr(f"ST_Buffer(geometry_{use}, {buf})"))
-    .withColumn(
-        "tmp",
-        F.expr(
-            """EXPLODE(Array(
-    Array(ST_Intersection(geometry_boundary, tmp), ST_Point(1,1)),
-    Array(ST_Difference(geometry_boundary, tmp), ST_Point(0,0))
-  ))"""
-        ),
-    )
-    .withColumn("geometry_boundary", F.expr("tmp[0]"))
-    .withColumn(f"elg_{use}", F.expr("tmp[1]==ST_Point(1,1)"))
-    .drop(f"geometry_{use}", "tmp")
-    .filter("NOT ST_IsEmpty(geometry_boundary)")
-    .withColumn("geometry_boundary", F.expr("EXPLODE(ST_Dump(geometry_boundary))"))
-)
+
+
+def boundary_use(sdf, use, buf):
+    return (
+        sdf.withColumn("tmp", F.expr(f"ST_Buffer(geometry_{use}, {buf})"))  # noqa:E128
+        .withColumn(
+            "tmp",
+            F.expr(
+                """EXPLODE(Array(
+                Array(ST_Intersection(geometry_boundary, tmp), ST_Point(1,1)),
+                Array(ST_Difference(geometry_boundary, tmp), ST_Point(0,0))
+            ))"""
+            ),
+        )
+        .withColumn("geometry_boundary", F.expr("tmp[0]"))
+        .withColumn(f"elg_{use}", F.expr("tmp[1]==ST_Point(1,1)"))
+        .drop(f"geometry_{use}", "tmp")
+        .filter("NOT ST_IsEmpty(geometry_boundary)")
+        .withColumn("geometry_boundary", F.expr("EXPLODE(ST_Dump(geometry_boundary))"))
+    )  # noqa:E128
 
 
 sdf_boundary = (

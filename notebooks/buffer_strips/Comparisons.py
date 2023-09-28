@@ -5,7 +5,6 @@
 
 # COMMAND ----------
 
-from glob import glob
 
 import pandas as pd
 
@@ -68,7 +67,7 @@ hedge = (
         feature="hedge",
         count=lambda df: df[f"sqm_buf{buf}"] > 0,
         hectarage=lambda df: df[f"sqm_buf{buf}"].fillna(0) / 10_000,
-        boundary=lambda df: df[f"m_adj"].fillna(0),
+        boundary=lambda df: df["m_adj"].fillna(0),
     )
     .melt(
         id_vars=["id_parcel", "feature"],
@@ -83,7 +82,7 @@ wall = (
         feature="wall",
         count=lambda df: df[f"sqm_buf{buf}"] > 0,
         hectarage=lambda df: df[f"sqm_buf{buf}"].fillna(0) / 10_000,
-        boundary=lambda df: df[f"m_wall"].fillna(0),
+        boundary=lambda df: df["m_wall"].fillna(0),
     )
     .melt(
         id_vars=["id_parcel", "feature"],
