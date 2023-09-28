@@ -7,7 +7,9 @@ exclude = '''(
   | build
   | dist
   | .*.ipynb
+  | elm_se/*
 )'''
 
 [tool.isort]
 profile = "black"
+skip_glob = "elm_se/**"
