@@ -47,7 +47,7 @@ for f_in, f_out in datasets:
 # elm_se.register()
 # from elm_se.io import ingest_osm
 
-import osmnx
+import osmnx  # noqa: E402
 
 osmnx.settings.cache_folder = "/databricks/driver/"
 osmnx.settings.timeout = 600

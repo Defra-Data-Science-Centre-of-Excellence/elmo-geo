@@ -1,8 +1,6 @@
 # Databricks notebook source
-import contextily as ctx
 import geopandas as gpd
 import matplotlib.pyplot as plt
-import pyogrio
 
 # COMMAND ----------
 

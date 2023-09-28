@@ -85,7 +85,10 @@ def batch_folder(path_in, ext, path_out, batch, engine):
         product = f_in.replace(path_in, "").replace(ext, "")
         f_out = path_out + product + ".parquet/"
         _sdf = batch_file(f_in, f_out, batch, engine)
-        sdf = sdf.union(_sdf) if i else _sdf
+        if i:
+            sdf = _sdf
+        else:
+            sdf = sdf.union(_sdf)
     return sdf
 
 
@@ -109,9 +112,9 @@ def convert_pyogrio(f_in, f_out, mn, mx):
 
 def convert(engine):
     if engine == "pyogrio":
-        return convert_pyogrio(f_in, f_out, mn, mx)
+        converter = convert_pyogrio
     elif engine == "fiona":
-        return convert_fiona(f_in, f_out, mn, mx)
+        converter = convert_fiona
 
     @F.udf(T.BooleanType())
     def udf_convert(f_in, f_out, mn, mx, status):

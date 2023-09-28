@@ -18,24 +18,17 @@
 import contextily as ctx
 import geopandas as gpd
 import osmnx as ox
-
-# Repo
-ox.settings.cache_folder = "/dbfs/tmp/"
-
-# SSL Issue
+import shapely
 import urllib3
+from cdap_geo.sedona import register, st_join
+from pyspark.sql import functions as F
+from sedona.sql.types import GeometryType
 
 urllib3.disable_warnings()
 ox.settings.requests_kwargs = {"verify": False}
+ox.settings.cache_folder = "/dbfs/tmp/"
+register()
 
-from cdap_geo.sedona import st_join, st_load, st_register, st_valid
-from pyspark.sql import functions as F
-from pyspark.sql import types as T
-
-st_register()
-
-
-from sedona.sql.types import GeometryType
 
 buffer = (
     gpd.tools.util.BaseGeometry.buffer if not hasattr(shapely, "buffer") else shapely.buffer

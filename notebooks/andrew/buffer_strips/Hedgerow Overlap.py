@@ -12,12 +12,9 @@
 
 # COMMAND ----------
 
-from pprint import pprint
-
 import matplotlib.pyplot as plt
 import pandas as pd
 from cdap_geo.sedona import F, st_join, st_load, st_register, st_valid
-from pyspark_dist_explore import hist
 
 st_register()
 
@@ -61,7 +58,7 @@ df_gis = (
 )
 
 
-df_g.write.parquet(f_gis, mode="overwrite")
+df_gis.write.parquet(f_gis, mode="overwrite")
 display(df_gis)
 
 # COMMAND ----------

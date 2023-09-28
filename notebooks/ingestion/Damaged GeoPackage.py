@@ -40,7 +40,7 @@ def test_gpkg_is_damaged(filepath):
         try:
             read_info(filepath)["features"]
             print(filepath)
-        except:
+        except Exception:
             pass
 
 
@@ -104,9 +104,7 @@ success = """
 /dbfs/mnt/base/unrestricted/source_rpa_spatial_data_mart/dataset_historic_common_land/format_GPKG_historic_common_land/LATEST_historic_common_land/common_land_historic.gpkg
 /dbfs/mnt/base/unrestricted/source_rpa_spatial_data_mart/dataset_england_boundary/format_GPKG_england_boundary/LATEST_england_boundary/refdata_owner.england_boundary_line.zip/refdata_owner.england_boundary_line/refdata_owner.england_boundary_line.gpkg
 /dbfs/tmp/awest/rpa-efa_hedge-2023_06_27.gpkg
-""".split(
-    "\n"
-)[
+""".split()[
     1:-1
 ]
 
@@ -142,7 +140,7 @@ df = pd.concat(
     ]
 )
 
-df.to_csv(f"/dbfs/tmp/damaged_gpkg_@3s.csv")
+df.to_csv("/dbfs/tmp/damaged_gpkg_@3s.csv")
 display(df)
 
 # COMMAND ----------

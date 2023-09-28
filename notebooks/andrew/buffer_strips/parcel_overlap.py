@@ -3,16 +3,18 @@
 
 # COMMAND ----------
 
-import sedona
-from pyspark.sql import functions as F
-from pyspark.sql import types as T
-
-sedona.register.SedonaRegistrator.registerAll(spark)
+import warnings
 
 import geopandas as gpd
 import matplotlib.pyplot as plt
 import pandas as pd
-from cdap_geo import area, intersection_area, st_join, to_gdf
+from cdap_geo import area, intersection, st_join, to_gdf
+from pyspark.sql import functions as F
+
+from elmo_geo import register
+
+register()
+
 
 # COMMAND ----------
 
@@ -89,21 +91,9 @@ df2.query("1e-5<prop")["id_left"].nunique(), df2.query(" .01<prop")["id_left"].n
 
 # COMMAND ----------
 
-gdf = to_gdf(df_parcels.filter(F.col("id_parcel").isin(ids)), crs=27700).merge(
-    df2[["id_left", "prop"]].rename(columns={"id_left": "id_parcel"})
-)
-
-f = "/dbfs/mnt/lab/unrestricted/DSMT/gis/parcels_that_overlap/2022-11-15.parquet"
-gdf.to_parquet(f)
-gdf = gpd.read_parquet(f)
-
-gdf
-
-# COMMAND ----------
-
-import warnings
-
 warnings.simplefilter(action="ignore", category=FutureWarning)
+
+gdf = df
 
 i, d = 0, dict()
 for g in gdf.geometry:
@@ -120,6 +110,18 @@ ids = sorted(d.values(), key=len, reverse=True)
 
 print(sum(len(v) for v in ids), gdf["id_parcel"].nunique())
 ids
+
+# COMMAND ----------
+
+gdf = to_gdf(df_parcels.filter(F.col("id_parcel").isin(ids)), crs=27700).merge(
+    df2[["id_left", "prop"]].rename(columns={"id_left": "id_parcel"})
+)
+
+f = "/dbfs/mnt/lab/unrestricted/DSMT/gis/parcels_that_overlap/2022-11-15.parquet"
+gdf.to_parquet(f)
+gdf = gpd.read_parquet(f)
+
+gdf
 
 # COMMAND ----------
 
@@ -158,12 +160,13 @@ wfm_ids
 
 # COMMAND ----------
 
+# x = [1, 3, 4, 10, 12, 27, 36, 43, 44, 45, 53, 73, 80, 90, 116, 118, 123, 147, 148, 151, 153, 167, 170, 171, 178, 186, 192, 197, 202, 203, 215, 221, 237, 246, 254]  # ids
+x = [2, 4, 5, 14, 16, 17, 19, 20, 22]  # wfm_ids
+
 [j for i, j in enumerate(wfm_ids) if i in x]
 
 # COMMAND ----------
 
-# x = [1, 3, 4, 10, 12, 27, 36, 43, 44, 45, 53, 73, 80, 90, 116, 118, 123, 147, 148, 151, 153, 167, 170, 171, 178, 186, 192, 197, 202, 203, 215, 221, 237, 246, 254]  # ids
-x = [2, 4, 5, 14, 16, 17, 19, 20, 22]  # wfm_ids
 
 fig, axs = plt.subplots(3, 3, figsize=(16, 9))
 axs = [ax for axx in axs for ax in axx]
@@ -190,7 +193,11 @@ wfm2
 import geopandas as gpd
 
 gpd.datasets.available
-get_example = lambda name: gpd.read_file(gpd.datasets.get_path(name)).to_crs("WGS84")
+
+
+def get_example(name):
+    return gpd.read_file(gpd.datasets.get_path(name)).to_crs("WGS84")
+
 
 naturalearth_lowres = get_example("naturalearth_lowres")
 naturalearth_cities = get_example("naturalearth_cities")

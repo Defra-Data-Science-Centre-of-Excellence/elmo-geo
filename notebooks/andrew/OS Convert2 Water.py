@@ -3,13 +3,18 @@ import os
 from glob import glob
 from math import ceil
 
-import geopandas as gpd
 import pandas as pd
 import pyogrio
+from cdap_geo.sedona import st_fromwkb, st_join, st_register
 from geopandas.io.arrow import _geopandas_to_arrow
 from pyarrow.dataset import write_dataset
 from pyspark.sql import functions as F
 from pyspark.sql import types as T
+
+st_register()
+
+
+# COMMAND ----------
 
 
 def batch_file(f_in, f_out, batch):
@@ -47,9 +52,9 @@ def convert():
     return udf_convert("f_in", "f_out", "i", "batch", "status")
 
 
-def batch_status(path_out):
+def batch_status(path_out, path_in, ext):
     f_status = path_out + "status.parquet"
-    sf_status = f_status.replace("/dbfs/", "dbfs:/")
+    # sf_status = f_status.replace("/dbfs/", "dbfs:/")
     if not os.path.exists(f_status):
         sdf = batch_folder(path_in, ext, path_out, batch)
         sdf.toPandas().to_parquet(f_status)
@@ -58,33 +63,18 @@ def batch_status(path_out):
 
 def batch_convert_folder(path_in, ext, path_out, batch=10_000, engine="pyogrio"):
     f_status = batch_status(path_out)
-    df = (
-        pd.read_parquet(f_status)
-        .pipe(spark.createDataFrame)
-        .repartition(sdf.count())
-        .withColumn("status", convert())
-        .toPandas()
-    )
+    sdf = pd.read_parquet(f_status).pipe(spark.createDataFrame)
+    sdf = sdf.repartition(sdf.count()).withColumn("status", convert()).toPandas()
     sdf.to_parquet(f_status)
     display(sdf)
 
 
 # COMMAND ----------
 
-import os
-from glob import glob
-from math import ceil
-
-import pyogrio
-from geopandas.io.arrow import _geopandas_to_arrow
-from pyarrow.dataset import write_dataset
-
-# COMMAND ----------
-
 f_in = "/dbfs/mnt/lab/unrestricted/elm_data/os/mmtopo_gpkg/wtr_fts_water.zip"
 batch = 10_000
 
-n = pyogrio.read_info(f)["features"]
+n = pyogrio.read_info(f_in)["features"]
 N = ceil(n / batch)
 for i in range(N):
     print(f"\r{i}/{N}", end="")
@@ -103,11 +93,6 @@ for i in range(N):
 # MAGIC %pip install -q git+https://github.com/aw-west-defra/cdap_geo.git
 
 # COMMAND ----------
-
-from cdap_geo.sedona import F, st_fromwkb, st_join, st_register
-
-st_register()
-
 
 sf_parcel = "dbfs:/mnt/lab/unrestricted/elm/buffer_strips/parcels.parquet/"
 sf_water = "dbfs:/mnt/lab/unrestricted/elm_data/os/mmtopo_pq2/wtr_fts_water.parquet/"

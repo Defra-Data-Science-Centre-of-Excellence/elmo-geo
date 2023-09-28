@@ -1,7 +1,8 @@
 # Databricks notebook source
+from glob import glob
+
 from pyspark.sql import Window
 from pyspark.sql import functions as F
-from pyspark.sql import types as T
 
 import elmo_geo
 
@@ -59,13 +60,11 @@ sdf.select("sindex", "sindex_batch").distinct().count()
 
 # COMMAND ----------
 
-from glob import glob
-
 glob("/dbfs/mnt/base/unrestricted/source_*[!bluesky]/**/*.csv", recursive=True)
 
 # COMMAND ----------
 
-# MAGIC %ls -lh '/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_nitrate_vulnerable_zones_2017/format_GPKG_nitrate_vulnerable_zones_2017/LATEST_nitrate_vulnerable_zones_2017/nvz_2017.csv.csv'
+# MAGIC %ls -lh '/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_nitrate_vulnerable_zones_2017/format_GPKG_nitrate_vulnerable_zones_2017/LATEST_nitrate_vulnerable_zones_2017/nvz_2017.csv.csv'  # noqa:E501
 # MAGIC
 
 # COMMAND ----------
@@ -75,7 +74,7 @@ glob("/dbfs/mnt/base/unrestricted/source_*[!bluesky]/**/*.csv", recursive=True)
 # MAGIC
 # MAGIC
 # MAGIC COPY INTO table1
-# MAGIC   FROM "dbfs:/mnt/base/unrestricted/source_defra_data_services_platform/dataset_nitrate_vulnerable_zones_2017/format_GPKG_nitrate_vulnerable_zones_2017/LATEST_nitrate_vulnerable_zones_2017/nvz_2017.csv.csv"
+# MAGIC   FROM "dbfs:/mnt/base/unrestricted/source_defra_data_services_platform/dataset_nitrate_vulnerable_zones_2017/format_GPKG_nitrate_vulnerable_zones_2017/LATEST_nitrate_vulnerable_zones_2017/nvz_2017.csv.csv"  # noqa:E501
 # MAGIC   FILEFORMAT = csv
 # MAGIC   FORMAT_OPTIONS('header'='true', 'inferSchema'='True');
 # MAGIC

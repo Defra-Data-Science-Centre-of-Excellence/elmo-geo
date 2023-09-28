@@ -68,16 +68,16 @@
 
 # COMMAND ----------
 
+import contextily as ctx
+import geopandas as gpd
 import matplotlib.pyplot as plt
-import pandas as pd
-from pyspark.sql import functions as F
-from sedona.register import SedonaRegistrator
-
-SedonaRegistrator.registerAll(spark)
-
 import shapely
 from cdap_geo.sedona import st_fromwkb, st_join, st_valid
+from pyspark.sql import functions as F
+from sedona.register import SedonaRegistrator
 from sedona.sql.types import GeometryType
+
+SedonaRegistrator.registerAll(spark)
 
 
 def st_buffer_udf(g, res, **kwargs):
@@ -163,7 +163,7 @@ sdf_rpa_hedge = (
         F.expr("ST_Length(geometry_parcel)").alias("m_parcel_boundary"),
         "m_efa",
         "m_adj",
-        #'m_adj_elg',
+        # 'm_adj_elg',
         F.expr("ST_Length(ST_Difference(ST_Boundary(geometry_parcel), uncapped_buf2))").alias(
             "m_none_hedge_boundary"
         ),
@@ -253,10 +253,6 @@ display(
 # MAGIC %md ## Plot
 
 # COMMAND ----------
-
-import contextily as ctx
-import geopandas as gpd
-import matplotlib.pyplot as plt
 
 
 def add_basemap(

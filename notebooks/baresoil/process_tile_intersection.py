@@ -19,7 +19,6 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import pyspark.sql.functions as F
 import seaborn as sns
-from pyspark.sql import SparkSession
 from pyspark.sql.functions import col, concat, expr
 
 from elmo_geo import LOG, register

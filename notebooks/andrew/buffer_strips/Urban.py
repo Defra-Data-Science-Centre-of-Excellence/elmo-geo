@@ -18,19 +18,25 @@
 
 # MAGIC
 # MAGIC %pip install -q xyzservices osdatahub
-
-# COMMAND ----------
-
-import geopandas as gpd
-import osdatahub
-
-key = "WxgUdETn6cy58WZkfwZ7wdMVLlt5eDsX"
+# MAGIC %pip install -q git+https://github.com/aw-west-defra/cdap_geo.git
 
 # COMMAND ----------
 
 from datetime import datetime
+from warnings import warn
 
+import geopandas as gpd
+import osdatahub
+import seaborn as sns
+from cdap_geo.sedona import st_join, st_load, st_register
+from pyspark.sql import functions as F
 from xyzservices import TileProvider
+
+st_register()
+
+key = "WxgUdETn6cy58WZkfwZ7wdMVLlt5eDsX"
+
+# COMMAND ----------
 
 # MapAPI
 AvailableLayers = [
@@ -109,18 +115,6 @@ df.assign(geometry=df.geometry.simplify(10)).explore()
 
 # COMMAND ----------
 
-# MAGIC %pip install -q git+https://github.com/aw-west-defra/cdap_geo.git
-
-# COMMAND ----------
-
-from cdap_geo.sedona import st_join, st_load, st_register
-from pyspark.sql import functions as F
-from pyspark.sql import types as T
-
-st_register()
-
-# COMMAND ----------
-
 sf_parcel = "dbfs:/mnt/lab/unrestricted/elm/buffer_strips/parcels.parquet/"
 sf_urban = "dbfs:/mnt/lab/unrestricted/elm_data/os/Zoomstack_UrbanAreas.parquet"
 
@@ -184,11 +178,6 @@ df = spark.read.parquet(sf_geom_out).select(
 
 df.write.parquet(sf_out)
 display(df)
-
-# COMMAND ----------
-
-import numpy as np
-import seaborn as sns
 
 # COMMAND ----------
 

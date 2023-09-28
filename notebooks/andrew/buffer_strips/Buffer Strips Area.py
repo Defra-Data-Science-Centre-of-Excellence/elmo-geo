@@ -44,9 +44,8 @@ from datetime import datetime
 import geopandas as gpd
 import matplotlib.pyplot as plt
 import pandas as pd
-from cdap_geo.sedona import st, st_join, st_load, st_register
+from cdap_geo.sedona import st_join, st_load, st_register
 from pyspark.sql import functions as F
-from pyspark.sql import types as T
 
 st_register()
 
@@ -117,7 +116,7 @@ sdf_hedge = (
         st_load("geometry").alias("geometry"),
     )
     .groupBy("id_parcel")
-    .agg(F.expr(f"ST_Union_Aggr(geometry)").alias("geometry"))
+    .agg(F.expr("ST_Union_Aggr(geometry)").alias("geometry"))
     .repartition(200, "id_parcel")
 )
 
@@ -146,7 +145,7 @@ sdf_water = (
     )
     .groupBy("id_parcel")
     .agg(
-        F.expr(f"ST_Union_Aggr(geometry)").alias("geometry"),
+        F.expr("ST_Union_Aggr(geometry)").alias("geometry"),
         F.first("geometry_left").alias("geometry_left"),
     )
     .withColumn(
@@ -295,7 +294,7 @@ df_buf12 = to_gdf(
 
 fig, axs = plt.subplots(1, 4, figsize=(16, 9))
 for i, ax in enumerate(axs):
-    df_parcel[i : i + 1].plot(ax=ax, color="C1", alpha=0.5)
-    df_buf4[i : i + 1].plot(ax=ax, color="C4", alpha=0.25)
-    df_buf12[i : i + 1].plot(ax=ax, color="C0", alpha=0.25)
-    df_hedge[i : i + 1].plot(ax=ax, color="C2")
+    df_parcel[i:i+1].plot(ax=ax, color="C1", alpha=0.5)
+    df_buf4[i:i+1].plot(ax=ax, color="C4", alpha=0.25)
+    df_buf12[i:i+1].plot(ax=ax, color="C0", alpha=0.25)
+    df_hedge[i:i+1].plot(ax=ax, color="C2")

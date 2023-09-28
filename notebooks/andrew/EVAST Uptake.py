@@ -148,7 +148,7 @@ y = x.query('farm_type == "Arable"')
 i, j = y["ha_parcel_uaa"].sum(), y["m_adj"].sum()
 
 y = x.query('farm_type == "Mixed"')
-k, l = y["ha_parcel_uaa"].sum(), y["m_adj"].sum()
+k, l = y["ha_parcel_uaa"].sum(), y["m_adj"].sum()  # noqa:E741
 
 
 pd.DataFrame(

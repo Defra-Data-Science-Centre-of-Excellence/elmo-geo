@@ -15,7 +15,6 @@
 
 # COMMAND ----------
 
-import geopandas as gpd
 import osmnx as ox
 
 ox.settings.cache_folder = "/dbfs/tmp/"

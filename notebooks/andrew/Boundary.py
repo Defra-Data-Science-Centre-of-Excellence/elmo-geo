@@ -1,8 +1,9 @@
 # Databricks notebook source
 from pyspark.sql import functions as F
-from sedona.register import SedonaRegistrator
 
-SedonaRegistrator.registerAll(spark)
+from elmo_geo import register
+
+register()
 
 # COMMAND ----------
 
@@ -13,7 +14,10 @@ sf_out = "dbfs:/mnt/lab/unrestricted/elm/buffer_strips/boundary.parquet/"
 # COMMAND ----------
 
 buf = (
-    lambda x: f"ST_Area(ST_Intersection(ST_MakeValid(ST_Buffer(ST_Boundary(geometry), {x})), geometry))/10000 AS ha_buf{x}"
+    lambda x: f"""ST_Area(ST_Intersection(
+        ST_MakeValid(ST_Buffer(ST_Boundary(geometry), {x})),
+        geometry
+    )) / 10000 AS ha_buf{x}"""
 )
 
 sdf = (

@@ -3,12 +3,16 @@
 
 # COMMAND ----------
 
-import geopandas as gpd
-import numpy as np
 import pandas as pd
-from cdap_geo import buffer, pointify, st_join, st_register, to_gdf, to_sdf, unary_union
+from cdap_geo import (
+    buffer,
+    pointify,
+    st_join,
+    st_register,
+    unary_union,
+    write_geoparquet,
+)
 from pyspark.sql import functions as F
-from pyspark.sql import types as T
 
 st_register()
 
@@ -115,8 +119,8 @@ fl = df_felling_licences.filter(
         [
             "Sel Fell/Thin (Conditional)",
             "Clear Fell (Conditional)",
-            #'Refused FLA',
-            #'Single Tree',
+            # 'Refused FLA',
+            # 'Single Tree',
             "Clear Fell (Unconditional)",
             "Sel Fell/Thin (Unconditional)",
         ]
@@ -200,7 +204,7 @@ for right, name, sign in zip(
     [+1, +1, +1, +1, -1, -1],
 ):
     if name == "Living England":
-        right = right.withColumn("geometry", cdap_geo.buffer("geometry", r))
+        right = right.withColumn("geometry", buffer("geometry", r))
     df = (
         st_join(parcels, right, from_wkb=True, lsuffix="_parcel", rsuffix="")
         .drop("geometry_parcel")
@@ -217,13 +221,6 @@ display(df)
 
 # COMMAND ----------
 
-from cdap_geo.utils import wkb
-
-
-@F.udf(returnType=T.BinaryType())
-def unary_union(geoms):
-    return sum(wkb(geom) for geom in geoms).wkb
-
 
 df2 = (
     df.groupBy("id_business", "id_parcel")
@@ -238,12 +235,12 @@ display(df2)
 
 # COMMAND ----------
 
-business, parcel, commercial_woodland_area, amenity_woodland_area
+# business, parcel, commercial_woodland_area, amenity_woodland_area
 
-stats
-distro - business
-distro - parcel
-distro - farm_type, farm_size
+# stats
+# distro - business
+# distro - parcel
+# distro - farm_type, farm_size
 
 
 # COMMAND ----------

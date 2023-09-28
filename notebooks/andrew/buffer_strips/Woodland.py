@@ -6,12 +6,15 @@
 import os
 
 import geopandas as gpd
-from cdap_geo.os import OSTileProvider
+import pandas as pd
+
+# from cdap_geo.os import OSTileProvider
 
 key = "WxgUdETn6cy58WZkfwZ7wdMVLlt5eDsX"
 
 # COMMAND ----------
 
+product = "wtr-fts-water"
 f = f"/dbfs/mnt/lab/unrestricted/elm_data/os/{product}.parquet"
 f_parcel = None
 
@@ -50,7 +53,7 @@ for i in range(-1, precision):
     x, y = x - dx, y - dy
     step //= N
     print(x, y, i, j)
-    result += letters_split5[i][j]
+    result += letters_split[i][j]
 result
 
 # COMMAND ----------
@@ -85,8 +88,8 @@ def bng(x: int, y: int, *, precision: int = 1) -> str:
     assert (
         BNG_LIMITS[1] <= y < BNG_LIMITS[3]
     ), f"{y:_} not within BNG range[{BNG_LIMITS[1]:_}, {BNG_LIMITS[3]:_})"
-    L = lambda a: (a // 100_000) * 100_000
-    D = lambda b: f"{int(b)%100_000:05d}"[:precision]
+    L = lambda a: (a // 100_000) * 100_000  # noqa:E731
+    D = lambda b: f"{int(b)%100_000:05d}"[:precision]  # noqa:E731
     return BNG_LOOKUP[L(x), L(y)] + D(x) + D(y)
 
 
@@ -129,7 +132,7 @@ def df_to_geoparquet(df, path_out, name):
     )
 
 
-def writer_os(key: str, product: str, bbox: list, path_out: str, name: str) -> int:
+def writer_os(df, key: str, product: str, bbox: list, path_out: str, name: str) -> int:
     result = os_features(key, product, bbox)
     count = len(result["features"])
     if count:
@@ -161,7 +164,7 @@ def os_loop_writer(key: str, product: str, path_out: str, df: PandasDataFrame) -
         bbox, name = df.at[i, "bbox"], df.at[i, "name"]
         pbar.set_description(name)
         if df.at[i, "count"] is None:
-            df.at[i, "count"] = writer_os(key, product, bbox, path_out, name)
+            df.at[i, "count"] = writer_os(df, key, product, bbox, path_out, name)
     return df
 
 
@@ -212,7 +215,7 @@ def download_file(url, path, retry_count, retry_delay):
 
 
 def download_files(urls, path, num_retries=3, retry_delay=60):
-    _dl = lambda url: download_file(url, path, num_retries, retry_delay)
+    _dl = lambda url: download_file(url, path, num_retries, retry_delay)  # noqa:E731
     sc.parallelize(urls).map(_dl).collect()
 
 

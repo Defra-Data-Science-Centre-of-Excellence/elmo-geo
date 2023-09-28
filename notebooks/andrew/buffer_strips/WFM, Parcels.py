@@ -5,6 +5,8 @@
 
 import geopandas as gpd
 from fiona import listlayers
+from pyspark.sql import functions as F
+from pyspark_vector_files.gpkg import read_gpkg
 
 # COMMAND ----------
 

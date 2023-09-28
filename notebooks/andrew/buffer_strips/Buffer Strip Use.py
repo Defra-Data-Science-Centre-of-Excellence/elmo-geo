@@ -8,7 +8,6 @@ from datetime import datetime
 
 import geopandas as gpd
 import matplotlib.pyplot as plt
-import pandas as pd
 from cdap_geo.sedona import F, st, st_register
 
 st_register()
