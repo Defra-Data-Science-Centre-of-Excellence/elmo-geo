@@ -2,9 +2,14 @@ import os
 import shutil
 import zipfile
 
-from pyspark.sql.session import SparkSession
+from pyspark.dbutils import DBUtils
+from pyspark.sql import SparkSession
 
 from elmo_geo.log import LOG
+
+# Define SparkSession and dbutils
+spark = SparkSession.getActiveSession()
+dbutils = DBUtils(spark)
 
 
 def download_link(spark: SparkSession, path: str) -> str:

@@ -447,6 +447,22 @@ nfc_ammonia_emmissions = Dataset(
     output_coltypes={"status": "category"},
 )
 
+tiles = Dataset(
+    name="tiles",
+    source="sentinel",
+    versions=[
+        Version(
+            name="2023_02_07",
+            path_read=("/dbfs/mnt/lab/unrestricted/elm/elmo/baresoil/tiles.parquet"),
+        ),
+    ],
+    keep_cols=[
+        "geometry",
+        "Name",
+    ],
+    rename_cols={"Name": "tile"},
+)
+
 
 datasets = [
     national_park,
@@ -466,5 +482,6 @@ datasets = [
     flood_risk_management,
     keeping_rivers_cool_riparian_buffers,
     nfc_ammonia_emmissions,
+    tiles,
 ]
 """A list of all defined datasets"""
