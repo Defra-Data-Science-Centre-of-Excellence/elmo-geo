@@ -3,6 +3,7 @@ import geopandas as gpd
 from pyspark.sql import functions as F
 
 from elmo_geo import register
+from elmo_geo.utils.misc import dbfs
 
 register()
 
@@ -18,14 +19,6 @@ f_out = {
     1_000: "/dbfs/mnt/lab/unrestricted/elm/buffer_strips/1km_wfm.parquet",
     100: "/dbfs/mnt/lab/unrestricted/elm/buffer_strips/ha_wfm.parquet",
     "parcel": "/dbfs/mnt/lab/unrestricted/elm/buffer_strips/parcel_wfm.parquet",
-}
-
-sf_out = {
-    100_000: "dbfs:/mnt/lab/unrestricted/elm/buffer_strips/100km_wfm.parquet",
-    10_000: "dbfs:/mnt/lab/unrestricted/elm/buffer_strips/10km_wfm.parquet",
-    1_000: "dbfs:/mnt/lab/unrestricted/elm/buffer_strips/1km_wfm.parquet",
-    100: "dbfs:/mnt/lab/unrestricted/elm/buffer_strips/ha_wfm.parquet",
-    "parcel": "dbfs:/mnt/lab/unrestricted/elm/buffer_strips/parcel_wfm.parquet",
 }
 
 # COMMAND ----------
@@ -79,7 +72,7 @@ df = (
 )
 
 # Output
-dbutils.fs.rm(sf_out[res], recurse=True)
+dbutils.fs.rm(dbfs(f_out[res], True), recurse=True)
 df.toPandas().to_parquet(f_out[res])
 display(df)
 
@@ -89,7 +82,7 @@ for res in [100_000, 10_000, 1000, 100]:
     print(res)
 
     # Gridify
-    df = spark.read.parquet(sf_out["parcel"])
+    df = spark.read.parquet(dbfs(f_out["parcel"], True))
     df = (
         df.withColumn("x", F.expr(f"FLOOR(x/{res})*{res}"))
         .withColumn("y", F.expr(f"FLOOR(y/{res})*{res}"))
@@ -112,7 +105,7 @@ for res in [100_000, 10_000, 1000, 100]:
     )
 
     # Output
-    dbutils.fs.rm(sf_out[res], recurse=True)
+    dbutils.fs.rm(dbfs(f_out[res], True), recurse=True)
     if res in [1000, 100]:
         df.drop("geometry").toPandas().to_parquet(f_out[res])
     else:
