@@ -2,8 +2,9 @@ import os
 import shutil
 import zipfile
 
+from pyspark.sql.session import SparkSession
+
 from elmo_geo import LOG
-from elmo_geo.utils.types import SparkSession
 
 
 def download_link(spark: SparkSession, path: str) -> str:
