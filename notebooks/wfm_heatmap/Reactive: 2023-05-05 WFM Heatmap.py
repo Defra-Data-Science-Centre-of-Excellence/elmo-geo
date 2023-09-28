@@ -28,7 +28,7 @@ res = "parcel"
 # Denormalise WFM
 df_wfm = spark.read.parquet(sf_wfm)
 for col in df_wfm.columns:
-    if any(col.startswith(x) for x in ["gmpn_", "gmplu_"]):
+    if col.startswith(("gmpn_", "gmplu_")):
         df_wfm = df_wfm.drop(col)
     elif col.startswith("tph_"):
         col_new = col.replace("tph_", "t_")
