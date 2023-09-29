@@ -9,7 +9,7 @@
 
 # COMMAND ----------
 
-# MAGIC %pip install contextily
+# MAGIC %pip install contextily rich
 
 # COMMAND ----------
 
@@ -25,7 +25,8 @@ from pyspark.sql import functions as F
 from shapely import from_wkb, from_wkt
 
 from elmo_geo import register
-from elmo_geo.io import io2 as io
+import elmo_geo.io as io
+from elmo_geo.io.convert import SparkDataFrame_to_PandasDataFrame
 from elmo_geo.utils import types
 from elmo_geo.utils.dbr import spark
 
@@ -613,46 +614,46 @@ sdf_vom_td = (
 # COMMAND ----------
 
 # Create geo dataframes
-gdf_parcels = io.SparkDataFrame_to_PandasDataFrame(sdf_parcels)
+gdf_parcels = SparkDataFrame_to_PandasDataFrame(sdf_parcels)
 gdf_parcels = gpd.GeoDataFrame(
     gdf_parcels, geometry=gpd.GeoSeries.from_wkb(gdf_parcels["geometry"], crs=27700), crs=27700
 )
 
-gdf_hr = io.SparkDataFrame_to_PandasDataFrame(sdf_hr)
+gdf_hr = SparkDataFrame_to_PandasDataFrame(sdf_hr)
 gdf_hr = gpd.GeoDataFrame(
     gdf_hr, geometry=gpd.GeoSeries.from_wkb(gdf_hr["geometry_hedge"], crs=27700), crs=27700
 )
 
-gdf_woodland = io.SparkDataFrame_to_PandasDataFrame(sdf_nfi)
+gdf_woodland = SparkDataFrame_to_PandasDataFrame(sdf_nfi)
 gdf_woodland = gpd.GeoDataFrame(
     gdf_woodland,
     geometry=gpd.GeoSeries.from_wkb(gdf_woodland["geometry_woodland"], crs=27700),
     crs=27700,
 )
 
-# gdf_other_woody_vom = io.SparkDataFrame_to_PandasDataFrame(sdf_other_woody_vom)
+# gdf_other_woody_vom = SparkDataFrame_to_PandasDataFrame(sdf_other_woody_vom)
 # gdf_other_woody_vom = gpd.GeoDataFrame(gdf_other_woody_vom, geometry = gpd.GeoSeries.from_wkb(gdf_other_woody_vom['geometry_vom_td'], crs=27700), crs = 27700 )
 
-# gdf_other_woody_tow = io.SparkDataFrame_to_PandasDataFrame(sdf_other_woody_tow)
+# gdf_other_woody_tow = SparkDataFrame_to_PandasDataFrame(sdf_other_woody_tow)
 # gdf_other_woody_tow = gpd.GeoDataFrame(gdf_other_woody_tow, geometry = gpd.GeoSeries.from_wkb(gdf_other_woody_tow['geometry_tow'], crs=27700), crs = 27700 )
 
-gdf_other_woody_segments = io.SparkDataFrame_to_PandasDataFrame(sdf_other_woody_segments)
+gdf_other_woody_segments = SparkDataFrame_to_PandasDataFrame(sdf_other_woody_segments)
 gdf_other_woody_segments = gpd.GeoDataFrame(
     gdf_other_woody_segments,
     geometry=gpd.GeoSeries.from_wkb(gdf_other_woody_segments["geometry_segment"], crs=27700),
     crs=27700,
 )
 
-# gdf_tow = io.SparkDataFrame_to_PandasDataFrame(sdf_tow)
+# gdf_tow = SparkDataFrame_to_PandasDataFrame(sdf_tow)
 # gdf_tow = gpd.GeoDataFrame(gdf_tow, geometry = gpd.GeoSeries.from_wkb(gdf_tow['geometry'], crs=27700), crs = 27700 )
 
 # COMMAND ----------
 
-gdf_wb = io.SparkDataFrame_to_PandasDataFrame(sdf_wb)
+gdf_wb = SparkDataFrame_to_PandasDataFrame(sdf_wb)
 
 # COMMAND ----------
 
-gdf_relict_segments = io.SparkDataFrame_to_PandasDataFrame(sdf_relict_segments)
+gdf_relict_segments = SparkDataFrame_to_PandasDataFrame(sdf_relict_segments)
 gdf_relict_segments = gpd.GeoDataFrame(
     gdf_relict_segments,
     geometry=gpd.GeoSeries.from_wkb(gdf_relict_segments["geometry"], crs=27700),
@@ -661,14 +662,14 @@ gdf_relict_segments = gpd.GeoDataFrame(
 
 # COMMAND ----------
 
-gdf_vom_td = io.SparkDataFrame_to_PandasDataFrame(sdf_vom_td)
+gdf_vom_td = SparkDataFrame_to_PandasDataFrame(sdf_vom_td)
 gdf_vom_td = gpd.GeoDataFrame(
     gdf_vom_td, geometry=gpd.GeoSeries.from_wkb(gdf_vom_td["geometry"], crs=27700), crs=27700
 )
 
 # COMMAND ----------
 
-gdf_available_segments = io.SparkDataFrame_to_PandasDataFrame(sdf_available_segments)
+gdf_available_segments = SparkDataFrame_to_PandasDataFrame(sdf_available_segments)
 gdf_available_segments = gpd.GeoDataFrame(
     gdf_available_segments,
     geometry=gpd.GeoSeries.from_wkb(gdf_available_segments["geometry"], crs=27700),

@@ -1,6 +1,6 @@
 import osmnx
 
-from elmo_geo.st import load_geometry
+from elmo_geo.io.geometry import load_geometry
 from elmo_geo.utils.dbr import spark
 from elmo_geo.utils.misc import dbfs
 from elmo_geo.utils.settings import BATCHSIZE

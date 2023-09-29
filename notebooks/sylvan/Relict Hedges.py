@@ -170,8 +170,8 @@ from pyspark.sql import types as T
 from shapely.geometry import LineString
 
 from elmo_geo import register
-from elmo_geo.io import io2 as io
-from elmo_geo.st import st
+import elmo_geo.io as io
+from elmo_geo import st
 from elmo_geo.utils.dbr import spark
 
 register()
@@ -242,7 +242,7 @@ sdf_hedge = spark.read.parquet(sf_efa_hedge).select(
     "LENGTH",
     io.load_geometry("wkb_geometry").alias("geometry"),
 )
-sdf_hedge = st.sjoin(
+sdf_hedge = st.join(
     sdf_parcels, sdf_hedge, distance=BUFFER, lsuffix="_segjoin", rsuffix="_hedge", spark=spark
 )
 
@@ -281,16 +281,16 @@ sdf_woodland = (sdf_nfi
                 .groupby("key")
                 .agg(F.expr(f'ST_Union_Aggr(geometry)  AS geometry'))
 )
-sdf_woodland = st.sjoin(sdf_parcel_segments, sdf_woodland, distance=4, lsuffix='_segjoin', rsuffix='_woodland', spark=spark)
+sdf_woodland = st.join(sdf_parcel_segments, sdf_woodland, distance=4, lsuffix='_segjoin', rsuffix='_woodland', spark=spark)
 """
 
 sdf_woodland = (
-    st.sjoin(
+    st.join(
         sdf_parcels, sdf_nfi, distance=BUFFER, lsuffix="_segjoin", rsuffix="_woodland", spark=spark
     )
-    # .union(st.sjoin(sdf_parcel_segments, sdf_fl, distance=4, lsuffix='_segjoin', rsuffix='_woodland'))
-    # .union(st.sjoin(sdf_parcel_segments, sdf_cf, distance=4, lsuffix='_segjoin', rsuffix='_woodland'))
-    # .union(st.sjoin(sdf_parcel_segments, sdf_awi, distance=4, lsuffix='_segjoin', rsuffix='_woodland'))
+    # .union(st.join(sdf_parcel_segments, sdf_fl, distance=4, lsuffix='_segjoin', rsuffix='_woodland'))
+    # .union(st.join(sdf_parcel_segments, sdf_cf, distance=4, lsuffix='_segjoin', rsuffix='_woodland'))
+    # .union(st.join(sdf_parcel_segments, sdf_awi, distance=4, lsuffix='_segjoin', rsuffix='_woodland'))
 )
 
 # COMMAND ----------
@@ -558,7 +558,7 @@ sf_tow_dissolved_sp = "dbfs:/mnt/lab/unrestricted/elm/forest_research/tow_dissol
 sdf_tow = spark.read.parquet(sf_tow_dissolved_sp)
 
 sdf_other_woody_tow = (
-  st.sjoin(sdf_available_segments, sdf_tow, distance=BUFFER, lsuffix='_segjoin', rsuffix='_tow', spark=spark)
+  st.join(sdf_available_segments, sdf_tow, distance=BUFFER, lsuffix='_segjoin', rsuffix='_tow', spark=spark)
 )
 """
 
@@ -586,7 +586,7 @@ sdf_vom_td = (
         "geometry", io.load_geometry(column="top_point", encoding_fn="ST_GeomFromText")
     )  # Use coordinate to join to parcels for efficiency
 )
-sdf_other_woody_vom = st.sjoin(
+sdf_other_woody_vom = st.join(
     sdf_available_segments,
     sdf_vom_td,
     distance=BUFFER,

@@ -36,7 +36,7 @@ def tree_count(x):
         f"""
         CAST(
             ST_Intersects(
-                ST_MakeValid(ST_Buffer(geom_left, {x})), 
+                ST_MakeValid(ST_Buffer(geom_left, {x})),
                 ST_MakeValid(geom_right)
                 ) AS INTEGER
             )as c{x}"""
@@ -48,7 +48,7 @@ def tree_intersection_length(x):
         f"""
         ST_Length(
             ST_Intersection(
-                ST_MakeValid(ST_Buffer(geom_left, {x})), 
+                ST_MakeValid(ST_Buffer(geom_left, {x})),
                 ST_MakeValid(geom_right)
             )
         ) as c{x}"""
@@ -539,7 +539,7 @@ def get_interior_trees_features(
             f"""
         CAST(
             ST_Intersects(
-                ST_MakeValid(ST_Difference(parcel_geom, ST_MakeValid(ST_Buffer(perimeter_geom, {x})))), 
+                ST_MakeValid(ST_Difference(parcel_geom, ST_MakeValid(ST_Buffer(perimeter_geom, {x})))),
                 ST_MakeValid(geom_right)
                 ) AS INTEGER
             )as c{x}"""

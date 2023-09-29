@@ -1,5 +1,5 @@
 # Databricks notebook source
-# MAGIC %pip install contextily
+# MAGIC %pip install contextily rich
 
 # COMMAND ----------
 

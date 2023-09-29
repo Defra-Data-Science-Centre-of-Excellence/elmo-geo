@@ -21,7 +21,7 @@ from tree_features import (
 )
 
 from elmo_geo import register
-from elmo_geo.st.join import spatial_join
+from elmo_geo.st.join import sjoin_rdd
 from elmo_geo.utils.dbr import spark
 
 # COMMAND ----------
@@ -214,7 +214,7 @@ crowns = treesDF.select("crown_poly_raster").withColumn(
 )
 treesPointsDF = treesDF.drop("crown_poly_raster")
 
-treesAlignedDF = spatial_join(
+treesAlignedDF = sjoin_rdd(
     crowns,
     treesPointsDF,
     spark,
@@ -351,7 +351,7 @@ parcelsDF = parcelsDF.withColumn("geometry", F.col("perimeter_geom_buf"))
 # COMMAND ----------
 
 # Join trees with buffered percel perimeter
-pTreesDF = spatial_join(
+pTreesDF = sjoin_rdd(
     parcelsDF,
     treesDF,
     spark,
@@ -584,7 +584,7 @@ parcelsDF = parcelsDF.withColumn(
 )  # parcel interior, with buffered perimeter removed
 treesDF = treesDF.withColumn("geometry", F.col("top_point"))  # tree top coordinate
 
-iTreesDF = spatial_join(
+iTreesDF = sjoin_rdd(
     parcelsDF,
     treesDF,
     spark,

@@ -37,7 +37,7 @@ import pandas as pd
 from pyspark.sql import functions as F
 
 from elmo_geo import register
-from elmo_geo.io.geometry import load_geometry
+import elmo_geo.io as io
 from elmo_geo.st import st
 from elmo_geo.utils.types import SparkDataFrame
 from elmo_geo.utils.dbr import spark
@@ -298,16 +298,18 @@ simplify_tollerance = 2
 
 sdf_vom = (
     spark.read.parquet(output_trees_path)
-    .withColumn("geometry_orig", load_geometry("crown_poly_raster", encoding_fn="ST_GeomFromText"))
+    .withColumn(
+        "geometry_orig", io.load_geometry("crown_poly_raster", encoding_fn="ST_GeomFromText")
+    )
     .withColumn(
         "geometry", F.expr(f"ST_SimplifyPreserveTopology(geometry_orig, {simplify_tollerance})")
     )
-    .withColumn("top_point", load_geometry("top_point", encoding_fn="ST_GeomFromText"))
+    .withColumn("top_point", io.load_geometry("top_point", encoding_fn="ST_GeomFromText"))
     .repartition(10_000)
 )
 sdf_nfi = (
     spark.read.parquet(nfi_path)
-    .withColumn("geometry_orig", load_geometry("wkt", encoding_fn="ST_GeomFromText"))
+    .withColumn("geometry_orig", io.load_geometry("wkt", encoding_fn="ST_GeomFromText"))
     .withColumn(
         "geometry", F.expr(f"ST_SimplifyPreserveTopology(geometry_orig, {simplify_tollerance})")
     )
@@ -318,7 +320,7 @@ sdf_tow_li = spark.read.parquet(tow_lidar_parquet_output)
 sdf_tow_sp = spark.read.parquet(tow_sp_parquet_output)
 sdf_tow = (
     sdf_tow_li.union(sdf_tow_sp.select(*list(sdf_tow_li.columns)))
-    .withColumn("geometry_orig", load_geometry("geometry"))
+    .withColumn("geometry_orig", io.load_geometry("geometry"))
     .withColumn(
         "geometry", F.expr(f"ST_SimplifyPreserveTopology(geometry_orig, {simplify_tollerance})")
     )
@@ -331,7 +333,7 @@ sdf_tow = (
 sdf_sampled_tiles = (
     spark.createDataFrame(df_sampled_tiles)
     .repartition(10, "major_grid", "tile_name")
-    .withColumn("geometry", load_geometry("geometry"))
+    .withColumn("geometry", io.load_geometry("geometry"))
 )
 
 sdf_vom_sample = st.sjoin(
