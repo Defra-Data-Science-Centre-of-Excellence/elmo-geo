@@ -10,13 +10,11 @@ Tree Features:
 * Unsure of how to define this feature.
 """
 import itertools
-from typing import Callable, Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 from pyspark.sql import functions as F
 
 from elmo_geo import LOG, register
-from elmo_geo.st.joins import spatial_join
-from elmo_geo.utils.dbr import spark
 
 # from elmo_geo.st.st import sjoin
 from elmo_geo.utils.types import SparkDataFrame, SparkSession
@@ -27,28 +25,34 @@ register()
 # Define functions that are used in geocomputation operations
 #
 
+
 # Define buffer function
-buf = lambda col, x: F.expr(f"ST_MakeValid(ST_Buffer({col}, {x}))")
+def buf(col, x):
+    return F.expr(f"ST_MakeValid(ST_Buffer({col}, {x}))")
 
-tree_count = lambda x: F.expr(
-    f"""
-                            CAST(
-                                ST_Intersects(
-                                    ST_MakeValid(ST_Buffer(geom_left, {x})), 
-                                    ST_MakeValid(geom_right)
-                                    ) AS INTEGER
-                                )as c{x}"""
-)
 
-tree_intersection_length = lambda x: F.expr(
-    f"""
-                                            ST_Length(
-                                                ST_Intersection(
-                                                    ST_MakeValid(ST_Buffer(geom_left, {x})), 
-                                                    ST_MakeValid(geom_right)
-                                                )
-                                            ) as c{x}"""
-)
+def tree_count(x):
+    return F.expr(
+        f"""
+        CAST(
+            ST_Intersects(
+                ST_MakeValid(ST_Buffer(geom_left, {x})), 
+                ST_MakeValid(geom_right)
+                ) AS INTEGER
+            )as c{x}"""
+    )
+
+
+def tree_intersection_length(x):
+    return F.expr(
+        f"""
+        ST_Length(
+            ST_Intersection(
+                ST_MakeValid(ST_Buffer(geom_left, {x})), 
+                ST_MakeValid(geom_right)
+            )
+        ) as c{x}"""
+    )
 
 
 def sjoin(
@@ -474,6 +478,7 @@ def get_perimeter_trees_features(
         double_count,
     )
 
+    """
     counts = feature_tree_and_parcel_counts(
         parcelsDF,
         perimTreesDF,
@@ -481,6 +486,7 @@ def get_perimeter_trees_features(
         bufferDistances,
         [countFeatureName, lenFeatureName],
     )
+    """
 
     report_buffer_distance = 2
     nTreeParcels = (
@@ -528,15 +534,16 @@ def get_interior_trees_features(
         "geometry", F.col("parcel_geom")
     )  # parcel interior, with buffered perimeter removed
 
-    interior_tree_count = lambda x: F.expr(
-        f"""
-                                            CAST(
-                                                ST_Intersects(
-                                                    ST_MakeValid(ST_Difference(parcel_geom, ST_MakeValid(ST_Buffer(perimeter_geom, {x})))), 
-                                                    ST_MakeValid(geom_right)
-                                                    ) AS INTEGER
-                                                )as c{x}"""
-    )
+    def interior_tree_count(x):
+        return F.expr(
+            f"""
+        CAST(
+            ST_Intersects(
+                ST_MakeValid(ST_Difference(parcel_geom, ST_MakeValid(ST_Buffer(perimeter_geom, {x})))), 
+                ST_MakeValid(geom_right)
+                ) AS INTEGER
+            )as c{x}"""
+        )
 
     featureName = "int_trees_count"
     double_count = False
@@ -683,7 +690,7 @@ def get_parcel_tree_features(
     parcelsDF = make_parcel_geometries(parcelsDF)
     treesDF = treesDF.withColumn("top_point", F.expr("ST_GeomFromWKT(top_point)"))
     hrDF = hrDF.withColumn("wkb", F.col("geometry")).withColumn(
-        "geometry_hedge", F.expr(f"ST_MakeValid(ST_GeomFromWKB(wkb))")
+        "geometry_hedge", F.expr("ST_MakeValid(ST_GeomFromWKB(wkb))")
     )
 
     # Create unique parcel id

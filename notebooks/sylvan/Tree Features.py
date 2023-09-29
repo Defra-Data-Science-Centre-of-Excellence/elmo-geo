@@ -96,15 +96,10 @@
 
 # COMMAND ----------
 
-import geopandas as gpd
-import numpy as np
-import pandas as pd
-from pyspark.sql import functions as F
-from shapely import from_wkt
-from shapely.geometry import Polygon
-from tree_features import *
+from tree_features import get_parcel_tree_features
 
-from elmo_geo import LOG, register
+from elmo_geo import register
+from elmo_geo.utils.dbr import spark
 
 # COMMAND ----------
 

@@ -4,34 +4,27 @@
 
 # COMMAND ----------
 
-import os
-import re
-import sys
-from itertools import chain
-from typing import Iterator, List, Optional, Tuple
-
-import contextily as ctx
 import geopandas as gpd
-import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
-import seaborn as sns
-from matplotlib.ticker import FuncFormatter, PercentFormatter
 from pyspark.sql import functions as F
-from pyspark.sql.types import FloatType, StringType, StructField, StructType
 from shapely import from_wkt
 from shapely.geometry import Polygon
-from tree_features import *
 
-from elmo_geo import LOG, register
-from elmo_geo.st.joins import spatial_join
+from tree_features import (
+    make_parcel_geometries,
+    get_perimeter_trees_features,
+    get_interior_trees_features,
+    get_parcel_perimeter_and_interior_tree_features,
+    get_waterbody_trees_features,
+    get_hedgerow_trees_features,
+)
+
+from elmo_geo import register
+from elmo_geo.st.join import spatial_join
+from elmo_geo.utils.dbr import spark
 
 # COMMAND ----------
-
-
-# COMMAND ----------
-
 
 register()
 
@@ -280,7 +273,7 @@ df_trees.shape, df_parcels.shape
 
 # COMMAND ----------
 
-'''
+"""
 gcols = ['parcel_geom', 'perimeter_geom', 'perimeter_geom_buf', 'interior_geom', 'top_point', 'crown_poly_raster', 'geom_right', 'geom_left']
 #gcols = ['geom_left', 'geom_right']
 for c in gcols:
@@ -291,41 +284,45 @@ for c in gcols:
             continue
 
 gdf = gpd.GeoDataFrame(gdf, geometry='perimeter_geom_buf')
-
+"""
 # COMMAND ----------
 
 df_trees = make_geoms(df_trees, gcols)
-gdf_trees = gpd.GeoDataFrame(df_trees, geometry='geometry')
+gdf_trees = gpd.GeoDataFrame(df_trees, geometry="geometry")
 gdf_trees.head()
 
 # COMMAND ----------
 
 # Check alignment between tree points and crowns
-f, ax = plt.subplots(figsize = (12,12))
+f, ax = plt.subplots(figsize=(12, 12))
 
-#gdf_trees.plot(ax=ax, edgecolor='k', linewidth=0.5)
-gdf_trees.set_geometry('crown_poly_raster').plot(ax=ax, facecolor='grey', edgecolor='k', linewidth=0.5, alpha=0.7)
+# gdf_trees.plot(ax=ax, edgecolor='k', linewidth=0.5)
+gdf_trees.set_geometry("crown_poly_raster").plot(
+    ax=ax, facecolor="grey", edgecolor="k", linewidth=0.5, alpha=0.7
+)
 
 
-#ax.set_xlim(xmin = 460650, xmax=460800)
-#ax.set_ylim(ymin = 256950, ymax=257100)
+# ax.set_xlim(xmin = 460650, xmax=460800)
+# ax.set_ylim(ymin = 256950, ymax=257100)
 
 
 # COMMAND ----------
 
 # Check alignment between tree points and crowns
-f, ax = plt.subplots(figsize = (12,12))
+f, ax = plt.subplots(figsize=(12, 12))
 
-gdf_trees.set_geometry('top_point').plot(ax=ax, edgecolor='k', linewidth=0.5)
-gdf_trees.set_geometry('crown_poly_raster').plot(ax=ax, facecolor='grey', edgecolor='k', linewidth=0.5, alpha=0.7)
+gdf_trees.set_geometry("top_point").plot(ax=ax, edgecolor="k", linewidth=0.5)
+gdf_trees.set_geometry("crown_poly_raster").plot(
+    ax=ax, facecolor="grey", edgecolor="k", linewidth=0.5, alpha=0.7
+)
 
 
-#ax.set_xlim(xmin = 460650, xmax=460800)
-#ax.set_ylim(ymin = 256950, ymax=257100)
+# ax.set_xlim(xmin = 460650, xmax=460800)
+# ax.set_ylim(ymin = 256950, ymax=257100)
 
 # COMMAND ----------
 
-gdf_trees.apply(lambda row: row['crown_poly_raster'].contains(row['top_point']), axis=1).all()
+gdf_trees.apply(lambda row: row["crown_poly_raster"].contains(row["top_point"]), axis=1).all()
 
 # COMMAND ----------
 
@@ -344,7 +341,7 @@ parcelsDF = make_parcel_geometries(parcelsDF, parcel_buffer_distance)
 treesDF = treesDF.withColumn("top_point", F.expr("ST_GeomFromWKT(top_point)"))
 
 # Create unique parcel id
-parcelsDF = parcelsDF.withColumn("SHEET_PARCEL_ID", F.concat("SHEET_ID","PARCEL_ID"))
+parcelsDF = parcelsDF.withColumn("SHEET_PARCEL_ID", F.concat("SHEET_ID", "PARCEL_ID"))
 
 # COMMAND ----------
 
@@ -355,30 +352,38 @@ parcelsDF = parcelsDF.withColumn("geometry", F.col("perimeter_geom_buf"))
 
 # Join trees with buffered percel perimeter
 pTreesDF = spatial_join(
-                parcelsDF,
-                treesDF,
-                spark,
-                partitioning = None,
-                partition_right = False,
-                useIndex = True,
-                considerBoundaryIntersection = False, # returns tree geometries contained within parcel geoms (since trees are point geoms using 'True' should produce the result)
-                calculate_proportion = False
+    parcelsDF,
+    treesDF,
+    spark,
+    partitioning=None,
+    partition_right=False,
+    useIndex=True,
+    considerBoundaryIntersection=False,  # returns tree geometries contained within parcel geoms (since trees are point geoms using 'True' should produce the result)
+    calculate_proportion=False,
 )
 
 # COMMAND ----------
 
 # Get the length of the perimeter that is intersected by tree crowns
-perimTreesIntDF = pTreesDF.withColumn("crown_perim_intersection", F.expr("""
+perimTreesIntDF = pTreesDF.withColumn(
+    "crown_perim_intersection",
+    F.expr(
+        """
                                                             ST_Intersection(
                                                                 ST_GeomFromWKT(crown_poly_raster), ST_GeomFromWKT(perimeter_geom)
                                                             )
-                                                            """)
-                                )
+                                                            """
+    ),
+)
 
-perimTreesIntDF = perimTreesIntDF.withColumn("crown_perim_length", F.expr("""
+perimTreesIntDF = perimTreesIntDF.withColumn(
+    "crown_perim_length",
+    F.expr(
+        """
                                                             ST_Length(crown_perim_intersection)
-                                                            """)
-                                )
+                                                            """
+    ),
+)
 
 # COMMAND ----------
 
@@ -388,25 +393,39 @@ gdf = gpd.GeoDataFrame(df)
 # COMMAND ----------
 
 # Create geometries
-gcols = ['parcel_geom', 'perimeter_geom', 'perimeter_geom_buf', 'interior_geom', 'top_point', 'crown_poly_raster', 'geom_right', 'geom_left', "crown_perim_intersection"]
-#gcols = ['geom_left', 'geom_right']
+gcols = [
+    "parcel_geom",
+    "perimeter_geom",
+    "perimeter_geom_buf",
+    "interior_geom",
+    "top_point",
+    "crown_poly_raster",
+    "geom_right",
+    "geom_left",
+    "crown_perim_intersection",
+]
+# gcols = ['geom_left', 'geom_right']
 
 gdf = make_geoms(gdf, gcols)
 
 # COMMAND ----------
 
-f, ax = plt.subplots(figsize = (15,15))
+f, ax = plt.subplots(figsize=(15, 15))
 
-gdf.set_geometry('perimeter_geom_buf').plot(ax=ax, facecolor='lightblue', edgecolor='k', linewidth=0.5, alpha=0.7)
-gdf.set_geometry('perimeter_geom').plot(ax=ax, edgecolor='red', linewidth=1.5, alpha=1)
+gdf.set_geometry("perimeter_geom_buf").plot(
+    ax=ax, facecolor="lightblue", edgecolor="k", linewidth=0.5, alpha=0.7
+)
+gdf.set_geometry("perimeter_geom").plot(ax=ax, edgecolor="red", linewidth=1.5, alpha=1)
 
-gdf.set_geometry('crown_perim_intersection').plot(ax=ax, edgecolor='green', linewidth=1.5, alpha=1)
+gdf.set_geometry("crown_perim_intersection").plot(ax=ax, edgecolor="green", linewidth=1.5, alpha=1)
 
-gdf.set_geometry('crown_poly_raster').plot(ax=ax, facecolor='grey', edgecolor='k', linewidth=0.5, alpha=0.7)
-gdf.set_geometry('top_point').plot(ax=ax, edgecolor='k', linewidth=0.5)
+gdf.set_geometry("crown_poly_raster").plot(
+    ax=ax, facecolor="grey", edgecolor="k", linewidth=0.5, alpha=0.7
+)
+gdf.set_geometry("top_point").plot(ax=ax, edgecolor="k", linewidth=0.5)
 
-ax.set_xlim(xmin = 460650, xmax=460800)
-ax.set_ylim(ymin = 256950, ymax=257100)
+ax.set_xlim(xmin=460650, xmax=460800)
+ax.set_ylim(ymin=256950, ymax=257100)
 
 # COMMAND ----------
 
@@ -414,13 +433,14 @@ perimTreesIntDF.columns
 
 # COMMAND ----------
 
-DF = (perimTreesIntDF
-            .select("SHEET_PARCEL_ID", "geom_right", "crown_perim_length")
-            .distinct()
-            .groupby("SHEET_PARCEL_ID")
-            .agg(F.count("geom_right").alias("perim_trees_count"),
-                F.sum("crown_perim_length").alias("perim_trees_length"),
-                )
+DF = (
+    perimTreesIntDF.select("SHEET_PARCEL_ID", "geom_right", "crown_perim_length")
+    .distinct()
+    .groupby("SHEET_PARCEL_ID")
+    .agg(
+        F.count("geom_right").alias("perim_trees_count"),
+        F.sum("crown_perim_length").alias("perim_trees_length"),
+    )
 )
 
 # COMMAND ----------
@@ -452,14 +472,11 @@ parcelsDF = make_parcel_geometries(parcelsDF, parcel_buffer_distance)
 treesDF = treesDF.withColumn("top_point", F.expr("ST_GeomFromWKT(top_point)"))
 
 # Create unique parcel id
-parcelsDF = parcelsDF.withColumn("SHEET_PARCEL_ID", F.concat("SHEET_ID","PARCEL_ID"))
+parcelsDF = parcelsDF.withColumn("SHEET_PARCEL_ID", F.concat("SHEET_ID", "PARCEL_ID"))
 
 # COMMAND ----------
 
-parcelTreesFeaturesDF = get_perimeter_trees_features(spark,
-                                                    treesDF,
-                                                    parcelsDF
-                                                    )
+parcelTreesFeaturesDF = get_perimeter_trees_features(spark, treesDF, parcelsDF)
 
 # COMMAND ----------
 
@@ -471,54 +488,65 @@ df_results_func.head()
 
 # COMMAND ----------
 
-data = df_results_func.iloc[ np.random.choice(df_results_func.index, 6)].values
+data = df_results_func.iloc[np.random.choice(df_results_func.index, 6)].values
 
-f, axs = plt.subplots(2,3,figsize=(40,30))
-axs = axs.reshape(1,-1)[0]
+f, axs = plt.subplots(2, 3, figsize=(40, 30))
+axs = axs.reshape(1, -1)[0]
 for i, (parcel_id, ntrees, length) in enumerate(data):
-    ax=axs[i]
+    ax = axs[i]
 
-    df_parcels = (parcelsDF
-              .filter(F.col("SHEET_PARCEL_ID")==parcel_id)
-              .toPandas()
-    )
+    df_parcels = parcelsDF.filter(F.col("SHEET_PARCEL_ID") == parcel_id).toPandas()
     df_parcels = make_geoms(df_parcels, gcols)
-    gdf_parcels = gpd.GeoDataFrame(df_parcels, geometry='perimeter_geom')
-    xmin,ymin,xmax,ymax = gdf_parcels.total_bounds
+    gdf_parcels = gpd.GeoDataFrame(df_parcels, geometry="perimeter_geom")
+    xmin, ymin, xmax, ymax = gdf_parcels.total_bounds
 
-    bbox_coords = [(xmin, ymin), (xmax, ymin), (xmax, ymax), (xmin, ymax), (xmin, ymin) ]
+    bbox_coords = [(xmin, ymin), (xmax, ymin), (xmax, ymax), (xmin, ymax), (xmin, ymin)]
     bbox = Polygon(bbox_coords)
-    gdfbbox = gpd.GeoDataFrame({'geometry':[bbox]}, geometry="geometry")
+    gdfbbox = gpd.GeoDataFrame({"geometry": [bbox]}, geometry="geometry")
 
-    df_trees = (treesDF
-                .filter(F.expr(f"""
+    df_trees = treesDF.filter(
+        F.expr(
+            f"""
                                 ST_Contains(
                                     ST_GeomFromWKT('{bbox.wkt}'),top_point
                                 )
-                                """))
-                .toPandas()
-                )
+                                """
+        )
+    ).toPandas()
     df_trees = make_geoms(df_trees, gcols)
-    gdf_trees = gpd.GeoDataFrame(df_trees, geometry='top_point')
+    gdf_trees = gpd.GeoDataFrame(df_trees, geometry="top_point")
 
-    gdf_parcels.set_geometry('perimeter_geom_buf').plot(ax=ax, facecolor='lightblue', edgecolor=None, linewidth=0.5, alpha=0.7)
-    gdf_parcels.set_geometry('perimeter_geom').plot(ax=ax, edgecolor='red', linewidth=1.0, alpha=1)
+    gdf_parcels.set_geometry("perimeter_geom_buf").plot(
+        ax=ax, facecolor="lightblue", edgecolor=None, linewidth=0.5, alpha=0.7
+    )
+    gdf_parcels.set_geometry("perimeter_geom").plot(ax=ax, edgecolor="red", linewidth=1.0, alpha=1)
 
-    gdf_trees.set_geometry('crown_poly_raster').plot(ax=ax, facecolor='grey', edgecolor=None, linewidth=0.5, alpha=0.7)
-    gdf_trees.set_geometry('top_point').plot(ax=ax, edgecolor=None, linewidth=0.5)
+    gdf_trees.set_geometry("crown_poly_raster").plot(
+        ax=ax, facecolor="grey", edgecolor=None, linewidth=0.5, alpha=0.7
+    )
+    gdf_trees.set_geometry("top_point").plot(ax=ax, edgecolor=None, linewidth=0.5)
 
-    gdf_trees_int = gdf_trees.loc[ gdf_trees['top_point'].map(lambda g: g.intersects(gdf_parcels.perimeter_geom_buf.values[0]))]
-    gdf_trees_int.set_geometry('top_point').plot(ax=ax, facecolor='lime')
+    gdf_trees_int = gdf_trees.loc[
+        gdf_trees["top_point"].map(lambda g: g.intersects(gdf_parcels.perimeter_geom_buf.values[0]))
+    ]
+    gdf_trees_int.set_geometry("top_point").plot(ax=ax, facecolor="lime")
 
     # Calculate crown intersection to compare total length of intersection
-    gdf_trees_int['crown_perim_intersection'] = gdf_trees_int.apply(lambda row: row['crown_poly_raster'].intersection(gdf_parcels.perimeter_geom),axis=1)
-    gdf_trees_int['intersection_length'] = gdf_trees_int['crown_perim_intersection'].map(lambda g: g.length)
+    gdf_trees_int["crown_perim_intersection"] = gdf_trees_int.apply(
+        lambda row: row["crown_poly_raster"].intersection(gdf_parcels.perimeter_geom), axis=1
+    )
+    gdf_trees_int["intersection_length"] = gdf_trees_int["crown_perim_intersection"].map(
+        lambda g: g.length
+    )
 
-
-    gdf_trees_int.set_geometry('crown_perim_intersection').plot(ax=ax, edgecolor='lime', linewidth=1.5, alpha=1)
+    gdf_trees_int.set_geometry("crown_perim_intersection").plot(
+        ax=ax, edgecolor="lime", linewidth=1.5, alpha=1
+    )
 
     ax.set_axis_off()
-    ax.set_title(f"{ntrees} trees in parcel perimeter\n{length:.2f},{gdf_trees_int.intersection_length.sum():.2f} perim tree cover")
+    ax.set_title(
+        f"{ntrees} trees in parcel perimeter\n{length:.2f},{gdf_trees_int.intersection_length.sum():.2f} perim tree cover"
+    )
 
 # COMMAND ----------
 
@@ -538,7 +566,7 @@ parcelsDF = make_parcel_geometries(parcelsDF, parcel_buffer_distance)
 treesDF = treesDF.withColumn("top_point", F.expr("ST_GeomFromWKT(top_point)"))
 
 # Create unique parcel id
-parcelsDF = parcelsDF.withColumn("SHEET_PARCEL_ID", F.concat("SHEET_ID","PARCEL_ID"))
+parcelsDF = parcelsDF.withColumn("SHEET_PARCEL_ID", F.concat("SHEET_ID", "PARCEL_ID"))
 
 # COMMAND ----------
 
@@ -550,7 +578,7 @@ df_int_results = interiorTreesFeaturesDF.toPandas()
 
 # COMMAND ----------
 
-'''
+"""
 parcelsDF = parcelsDF.withColumn(
     "geometry", F.col("interior_geom")
 )  # parcel interior, with buffered perimeter removed
@@ -570,7 +598,7 @@ iTreesDF = spatial_join(
 df_iTreesDF = iTreesDF.toPandas()
 gdf_int_results = gpd.GeoDataFrame(df_iTreesDF)
 gdf_int_results = make_geoms(gdf_int_results, gcols)
-
+"""
 
 # COMMAND ----------
 
