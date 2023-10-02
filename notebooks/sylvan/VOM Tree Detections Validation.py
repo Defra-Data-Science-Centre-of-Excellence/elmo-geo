@@ -44,7 +44,6 @@ from elmo_geo import register
 from elmo_geo.io import io2 as io
 from elmo_geo.st import st
 from elmo_geo.utils.types import SparkDataFrame
-from elmo_geo.utils.dbr import spark
 
 register()
 
