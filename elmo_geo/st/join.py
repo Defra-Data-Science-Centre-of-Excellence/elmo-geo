@@ -80,7 +80,7 @@ def sjoin(
     how: str = "inner",
     lsuffix: str = "_left",
     rsuffix: str = "_right",
-    sjoin: callable = sjoin_sql,
+    sjoin_fn: callable = sjoin_sql,
     sjoin_kwargs: dict = {},
 ) -> SparkDataFrame:
     """Spatial Join with how
@@ -97,7 +97,7 @@ def sjoin(
     how_left = "full" if how in ["left", "full"] else "inner"
     how_right = "full" if how in ["right", "full"] else "inner"
     # Spatial Join
-    sdf = sjoin(
+    sdf = sjoin_fn(
         sdf_left.select("id_left", "geometry"),
         sdf_right.select("id_right", "geometry"),
         **sjoin_kwargs,
