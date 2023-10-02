@@ -82,7 +82,7 @@ def layers_plot(
     n_layers = len(layers)
     figures = []
     for i in range(n_layers):
-        if stagger == False:
+        if stagger is False:
             # Only produce the final scene with all layers
             if i < n_layers - 1:
                 continue
@@ -169,7 +169,7 @@ def load_data(subdir: str, datasets: list) -> Tuple[types.SparkDataFrame]:
 # COMMAND ----------
 
 # Input data paths
-sf_vom_td = f"dbfs:/mnt/lab/unrestricted/elm/elmo/tree_features/tree_detections/tree_detections_202308040848.parquet"
+sf_vom_td = "dbfs:/mnt/lab/unrestricted/elm/elmo/tree_features/tree_detections/tree_detections_202308040848.parquet"
 sf_tow_sp = "dbfs:/mnt/lab/unrestricted/elm_data/forest_research/TOW_SP_England_26062023.parquet"
 sf_tow_lidar = (
     "dbfs:/mnt/lab/unrestricted/elm_data/forest_research/TOW_LiDAR_England_26062023.parquet"
@@ -280,7 +280,8 @@ datasets = [
 
 # COMMAND ----------
 
-sdf_parcels.count(), sdf_hedge.count(), sdf_nfi.count(), sdf_other_woody_tow.count(), sdf_other_woody_vom.count()
+sdf_parcels.count(), sdf_hedge.count(), sdf_nfi.count(), sdf_other_woody_vom.count()
+#  sdf_other_woody_tow.count(),
 
 # COMMAND ----------
 
@@ -401,7 +402,7 @@ ax.set_title(
 )
 
 f.supxlabel(
-    f"""
+    """
     Source: Environment Agency Vegitation Object Model $1m^2$, National Forest Inventory, Rural Payments Agency EFA Hedges
     Definitions: Relict classification based on 30% of boundary segment being intersected by tree crowns
     """,
@@ -457,7 +458,7 @@ ax.xaxis.grid(False)
 ax.set_title("Mapped and relict hedgerow length, England", fontsize=22, loc="left", y=1.05)
 
 f.supxlabel(
-    f"""
+    """
     Units: million metres
     Source: Environment Agency Vegitation Object Model $1m^2$
     National Forest Inventory, Rural Payments Agency EFA Hedges
@@ -515,10 +516,10 @@ def stacked_bar_parcel_counts(data: pd.Series, title: str, names: list):
         fontsize=24,
     )
     f.supxlabel(
-        f"""
+        """
         Units: million metres
         Source: Environment Agency Vegitation Object Model $1m^2$, National Forest Inventory, Rural Payments Agency EFA Hedges
-        Definitions: Wooded classification based on length of parcel boundaries intersected by NFI Woodland. 
+        Definitions: Wooded classification based on length of parcel boundaries intersected by NFI Woodland.
         Relict classification based on 30% of boundary segment being intersected by tree crowns.""",
         x=0.09,
         y=-0.2,

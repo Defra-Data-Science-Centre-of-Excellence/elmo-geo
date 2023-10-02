@@ -3,11 +3,7 @@
 
 # COMMAND ----------
 
-import os
-import re
-import sys
-from itertools import chain
-from typing import Iterator, List, Optional, Tuple
+from typing import Optional, Tuple
 
 import contextily as ctx
 import geopandas as gpd
@@ -18,13 +14,11 @@ import pandas as pd
 import seaborn as sns
 from matplotlib.ticker import FuncFormatter, PercentFormatter
 from pyspark.sql import functions as F
-from pyspark.sql.types import FloatType, StringType, StructField, StructType
 from shapely.geometry import Polygon
 from tree_features import get_hedgerow_trees_features
 
 from elmo_geo import LOG, register
 from elmo_geo.io.io2 import load_geometry
-from elmo_geo.st.joins import spatial_join
 from elmo_geo.utils.dbr import spark
 
 # COMMAND ----------
@@ -166,7 +160,7 @@ hrtreesPerParcelDF = hrtreesPerParcelDF.withColumn(
 # Get total coverage of hr trees
 area = hrtreesDF.select(
     F.expr(
-        f"""
+        """
                                                         ST_Area(
                                                             ST_GeomFromWKT(crown_poly_raster)
                                                         )
@@ -254,7 +248,7 @@ def stacked_bar_parcel_counts(
         fontsize="large",
     )
     f.supxlabel(
-        f"Source: Environment Agency Vegitation Object Model"
+        "Source: Environment Agency Vegitation Object Model"
         + r" $1m^2$"
         + " and Rural Payments Agency EFA Hedges",
         x=0.09,
@@ -376,7 +370,7 @@ def plot_hrtree_dist(
     sns.set_context("talk")
 
     if dark:
-        sns.set_style("darkgrid", rc=dark_style)
+        sns.set_style("darkgrid")
 
     dark = False
     fig, ax = plt.subplots(figsize=(18, 6), constrained_layout=True)
@@ -421,7 +415,7 @@ def plot_hrtree_dist(
         fontsize="large",
     )
     fig.supxlabel(
-        f"Source: Environment Agency Vegitation Object Model"
+        "Source: Environment Agency Vegitation Object Model"
         + r" $1m^2$"
         + " and Rural Payments Agency EFA Hedges",
         x=0.09,

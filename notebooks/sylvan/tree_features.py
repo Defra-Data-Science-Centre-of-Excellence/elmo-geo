@@ -10,15 +10,13 @@ Tree Features:
 * Unsure of how to define this feature.
 """
 import itertools
-from typing import Callable, Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 from pyspark.sql import functions as F
 
 from elmo_geo import LOG, register
-from elmo_geo.st.joins import spatial_join
 from elmo_geo.utils.dbr import spark
 
-# from elmo_geo.st.st import sjoin
 from elmo_geo.utils.types import SparkDataFrame, SparkSession
 
 register()
@@ -34,7 +32,7 @@ tree_count = lambda x: F.expr(
     f"""
                             CAST(
                                 ST_Intersects(
-                                    ST_MakeValid(ST_Buffer(geom_left, {x})), 
+                                    ST_MakeValid(ST_Buffer(geom_left, {x})),
                                     ST_MakeValid(geom_right)
                                     ) AS INTEGER
                                 )as c{x}"""
@@ -44,7 +42,7 @@ tree_intersection_length = lambda x: F.expr(
     f"""
                                             ST_Length(
                                                 ST_Intersection(
-                                                    ST_MakeValid(ST_Buffer(geom_left, {x})), 
+                                                    ST_MakeValid(ST_Buffer(geom_left, {x})),
                                                     ST_MakeValid(geom_right)
                                                 )
                                             ) as c{x}"""
@@ -474,7 +472,7 @@ def get_perimeter_trees_features(
         double_count,
     )
 
-    counts = feature_tree_and_parcel_counts(
+    _ = feature_tree_and_parcel_counts(
         parcelsDF,
         perimTreesDF,
         perimTreesPerParcelDF,
@@ -532,7 +530,7 @@ def get_interior_trees_features(
         f"""
                                             CAST(
                                                 ST_Intersects(
-                                                    ST_MakeValid(ST_Difference(parcel_geom, ST_MakeValid(ST_Buffer(perimeter_geom, {x})))), 
+                                                    ST_MakeValid(ST_Difference(parcel_geom, ST_MakeValid(ST_Buffer(perimeter_geom, {x})))),
                                                     ST_MakeValid(geom_right)
                                                     ) AS INTEGER
                                                 )as c{x}"""
@@ -683,7 +681,7 @@ def get_parcel_tree_features(
     parcelsDF = make_parcel_geometries(parcelsDF)
     treesDF = treesDF.withColumn("top_point", F.expr("ST_GeomFromWKT(top_point)"))
     hrDF = hrDF.withColumn("wkb", F.col("geometry")).withColumn(
-        "geometry_hedge", F.expr(f"ST_MakeValid(ST_GeomFromWKB(wkb))")
+        "geometry_hedge", F.expr("ST_MakeValid(ST_GeomFromWKB(wkb))")
     )
 
     # Create unique parcel id
