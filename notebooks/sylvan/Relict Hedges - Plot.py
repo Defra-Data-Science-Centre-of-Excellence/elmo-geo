@@ -21,15 +21,15 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import shapely
+import seaborn as sns
+from matplotlib.ticker import PercentFormatter
 from pyspark.sql import functions as F
 from shapely import from_wkb, from_wkt
-from shapely.geometry import Polygon
 
 from elmo_geo import register
 from elmo_geo.io import io2 as io
-from elmo_geo.st import st
 from elmo_geo.utils import types
+from elmo_geo.utils.dbr import spark
 
 register()
 
@@ -82,7 +82,7 @@ def layers_plot(
     n_layers = len(layers)
     figures = []
     for i in range(n_layers):
-        if stagger == False:
+        if stagger is False:
             # Only produce the final scene with all layers
             if i < n_layers - 1:
                 continue
@@ -169,7 +169,7 @@ def load_data(subdir: str, datasets: list) -> Tuple[types.SparkDataFrame]:
 # COMMAND ----------
 
 # Input data paths
-sf_vom_td = f"dbfs:/mnt/lab/unrestricted/elm/elmo/tree_features/tree_detections/tree_detections_202308040848.parquet"
+sf_vom_td = "dbfs:/mnt/lab/unrestricted/elm/elmo/tree_features/tree_detections/tree_detections_202308040848.parquet"
 sf_tow_sp = "dbfs:/mnt/lab/unrestricted/elm_data/forest_research/TOW_SP_England_26062023.parquet"
 sf_tow_lidar = (
     "dbfs:/mnt/lab/unrestricted/elm_data/forest_research/TOW_LiDAR_England_26062023.parquet"
@@ -186,7 +186,7 @@ sf_tow_lidar = (
 parcels_to_test = ["SP62553568", "SP62553755", "SP62555066"]
 
 # COMMAND ----------
-
+sf_parcel = "dbfs:/mnt/lab/unrestricted/elm_data/rpa/reference_parcels/2023_06_03.geoparquet"
 sdf_parcel_sub = spark.read.parquet(sf_parcel).filter(F.col("id_parcel").isin(parcels_to_test))
 sdf_parcel_sub.count()
 
@@ -215,9 +215,6 @@ gdf_seg["geometry"] = gdf_seg["boundary_segment"].map(lambda x: from_wkt(x))
 gdf_seg = gpd.GeoDataFrame(gdf_seg, geometry="geometry")
 
 # COMMAND ----------
-
-import matplotlib as mpl
-
 f, ax = plt.subplots(figsize=(10, 10))
 for pid in gdf_seg["id_parcel"].unique():
     sub = gdf_seg.loc[gdf_seg["id_parcel"] == pid]
@@ -283,7 +280,8 @@ datasets = [
 
 # COMMAND ----------
 
-sdf_parcels.count(), sdf_hedge.count(), sdf_nfi.count(), sdf_other_woody_tow.count(), sdf_other_woody_vom.count()
+sdf_parcels.count(), sdf_hedge.count(), sdf_nfi.count(), sdf_other_woody_vom.count()
+#  sdf_other_woody_tow.count(),
 
 # COMMAND ----------
 
@@ -404,7 +402,7 @@ ax.set_title(
 )
 
 f.supxlabel(
-    f"""
+    """
     Source: Environment Agency Vegitation Object Model $1m^2$, National Forest Inventory, Rural Payments Agency EFA Hedges
     Definitions: Relict classification based on 30% of boundary segment being intersected by tree crowns
     """,
@@ -460,7 +458,7 @@ ax.xaxis.grid(False)
 ax.set_title("Mapped and relict hedgerow length, England", fontsize=22, loc="left", y=1.05)
 
 f.supxlabel(
-    f"""
+    """
     Units: million metres
     Source: Environment Agency Vegitation Object Model $1m^2$
     National Forest Inventory, Rural Payments Agency EFA Hedges
@@ -475,8 +473,6 @@ f.supxlabel(
 # COMMAND ----------
 
 # Make a stacked bar chart
-import seaborn as sns
-from matplotlib.ticker import FuncFormatter, PercentFormatter
 
 
 def stacked_bar_parcel_counts(data: pd.Series, title: str, names: list):
@@ -520,10 +516,10 @@ def stacked_bar_parcel_counts(data: pd.Series, title: str, names: list):
         fontsize=24,
     )
     f.supxlabel(
-        f"""
+        """
         Units: million metres
         Source: Environment Agency Vegitation Object Model $1m^2$, National Forest Inventory, Rural Payments Agency EFA Hedges
-        Definitions: Wooded classification based on length of parcel boundaries intersected by NFI Woodland. 
+        Definitions: Wooded classification based on length of parcel boundaries intersected by NFI Woodland.
         Relict classification based on 30% of boundary segment being intersected by tree crowns.""",
         x=0.09,
         y=-0.2,
