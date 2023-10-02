@@ -1,5 +1,7 @@
 from pyspark.sql import functions as F
 
+from elmo_geo.io.geometry import load_geometry
+from elmo_geo.utils.dbr import spark
 from elmo_geo.utils.types import (
     BaseGeometry,
     GeoDataFrame,
@@ -8,7 +10,6 @@ from elmo_geo.utils.types import (
     PandasDataFrame,
     SedonaType,
     SparkDataFrame,
-    SparkSession,
     Union,
 )
 
@@ -18,13 +19,19 @@ def GeoDataFrame_to_PandasDataFrame(df: GeoDataFrame) -> PandasDataFrame:
 
 
 def PandasDataFrame_to_SparkDataFrame(
-    df: PandasDataFrame, spark: SparkSession = None
+    df: PandasDataFrame,
+    column: str,
 ) -> SparkDataFrame:
-    return spark.createDataFrame(df)
+    return spark.createDataFrame(df).withColumn(column, load_geometry(column))
 
 
-def GeoDataFrame_to_SparkDataFrame(gdf: GeoDataFrame) -> SparkDataFrame:
-    return gdf.pipe(GeoDataFrame_to_PandasDataFrame).pipe(PandasDataFrame_to_SparkDataFrame)
+def GeoDataFrame_to_SparkDataFrame(
+    gdf: GeoDataFrame,
+    column: str,
+) -> SparkDataFrame:
+    return gdf.pipe(GeoDataFrame_to_PandasDataFrame).pipe(
+        PandasDataFrame_to_SparkDataFrame, column=column
+    )
 
 
 def SparkDataFrame_to_PandasDataFrame(df: SparkDataFrame) -> PandasDataFrame:
@@ -35,7 +42,9 @@ def SparkDataFrame_to_PandasDataFrame(df: SparkDataFrame) -> PandasDataFrame:
 
 
 def PandasDataFrame_to_GeoDataFrame(
-    pdf: PandasDataFrame, column: str, crs: Union[int, str]
+    pdf: PandasDataFrame,
+    column: str,
+    crs: Union[int, str],
 ) -> GeoDataFrame:
     return GeoDataFrame(pdf, geometry=GeoSeries.from_wkb(pdf[column], crs=crs), crs=crs).drop(
         columns=[column]
@@ -43,7 +52,9 @@ def PandasDataFrame_to_GeoDataFrame(
 
 
 def SparkDataFrame_to_GeoDataFrame(
-    df: SparkDataFrame, column: str, crs: Union[int, str]
+    df: SparkDataFrame,
+    column: str,
+    crs: Union[int, str],
 ) -> GeoDataFrame:
     return SparkDataFrame_to_PandasDataFrame(df).pipe(
         PandasDataFrame_to_GeoDataFrame, column=column, crs=crs
@@ -51,7 +62,9 @@ def SparkDataFrame_to_GeoDataFrame(
 
 
 def to_gdf(
-    x: Union[SparkDataFrame, Geometry], column: str = "geometry", crs: Union[int, str] = 27700
+    x: Union[SparkDataFrame, Geometry],
+    column: str = "geometry",
+    crs: Union[int, str] = 27700,
 ) -> GeoDataFrame:
     """Convert anything-ish to GeoDataFrame"""
     if isinstance(x, GeoDataFrame):
@@ -69,12 +82,16 @@ def to_gdf(
     return gdf
 
 
-def to_sdf(x: Union[SparkDataFrame, Geometry], crs: Union[int, str] = None) -> SparkDataFrame:
+def to_sdf(
+    x: Union[SparkDataFrame, Geometry],
+    column: str = "geometry",
+    crs: Union[int, str] = None,
+) -> SparkDataFrame:
     """Convert anything-ish to SparkDataFrame"""
     if isinstance(x, SparkDataFrame):
         sdf = x
     elif isinstance(x, PandasDataFrame):
-        sdf = PandasDataFrame_to_SparkDataFrame(x)
+        sdf = PandasDataFrame_to_SparkDataFrame(x, column=column)
     else:
-        sdf = GeoDataFrame_to_SparkDataFrame(to_gdf(x, crs))
+        sdf = GeoDataFrame_to_SparkDataFrame(to_gdf(x, crs), column=column)
     return sdf
