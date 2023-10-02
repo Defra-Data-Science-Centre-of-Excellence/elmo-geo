@@ -34,3 +34,7 @@ def sentinel_api_session(*args, **kwargs):
     finally:
         api.session.close()
         LOG.info("API session closed")
+
+
+def download_sentinel():
+    raise NotImplementedError("download_sentinel")
