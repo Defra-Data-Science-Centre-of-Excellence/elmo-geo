@@ -1,7 +1,7 @@
 from pyspark.sql import functions as F
 
 from elmo_geo import LOG
-from elmo_geo.st.index import chipped_index, index, index_centroid
+from elmo_geo.st.index import chipped_index, index, centroid_index
 from elmo_geo.utils.misc import run
 from elmo_geo.utils.types import SparkDataFrame
 
@@ -13,13 +13,13 @@ def convert_file(f_in: str, f_out: str, layer: str):
 
 def to_gpq_partitioned(sdf: SparkDataFrame, sf_out: str):
     """SparkDataFrame to GeoParquet, partitioned by BNG index"""
-    (sdf.transform(index_centroid).write.format("geoparquet").save(sf_out, partitionBy="sindex"))
+    (sdf.transform(centroid_index).write.format("geoparquet").save(sf_out, partitionBy="sindex"))
 
 
 def to_gpq_sorted(sdf: SparkDataFrame, sf_out: str):
     """SparkDataFrame to GeoParquet, sorted by BNG index"""
     (
-        sdf.transform(index_centroid, resolution="1km")
+        sdf.transform(centroid_index, resolution="1km")
         .sort("sindex")
         .write.format("geoparquet")
         .save(sf_out)

@@ -9,7 +9,7 @@
 
 # COMMAND ----------
 
-# MAGIC %pip install contextily
+# MAGIC %pip install contextily rich
 
 # COMMAND ----------
 
@@ -21,15 +21,14 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import shapely
 from pyspark.sql import functions as F
 from shapely import from_wkb, from_wkt
-from shapely.geometry import Polygon
 
 from elmo_geo import register
-from elmo_geo.io import io2 as io
-from elmo_geo.st import st
+import elmo_geo.io as io
+from elmo_geo.io.convert import SparkDataFrame_to_PandasDataFrame
 from elmo_geo.utils import types
+from elmo_geo.utils.dbr import spark
 
 register()
 
@@ -82,7 +81,7 @@ def layers_plot(
     n_layers = len(layers)
     figures = []
     for i in range(n_layers):
-        if stagger == False:
+        if not stagger:
             # Only produce the final scene with all layers
             if i < n_layers - 1:
                 continue
@@ -169,7 +168,7 @@ def load_data(subdir: str, datasets: list) -> Tuple[types.SparkDataFrame]:
 # COMMAND ----------
 
 # Input data paths
-sf_vom_td = f"dbfs:/mnt/lab/unrestricted/elm/elmo/tree_features/tree_detections/tree_detections_202308040848.parquet"
+sf_vom_td = "dbfs:/mnt/lab/unrestricted/elm/elmo/tree_features/tree_detections/tree_detections_202308040848.parquet"
 sf_tow_sp = "dbfs:/mnt/lab/unrestricted/elm_data/forest_research/TOW_SP_England_26062023.parquet"
 sf_tow_lidar = (
     "dbfs:/mnt/lab/unrestricted/elm_data/forest_research/TOW_LiDAR_England_26062023.parquet"
@@ -186,7 +185,7 @@ sf_tow_lidar = (
 parcels_to_test = ["SP62553568", "SP62553755", "SP62555066"]
 
 # COMMAND ----------
-
+sf_parcel = "dbfs:/mnt/lab/unrestricted/elm_data/rpa/reference_parcels/2023_06_03.geoparquet"
 sdf_parcel_sub = spark.read.parquet(sf_parcel).filter(F.col("id_parcel").isin(parcels_to_test))
 sdf_parcel_sub.count()
 
@@ -215,8 +214,6 @@ gdf_seg["geometry"] = gdf_seg["boundary_segment"].map(lambda x: from_wkt(x))
 gdf_seg = gpd.GeoDataFrame(gdf_seg, geometry="geometry")
 
 # COMMAND ----------
-
-import matplotlib as mpl
 
 f, ax = plt.subplots(figsize=(10, 10))
 for pid in gdf_seg["id_parcel"].unique():
@@ -283,7 +280,7 @@ datasets = [
 
 # COMMAND ----------
 
-sdf_parcels.count(), sdf_hedge.count(), sdf_nfi.count(), sdf_other_woody_tow.count(), sdf_other_woody_vom.count()
+sdf_parcels.count(), sdf_hedge.count(), sdf_nfi.count(), sdf_other_woody_vom.count()  # , sdf_other_woody_tow.count(),
 
 # COMMAND ----------
 
@@ -404,7 +401,7 @@ ax.set_title(
 )
 
 f.supxlabel(
-    f"""
+    """
     Source: Environment Agency Vegitation Object Model $1m^2$, National Forest Inventory, Rural Payments Agency EFA Hedges
     Definitions: Relict classification based on 30% of boundary segment being intersected by tree crowns
     """,
@@ -460,7 +457,7 @@ ax.xaxis.grid(False)
 ax.set_title("Mapped and relict hedgerow length, England", fontsize=22, loc="left", y=1.05)
 
 f.supxlabel(
-    f"""
+    """
     Units: million metres
     Source: Environment Agency Vegitation Object Model $1m^2$
     National Forest Inventory, Rural Payments Agency EFA Hedges
@@ -476,7 +473,7 @@ f.supxlabel(
 
 # Make a stacked bar chart
 import seaborn as sns
-from matplotlib.ticker import FuncFormatter, PercentFormatter
+from matplotlib.ticker import PercentFormatter
 
 
 def stacked_bar_parcel_counts(data: pd.Series, title: str, names: list):
@@ -520,10 +517,10 @@ def stacked_bar_parcel_counts(data: pd.Series, title: str, names: list):
         fontsize=24,
     )
     f.supxlabel(
-        f"""
+        """
         Units: million metres
         Source: Environment Agency Vegitation Object Model $1m^2$, National Forest Inventory, Rural Payments Agency EFA Hedges
-        Definitions: Wooded classification based on length of parcel boundaries intersected by NFI Woodland. 
+        Definitions: Wooded classification based on length of parcel boundaries intersected by NFI Woodland.
         Relict classification based on 30% of boundary segment being intersected by tree crowns.""",
         x=0.09,
         y=-0.2,
@@ -617,46 +614,46 @@ sdf_vom_td = (
 # COMMAND ----------
 
 # Create geo dataframes
-gdf_parcels = io.SparkDataFrame_to_PandasDataFrame(sdf_parcels)
+gdf_parcels = SparkDataFrame_to_PandasDataFrame(sdf_parcels)
 gdf_parcels = gpd.GeoDataFrame(
     gdf_parcels, geometry=gpd.GeoSeries.from_wkb(gdf_parcels["geometry"], crs=27700), crs=27700
 )
 
-gdf_hr = io.SparkDataFrame_to_PandasDataFrame(sdf_hr)
+gdf_hr = SparkDataFrame_to_PandasDataFrame(sdf_hr)
 gdf_hr = gpd.GeoDataFrame(
     gdf_hr, geometry=gpd.GeoSeries.from_wkb(gdf_hr["geometry_hedge"], crs=27700), crs=27700
 )
 
-gdf_woodland = io.SparkDataFrame_to_PandasDataFrame(sdf_nfi)
+gdf_woodland = SparkDataFrame_to_PandasDataFrame(sdf_nfi)
 gdf_woodland = gpd.GeoDataFrame(
     gdf_woodland,
     geometry=gpd.GeoSeries.from_wkb(gdf_woodland["geometry_woodland"], crs=27700),
     crs=27700,
 )
 
-# gdf_other_woody_vom = io.SparkDataFrame_to_PandasDataFrame(sdf_other_woody_vom)
+# gdf_other_woody_vom = SparkDataFrame_to_PandasDataFrame(sdf_other_woody_vom)
 # gdf_other_woody_vom = gpd.GeoDataFrame(gdf_other_woody_vom, geometry = gpd.GeoSeries.from_wkb(gdf_other_woody_vom['geometry_vom_td'], crs=27700), crs = 27700 )
 
-# gdf_other_woody_tow = io.SparkDataFrame_to_PandasDataFrame(sdf_other_woody_tow)
+# gdf_other_woody_tow = SparkDataFrame_to_PandasDataFrame(sdf_other_woody_tow)
 # gdf_other_woody_tow = gpd.GeoDataFrame(gdf_other_woody_tow, geometry = gpd.GeoSeries.from_wkb(gdf_other_woody_tow['geometry_tow'], crs=27700), crs = 27700 )
 
-gdf_other_woody_segments = io.SparkDataFrame_to_PandasDataFrame(sdf_other_woody_segments)
+gdf_other_woody_segments = SparkDataFrame_to_PandasDataFrame(sdf_other_woody_segments)
 gdf_other_woody_segments = gpd.GeoDataFrame(
     gdf_other_woody_segments,
     geometry=gpd.GeoSeries.from_wkb(gdf_other_woody_segments["geometry_segment"], crs=27700),
     crs=27700,
 )
 
-# gdf_tow = io.SparkDataFrame_to_PandasDataFrame(sdf_tow)
+# gdf_tow = SparkDataFrame_to_PandasDataFrame(sdf_tow)
 # gdf_tow = gpd.GeoDataFrame(gdf_tow, geometry = gpd.GeoSeries.from_wkb(gdf_tow['geometry'], crs=27700), crs = 27700 )
 
 # COMMAND ----------
 
-gdf_wb = io.SparkDataFrame_to_PandasDataFrame(sdf_wb)
+gdf_wb = SparkDataFrame_to_PandasDataFrame(sdf_wb)
 
 # COMMAND ----------
 
-gdf_relict_segments = io.SparkDataFrame_to_PandasDataFrame(sdf_relict_segments)
+gdf_relict_segments = SparkDataFrame_to_PandasDataFrame(sdf_relict_segments)
 gdf_relict_segments = gpd.GeoDataFrame(
     gdf_relict_segments,
     geometry=gpd.GeoSeries.from_wkb(gdf_relict_segments["geometry"], crs=27700),
@@ -665,14 +662,14 @@ gdf_relict_segments = gpd.GeoDataFrame(
 
 # COMMAND ----------
 
-gdf_vom_td = io.SparkDataFrame_to_PandasDataFrame(sdf_vom_td)
+gdf_vom_td = SparkDataFrame_to_PandasDataFrame(sdf_vom_td)
 gdf_vom_td = gpd.GeoDataFrame(
     gdf_vom_td, geometry=gpd.GeoSeries.from_wkb(gdf_vom_td["geometry"], crs=27700), crs=27700
 )
 
 # COMMAND ----------
 
-gdf_available_segments = io.SparkDataFrame_to_PandasDataFrame(sdf_available_segments)
+gdf_available_segments = SparkDataFrame_to_PandasDataFrame(sdf_available_segments)
 gdf_available_segments = gpd.GeoDataFrame(
     gdf_available_segments,
     geometry=gpd.GeoSeries.from_wkb(gdf_available_segments["geometry"], crs=27700),
