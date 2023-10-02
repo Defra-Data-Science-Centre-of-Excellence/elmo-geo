@@ -1,3 +1,5 @@
+from pyspark.sql import functions as F
+
 from elmo_geo.utils.types import (
     BaseGeometry,
     GeoDataFrame,
@@ -9,7 +11,6 @@ from elmo_geo.utils.types import (
     SparkSession,
     Union,
 )
-from pyspark.sql import functions as F
 
 
 def GeoDataFrame_to_PandasDataFrame(df: GeoDataFrame) -> PandasDataFrame:
