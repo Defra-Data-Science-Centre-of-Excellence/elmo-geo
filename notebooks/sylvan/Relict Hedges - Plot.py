@@ -19,10 +19,10 @@ import contextily as ctx
 import geopandas as gpd
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-import seaborn as sns
-from matplotlib.ticker import PercentFormatter
 import numpy as np
 import pandas as pd
+import seaborn as sns
+from matplotlib.ticker import PercentFormatter
 from pyspark.sql import functions as F
 from shapely import from_wkb, from_wkt
 
