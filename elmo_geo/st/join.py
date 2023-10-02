@@ -5,6 +5,7 @@ from sedona.utils.adapter import Adapter
 from elmo_geo.io import load_missing
 
 # from elmo_geo import LOG
+from elmo_geo.utils.dbr import spark
 from elmo_geo.utils.types import SparkDataFrame
 
 
@@ -73,7 +74,7 @@ def sjoin_sql(
     return sdf
 
 
-def join(
+def sjoin(
     sdf_left: SparkDataFrame,
     sdf_right: SparkDataFrame,
     how: str = "inner",

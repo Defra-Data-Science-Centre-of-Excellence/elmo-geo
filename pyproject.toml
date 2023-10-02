@@ -11,3 +11,6 @@ exclude = '''(
 
 [tool.isort]
 profile = "black"
+
+[tool.pylance]
+builtins = spark, sc, dbutils, display, displayHTML
