@@ -162,18 +162,21 @@ sf_relict_segments_out
 
 # COMMAND ----------
 
+# MAGIC %pip install rich
+
+# COMMAND ----------
+
 import geopandas as gpd
 import numpy as np
 import pandas as pd
-import shapely
 from pyspark.sql import functions as F
 from pyspark.sql import types as T
-from shapely import from_wkb, from_wkt
 from shapely.geometry import LineString
 
 from elmo_geo import register
 from elmo_geo.io import io2 as io
 from elmo_geo.st import st
+from elmo_geo.utils.dbr import spark
 
 register()
 

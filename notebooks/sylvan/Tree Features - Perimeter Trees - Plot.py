@@ -26,6 +26,7 @@ from tree_features import *
 
 from elmo_geo import LOG, register
 from elmo_geo.st.joins import spatial_join
+from elmo_geo.utils.dbr import spark
 
 # COMMAND ----------
 
