@@ -1,4 +1,4 @@
 """Vector (Spatial Types) functions for elmo_geo
 """
-from .index import index
-from .join import join
+from .index import sindex
+from .join import sjoin
