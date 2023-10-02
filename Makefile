@@ -14,7 +14,8 @@ fmt:
 verify:
 	isort --check-only .
 	black --diff --check .
-	flake8 .
+	flake8 elmo_geo
+	flake8 notebooks --builtins=spark,sc,dbutils,display,displayHTML
 	pytest .
 
 clean:

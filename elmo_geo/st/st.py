@@ -1,6 +1,7 @@
 from pyspark.sql import functions as F
 
 from elmo_geo.io.io2 import load_missing
+from elmo_geo.utils.dbr import spark
 from elmo_geo.utils.types import SparkDataFrame
 
 
