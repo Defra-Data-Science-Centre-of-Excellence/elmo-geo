@@ -42,9 +42,6 @@ def spatial_join(
     considerBoundaryIntersection: bool = True,
     calculate_proportion: bool = True,
 ) -> SparkDataFrame:
-    DeprecationWarning(
-        '"elmo_geo.st.joins.spatial_join" can be replaced with "elmo_geo.st.sjoin", for RDDs see "elmo_geo.st.join.sjoin_rdd".'  # noqa:E501
-    )
     """Spatially join two spark DataFrames of polygons using Sedona.
     Uses Sedona's python RDD api to perform partitioning and indexing.
     `df_left` and `df_right` must use the same CRS. `simplify` units will depend on the CRS.
