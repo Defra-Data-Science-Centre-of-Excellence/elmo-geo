@@ -13,8 +13,8 @@
 
 # COMMAND ----------
 
-from elmo_geo.io.io import download_link
 from elmo_geo import LOG
+from elmo_geo.io.io import download_link
 from elmo_geo.rs.sentinel import sentinel_years
 
 # ensuring we can multiselect all years from the initial stage

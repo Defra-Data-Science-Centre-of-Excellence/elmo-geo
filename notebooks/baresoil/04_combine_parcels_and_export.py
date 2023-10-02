@@ -21,8 +21,8 @@ import pandas as pd  # noqa F401
 import seaborn as sns
 from matplotlib.ticker import PercentFormatter
 
-from elmo_geo.io.io import download_link
 from elmo_geo import LOG
+from elmo_geo.io.io import download_link
 from elmo_geo.rs.sentinel import sentinel_years
 
 dbutils.widgets.dropdown("year", sentinel_years[-1], sentinel_years)
