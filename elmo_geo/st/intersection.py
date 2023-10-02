@@ -15,6 +15,7 @@ def intersect_parcels(
     threshold: float = 1e-6,
     n_parcel_partitions=10000,
 ):
+    DeprecationWarning('"elmo_geo.st.intersection.intersect_parcels" is partially replaced by "elmo_geo.st.join.overlap"')
     """Intersect a geospatial feature dataset with the parcels dataset and return inner join
     with geometry info removed. The output is persisted to parquet.
 
