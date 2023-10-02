@@ -9,7 +9,9 @@ def sjoin(
     distance: float = 0,
     spark=None,
 ) -> SparkDataFrame:
-    DeprecationWarning('"elmo_geo.st.st.sjoin" is replaced by "elmo_geo.st.sjoin", which adds "how".')
+    DeprecationWarning(
+        '"elmo_geo.st.st.sjoin" is replaced by "elmo_geo.st.sjoin", which adds "how".'
+    )
     # Rename
     for col in sdf_left.columns:
         if col in sdf_right.columns:

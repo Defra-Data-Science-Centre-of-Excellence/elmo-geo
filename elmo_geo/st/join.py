@@ -127,7 +127,7 @@ def overlap(
 ):
     geometry_left, geometry_right = "geometry" + lsuffix, "geometry" + rsuffix
     return (
-        join(sdf_left, sdf_right, lsuffix=lsuffix, rsuffix=lsuffix, **kwargs)
+        sjoin(sdf_left, sdf_right, lsuffix=lsuffix, rsuffix=lsuffix, **kwargs)
         .withColumn("geometry", F.expr(f"ST_Intersection({geometry_left}, {geometry_right})"))
         # TODO: groupby
         .withColumn("proportion", F.expr(f"ST_Area(geometry) / ST_Area({geometry_left})"))
