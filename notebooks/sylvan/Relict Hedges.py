@@ -99,7 +99,7 @@ sf_fl = (
 # sf_to = 'dbfs:/mnt/lab/unrestricted/elm_data/defra/traditional_orchards/2021_03_22.parquet'
 sf_cf = "dbfs:/mnt/lab/unrestricted/elm_data/englands_community_forests_partnership/community_forests/2021_11_02.parquet"
 sf_awi = "dbfs:/mnt/lab/unrestricted/elm_data/defra/ancient_woodland_inventory/2021_03_12.parquet"
-sf_vom_td = f"dbfs:/mnt/lab/unrestricted/elm/elmo/tree_features/tree_detections/tree_detections_202308040848.parquet"
+sf_vom_td = "dbfs:/mnt/lab/unrestricted/elm/elmo/tree_features/tree_detections/tree_detections_202308040848.parquet"
 sf_tow_sp = "dbfs:/mnt/lab/unrestricted/elm_data/forest_research/TOW_SP_England_26062023.parquet"
 sf_tow_lidar = (
     "dbfs:/mnt/lab/unrestricted/elm_data/forest_research/TOW_LiDAR_England_26062023.parquet"
@@ -110,7 +110,8 @@ sf_tow_lidar = (
 #
 filter_parcels = True
 if filter_parcels:
-    filter_tile = "SP6552"  #'SS4826' 'SP5833' - this tile is causing invalid geom # SP6552 - this is the tile I am creating figures for
+    # 'SS4826' 'SP5833' - this tile is causing invalid geom # SP6552 - this is the tile I am creating figures for
+    filter_tile = "SP6552"
     path_out = (
         "dbfs:/mnt/lab/unrestricted/elm/elm_se/relict_hedge/test"
         + filter_tile
@@ -162,18 +163,21 @@ sf_relict_segments_out
 
 # COMMAND ----------
 
+# MAGIC %pip install rich
+
+# COMMAND ----------
+
 import geopandas as gpd
 import numpy as np
 import pandas as pd
-import shapely
 from pyspark.sql import functions as F
 from pyspark.sql import types as T
-from shapely import from_wkb, from_wkt
 from shapely.geometry import LineString
 
 from elmo_geo import register
 from elmo_geo.io import io2 as io
 from elmo_geo.st import st
+from elmo_geo.utils.dbr import spark
 
 register()
 
@@ -450,7 +454,7 @@ def apply_st_func(sdf, func, explode_query, gcol, **kwargs):
 
 
 def apply_st_dump(sdf, gcol="geometry"):
-    explode = f"""select major_grid, bng_10km, bng_1km, id_parcel, 
+    explode = f"""select major_grid, bng_10km, bng_1km, id_parcel,
                 ROW_NUMBER() over (partition by id_parcel ORDER BY id_parcel ASC) as id_boundary,
                 EXPLODE({gcol}) as {gcol}
                 from tbl
@@ -492,7 +496,7 @@ sdf_woody_boundaries = spark.read.parquet(sf_woody_boundaries_out)
 (
     sdf_woody_boundaries.withColumn(
         "geometry_boundary_relict_available",
-        F.expr(f"ST_MakeValid(ST_SimplifyPreserveTopology(geometry_boundary_relict_available, 1))"),
+        F.expr("ST_MakeValid(ST_SimplifyPreserveTopology(geometry_boundary_relict_available, 1))"),
     )
     .transform(apply_st_dump, gcol="geometry_boundary_relict_available")
     .withColumn(
@@ -667,7 +671,7 @@ sdf_relict_segments = spark.sql(
                                 length_other_woody_tow / segment_length as prop_tow,
                                 (length_other_woody_vom + length_other_woody_tow) / segment_length as prop_all
                                 from (
-                                select 
+                                select
                                 major_grid,
                                 bng_10km,
                                 bng_1km,
@@ -679,8 +683,8 @@ sdf_relict_segments = spark.sql(
                                 0 as length_other_woody_tow,
                                 /*SUM(ST_Length(geometry_other_woody_tow_boundary_relict)) as length_other_woody_tow,*/
                                 SUM(ST_Length(geometry_other_woody_vom_boundary)) as length_other_woody_vom
-                                from 
-                                (select * from 
+                                from
+                                (select * from
                                 woody_segments
                                 where (
                                   /*(ST_IsEmpty(geometry_other_woody_tow_boundary_relict) = false) or */

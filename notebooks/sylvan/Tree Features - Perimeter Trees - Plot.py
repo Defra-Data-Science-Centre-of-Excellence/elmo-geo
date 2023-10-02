@@ -3,29 +3,17 @@
 # MAGIC %pip install contextily
 
 # COMMAND ----------
-
-import os
-import re
-import sys
-from itertools import chain
-from typing import Iterator, List, Optional, Tuple
-
-import contextily as ctx
 import geopandas as gpd
-import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
-import seaborn as sns
-from matplotlib.ticker import FuncFormatter, PercentFormatter
 from pyspark.sql import functions as F
-from pyspark.sql.types import FloatType, StringType, StructField, StructType
 from shapely import from_wkt
 from shapely.geometry import Polygon
 from tree_features import *
 
-from elmo_geo import LOG, register
+from elmo_geo import register
 from elmo_geo.st.joins import spatial_join
+from elmo_geo.utils.dbr import spark
 
 # COMMAND ----------
 
@@ -574,7 +562,7 @@ gdf_int_results = make_geoms(gdf_int_results, gcols)
 
 # COMMAND ----------
 
-data = df_int_results.iloc[np.random.choice(df_int_results.index, 1)].values
+data = gdf_int_results.iloc[np.random.choice(gdf_int_results.index, 1)].values
 
 f, ax = plt.subplots(figsize=(12, 12))
 for i, (parcel_id, ntrees) in enumerate(data):
@@ -619,7 +607,7 @@ for i, (parcel_id, ntrees) in enumerate(data):
 
 # COMMAND ----------
 
-data = df_int_results.iloc[np.random.choice(df_int_results.index, 6)].values
+data = gdf_int_results.iloc[np.random.choice(gdf_int_results.index, 6)].values
 
 f, axs = plt.subplots(2, 3, figsize=(40, 30))
 axs = axs.reshape(1, -1)[0]
