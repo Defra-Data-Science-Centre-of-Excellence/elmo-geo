@@ -9,7 +9,7 @@
 
 # COMMAND ----------
 
-# MAGIC %pip install contextily
+# MAGIC %pip install contextily rich
 
 # COMMAND ----------
 
@@ -19,17 +19,17 @@ import contextily as ctx
 import geopandas as gpd
 import matplotlib as mpl
 import matplotlib.pyplot as plt
+import seaborn as sns
+from matplotlib.ticker import PercentFormatter
 import numpy as np
 import pandas as pd
-import shapely
 from pyspark.sql import functions as F
 from shapely import from_wkb, from_wkt
-from shapely.geometry import Polygon
 
 from elmo_geo import register
 from elmo_geo.io import io2 as io
-from elmo_geo.st import st
 from elmo_geo.utils import types
+from elmo_geo.utils.dbr import spark
 
 register()
 
@@ -186,7 +186,7 @@ sf_tow_lidar = (
 parcels_to_test = ["SP62553568", "SP62553755", "SP62555066"]
 
 # COMMAND ----------
-
+sf_parcel = "dbfs:/mnt/lab/unrestricted/elm_data/rpa/reference_parcels/2023_06_03.geoparquet"
 sdf_parcel_sub = spark.read.parquet(sf_parcel).filter(F.col("id_parcel").isin(parcels_to_test))
 sdf_parcel_sub.count()
 
@@ -215,9 +215,6 @@ gdf_seg["geometry"] = gdf_seg["boundary_segment"].map(lambda x: from_wkt(x))
 gdf_seg = gpd.GeoDataFrame(gdf_seg, geometry="geometry")
 
 # COMMAND ----------
-
-import matplotlib as mpl
-
 f, ax = plt.subplots(figsize=(10, 10))
 for pid in gdf_seg["id_parcel"].unique():
     sub = gdf_seg.loc[gdf_seg["id_parcel"] == pid]
@@ -475,8 +472,6 @@ f.supxlabel(
 # COMMAND ----------
 
 # Make a stacked bar chart
-import seaborn as sns
-from matplotlib.ticker import FuncFormatter, PercentFormatter
 
 
 def stacked_bar_parcel_counts(data: pd.Series, title: str, names: list):

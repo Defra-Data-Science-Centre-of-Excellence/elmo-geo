@@ -96,6 +96,10 @@
 
 # COMMAND ----------
 
+# MAGIC %pip install rich
+
+# COMMAND ----------
+
 import geopandas as gpd
 import numpy as np
 import pandas as pd
@@ -105,6 +109,7 @@ from shapely.geometry import Polygon
 from tree_features import *
 
 from elmo_geo import LOG, register
+from elmo_geo.utils.dbr import spark
 
 # COMMAND ----------
 

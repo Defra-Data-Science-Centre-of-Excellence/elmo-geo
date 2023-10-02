@@ -1,5 +1,5 @@
 # Databricks notebook source
-# MAGIC %pip install contextily
+# MAGIC %pip install contextily rich
 
 # COMMAND ----------
 
@@ -23,8 +23,9 @@ from shapely.geometry import Polygon
 from tree_features import get_hedgerow_trees_features
 
 from elmo_geo import LOG, register
-from elmo_geo.io.io2 import *
+from elmo_geo.io.io2 import load_geometry
 from elmo_geo.st.joins import spatial_join
+from elmo_geo.utils.dbr import spark
 
 # COMMAND ----------
 
@@ -126,9 +127,9 @@ hrLengthDF = spark.read.option("header", True).csv(hedges_length_path)
 # COMMAND ----------
 
 # Create geometry and parcel ID fields
-hrDF = SparkDataFrame_to_SedonaDataFrame(
-    hrDF.withColumn("wkb", F.col("geometry")), column="geometry"
-).withColumn("geometry", F.expr(f"ST_Buffer(geometry, {hedgerows_buffer_distance})"))
+hrDF = hrDF.withColumn("wkb", load_geometry("geometry")).withColumn(
+    "geometry", F.expr(f"ST_Buffer(geometry, {hedgerows_buffer_distance})")
+)
 
 treesDF = treesDF.withColumn("geometry", F.expr("ST_Point(top_x, top_y)"))
 
