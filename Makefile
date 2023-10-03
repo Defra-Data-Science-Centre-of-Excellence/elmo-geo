@@ -14,7 +14,7 @@ fmt:
 verify:
 	isort --check-only .
 	black --diff --check .
-	flake8 . extend-exclude=notebooks/
+	flake8 . --extend-exclude=notebooks/
 	flake8 notebooks --builtins=spark,sc,dbutils,display,displayHTML
 	pytest .
 
