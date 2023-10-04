@@ -1,6 +1,5 @@
 from pyspark.sql import functions as F
 
-from elmo_geo import LOG
 from elmo_geo.st.index import centroid_index, chipped_index, index
 from elmo_geo.utils.misc import sh_run
 from elmo_geo.utils.types import SparkDataFrame
