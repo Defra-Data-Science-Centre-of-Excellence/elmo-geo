@@ -2,13 +2,12 @@ from pyspark.sql import functions as F
 
 from elmo_geo import LOG
 from elmo_geo.st.index import centroid_index, chipped_index, index
-from elmo_geo.utils.misc import run
+from elmo_geo.utils.misc import sh_run
 from elmo_geo.utils.types import SparkDataFrame
 
 
 def convert_file(f_in: str, f_out: str, layer: str):
-    out = run("/databricks/minconda/bin/ogr2ogr -progress -t_srs EPSG:27700 {f_out} {f_in} {layer}")
-    LOG.info(out)
+    sh_run(f"/databricks/minconda/bin/ogr2ogr -progress -t_srs EPSG:27700 {f_out} {f_in} {layer}")
 
 
 def to_gpq_partitioned(sdf: SparkDataFrame, sf_out: str):
