@@ -14,8 +14,11 @@
 
 # COMMAND ----------
 
-from elmo_geo.plot_bare_soil_dist import plot_bare_soil_dist
-from elmo_geo.sentinel import sentinel_years
+from elmo_geo.plot import plot_bare_soil_dist
+from elmo_geo.rs.sentinel import sentinel_years
+from elmo_geo.utils.dbr import spark, dbutils
+
+# from helpers import get_cols, get_cols_wfm
 
 dbutils.widgets.dropdown("year", sentinel_years[-1], sentinel_years)
 
@@ -64,7 +67,7 @@ def add_bool_col(df, col_list, new_col_name):
 
 # COMMAND ----------
 
-# arable soils analysis
+
 predicate = lambda col: col.startswith("ha_arable_")
 wfm["arable"] = wfm[filter(predicate, wfm.columns)].sum(axis=1) > 0
 fig, ax = plot_bare_soil_dist(
