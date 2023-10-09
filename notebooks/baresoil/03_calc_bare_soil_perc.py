@@ -7,10 +7,10 @@
 
 import os
 
-from elmo_geo.bare_soil import calc_bare_soil_percent
-from elmo_geo.log import LOG
-from elmo_geo.plot_bare_soil_dist import plot_bare_soil_dist
-from elmo_geo.sentinel import sentinel_tiles, sentinel_years
+from elmo_geo import LOG
+from elmo_geo.plot.plot_bare_soil_dist import plot_bare_soil_dist
+from elmo_geo.rs.bare_soil import calc_bare_soil_percent
+from elmo_geo.rs.sentinel import sentinel_tiles, sentinel_years
 
 # COMMAND ----------
 

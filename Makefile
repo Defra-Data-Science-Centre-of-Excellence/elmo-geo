@@ -8,13 +8,14 @@ freeze:
 	pip freeze --exclude-editable | grep -v "file:///" > requirements.txt
 
 fmt:
-	isort elmo_geo
-	black elmo_geo
+	isort .
+	black .
 
 verify:
 	isort --check-only .
 	black --diff --check .
-	flake8 .
+	flake8 elmo_geo
+	flake8 notebooks --builtins=spark,sc,dbutils,display,displayHTML
 	pytest .
 
 clean:
