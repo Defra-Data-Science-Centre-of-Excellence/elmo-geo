@@ -17,6 +17,11 @@ REQUIRED_PACKAGES = [
     "sentinelsat>=1.1.1",
     "bs4",
     "pyogrio",
+    "contextily",
+    "databricks",
+    "esridump",
+    "osdatahub",
+    "osmnx",
 ]
 
 TEST_PACKAGES = [
