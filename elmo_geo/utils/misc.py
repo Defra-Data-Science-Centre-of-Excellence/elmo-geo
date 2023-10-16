@@ -23,9 +23,10 @@ def dbfs(f: str, spark_api: bool):
         raise Exception(f'file must start with "dbfs:/" or "/dbfs/": {f}')
 
 
-def run(exc: str):
-    out = subprocess.run(exc, shell=True, check=True)
+def sh_run(exc: str):
+    out = subprocess.run(exc, shell=True, capture_output=True, text=True)
     LOG.info(exc, out)
+    return out
 
 
 def gtypes(sdf: SparkDataFrame, col: str = "geometry"):
