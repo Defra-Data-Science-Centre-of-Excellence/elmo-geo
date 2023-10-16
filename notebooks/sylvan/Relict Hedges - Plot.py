@@ -9,7 +9,7 @@
 
 # COMMAND ----------
 
-# MAGIC %pip install contextily rich
+# MAGIC %pip install contextily
 
 # COMMAND ----------
 
