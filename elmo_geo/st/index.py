@@ -15,7 +15,7 @@ def get_bng_resolution(n: int, /, target: int) -> str:
         "10km": 9100,
         # '5km': 36400,
         "1km": 910000,
-    }:
+    }.items():
         if target < cells:
             break
     return resolution
