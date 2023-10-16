@@ -215,7 +215,6 @@ gdf_seg["geometry"] = gdf_seg["boundary_segment"].map(lambda x: from_wkt(x))
 gdf_seg = gpd.GeoDataFrame(gdf_seg, geometry="geometry")
 
 # COMMAND ----------
-
 f, ax = plt.subplots(figsize=(10, 10))
 for pid in gdf_seg["id_parcel"].unique():
     sub = gdf_seg.loc[gdf_seg["id_parcel"] == pid]
