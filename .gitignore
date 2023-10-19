@@ -2,6 +2,8 @@
 secrets
 .env
 odbc.ini
+/data/
+!/data/catalogue.json
 
 # folders
 .dbx/*
