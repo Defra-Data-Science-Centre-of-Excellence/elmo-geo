@@ -1,6 +1,6 @@
 from pyspark.sql import functions as F
 
-from elmo_geo.st import join
+from elmo_geo.st.join import sjoin
 from elmo_geo.utils.dbr import spark
 from elmo_geo.utils.settings import BATCHSIZE
 from elmo_geo.utils.types import SparkDataFrame, Union
@@ -37,11 +37,11 @@ def get_grid(method: str, resolution: Union[str, int]) -> SparkDataFrame:
         raise NotImplementedError(method)
     else:
         methods = ["BNG", "GeoHash", "H3", "S2"]
-        raise TypeError(f"{method} not in {methods}")
+        raise ValueError(f"{method} not in {methods}")
 
 
 def multi_index(sdf: SparkDataFrame, grid: SparkDataFrame) -> SparkDataFrame:
-    return sdf.transform(join, grid, lsuffix="").drop("geometry_right")
+    return sdf.transform(sjoin, grid, lsuffix="").drop("geometry_right")
 
 
 def centroid_index(sdf: SparkDataFrame, grid: SparkDataFrame) -> SparkDataFrame:
@@ -49,7 +49,7 @@ def centroid_index(sdf: SparkDataFrame, grid: SparkDataFrame) -> SparkDataFrame:
     return (
         sdf.withColumnRenamed("geometry", "geometry_feature")
         .withColumn("geometry", F.expr("ST_Centroid(geometry_feature)"))
-        .transform(join, grid, lsuffix="")
+        .transform(sjoin, grid, lsuffix="")
         .drop("geometry", "geometry_right")
         .withColumnRenamed("geometry_feature", "geometry")
     )
@@ -57,7 +57,7 @@ def centroid_index(sdf: SparkDataFrame, grid: SparkDataFrame) -> SparkDataFrame:
 
 def chipped_index(sdf: SparkDataFrame, grid: SparkDataFrame) -> SparkDataFrame:
     return (
-        sdf.transform(join, grid, lsuffix="")
+        sdf.transform(sjoin, grid, lsuffix="")
         .withColumn("geometry", F.expr("ST_Intersection(geometry, geometry_right)"))
         .drop("geometry_right")
     )
