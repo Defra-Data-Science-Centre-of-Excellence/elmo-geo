@@ -1,9 +1,66 @@
 import os
 import shutil
 import zipfile
+from glob import iglob
 
 from elmo_geo import LOG
+from elmo_geo.io.datasets import append_to_catalogue
+from elmo_geo.io.file import convert_file
 from elmo_geo.utils.dbr import spark
+from elmo_geo.utils.misc import sh_run
+from elmo_geo.utils.settings import FOLDER_CONDA, FOLDER_STG
+
+
+def rewrite_vector_file(f_in: str) -> str:
+    """For broken RPA data"""
+    LOG.info("Repairing damaged vector file")
+    f_tmp = "/databricks/driver/tmp.gpkg"
+    sh_run(f"{FOLDER_CONDA}/ogr2ogr {f_tmp} {f_in}")
+    return f_tmp
+
+
+def create_outpath(f_in: str) -> str:
+    """Create an output filepath based on the DASH filepath.
+    dash: /dbfs/mnt/base/unrestricted/source_<source>/dataset_<dataset>_<source>/FORMAT_<format>_<source>_<dataset>/SNAPSHOT_<version>/...
+    elmo: <FOLDER_STG>/<source>-<dataset>-<version>.parquet/<layer>
+    """  # noqa:E501
+    source = f_in.split("/source_")[1].split("/")[0]
+    dataset = f_in.split("/dataset_")[1].split("/")[0]
+    version = f_in.split("/SNAPSHOT_")[1].split("/")[0]
+    version = version.replace("_" + dataset, "")
+    dataset = dataset.replace("_" + source, "")
+    return f"{FOLDER_STG}/{source}-{dataset}-{version}.parquet"
+
+
+def ingest_dash(f_in: str, f_out: str = None, broken: bool = False) -> str:
+    """Ingest vector data from DASH's governed/managed base area.
+    Fix names, fix damaged RPA files, and convert to geoparquet in FOLDER_STG
+    """
+    if broken:  # RPA Spatial Mart
+        f_in = rewrite_vector_file(f_in)
+    if f_out is None:
+        f_out = create_outpath(f_in)
+    name = f_out.split("/")[-1].split(".")[0]
+    convert_file(f_in, f_out)
+    append_to_catalogue(
+        {
+            name: {
+                "url": f_in,
+                "filepath": f_out,
+                "function": "ingest_dash",
+            }
+        }
+    )
+
+
+def search_dash(
+    path: str = "/dbfs/mnt/base/unrestricted/source_*[!bluesky]/**/*.*",
+    exts: tuple[str] = ("geojson", "gpkg", "shp", "gdb"),
+):
+    """By default this will search DASH managed data for vector files."""
+    for f in iglob(path, recursive=True):
+        if f.endswith(exts):
+            yield f
 
 
 def download_link(path: str) -> str:
