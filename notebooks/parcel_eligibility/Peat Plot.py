@@ -3,20 +3,20 @@
 
 # COMMAND ----------
 
-import elmo_geo
-
-elmo_geo.register()
 import contextily as ctx
 import geopandas as gpd
 from pyspark.sql import functions as F
 
+import elmo_geo
+
+elmo_geo.register()
+
 # COMMAND ----------
 
 sf_uptake = "dbfs:/mnt/lab/unrestricted/elm/elm_se/boundary_use_uptake.parquet"
-# sf_peat = 'dbfs:/mnt/lab/restricted/ELM-Project/data/defra-peaty_soils-2021_03_24.parquet'
+sf_peat = 'dbfs:/mnt/lab/restricted/ELM-Project/data/defra-peaty_soils-2021_03_24.parquet'
 f_peat = "/dbfs/mnt/lab/unrestricted/elm_data/defra-peaty_soils-2021_03_24.parquet"
 sf_parcel = "dbfs:/mnt/lab/unrestricted/elm/buffer_strips/parcels.parquet"
-
 
 # COMMAND ----------
 
