@@ -12,6 +12,6 @@ elmo_geo.register()
 
 # COMMAND ----------
 
-sdf = elmo_geo.io.datasets.load_sdf('osm-britain_and_ireland')
+sdf = elmo_geo.io.datasets.load_sdf("osm-britain_and_ireland")
 
-sdf.filter("other_tags LIKE '%\"%\"=>\"ha%ha\"%'")
+sdf.filter('other_tags LIKE \'%"%"=>"ha%ha"%\'')

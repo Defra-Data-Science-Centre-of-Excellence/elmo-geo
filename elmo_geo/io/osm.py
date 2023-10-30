@@ -7,11 +7,8 @@ Download and Ingest OSM data, there are 2 options;
 2. Download specific tags and bounds using Overpass API
   - Try: [tag finder](https://tagfinder.osm.ch/)
 """  # noqa:E501
-from datetime import datetime
-
 import osmnx  # noqa:F401
 
-from elmo_geo.io import to_gpq
 from elmo_geo.io.datasets import append_to_catalogue
 from elmo_geo.io.file import convert_file
 from elmo_geo.utils.misc import sh_run
@@ -53,5 +50,5 @@ def ingest_osm_overpass(place, tags, name):
         osmnx.geometries_from_place(place, tags)
         .reset_index()[["osmid", *tags.keys(), "geometry"]]
         .to_crs(epsg=27700)
-        .to_parquet(f'{FOLDER_STG}/{name}.parquet')
+        .to_parquet(f"{FOLDER_STG}/{name}.parquet")
     )

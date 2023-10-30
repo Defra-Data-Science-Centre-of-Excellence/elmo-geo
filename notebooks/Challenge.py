@@ -36,19 +36,20 @@
 import pandas as pd
 
 import elmo_geo
-from elmo_geo.utils.settings import FOLDER_STG, FOLDER_ODS
+
+# from elmo_geo.st import sjoin
 from elmo_geo.utils.misc import dbfs
-from elmo_geo.st import sjoin
+from elmo_geo.utils.settings import FOLDER_ODS, FOLDER_STG
 
 elmo_geo.register()
 
 # COMMAND ----------
 
-sf_parcel = dbfs(FOLDER_ODS, True) + '/rpa-parcels-2021_03_16.parquet'
-f_farm = FOLDER_STG + '/wfm-farm-2023_06_09.feather'
-f_field = FOLDER_STG + '/wfm-field-2023_06_09.feather'
-f_sssi = FOLDER_STG + '/ne-sssi_units-2023_02_10.geojson'
-sf_sssi = dbfs(FOLDER_STG, True) + '/ne-sssi_units-2023_02_10.parquet'
+sf_parcel = dbfs(FOLDER_ODS, True) + "/rpa-parcels-2021_03_16.parquet"
+f_farm = FOLDER_STG + "/wfm-farm-2023_06_09.feather"
+f_field = FOLDER_STG + "/wfm-field-2023_06_09.feather"
+f_sssi = FOLDER_STG + "/ne-sssi_units-2023_02_10.geojson"
+sf_sssi = dbfs(FOLDER_STG, True) + "/ne-sssi_units-2023_02_10.parquet"
 
 
 # COMMAND ----------
@@ -57,20 +58,22 @@ df_farm = pd.read_feather(f_farm)
 df_field = pd.read_feather(f_field)
 
 
-sdf_cs = spark.createDataFrame(pd.DataFrame.merge(
-  df_field[['id_business', 'id_parcel']],
-  df_farm[['id_business', 'participation_schemes']],
-  on = 'id_business',
-  how = 'outer',
-))
+sdf_cs = spark.createDataFrame(
+    pd.DataFrame.merge(
+        df_field[["id_business", "id_parcel"]],
+        df_farm[["id_business", "participation_schemes"]],
+        on="id_business",
+        how="outer",
+    )
+)
 
 
 display(sdf_cs)
 
 # COMMAND ----------
 
-sdf_parcel = spark.read.format('geoparquet').load(sf_parcel)
-sdf_sssi = spark.read.format('geoparquet').load(sf_sssi)
+sdf_parcel = spark.read.format("geoparquet").load(sf_parcel)
+sdf_sssi = spark.read.format("geoparquet").load(sf_sssi)
 
 
 display(sdf_parcel)
