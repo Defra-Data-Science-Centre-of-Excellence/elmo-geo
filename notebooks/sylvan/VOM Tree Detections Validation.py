@@ -56,14 +56,14 @@ register()
 def disjoint_filter(
     inDF: SparkDataFrame, filterFeaturesDF: SparkDataFrame, left_geometry: str, right_geometry: str
 ) -> SparkDataFrame:
-    inDF = inDF.withColumn("geometry", F.col(left_geometry))
-    filterFeaturesDF = filterFeaturesDF.withColumn("geometry", F.col(right_geometry))
+    inDF = inDF.withColumn("geometry_temp", F.col(left_geometry))
+    filterFeaturesDF = filterFeaturesDF.withColumn("geometry_temp", F.col(right_geometry))
 
     # Create a single geometry
     filterFeaturesDF.createOrReplaceTempView("ffDF")
     filterFeaturesDF = spark.sql(
         """
-                                    SELECT ST_Union_Aggr(geometry) AS geometry
+                                    SELECT ST_Union_Aggr(geometry_temp) AS geometry_temp
                                     FROM ffDF
                                     """
     )
@@ -77,10 +77,10 @@ def disjoint_filter(
         """
                                 SELECT inDF.*
                                 FROM inDF, ffDF
-                                WHERE ST_Disjoint(inDF.geometry, ffDF.geometry)
+                                WHERE ST_Disjoint(inDF.geometry_temp, ffDF.geometry_temp)
                                 """
     )
-    return notIntersectDF
+    return notIntersectDF.drop("geometry_temp")
 
 
 def calculate_tree_crown_areas(
