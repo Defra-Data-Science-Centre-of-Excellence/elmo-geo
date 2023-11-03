@@ -227,7 +227,7 @@ def validate_tree_detections_string_filter(
 def aggregated_precision_recall(df):
     p = df["true_positive"].sum() / df["vom_crown_area"].sum()
     r = df["true_positive"].sum() / df["tow_crown_area"].sum()
-    f = 2 / (1 / p) + (1 / r)
+    f = 2 / ((1 / p) + (1 / r))
     return p, r, f
 
 
