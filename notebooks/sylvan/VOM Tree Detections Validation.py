@@ -305,7 +305,7 @@ sdf_sampled_tiles = (
 # COMMAND ----------
 
 # DBTITLE 1,Filter datase to these tiles
-simplify_tollerance = 2
+simplify_tollerance = 1
 
 sdf_vom = (
     spark.read.parquet(output_trees_path)
