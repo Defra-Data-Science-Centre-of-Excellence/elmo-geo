@@ -41,9 +41,11 @@ import pandas as pd
 from pyspark.sql import functions as F
 
 from elmo_geo import register
-from elmo_geo.io import io2 as io
+import elmo_geo.io.io2 as io
 from elmo_geo.st import st
+
 from elmo_geo.utils.types import SparkDataFrame
+from elmo_geo.utils.dbr import spark
 
 register()
 
@@ -124,7 +126,7 @@ def calculate_tree_crown_areas(
 
 
 def filter_out_itersecting_features(inDF, filterFeaturesDF, id_col="tree_id"):
-    intersectDF = st.sjoin(spark, inDF, filterFeaturesDF, lsuffix="_left", rsuffix="_right")
+    intersectDF = st.sjoin(inDF, filterFeaturesDF, lsuffix="_left", rsuffix="_right", spark=spark)
     notIntersectDF = inDF.join(intersectDF, on=id_col, how="left_anti").select(*list(inDF.columns))
     return notIntersectDF
 
