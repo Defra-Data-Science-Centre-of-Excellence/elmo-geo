@@ -262,9 +262,7 @@ sf_tow_sub = "dbfs:/mnt/lab/unrestricted/elm/elmo/tree_features/tree_detection_v
 sf_nfi_sub = "dbfs:/mnt/lab/unrestricted/elm/elmo/tree_features/tree_detection_validation/nfi__validation_sample.parquet"
 
 # where validation results area stored
-validation_results_path = (
-    "/dbfs/mnt/lab/unrestricted/elm/elmo/hrtrees/tree_detection_validation/validation_results.csv"
-)
+validation_results_path = "/dbfs/mnt/lab/unrestricted/elm/elmo/tree_features/tree_detection_validation/validation_results.csv"
 
 # COMMAND ----------
 
@@ -385,9 +383,7 @@ sdf_tow_sample = spark.read.parquet(sf_tow_sub)
 
 # COMMAND ----------
 
-# Now apply the validation function to the tiles sdf to get validation results for each tile
-# sdf_validation_results = sdf_sampled_tiles.groupby("major_grid", "tile_name").apply(validate_tree_detections_string_filter, tile_name, sdf_vom_sub, sdf_nfi_sub, sdf_tow_sub)
-
+df_res_all = pd.read_csv(validation_results_path)
 
 # COMMAND ----------
 
@@ -398,7 +394,6 @@ else:
     df_res_all = pd.DataFrame()
 
 for ix, row in df_sampled_tiles.iterrows():
-    print(row["tile_name"])
     df_res = validate_tree_detections_string_filter(
         row["tile_name"], sdf_vom_sample, sdf_nfi_sample, sdf_tow_sample
     )
@@ -408,9 +403,10 @@ for ix, row in df_sampled_tiles.iterrows():
     df_res["method"] = f"stratified_sample_seed_{seed}"
     df_res_all = pd.concat([df_res_all, df_res])
 
+# COMMAND ----------
+
 df_res_all["precision"] = df_res_all["true_positive"] / df_res_all["vom_crown_area"]
 df_res_all["recall"] = df_res_all["true_positive"] / df_res_all["tow_crown_area"]
-df_res_all
 
 # COMMAND ----------
 
@@ -525,9 +521,21 @@ df_res_all = pd.read_csv(validation_results_path)
 
 # COMMAND ----------
 
+df_res_all["precision"] = df_res_all["true_positive"] / df_res_all["vom_crown_area"]
+df_res_all["recall"] = df_res_all["true_positive"] / df_res_all["tow_crown_area"]
+
+# COMMAND ----------
+
+df_res_all.tail()
+
+# COMMAND ----------
+
 s = (
-    df_res_all.loc[df_res_all["true_positive"].isnull() is False]
+    df_res_all.loc[
+        (df_res_all["method"] == "stratified_sample_seed_1")
+        & (~df_res_all["true_positive"].isnull())
+    ]
     .groupby("tree_detections_data")
     .apply(aggregated_precision_recall)
 )
-s
+s.values  # precision, recall, f score
