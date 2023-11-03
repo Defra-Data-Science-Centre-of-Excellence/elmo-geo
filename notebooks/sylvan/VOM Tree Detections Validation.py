@@ -290,6 +290,12 @@ df_sampled_tiles = (
     .to_wkb()
 )
 
+sdf_sampled_tiles = (
+    spark.createDataFrame(df_sampled_tiles)
+    .repartition(10, "major_grid", "tile_name")
+    .withColumn("geometry", io.load_geometry("geometry"))
+)
+
 # COMMAND ----------
 
 # MAGIC %md
