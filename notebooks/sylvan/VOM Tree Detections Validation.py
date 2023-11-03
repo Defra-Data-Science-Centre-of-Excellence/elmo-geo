@@ -341,25 +341,27 @@ sdf_tow = (
 # COMMAND ----------
 
 # DBTITLE 1,Intersect sample tiles with data for validation
-sdf_sampled_tiles = (
-    spark.createDataFrame(df_sampled_tiles)
-    .repartition(10, "major_grid", "tile_name")
-    .withColumn("geometry", io.load_geometry("geometry"))
+sdf_vom_sample = (
+    st.sjoin(sdf_vom, sdf_sampled_tiles, lsuffix="_sample", rsuffix="_tile", spark=spark)
+    .withColumnRenamed("geometry_sample", "geometry")
+    .withColumnRenamed("major_grid_sample", "major_grid")
+    .repartition(1_000, "major_grid", "tile_name")
 )
 
-sdf_vom_sample = st.sjoin(
-    sdf_vom, sdf_sampled_tiles, lsuffix="", rsuffix="_tile", spark=spark
-).repartition(1_000, "major_grid", "tile_name")
-sdf_nfi_sample = st.sjoin(
-    sdf_nfi, sdf_sampled_tiles, lsuffix="", rsuffix="_tile", spark=spark
-).repartition(1_000, "major_grid", "tile_name")
-sdf_tow_sample = st.sjoin(
-    sdf_nfi, sdf_sampled_tiles, lsuffix="", rsuffix="_tile", spark=spark
-).repartition(1_000, "major_grid", "tile_name")
+sdf_nfi_sample = (
+    st.sjoin(sdf_nfi, sdf_sampled_tiles, lsuffix="_sample", rsuffix="_tile", spark=spark)
+    .withColumnRenamed("geometry_sample", "geometry")
+    .withColumnRenamed("major_grid_sample", "major_grid")
+    .repartition(1_000, "major_grid", "tile_name")
+)
 
-# COMMAND ----------
-
-# sdf_vom_sample.count() # 2232417
+sdf_tow_sample = (
+    st.sjoin(sdf_tow, sdf_sampled_tiles, lsuffix="_sample", rsuffix="_tile", spark=spark)
+    .withColumnRenamed("geometry_sample", "geometry")
+    .withColumnRenamed("major_grid_sample", "major_grid")
+    .repartition(1_000, "major_grid", "tile_name")
+)
+#
 
 # COMMAND ----------
 
