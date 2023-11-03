@@ -420,6 +420,103 @@ df_res_all.to_csv(validation_results_path, index=False)
 
 # MAGIC %md
 # MAGIC
+# MAGIC ## Debug
+
+# COMMAND ----------
+
+df_res = validate_tree_detections_string_filter(
+    "TR26NW", sdf_vom_sample, sdf_nfi_sample, sdf_tow_sample
+)
+df_res
+
+# COMMAND ----------
+
+tile_name = "TR26NW"
+tile_filter = F.expr(f"(major_grid='{tile_name[:2]}') and (tile_name='{tile_name}')")
+sdf_vom_tile = sdf_vom_sample.filter(tile_filter)
+sdf_tow_tile = sdf_tow_sample.filter(tile_filter)
+sdf_nfi_tile = sdf_nfi_sample.filter(tile_filter)
+
+# validate the detections for this tile
+sdf_nfi_tile = sdf_nfi_tile.withColumn("geometry_genbuf", F.expr("ST_Buffer(geometry, 10)"))
+sdf_notNfiTrees = disjoint_filter(
+    sdf_vom_tile, sdf_nfi_tile, left_geometry="top_point", right_geometry="geometry_genbuf"
+)
+
+# Calculate overlap
+# result = calculate_tree_crown_areas(sdf_notNfiTrees, sdf_tow, left_geometry=vom_td_canopy_geom, right_geometry=tow_canopy_geom)
+
+notNfiTreesDF = sdf_notNfiTrees.withColumn("geometry", F.col("geometry"))
+towDF = sdf_tow_tile.withColumn("geometry", F.col("geometry"))
+
+vom_crown_area = (
+    notNfiTreesDF.select(F.expr("ST_Area(geometry) as area")).agg(F.sum("area")).collect()[0][0]
+)
+
+tow_crown_area = (
+    towDF.select(F.expr("ST_Area(geometry) as area")).agg(F.sum("area")).collect()[0][0]
+)
+
+compDF = st.sjoin(notNfiTreesDF, towDF, lsuffix="_vom", rsuffix="_tow", spark=spark)
+approximated = False
+try:
+    compDF = compDF.withColumn(
+        "intersection_area",
+        F.expr("ST_Area(ST_MakeValid(ST_Intersection(geometry_vom, geometry_tow)))"),
+    )
+    true_positive = compDF.agg(F.sum("intersection_area")).collect()[0][0]
+except Exception:
+    true_positive = (
+        compDF.select(F.expr("ST_Area(geometry_vom) as area")).agg(F.sum("area")).collect()[0][0]
+    )
+    approximated = True
+
+vom_crown_area, tow_crown_area, true_positive, approximated
+
+# COMMAND ----------
+
+from shapely import from_wkb
+
+gdf_vom_not_nfi = notNfiTreesDF.select(
+    F.expr("ST_AsBinary(geometry) as geometry"), "tile_name"
+).toPandas()
+gdf_vom_not_nfi = gpd.GeoDataFrame(
+    gdf_vom_not_nfi, geometry=gdf_vom_not_nfi["geometry"].map(lambda x: from_wkb(x))
+)
+
+gdf_tow = towDF.select(F.expr("ST_AsBinary(geometry) as geometry"), "tile_name").toPandas()
+gdf_tow = gpd.GeoDataFrame(gdf_tow, geometry=gdf_tow["geometry"].map(lambda x: from_wkb(x)))
+
+gdf_sampled_tiles = gpd.GeoDataFrame(
+    df_sampled_tiles, geometry=df_sampled_tiles["geometry"].map(lambda x: from_wkb(x))
+)
+
+# COMMAND ----------
+
+gdf_area = gdf_sampled_tiles.loc[gdf_sampled_tiles["tile_name"] == tile_name]
+gdf_tow.loc[gdf_tow.intersects(gdf_area.geometry.values[0])].plot()
+# ax.set_xlim(xmin=621000, xmax = 622000)
+# ax.set_ylim(ymin = 167000, ymax = 168000)
+
+# COMMAND ----------
+
+gdf_tow["tile_name"].value_counts()
+
+# COMMAND ----------
+
+import matplotlib.pyplot as plt
+
+f, ax = plt.subplots(figsize=(10, 10))
+
+gdf_vom_not_nfi.plot(ax=ax, alpha=0.5, color="blue")
+gdf_tow.plot(ax=ax, alpha=0.5, color="red")
+ax.set_xlim(xmin=621000, xmax=622000)
+ax.set_ylim(ymin=167000, ymax=168000)
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC
 # MAGIC ## Calculate pre and re across all tiles
 
 # COMMAND ----------
