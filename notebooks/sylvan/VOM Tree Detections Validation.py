@@ -372,58 +372,15 @@ sdf_tow_sample.write.mode("overwrite").parquet(sf_tow_sub)
 
 # MAGIC %md
 # MAGIC
-# MAGIC ## Sampled data and run validation
+# MAGIC ## Run validation on a single tile
+# MAGIC
+# MAGIC Used to test methods. Visualises the overlap between the detections and 'ground truth' data to compare.
 
 # COMMAND ----------
 
-# DBTITLE 1,Load sampled data
 sdf_vom_sample = spark.read.parquet(sf_vom_sub)
 sdf_nfi_sample = spark.read.parquet(sf_nfi_sub)
 sdf_tow_sample = spark.read.parquet(sf_tow_sub)
-
-# COMMAND ----------
-
-df_res_all = pd.read_csv(validation_results_path)
-
-# COMMAND ----------
-
-# DBTITLE 1,Run validation on sampled tiles
-if os.path.exists(validation_results_path):
-    df_res_all = pd.read_csv(validation_results_path)
-else:
-    df_res_all = pd.DataFrame()
-
-for ix, row in df_sampled_tiles.iterrows():
-    df_res = validate_tree_detections_string_filter(
-        row["tile_name"], sdf_vom_sample, sdf_nfi_sample, sdf_tow_sample
-    )
-    df_res["tile_name"] = row["tile_name"]
-    df_res["tile_geom"] = row["geometry"]
-    df_res["tree_detections_data"] = output_trees_path
-    df_res["method"] = f"stratified_sample_seed_{seed}"
-    df_res_all = pd.concat([df_res_all, df_res])
-
-# COMMAND ----------
-
-df_res_all["precision"] = df_res_all["true_positive"] / df_res_all["vom_crown_area"]
-df_res_all["recall"] = df_res_all["true_positive"] / df_res_all["tow_crown_area"]
-
-# COMMAND ----------
-
-df_res_all.to_csv(validation_results_path, index=False)
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC
-# MAGIC ## Debug
-
-# COMMAND ----------
-
-df_res = validate_tree_detections_string_filter(
-    "TR26NW", sdf_vom_sample, sdf_nfi_sample, sdf_tow_sample
-)
-df_res
 
 # COMMAND ----------
 
@@ -471,6 +428,13 @@ vom_crown_area, tow_crown_area, true_positive, approximated
 
 # COMMAND ----------
 
+df_res = validate_tree_detections_string_filter(
+    "TR26NW", sdf_vom_sample, sdf_nfi_sample, sdf_tow_sample
+)
+df_res
+
+# COMMAND ----------
+
 from shapely import from_wkb
 
 gdf_vom_not_nfi = notNfiTreesDF.select(
@@ -513,6 +477,52 @@ ax.set_ylim(ymin=167000, ymax=168000)
 
 # MAGIC %md
 # MAGIC
+# MAGIC ## Run validation on all tiles in sample
+# MAGIC
+# MAGIC Loads sample data, loops through sample tiles, runs validation on each tile.
+
+# COMMAND ----------
+
+# DBTITLE 1,Load sampled data
+sdf_vom_sample = spark.read.parquet(sf_vom_sub)
+sdf_nfi_sample = spark.read.parquet(sf_nfi_sub)
+sdf_tow_sample = spark.read.parquet(sf_tow_sub)
+
+# COMMAND ----------
+
+df_res_all = pd.read_csv(validation_results_path)
+
+# COMMAND ----------
+
+# DBTITLE 1,Run validation on sampled tiles
+if os.path.exists(validation_results_path):
+    df_res_all = pd.read_csv(validation_results_path)
+else:
+    df_res_all = pd.DataFrame()
+
+for ix, row in df_sampled_tiles.iterrows():
+    df_res = validate_tree_detections_string_filter(
+        row["tile_name"], sdf_vom_sample, sdf_nfi_sample, sdf_tow_sample
+    )
+    df_res["tile_name"] = row["tile_name"]
+    df_res["tile_geom"] = row["geometry"]
+    df_res["tree_detections_data"] = output_trees_path
+    df_res["method"] = f"stratified_sample_seed_{seed}"
+    df_res_all = pd.concat([df_res_all, df_res])
+
+# COMMAND ----------
+
+df_res_all["precision"] = df_res_all["true_positive"] / df_res_all["vom_crown_area"]
+df_res_all["recall"] = df_res_all["true_positive"] / df_res_all["tow_crown_area"]
+
+# COMMAND ----------
+
+df_res_all.to_csv(validation_results_path, index=False)
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC
 # MAGIC ## Calculate pre and re across all tiles
 
 # COMMAND ----------
@@ -523,10 +533,6 @@ df_res_all = pd.read_csv(validation_results_path)
 
 df_res_all["precision"] = df_res_all["true_positive"] / df_res_all["vom_crown_area"]
 df_res_all["recall"] = df_res_all["true_positive"] / df_res_all["tow_crown_area"]
-
-# COMMAND ----------
-
-df_res_all.tail()
 
 # COMMAND ----------
 
