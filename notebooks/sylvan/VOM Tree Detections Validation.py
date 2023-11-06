@@ -124,13 +124,6 @@ def calculate_tree_crown_areas(
 
     return vom_crown_area, tow_crown_area, true_positive, approximated
 
-
-def filter_out_itersecting_features(inDF, filterFeaturesDF, id_col="tree_id"):
-    intersectDF = st.sjoin(inDF, filterFeaturesDF, lsuffix="_left", rsuffix="_right", spark=spark)
-    notIntersectDF = inDF.join(intersectDF, on=id_col, how="left_anti").select(*list(inDF.columns))
-    return notIntersectDF
-
-
 def validate_tree_detections_tile(
     sdf_vom_td: SparkDataFrame,
     sdf_tow: SparkDataFrame,
@@ -152,53 +145,6 @@ def validate_tree_detections_tile(
         sdf_notNfiTrees, sdf_tow, left_geometry=vom_td_canopy_geom, right_geometry=tow_canopy_geom
     )
     return result
-
-
-def validate_tree_detections(
-    tile_name: str,
-    tile_wkt: str,
-    sdf_vom_td: SparkDataFrame,
-    sdf_nfi: SparkDataFrame,
-    sdf_tow: SparkDataFrame,
-) -> pd.DataFrame:
-    """ """
-    # Filter data to just the tile
-    sdf_vom_sub = sdf_vom.filter(sdf_vom.major_grid.startswith(tile_name[:2])).filter(
-        F.expr(
-            f"""ST_Intersects(
-                                    ST_GeomFromWKT('{tile_wkt}'),crown_poly_raster
-                                    )"""
-        )
-    )
-
-    sdf_tow_sub = sdf_tow.filter(
-        F.expr(
-            f"""
-                                ST_Intersects(
-                                    ST_GeomFromWKT('{tile_wkt}'),geometry_generalised
-                                    )
-                                """
-        )
-    )
-
-    sdf_nfi_sub = sdf_nfi.filter(
-        F.expr(
-            f"""
-                                ST_Intersects(
-                                    ST_GeomFromWKT('{tile_wkt}'),geometry_generalised
-                                    )
-                                """
-        )
-    )
-
-    # validate the detections for this tile
-    result = validate_tree_detections_tile(sdf_vom_sub, sdf_tow_sub, sdf_nfi_sub)
-
-    df_res = pd.DataFrame(
-        [result], columns=["vom_crown_area", "tow_crown_area", "true_positive", "approximation"]
-    )
-    return df_res
-
 
 def validate_tree_detections_string_filter(
     tile_name: str,
@@ -222,7 +168,6 @@ def validate_tree_detections_string_filter(
     return pd.DataFrame(
         [result], columns=["vom_crown_area", "tow_crown_area", "true_positive", "approximation"]
     )
-
 
 def aggregated_precision_recall(df):
     p = df["true_positive"].sum() / df["vom_crown_area"].sum()
@@ -457,10 +402,6 @@ gdf_area = gdf_sampled_tiles.loc[gdf_sampled_tiles["tile_name"] == tile_name]
 gdf_tow.loc[gdf_tow.intersects(gdf_area.geometry.values[0])].plot()
 # ax.set_xlim(xmin=621000, xmax = 622000)
 # ax.set_ylim(ymin = 167000, ymax = 168000)
-
-# COMMAND ----------
-
-gdf_tow["tile_name"].value_counts()
 
 # COMMAND ----------
 
