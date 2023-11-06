@@ -254,7 +254,7 @@ tow_lidar_parquet_output = (
 )
 nfi_path = "dbfs:/mnt/lab/unrestricted/elm_data/source_forestry_commission_open_data/dataset_national_forest_inventory_woodland_england/SNAPSHOT_2022_10_19_national_forest_inventory_woodland_england_2020/National_Forest_Inventory_Woodland_England_2020.parquet"
 os_gb_grid_path = "/dbfs/mnt/lab/unrestricted/elm_data/ordnance_survey/os_bng_grids.gpkg"
-countries_path = "/dbfs/FileStore/Countries_December_2022_GB_BUC.gpkg"
+countries_path = "https://stg-arcgisazurecdataprod1.az.arcgis.com/exportfiles-1559-18731/Countries_December_2022_GB_BUC_-2258841071111693595.gpkg?sv=2018-03-28&sr=b&sig=u%2BAmHyIGzlqD7OdddmVff8iTn5vEI4VRs0W%2Fye0enNI%3D&se=2023-11-06T12%3A49%3A51Z&sp=r"
 
 # paths for inputs filters to sample validation areas
 sf_vom_sub = f"dbfs:/mnt/lab/unrestricted/elm/elmo/tree_features/tree_detection_validation/vom_td_{tree_detection_timestamp}_validation_sample.parquet"
