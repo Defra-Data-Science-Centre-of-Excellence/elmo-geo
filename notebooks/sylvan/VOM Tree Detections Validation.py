@@ -187,7 +187,7 @@ dfmeta
 # COMMAND ----------
 
 # timestamp = "202308040848"
-tree_detection_timestamp = "202308032321"
+tree_detection_timestamp = "202308040848"
 
 # input paths for validation
 output_trees_path = f"dbfs:/mnt/lab/unrestricted/elm/elmo/tree_features/tree_detections/tree_detections_{tree_detection_timestamp}.parquet"
@@ -199,7 +199,7 @@ tow_lidar_parquet_output = (
 )
 nfi_path = "dbfs:/mnt/lab/unrestricted/elm_data/source_forestry_commission_open_data/dataset_national_forest_inventory_woodland_england/SNAPSHOT_2022_10_19_national_forest_inventory_woodland_england_2020/National_Forest_Inventory_Woodland_England_2020.parquet"
 os_gb_grid_path = "/dbfs/mnt/lab/unrestricted/elm_data/ordnance_survey/os_bng_grids.gpkg"
-countries_path = "https://stg-arcgisazurecdataprod1.az.arcgis.com/exportfiles-1559-18731/Countries_December_2022_GB_BUC_-2258841071111693595.gpkg?sv=2018-03-28&sr=b&sig=u%2BAmHyIGzlqD7OdddmVff8iTn5vEI4VRs0W%2Fye0enNI%3D&se=2023-11-06T12%3A49%3A51Z&sp=r"
+countries_path = "/dbfs/FileStore/Countries_December_2022_GB_BUC.gpkg"
 
 # paths for inputs filters to sample validation areas
 sf_vom_sub = f"dbfs:/mnt/lab/unrestricted/elm/elmo/tree_features/tree_detection_validation/vom_td_{tree_detection_timestamp}_validation_sample.parquet"
@@ -431,10 +431,6 @@ sdf_tow_sample = spark.read.parquet(sf_tow_sub)
 
 # COMMAND ----------
 
-df_res_all = pd.read_csv(validation_results_path)
-
-# COMMAND ----------
-
 # DBTITLE 1,Run validation on sampled tiles
 if os.path.exists(validation_results_path):
     df_res_all = pd.read_csv(validation_results_path)
@@ -485,4 +481,9 @@ s = (
     .groupby("tree_detections_data")
     .apply(aggregated_precision_recall)
 )
-s.values  # precision, recall, f score
+s.index = [i.split("/")[-1] for i in s.index]
+s  # precision, recall, f score
+
+# COMMAND ----------
+
+
