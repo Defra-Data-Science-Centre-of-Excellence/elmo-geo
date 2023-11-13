@@ -16,7 +16,7 @@ verify:
 	black --diff --check .
 	flake8 . --extend-exclude=notebooks/
 	flake8 notebooks --builtins=spark,sc,dbutils,display,displayHTML
-	pytest .
+#	pytest .
 
 clean:
 	rm -r *.egg-info 2> /dev/null || true

@@ -2,7 +2,6 @@ import subprocess
 
 from pyspark.sql import functions as F
 
-from elmo_geo.utils.dbr import display
 from elmo_geo.utils.log import LOG
 from elmo_geo.utils.types import SparkDataFrame
 
@@ -25,9 +24,22 @@ def dbfs(f: str, spark_api: bool):
 
 def sh_run(exc: str):
     out = subprocess.run(exc, shell=True, capture_output=True, text=True)
-    LOG.info(exc, out)
+    LOG.info(out.__repr__())
     return out
 
 
 def gtypes(sdf: SparkDataFrame, col: str = "geometry"):
-    display(sdf.select(F.expr("ST_GeometryType({col}) AS gtype")).groupby("gtype").count())
+    sdf = sdf.select(F.expr(f"ST_GeometryType({col}) AS gtype")).groupby("gtype").count()
+    LOG.info(f"gtypes:  {sdf.rdd.collectAsMap()}")
+    return sdf
+
+
+def total_bounds(sdf: SparkDataFrame, col: str = "geometry"):
+    sdf = sdf.groupby().agg(
+        F.expr(f"MIN(ST_XMin({col})) AS xmin"),
+        F.expr(f"MIN(ST_YMin({col})) AS ymin"),
+        F.expr(f"MAX(ST_XMax({col})) AS xmax"),
+        F.expr(f"MAX(ST_YMax({col})) AS ymax"),
+    )
+    LOG.info(f"total_bounds:  {sdf.head().asDict()}")
+    return sdf

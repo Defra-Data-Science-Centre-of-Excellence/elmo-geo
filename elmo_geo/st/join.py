@@ -107,11 +107,11 @@ def sjoin(
         if col in sdf_right.columns:
             sdf_left = sdf_left.withColumnRenamed(col, col + lsuffix)
             sdf_right = sdf_right.withColumnRenamed(col, col + rsuffix)
-    geometry_left, geometry_right = f"left.geometry{lsuffix}", f"right.geometry{rsuffix}"
+    geometry_left, geometry_right = f"geometry{lsuffix}", f"geometry{rsuffix}"
     # Regular Join
     return (
-        sdf.join(sdf_left.drop("geometry"), how=how_left, on="id_left")
-        .join(sdf_right.drop("geometry"), how=how_right, on="id_right")
+        sdf.join(sdf_left, how=how_left, on="id_left")
+        .join(sdf_right, how=how_right, on="id_right")
         .withColumn(geometry_left, load_missing(geometry_left))
         .withColumn(geometry_right, load_missing(geometry_right))
         .drop("id_left", "id_right")

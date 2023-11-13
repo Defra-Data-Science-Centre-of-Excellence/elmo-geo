@@ -34,8 +34,8 @@ def ingest_esri(url, name=None):
     if name is None:
         name = get_esri_name(url)
     f_in, f_out = FOLDER_STG + f"/{name}.geojson", FOLDER_STG + f"/{name}.parquet"
-    sh_run(f"esri2geojson {url} {f_in}")
-    convert_file(f_in, f_out)
+    # sh_run(f"esri2geojson '{url}' '{f_in}'")
+    # convert_file(f_in, f_out)
     append_to_catalogue(
         {
             name: {
