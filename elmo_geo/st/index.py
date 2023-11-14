@@ -22,8 +22,9 @@ def get_bng_resolution(n: int, /, target: int) -> str:
 
 
 def get_bng_grid(resolution: str) -> SparkDataFrame:
-    sf = "dbfs:/mnt/lab/unrestricted/elm/ods/os/bng_grid_{resolution}/2023.parquet"
-    return spark.read.parquet(sf)
+    # sf = f"dbfs:/mnt/lab/unrestricted/elm/ods/os/bng_grid_{resolution}/2023.parquet"
+    sf = "dbfs:/mnt/lab/restricted/ELM-Project/stg/os-bng-2023_08_24.parquet/" + resolution
+    return spark.read.format("geoparquet").load(sf).withColumnRenamed('tile_name', 'sindex')
 
 
 def get_grid(method: str, resolution: Union[str, int]) -> SparkDataFrame:

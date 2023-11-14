@@ -56,7 +56,7 @@ def sjoin_sql(
     """
     # Distance Join
     if 0 < distance:
-        sdf_left.withColumn("geometry", F.expr("ST_MakeValid(ST_Buffer(geometry, {distance}))"))
+        sdf_left = sdf_left.withColumn("geometry", F.expr(f"ST_MakeValid(ST_Buffer(geometry, {distance}))"))
     # Add to SQL
     sdf_left.createOrReplaceTempView("left")
     sdf_right.createOrReplaceTempView("right")
@@ -81,7 +81,7 @@ def sjoin(
     lsuffix: str = "_left",
     rsuffix: str = "_right",
     sjoin_fn: callable = sjoin_sql,
-    sjoin_kwargs: dict = {},
+    **sjoin_kwargs,
 ) -> SparkDataFrame:
     """Spatial Join with how
     how: {inner, full, left, right}

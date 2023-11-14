@@ -22,8 +22,10 @@ def dbfs(f: str, spark_api: bool):
         raise Exception(f'file must start with "dbfs:/" or "/dbfs/": {f}')
 
 
-def sh_run(exc: str):
-    out = subprocess.run(exc, shell=True, capture_output=True, text=True)
+def sh_run(exc: str, **kwargs):
+    _kwargs = dict(shell=True, capture_output=True, text=True)
+    _kwargs.update(kwargs)
+    out = subprocess.run(exc, **_kwargs)
     LOG.info(out.__repr__())
     return out
 
