@@ -2,7 +2,6 @@ from pyspark.sql import functions as F
 
 from elmo_geo.st.index import centroid_index, chipped_index, sindex
 from elmo_geo.utils.misc import sh_run
-from elmo_geo.utils.settings import FOLDER_CONDA
 from elmo_geo.utils.types import SparkDataFrame
 
 
@@ -39,3 +38,6 @@ def to_gpq_zsorted(sdf: SparkDataFrame, sf_out: str):
         .write.format("geoparquet")
         .save(sf_out)
     )
+
+
+to_gpq = to_gpq_partitioned
