@@ -4,6 +4,9 @@ dbx:
 	databricks configure --jobs-api-version 2.1 --host $$DATABRICKS_HOST --aad-token
 	dbx sync repo -d elmo-geo-dev
 
+sync:
+	dbx sync repo -d elmo_geo --source .
+
 freeze:
 	pip freeze --exclude-editable | grep -v "file:///" > requirements.txt
 
