@@ -15,4 +15,5 @@
 __pycache__/
 # *.py[cod]
 # *$py.class
-# /build/
+/build/
+/*.egg-info/
