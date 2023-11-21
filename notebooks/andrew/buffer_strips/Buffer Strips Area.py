@@ -190,8 +190,8 @@ display(sdf_geo)
 
 # COMMAND ----------
 
-
 # DBTITLE 1,Plot
+
 def sql_startswiths(col: str, starters: list):
     return " OR ".join(f'STARTSWITH({col}, "{s}")' for s in starters)
 

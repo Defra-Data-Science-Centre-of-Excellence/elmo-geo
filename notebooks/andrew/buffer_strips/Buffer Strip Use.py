@@ -51,8 +51,8 @@ display(sdf0)
 
 # COMMAND ----------
 
-
 # DBTITLE 1,Plot
+
 def wkbs(data, crs):
     return gpd.GeoSeries.from_wkb(data, crs=crs)
 
@@ -135,6 +135,7 @@ display(sdf1)
 # COMMAND ----------
 
 
+
 # COMMAND ----------
 
 # DBTITLE 1,Statistics
@@ -169,5 +170,3 @@ display(df)
 # COMMAND ----------
 
 pan_df = df.toPandas()
-
-# COMMAND ----------
