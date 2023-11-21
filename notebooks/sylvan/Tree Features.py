@@ -13,7 +13,8 @@
 # MAGIC `dbfs:/mnt/lab/unrestricted/elm/elmo/hrtrees/tree_detections/tree_detections_{timestamp}.parquet`
 # MAGIC
 # MAGIC Parcel geometries are taken from
-# MAGIC `dbfs:/mnt/lab/unrestricted/elm_data/rpa/reference_parcels/2023_02_07.parquet`
+# MAGIC `dbfs:/mnt/lab/unrestricted/elm_data/rpa/reference_parcels/2021_03_16.parquet`.
+# MAGIC Using the March 2021 geometries to best align with the version of the WFM being used in elmo (May 2021) as of Nov 2023.
 # MAGIC
 # MAGIC Hedgerow geometries are already linked to parcels and located at
 # MAGIC `dbfs:/mnt/lab/unrestricted/elm_data/rural_payments_agency/efa_hedges/2022_06_24.parquet`
@@ -115,7 +116,7 @@ hedgerowBufferDistances = [2]
 parcelBufferDistances = [2, 4]
 waterbodyBufferDistances = [2, 4]
 
-timestamp = "202308040848"  # 20230623- timestamp used for sp tree features run
+timestamp = "202308040848"  # 202308040848 timestamp is tree detection version with best F1 score so far.
 
 hedgerows_path = (
     "dbfs:/mnt/lab/unrestricted/elm_data/rural_payments_agency/efa_hedges/2022_06_24.parquet"
@@ -127,17 +128,17 @@ hedges_length_path = (
     "dbfs:/mnt/lab/unrestricted/elm/elmo/hedgerows_and_water/hedgerows_and_water.csv"
 )
 
-parcels_path = "dbfs:/mnt/lab/unrestricted/elm_data/rpa/reference_parcels/2023_02_07.parquet"
+parcels_path = "dbfs:/mnt/lab/unrestricted/elm_data/rpa/reference_parcels/2021_03_16.parquet"
 
 trees_output_template = (
     "dbfs:/mnt/lab/unrestricted/elm/elmo/"
-    "hrtrees/tree_detections/"
+    "tree_features/tree_detections/"
     "tree_detections_{timestamp}.parquet"
 )
 output_trees_path = trees_output_template.format(timestamp=timestamp)
 
 features_output_template = (
-    "dbfs:/mnt/lab/unrestricted/elm/elmo/" "hrtrees/" "tree_features_{timestamp}.parquet"
+    "dbfs:/mnt/lab/unrestricted/elm/elmo/tree_features/tree_features_{timestamp}.parquet"
 )
 parcel_trees_output = features_output_template.format(timestamp=timestamp)
 
@@ -203,5 +204,3 @@ pTreesDF.schema
 
 # Save the data
 pTreesDF.write.mode("overwrite").parquet(parcel_trees_output)
-
-# COMMAND ----------
