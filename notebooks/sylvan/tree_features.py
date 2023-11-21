@@ -14,10 +14,8 @@ from typing import Dict, List, Optional, Tuple
 
 from pyspark.sql import functions as F
 
-from elmo_geo import LOG, register
+from elmo_geo import LOG
 from elmo_geo.utils.types import SparkDataFrame, SparkSession
-
-register()
 
 #
 # Define functions that are used in geocomputation operations

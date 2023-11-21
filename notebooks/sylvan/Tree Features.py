@@ -103,12 +103,12 @@
 
 from tree_features import *
 
-from elmo_geo import register
+from sedona.spark import SedonaContext
 from elmo_geo.utils.dbr import spark
 
 # COMMAND ----------
 
-register()
+SedonaContext.create(spark)
 
 # COMMAND ----------
 
@@ -145,6 +145,10 @@ parcel_trees_output = features_output_template.format(timestamp=timestamp)
 # COMMAND ----------
 
 parcel_trees_output
+
+# COMMAND ----------
+
+output_trees_path
 
 # COMMAND ----------
 
