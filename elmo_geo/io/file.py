@@ -7,29 +7,12 @@ from elmo_geo.utils.types import SparkDataFrame
 
 
 def convert_file(f_in: str, f_out: str):
-    sh_run(
-        f"""
-        PATH=$PATH:{FOLDER_CONDA}
-        export TMPDIR=/tmp
-        export PROJ_LIB=/databricks/miniconda/share/proj
-        export OGR_GEOMETRY_ACCEPT_UNCLOSED_RING=NO
-
-        mkdir -p {f_out}
-        layers=$(ogrinfo -so {f_in} | grep -oP '^\\d+: \\K[^ ]*')
-        if [ ${"{#layers[@]}"} < 2 ]; then
-            ogr2ogr -t_srs EPSG:27700 {f_out} {f_in}
-        else
-            for layer in $(ogrinfo -so {f_in} | grep -oP '^\\d+: \\K[^ ]*'); do
-                ogr2ogr -t_srs EPSG:27700 {f_out}/$layer {f_in} $layer
-            done
-        fi
-    """
-    )
+    sh_run(["./elmo_geo/io/ogr2gpq.sh", f_in, f_out], shell=False)
 
 
 def to_gpq_partitioned(sdf: SparkDataFrame, sf_out: str):
     """SparkDataFrame to GeoParquet, partitioned by BNG index"""
-    sdf.transform(centroid_index).write.format("geoparquet").save(sf_out, partitionBy="sindex")
+    sdf.transform(sindex).write.format("geoparquet").save(sf_out, partitionBy="sindex")
 
 
 def to_gpq_sorted(sdf: SparkDataFrame, sf_out: str):
