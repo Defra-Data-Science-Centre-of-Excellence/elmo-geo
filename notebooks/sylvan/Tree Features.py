@@ -152,6 +152,18 @@ output_trees_path
 
 # COMMAND ----------
 
+# MAGIC %sh
+# MAGIC
+# MAGIC stat /dbfs/mnt/lab/unrestricted/elm/elmo/tree_features/tree_detections/tree_detections_202308040848.parquet
+
+# COMMAND ----------
+
+# MAGIC %sh
+# MAGIC
+# MAGIC stat /dbfs/mnt/lab/unrestricted/elm/elmo/tree_features/tree_features_202308040848.parquet
+
+# COMMAND ----------
+
 # Just SP and SU major tiles
 # timestamp = "202306071149"
 # output_trees_path = f"dbfs:/mnt/lab/unrestricted/elm/elmo/hrtrees/tree_detections/SP_SU_tree_detections_{timestamp}.parquet"
@@ -208,3 +220,57 @@ pTreesDF.schema
 
 # Save the data
 pTreesDF.write.mode("overwrite").parquet(parcel_trees_output)
+
+# COMMAND ----------
+
+sdf_parcels = spark.read.parquet(parcels_path)
+sdf_tf_old = spark.read.parquet(parcel_trees_output.replace("202308040848", "202308032321"))
+sdf_tf_new = spark.read.parquet(parcel_trees_output)
+
+# COMMAND ----------
+
+parcel_ids = sdf_parcels.select("SHEET_ID", "PARCEL_ID").toPandas()
+tf_old_ids = sdf_tf_old.select("SHEET_PARCEL_ID").toPandas()
+tf_new_ids = sdf_tf_new.select("SHEET_PARCEL_ID").toPandas()
+
+# COMMAND ----------
+
+import pandas as pd
+
+# COMMAND ----------
+
+parcel_ids['SHEET_PARCEL_ID'] = parcel_ids['SHEET_ID'] + parcel_ids['PARCEL_ID']
+
+parcel_ids = pd.merge(parcel_ids, tf_old_ids, on = 'SHEET_PARCEL_ID', suffixes = ("", "_old"), indicator=True).rename(columns = {'_merge':'old_merge'})
+
+parcel_ids = pd.merge(parcel_ids, tf_new_ids, on = 'SHEET_PARCEL_ID', suffixes = ("", "_new"), indicator=True).rename(columns = {'_merge':'new_merge'})
+
+# COMMAND ----------
+
+parcel_ids['old_merge'].value_counts()
+
+# COMMAND ----------
+
+parcel_ids['new_merge'].value_counts()
+
+# COMMAND ----------
+
+# check number of trees 
+# 363,656,697
+# 101,561,208
+
+# COMMAND ----------
+
+sdf_trees = spark.read.parquet(output_trees_path)
+
+# COMMAND ----------
+
+sdf_trees.count()
+
+# COMMAND ----------
+
+# MAGIC %pip install numba
+
+# COMMAND ----------
+
+from numba import jit, float32, int32, float_
