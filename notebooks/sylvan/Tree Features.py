@@ -116,13 +116,13 @@ hedgerowBufferDistances = [2]
 parcelBufferDistances = [2, 4]
 waterbodyBufferDistances = [2, 4]
 
-timestamp = "202308040848"  # 202308040848 timestamp is tree detection version with best F1 score so far.
+timestamp = "202311231323"  # 202311231323 timestamp is tree detection version with best F1 score so far.
 
 hedgerows_path = (
     "dbfs:/mnt/lab/unrestricted/elm_data/rural_payments_agency/efa_hedges/2022_06_24.parquet"
 )
 
-waterbodies_path = "dbfs:/mnt/lab/unrestricted/elm/buffer_strips/waterbody_geometries.parquet"
+waterbodies_path = "dbfs:/mnt/lab/restricted/ELM-Project/out/water.parquet"
 
 hedges_length_path = (
     "dbfs:/mnt/lab/unrestricted/elm/elmo/hedgerows_and_water/hedgerows_and_water.csv"
@@ -152,18 +152,6 @@ output_trees_path
 
 # COMMAND ----------
 
-# MAGIC %sh
-# MAGIC
-# MAGIC stat /dbfs/mnt/lab/unrestricted/elm/elmo/tree_features/tree_detections/tree_detections_202308040848.parquet
-
-# COMMAND ----------
-
-# MAGIC %sh
-# MAGIC
-# MAGIC stat /dbfs/mnt/lab/unrestricted/elm/elmo/tree_features/tree_features_202308040848.parquet
-
-# COMMAND ----------
-
 # Just SP and SU major tiles
 # timestamp = "202306071149"
 # output_trees_path = f"dbfs:/mnt/lab/unrestricted/elm/elmo/hrtrees/tree_detections/SP_SU_tree_detections_{timestamp}.parquet"
@@ -181,6 +169,19 @@ treesDF = spark.read.parquet(output_trees_path)
 parcelsDF = spark.read.parquet(parcels_path)
 hrDF = spark.read.parquet(hedgerows_path)
 wbDF = spark.read.parquet(waterbodies_path)
+
+# COMMAND ----------
+
+treesDF.rdd.getNumPartitions(), hrDF.rdd.getNumPartitions()
+
+# COMMAND ----------
+
+treesDF.count(), hrDF.count()
+
+# COMMAND ----------
+
+treesDF = treesDF.repartition(100_000)
+hrDF = hrDF.repartition(10_000)
 
 # COMMAND ----------
 
@@ -214,7 +215,7 @@ pTreesDF = get_parcel_tree_features(
 
 # COMMAND ----------
 
-pTreesDF.schema
+parcel_trees_output
 
 # COMMAND ----------
 
@@ -223,8 +224,20 @@ pTreesDF.write.mode("overwrite").parquet(parcel_trees_output)
 
 # COMMAND ----------
 
+# MAGIC %md
+# MAGIC
+# MAGIC # Check data
+
+# COMMAND ----------
+
+# MAGIC %sh
+# MAGIC
+# MAGIC ls "/dbfs/mnt/lab/unrestricted/elm/elmo/tree_features/"
+
+# COMMAND ----------
+
 sdf_parcels = spark.read.parquet(parcels_path)
-sdf_tf_old = spark.read.parquet(parcel_trees_output.replace("202308040848", "202308032321"))
+sdf_tf_old = spark.read.parquet(parcel_trees_output.replace("202311231323", "202308032321"))
 sdf_tf_new = spark.read.parquet(parcel_trees_output)
 
 # COMMAND ----------
@@ -252,25 +265,3 @@ parcel_ids['old_merge'].value_counts()
 # COMMAND ----------
 
 parcel_ids['new_merge'].value_counts()
-
-# COMMAND ----------
-
-# check number of trees 
-# 363,656,697
-# 101,561,208
-
-# COMMAND ----------
-
-sdf_trees = spark.read.parquet(output_trees_path)
-
-# COMMAND ----------
-
-sdf_trees.count()
-
-# COMMAND ----------
-
-# MAGIC %pip install numba
-
-# COMMAND ----------
-
-from numba import jit, float32, int32, float_
