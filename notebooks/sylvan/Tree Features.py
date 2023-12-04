@@ -103,12 +103,14 @@
 
 from tree_features import *
 
-from sedona.spark import SedonaContext
+#from sedona.spark import SedonaContext
+from sedona.register import SedonaRegistrator
 from elmo_geo.utils.dbr import spark
 
 # COMMAND ----------
 
-SedonaContext.create(spark)
+#SedonaContext.create(spark)
+SedonaRegistrator.registerAll(spark)
 
 # COMMAND ----------
 
@@ -168,20 +170,18 @@ output_trees_path
 treesDF = spark.read.parquet(output_trees_path)
 parcelsDF = spark.read.parquet(parcels_path)
 hrDF = spark.read.parquet(hedgerows_path)
-wbDF = spark.read.parquet(waterbodies_path)
+#wbDF = spark.read.parquet(waterbodies_path)
+wbDF = None
 
 # COMMAND ----------
 
-treesDF.rdd.getNumPartitions(), hrDF.rdd.getNumPartitions()
-
-# COMMAND ----------
-
-treesDF.count(), hrDF.count()
+treesDF.count(), hrDF.count(), parcelsDF.count()
 
 # COMMAND ----------
 
 treesDF = treesDF.repartition(100_000)
-hrDF = hrDF.repartition(10_000)
+hrDF = hrDF.repartition(1_000)
+parcelsDF = parcelsDF.repartition(100)
 
 # COMMAND ----------
 
@@ -236,9 +236,22 @@ pTreesDF.write.mode("overwrite").parquet(parcel_trees_output)
 
 # COMMAND ----------
 
+parcels_path
+
+# COMMAND ----------
+
 sdf_parcels = spark.read.parquet(parcels_path)
 sdf_tf_old = spark.read.parquet(parcel_trees_output.replace("202311231323", "202308032321"))
 sdf_tf_new = spark.read.parquet(parcel_trees_output)
+
+# COMMAND ----------
+
+sdf_tf_new.createOrReplaceTempView("tf")
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC select * from tf
 
 # COMMAND ----------
 
@@ -254,9 +267,9 @@ import pandas as pd
 
 parcel_ids['SHEET_PARCEL_ID'] = parcel_ids['SHEET_ID'] + parcel_ids['PARCEL_ID']
 
-parcel_ids = pd.merge(parcel_ids, tf_old_ids, on = 'SHEET_PARCEL_ID', suffixes = ("", "_old"), indicator=True).rename(columns = {'_merge':'old_merge'})
+parcel_ids = pd.merge(parcel_ids, tf_old_ids, on = 'SHEET_PARCEL_ID', suffixes = ("", "_old"), indicator=True, how = 'outer').rename(columns = {'_merge':'old_merge'})
 
-parcel_ids = pd.merge(parcel_ids, tf_new_ids, on = 'SHEET_PARCEL_ID', suffixes = ("", "_new"), indicator=True).rename(columns = {'_merge':'new_merge'})
+parcel_ids = pd.merge(parcel_ids, tf_new_ids, on = 'SHEET_PARCEL_ID', suffixes = ("", "_new"), indicator=True, how = 'outer').rename(columns = {'_merge':'new_merge'})
 
 # COMMAND ----------
 

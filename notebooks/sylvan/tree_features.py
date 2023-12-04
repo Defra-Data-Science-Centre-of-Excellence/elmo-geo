@@ -687,6 +687,7 @@ def get_parcel_tree_features(
     hrDF = hrDF.withColumn(
         "SHEET_PARCEL_ID", F.concat("REF_PARCEL_SHEET_ID", "REF_PARCEL_PARCEL_ID")
     )
+    '''
     wbDF = wbDF.withColumn("SHEET_PARCEL_ID", F.col("id_parcel"))
     '''
     parcelPerimTreesDF = get_perimeter_trees_features(
@@ -695,7 +696,6 @@ def get_parcel_tree_features(
     parcelInterTreesDF = get_interior_trees_features(
         spark, treesDF, parcelsDF, parcelBufferDistances
     )
-    '''
 
     hrtreesDF, hrtreesPerParcelDF, hrCounts = get_hedgerow_trees_features(
         spark, treesDF, hrDF, hedgerowBufferDistances, double_count=double_count
@@ -708,7 +708,7 @@ def get_parcel_tree_features(
 
     # Get column names that contain tree metrics
     allFeatureNames = []
-    for df in [#parcelInterTreesDF,
+    for df in [parcelInterTreesDF,
                hrtreesPerParcelDF, 
                #wbTreesPerParcelDF
                ]:
@@ -723,11 +723,11 @@ def get_parcel_tree_features(
         .drop("SHEET_PARCEL_ID")
         #.join(wbTreesPerParcelDF, pDF.SPID == wbTreesPerParcelDF.SHEET_PARCEL_ID, "left")
         #.drop("SHEET_PARCEL_ID")
-        #.join(parcelPerimTreesDF, pDF.SPID == parcelPerimTreesDF.SHEET_PARCEL_ID, "left")
-        #.drop("SHEET_PARCEL_ID")
-        #.join(parcelInterTreesDF, pDF.SPID == parcelInterTreesDF.SHEET_PARCEL_ID, "left")
-        #.drop("SHEET_PARCEL_ID")
-        # .fillna(0, subset=["perim_trees_count", "perim_trees_length", "int_trees_count", "hrtrees_count", "wbtrees_count"])
+        .join(parcelPerimTreesDF, pDF.SPID == parcelPerimTreesDF.SHEET_PARCEL_ID, "left")
+        .drop("SHEET_PARCEL_ID")
+        .join(parcelInterTreesDF, pDF.SPID == parcelInterTreesDF.SHEET_PARCEL_ID, "left")
+        .drop("SHEET_PARCEL_ID")
+        #.fillna(0, subset=["perim_trees_count", "perim_trees_length", "int_trees_count", "hrtrees_count", "wbtrees_count"])
         .fillna(0, subset=allFeatureNames)
         .withColumn("SHEET_PARCEL_ID", F.col("SPID"))
         .drop("SPID")
