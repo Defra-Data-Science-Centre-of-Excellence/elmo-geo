@@ -103,14 +103,14 @@
 
 from tree_features import *
 
-#from sedona.spark import SedonaContext
-from sedona.register import SedonaRegistrator
+from sedona.spark import SedonaContext
+#from sedona.register import SedonaRegistrator
 from elmo_geo.utils.dbr import spark
 
 # COMMAND ----------
 
-#SedonaContext.create(spark)
-SedonaRegistrator.registerAll(spark)
+SedonaContext.create(spark)
+#SedonaRegistrator.registerAll(spark)
 
 # COMMAND ----------
 
@@ -170,18 +170,20 @@ output_trees_path
 treesDF = spark.read.parquet(output_trees_path)
 parcelsDF = spark.read.parquet(parcels_path)
 hrDF = spark.read.parquet(hedgerows_path)
-#wbDF = spark.read.parquet(waterbodies_path)
-wbDF = None
+wbDF = spark.read.parquet(waterbodies_path)
+#wbDF = None
 
 # COMMAND ----------
 
-treesDF.count(), hrDF.count(), parcelsDF.count()
+#treesDF.count(), hrDF.count(), parcelsDF.count()
+wbDF.count()
 
 # COMMAND ----------
 
 treesDF = treesDF.repartition(100_000)
 hrDF = hrDF.repartition(1_000)
 parcelsDF = parcelsDF.repartition(100)
+wbDF = wbDF.repartition(1_000)
 
 # COMMAND ----------
 
