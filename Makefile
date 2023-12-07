@@ -22,8 +22,13 @@ verify:
 #	pytest .
 
 clean:
-	rm -r *.egg-info 2> /dev/null || true
+	rm -r \
+		.pytest_cache/ \
+		build/ \
+		*.egg-info \
+	2> /dev/null || true
 	py3clean .
+	clear
 
 setup_guide:
 	echo "\e[32m--- run this line by line:\e[m\npython -m virtualenv ~/virtualenvs/elmo-geo/\nsource ~/virtualenvs/elmo-geo/bin/activate\npip install -U pip\npip install .[dev]"

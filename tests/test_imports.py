@@ -13,7 +13,3 @@ def test_imports():
         except Exception as e:
             fails[m] = e
     assert not fails, fails
-
-
-if __name__ == "__main__":
-    test_imports()
