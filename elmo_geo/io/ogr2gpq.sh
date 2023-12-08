@@ -7,13 +7,18 @@ TMPDIR=/tmp
 PROJ_LIB=/databricks/miniconda/share/proj
 OGR_GEOMETRY_ACCEPT_UNCLOSED_RING=NO
 
-rm -r $f_out
+
 layers=$(ogrinfo -so $f_in | grep -oP '^\d+: \K[^ ]*')
-if [ ${#layers[@]} -lt 2 ]; then
+if [ -e $f_out ]; then
+    rm -r $f_out
+fi
+if [ $(echo "$layers" | wc -w) -lt 2 ]; then
+    echo $f_out
     ogr2ogr -f Parquet $f_out $f_in
 else
-    mkdir -p $f_out
+    mkdir $f_out
     for layer in $layers; do
+        echo $f_out/$layer
         ogr2ogr -f Parquet $f_out/$layer $f_in $layer
     done
 fi
