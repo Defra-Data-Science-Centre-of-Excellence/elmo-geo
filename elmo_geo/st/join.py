@@ -56,18 +56,16 @@ def sjoin_sql(
     """
     # Distance Join
     if 0 < distance:
-        sdf_left = sdf_left.withColumn("geometry", F.expr(f"ST_MakeValid(ST_Buffer(geometry, {distance}))"))
+        sdf_left = sdf_left.withColumn("geometry", F.expr(f"ST_MakeValid(ST_Buffer(ST_MakeValid(ST_Buffer(geometry, 0.001)), {distance-0.001}))"))
     # Add to SQL
     sdf_left.createOrReplaceTempView("left")
     sdf_right.createOrReplaceTempView("right")
     # Join
-    sdf = spark.sql(
-        """
+    sdf = spark.sql("""
         SELECT id_left, id_right
         FROM left, right
         WHERE ST_Intersects(left.geometry, right.geometry)
-    """
-    )
+    """)
     # Remove from SQL
     spark.sql("DROP TABLE left")
     spark.sql("DROP TABLE right")
@@ -109,8 +107,8 @@ def sjoin(
             sdf_right = sdf_right.withColumnRenamed(col, col + rsuffix)
     geometry_left, geometry_right = f"geometry{lsuffix}", f"geometry{rsuffix}"
     # Regular Join
-    return (
-        sdf.join(sdf_left, how=how_left, on="id_left")
+    return (sdf
+        .join(sdf_left, how=how_left, on="id_left")
         .join(sdf_right, how=how_right, on="id_right")
         .withColumn(geometry_left, load_missing(geometry_left))
         .withColumn(geometry_right, load_missing(geometry_right))
@@ -128,8 +126,8 @@ def overlap(
     geometry_left, geometry_right = "geometry" + lsuffix, "geometry" + rsuffix
     return (
         sjoin(sdf_left, sdf_right, lsuffix=lsuffix, rsuffix=lsuffix, **kwargs)
-        .withColumn("geometry", F.expr(f"ST_Intersection({geometry_left}, {geometry_right})"))
         # TODO: groupby
+        .withColumn("geometry", F.expr(f"ST_Intersection({geometry_left}, {geometry_right})"))
         .withColumn("proportion", F.expr(f"ST_Area(geometry) / ST_Area({geometry_left})"))
         .drop(geometry_left, geometry_right)
     )

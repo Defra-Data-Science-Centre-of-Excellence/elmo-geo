@@ -28,7 +28,7 @@ def load_sdf(name: str) -> SparkDataFrame:
     else:
         raise Exception(f'Not found any: "{name}"')
     LOG.info(f"Loading:  {f}")
-    return spark.read.option("mergeSchema", "true").format("geoparquet").load(dbfs(f, True))
+    return spark.read.format("geoparquet").load(dbfs(f, True))
 
 
 # def verify_catalogue():

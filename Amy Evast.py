@@ -49,14 +49,57 @@
 
 import os
 from glob import glob
+import pandas as pd
+import geopandas as gpd
 from pyspark.sql import functions as F, types as T
 
 import elmo_geo
 from elmo_geo.io import to_gpq, load_sdf, download_link_file, download_link_dir
+from elmo_geo.io.file import st_simplify
 from elmo_geo.st import sjoin
 from elmo_geo.utils.misc import gtypes  # debug
 
 elmo_geo.register()
+
+# COMMAND ----------
+
+tile = 'TL49'
+
+sdf_parcels = spark.read.format('geoparquet').load(f'dbfs:/mnt/lab/restricted/ELM-Project/ods/rpa-parcels-adas.parquet/sindex={tile}*')
+sdf_hedges = spark.read.format('geoparquet').load(f'dbfs:/mnt/lab/restricted/ELM-Project/ods/rpa-hedge-adas.parquet/sindex={tile}*')
+sdf_hedges_2023 = spark.read.format('geoparquet').load(f'dbfs:/mnt/lab/restricted/ELM-Project/ods/rpa-hedge-2023_11_13.parquet/sindex={tile}*')
+
+print(sdf_parcels.count(), sdf_hedges.count(), sdf_hedges_2023.count())
+
+calc_parcels_with_hedges = lambda n: sjoin(sdf_parcels, sdf_hedges, how='inner', distance=n).select('id_parcel').distinct().count()
+
+df = pd.DataFrame({'spatial_join_distance': range(0, 200, 4)})
+df['parcels_with_hedges'] = df['spatial_join_distance'].apply(calc_parcels_with_hedges)
+
+df.plot(x='spatial_join_distance', y='parcels_with_hedges')
+
+
+sf = 'dbfs:/mnt/lab/restricted/ELM-Project/ods/{}.parquet/sindex={}'
+f = '/dbfs/mnt/lab/restricted/ELM-Project/ods/{}.parquet/sindex={}'
+
+sdf_parcel = spark.read.format('geoparquet').load(sf.format('rpa-parcels-adas', tile)).select('id_parcel', 'geometry')
+sdf_hedge = spark.read.format('geoparquet').load(sf.format('rpa-hedge-2023_11_13', tile)).select('geometry')
+gdf_parcel = gpd.read_parquet(f.format('rpa-parcels-adas', tile))
+gdf_hedge = gpd.read_parquet(f.format('rpa-hedge-2023_11_13', tile))
+
+
+sdf = sjoin(sdf_parcel, sdf_hedge, rsuffix='', how='inner', distance=12)
+gdf = sdf.toPandas()
+
+
+a, b = gdf['id_parcel'].nunique(), gdf_parcel['id_parcel'].nunique()
+print(a, b, a/b)
+
+ax = gpd.GeoSeries(gdf['geometry_left']).plot(figsize=(16,16), color='darkgoldenrod')
+ax = gdf_parcel.plot(ax=ax, color='darkgoldenrod', alpha=.3, edgecolor='k', linewidth=.5)
+ax = gdf_hedge.plot(ax=ax, color='r')
+ax = gpd.GeoSeries(gdf['geometry']).plot(ax=ax, color='g')
+ax.axis('off')
 
 # COMMAND ----------
 
@@ -72,17 +115,6 @@ def st_to_polygon(col:str='geometry', precision:float=3) -> F.expr:
     '''
     return F.expr(f'ST_Buffer({expr}, {10**-precision}) AS {col}')
 
-def st_simplify(col:str='geometry', precision:float=3) -> F.expr:
-    '''Simplifies geometries
-    Ensuring they are valid for other processes
-    And to avoid non-noded intersection errors
-    '''
-    null = 'ST_GeomFromText("Point EMPTY")'
-    expr = f'COALESCE(ST_MakeValid({col}), {null})'
-    expr = f'ST_MakeValid(ST_SimplifyPreserveTopology(ST_MakeValid(ST_PrecisionReduce({expr}, {precision})), {10**-precision}))'
-    expr = f'{expr} AS {col}'
-    return F.expr(expr)
-
 def fn_m(name):
     '''Calculate the length of overlap between the named feature and parcel
     '''
@@ -92,7 +124,6 @@ def fn_m(name):
     expr = f'ST_Length({expr})'
     expr = f'{expr} AS m_{name}'
     return F.expr(expr)
-
 
 def fn_ha(name, buf):
     '''Calculate the buffered area overlap between the named feature and parcel
@@ -108,93 +139,6 @@ def fn_ha(name, buf):
 
 # COMMAND ----------
 
-# stg2ods
-mode = 'ignore'
-
-
-sdf_rpa_parcel = (spark.read.format('parquet')
-    .load('dbfs:/mnt/lab/restricted/ELM-Project/stg/rpa-parcels-adas.parquet')
-    .select(
-        F.expr('CONCAT(RLR_RW_REFERENCE_PARCELS_DEC_21_SHEET_ID, RLR_RW_REFERENCE_PARCELS_DEC_21_PARCEL_ID) AS id_parcel'),
-        F.expr('ST_SetSRID(ST_GeomFromWKB(Shape), 27700) AS geometry'),
-    )
-    .withColumn('geometry', st_simplify('geometry', 3))
-)
-to_gpq(sdf_rpa_parcel, 'dbfs:/mnt/lab/restricted/ELM-Project/ods/rpa-parcels-adas.parquet', mode=mode)
-
-sdf_rpa_parcel_2023 = (spark.read.format('parquet')
-    .load('dbfs:/mnt/lab/restricted/ELM-Project/stg/rpa-parcels-2023_11_13.parquet')
-    .select(
-        # id_parcel,
-        F.expr('ST_SetSRID(ST_GeomFromWKB(geom), 27700) AS geometry'),
-    )
-    .withColumn('geometry', st_simplify('geometry', 3))
-)
-to_gpq(sdf_rpa_parcel_2023, 'dbfs:/mnt/lab/restricted/ELM-Project/ods/rpa-parcels-2023_11_13.parquet', mode=mode)
-
-
-sdf_rpa_hedge = (spark.read.format('parquet')
-    .load('dbfs:/mnt/lab/restricted/ELM-Project/stg/rpa-hedge-adas.parquet')
-    .select(
-        # id_parcel,
-        # adj,
-        F.expr('ST_SetSRID(ST_GeomFromWKB(geom), 27700) AS geometry'),
-    )
-    .withColumn('geometry', st_simplify('geometry', 3))
-)
-to_gpq(sdf_rpa_hedge, 'dbfs:/mnt/lab/restricted/ELM-Project/ods/rpa-hedge-adas.parquet', mode=mode)
-
-sdf_rpa_hedge_2023 = (spark.read.format('parquet')
-    .load('dbfs:/mnt/lab/restricted/ELM-Project/stg/rpa-hedge-2023_11_13.parquet')
-    .select(
-        F.expr('CONCAT(REF_PARCEL_SHEET_ID, REF_PARCEL_PARCEL_ID) AS id_parcel'),
-        F.expr('ADJACENT_PARCEL_PARCEL_ID IS NOT NULL AS adj'),
-        F.expr('ST_SetSRID(ST_GeomFromWKB(the_geom), 27700) AS geometry'),
-    )
-    .withColumn('geometry', st_simplify('geometry', 3))
-)
-to_gpq(sdf_rpa_hedge_2023, 'dbfs:/mnt/lab/restricted/ELM-Project/ods/rpa-hedge-2023_11_13.parquet', mode=mode)
-
-
-os_schema = T.StructType([
-    T.StructField("theme", T.StringType(), True),
-    T.StructField("description", T.StringType(), True),
-    T.StructField("watermark", T.StringType(), True),
-    T.StructField("width", T.DoubleType(), True),
-    T.StructField("geometry", T.BinaryType(), True),
-])
-
-sdf_os_water = (spark.read.format('parquet')
-    .schema(os_schema)
-    .load('dbfs:/mnt/lab/restricted/ELM-Project/stg/os-ngd-2022.parquet/wtr_*')
-    .select(
-        'theme',
-        'description',
-        'watermark',
-        'width',
-        F.expr('ST_SetSRID(ST_GeomFromWKB(geometry), 27700) AS geometry'),
-    )
-    .withColumn('geometry', F.expr('CASE WHEN (width IS NOT NULL) THEN ST_Buffer(geometry, width) ELSE geometry END'))
-    .withColumn('geometry', st_simplify('geometry', 3))
-)
-to_gpq(sdf_os_water, 'dbfs:/mnt/lab/restricted/ELM-Project/ods/os-water-2022.parquet', mode=mode)
-
-sdf_os_wall = (spark.read.format('parquet')
-    .schema(os_schema)
-    .load('dbfs:/mnt/lab/restricted/ELM-Project/stg/os-ngd-2022.parquet')
-    .filter('description REGEXP " Wall"')
-    .select(
-        'theme',
-        'description',
-        F.expr('ST_SetSRID(ST_GeomFromWKB(geometry), 27700) AS geometry'),
-    )
-    .withColumn('geometry', st_simplify('geometry', 3))
-)
-to_gpq(sdf_os_wall, 'dbfs:/mnt/lab/restricted/ELM-Project/ods/os-wall-2022.parquet', mode=mode)
-
-
-# COMMAND ----------
-
 # MAGIC %ls /dbfs/mnt/lab/restricted/ELM-Project/ods/
 
 # COMMAND ----------
@@ -204,113 +148,63 @@ mode = 'ignore'
 
 distance = 12
 drains = ['Ditch', 'Named Ditch', 'Moat']
-sdf_parcel = load_sdf('rpa-parcels-adas').select('id_parcel', 'geometry')
-sdf_hedge = load_sdf('rpa-hedge-adas').select('geometry')
-sdf_hedge_new = load_sdf('rpa-hedge-2023_11_13').select('id_parcel', 'geometry')
+sdf_parcels = load_sdf('rpa-parcels-adas').select('id_parcel', 'geometry')
+sdf_hedges = load_sdf('rpa-hedge-adas').select('geometry')
+sdf_hedges_new = load_sdf('rpa-hedge-2023_11_13').select('id_parcel', 'geometry')
 sdf_water = load_sdf('os-water-2022').filter(~F.col('description').isin(drains)).select('geometry')
-sdf_ditch = load_sdf('os-water-2022').filter(F.col('description').isin(drains)).select('geometry')
-sdf_wall = load_sdf('os-wall-2022').select('geometry')
+sdf_ditchs = load_sdf('os-water-2022').filter(F.col('description').isin(drains)).select('geometry')
+sdf_walls = load_sdf('os-wall-2022').select('geometry')
 
 
 def add_extra_hedges(sdf, check):
     if check:
         sdf = sdf.unionByName(
-            sdf_hedge_new.join(sdf.select('id_parcel'), on='id_parcel', how='inner'),
+            sdf_hedges_new.join(sdf.select('id_parcel'), on='id_parcel', how='inner'),
             allowMissingColumns = True,
         )
     return sdf
 
 
 for name, sdf_other in {
-    # 'hedge': sdf_hedge,
-    'water': sdf_water,
-    'ditch': sdf_ditch,
-    'wall': sdf_wall,
+    'hedge': sdf_hedges,
+    # 'water': sdf_water,
+    # 'ditch': sdf_ditchs,
+    # 'wall': sdf_walls,
 }.items():
-    print(name, sdf_other.columns)
-    sf = f'dbfs:/mnt/lab/restricted/ELM-Project/ods/elmo-{name}_sjoin-2023_12_05.parquet'
+    print(name, sdf_parcels.columns, sdf_other.columns)
     sdf = (
-        sjoin(sdf_parcel, sdf_other, rsuffix='', how='left', distance=12)
+        sjoin(sdf_parcels, sdf_other, rsuffix='', how='left', distance=12)
+        # .select('id_parcel', 'geometry').join(sdf_parcels.select('id_parcel'), on='id_parcel', how='right')  # left join bug
         # .transform(add_extra_hedges, name=='hedge')
+        .withColumn('geometry', F.expr('ST_MakeValid(ST_Buffer(geometry, 0.001))'))  # to polygon
         # .withColumn('geometry', F.expr('EXPLODE(ST_Dump(geometry))'))
         # .withColumn('gtype', F.expr('ST_GeometryType(geometry)'))
         # .groupby('id_parcel', 'gtype').agg(F.expr('ST_Union_Aggr(geometry) AS geometry'))
-        # .withColumn('geometry', st_simplify())
+        .groupby('id_parcel').agg(F.expr('ST_Union_Aggr(geometry) AS geometry'))
+        .withColumn('geometry', st_simplify())
     )
-    # print(f'{name}\tParcels: {sdf_parcel.count():,}    Other: {sdf_other.count():,}   Out: {sdf.count():,}')
-    # to_gpq(sdf, sf, mode=mode)
+    print(f'{name}\tParcels: {sdf_parcels.count():,}    Other: {sdf_other.count():,}   Out: {sdf.count():,}')
+    sf = f'dbfs:/mnt/lab/restricted/ELM-Project/ods/elmo_geo-{name}_sjoin-2023_12_12.parquet'
+    to_gpq(sdf, sf, mode=mode)
 
 
 # COMMAND ----------
 
-# gsjoin
-mode = 'ignore'
-
-distance = 12
-drains = ['Ditch', 'Named Ditch', 'Moat']
-sdf_parcel = load_sdf('rpa-parcels-adas').select('id_parcel', 'geometry')
-sdf_hedge = load_sdf('rpa-hedge-adas').select('geometry')
-sdf_hedge_new = load_sdf('rpa-hedge-2023_11_13').select('id_parcel', 'geometry')
-sdf_water = load_sdf('os-water-2022').filter(~F.col('description').isin(drains)).select('geometry')
-sdf_ditch = load_sdf('os-water-2022').filter(F.col('description').isin(drains)).select('geometry')
-sdf_wall = load_sdf('os-wall-2022').select('geometry')
-
-
-def add_extra_hedges(sdf, check):
-    if check:
-        sdf = sdf.unionByName(
-            sdf_hedge_new.join(sdf.select('id_parcel'), on='id_parcel', how='inner'),
-            allowMissingColumns = True,
-        )
-    return sdf
-
-
-for name, sdf_other in {
-    # 'hedge': sdf_hedge,
-    'water': sdf_water,
-    'ditch': sdf_ditch,
-    'wall': sdf_wall,
-}.items():
-    print(name, sdf_other.columns)
-    sf = f'dbfs:/mnt/lab/restricted/ELM-Project/ods/elmo-{name}_sjoin-2023_12_05.parquet'
-    sdf = (
-        sjoin(sdf_parcel, sdf_other, rsuffix='', how='left', distance=12)
-        # .transform(add_extra_hedges, name=='hedge')
-        # .withColumn('geometry', F.expr('EXPLODE(ST_Dump(geometry))'))
-        # .withColumn('gtype', F.expr('ST_GeometryType(geometry)'))
-        # .groupby('id_parcel', 'gtype').agg(F.expr('ST_Union_Aggr(geometry) AS geometry'))
-        # .withColumn('geometry', st_simplify())
-    )
-    # print(f'{name}\tParcels: {sdf_parcel.count():,}    Other: {sdf_other.count():,}   Out: {sdf.count():,}')
-    # to_gpq(sdf, sf, mode=mode)
-
-
-# COMMAND ----------
-
-sdf_parcel = load_sdf('rpa-parcels-adas').drop('sindex')
-sdf_hedge = load_sdf('elmo-hedge-2023_12_05')
-sdf_water = load_sdf('elmo-water-2023_12_05')
-sdf_ditch = load_sdf('elmo-ditch-2023_12_05')
-sdf_wall = load_sdf('elmo-wall-2023_12_05')
+sdf_parcels = load_sdf('rpa-parcels-adas').drop('sindex')
+sdf_hedges = load_sdf('elmo-hedge-2023_12_05').drop('sindex')
+sdf_water = load_sdf('elmo-water-2023_12_05').drop('sindex')
+sdf_ditchs = load_sdf('elmo-ditch-2023_12_05').drop('sindex')
+sdf_walls = load_sdf('elmo-wall-2023_12_05').drop('sindex')
 names = 'hedge', 'water', 'ditch', 'wall'
 bufs = 0, 4, 8, 12
 
 
-def fn_union(sdf, name):
-    return (sdf
-        .withColumn('geometry', F.expr('ST_Buffer(geometry, 0.001)'))
-        .groupby('id_parcel')
-        .agg(F.expr('ST_Union_Aggr(geometry) AS geometry'))
-        .withColumn('geometry', st_simplify())
-        .withColumnRenamed('geometry', f'geometry_{name}')
-    )
-
-
-sdf = (sdf_parcel
-    .join(fn_union(sdf_hedge, 'hedge'), on='id_parcel', how='full')
-    .join(fn_union(sdf_water, 'water'), on='id_parcel', how='full')
-    .join(fn_union(sdf_ditch, 'ditch'), on='id_parcel', how='full')
-    .join(fn_union(sdf_wall, 'wall'), on='id_parcel', how='full')
+null = 'ST_GeomFromText("Point EMPTY")'
+sdf = (sdf_parcels
+    .join(sdf_hedges.withColumnRenamed('geometry', 'geometry_hedge'), on='id_parcel', how='left').withColumn('geometry_hedge', F.expr(f'COALESCE(geometry_hedge, {null})'))
+    .join(sdf_water.withColumnRenamed('geometry', 'geometry_water'), on='id_parcel', how='left').withColumn('geometry_water', F.expr(f'COALESCE(geometry_water, {null})'))
+    .join(sdf_ditchs.withColumnRenamed('geometry', 'geometry_ditch'), on='id_parcel', how='left').withColumn('geometry_ditch', F.expr(f'COALESCE(geometry_ditch, {null})'))
+    .join(sdf_walls.withColumnRenamed('geometry', 'geometry_wall'), on='id_parcel', how='left').withColumn('geometry_wall', F.expr(f'COALESCE(geometry_wall, {null})'))
     .select(
         'id_parcel',
         *(F.expr(f'ST_Length(ST_Intersection(geometry, geometry_{name})) AS m_{name}') for name in names),
