@@ -7,12 +7,12 @@ from elmo_geo.utils.misc import sh_run, dbfs
 from elmo_geo.utils.types import SparkDataFrame
 
 
-def st_simplify(col:str='geometry', precision:float=3) -> F.expr:
+def st_simplify(col:str='geometry', precision:float=1) -> F.expr:
     '''Simplifies geometries
     Ensuring they are valid for other processes
     And to avoid non-noded intersection errors
 
-    precision=3 for BNG (EPSG:27700) is 1mm
+    precision=1 for BNG (EPSG:27700) is 100mm
     '''
     null = 'ST_GeomFromText("Point EMPTY")'
     expr = f'COALESCE(ST_MakeValid({col}), {null})'

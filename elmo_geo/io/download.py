@@ -3,30 +3,36 @@ import shutil
 import tempfile
 import zipfile
 
+from elmo_geo.utils.dbr import spark, displayHTML
 
-def download_link_file(
-    filepath,
-    filestore_path = '/dbfs/FileStore',
-    copy = True,
-) -> str:
-    filename = filepath[filepath.rfind("/"):]
-    if move:
-        shutil.copy(filepath, f"{filestore_path}/{filename}")
+
+def zip_folder(path_in, path_out):
+    with zipfile.ZipFile(path_out, 'w', zipfile.ZIP_DEFLATED) as zipf:
+        for root, dirs, files in os.walk(path_in):
+            for file in files:
+                filepath = os.path.join(root, file)
+                arcname = os.path.relpath(filepath, path_in)
+                zipf.write(filepath, arcname)
+
+
+def download_link(filepath:str, name:str=None, return_over_display:bool=False) -> str:
+    '''Create a link to download a file or folder from dbfs
+    Copies a file to dbfs/FileStore
+    Folders are zipped and saved to dbfs/FileStore
+
+    example: `download_link(f)`
+    '''
+    if name is None:
+        name = filepath.split('/')[-1]
+    if os.path.isdir(filepath):
+        name = f'{name}.zip'
+        zip_folder(filepath, f'/dbfs/FileStore/{name}')
     else:
-        shutil.move(filepath, f"{filestore_path}/{filename}")
-    url = f"https://{spark.conf.get('spark.databricks.workspaceUrl')}/files/{filename}?o={spark.conf.get('spark.databricks.clusterUsageTags.orgId')}"
-    return f"<a href={url} target='_blank'>Download file: {filename}</a>"
-
-
-def download_link_dir(
-    folderpath,
-    filestore_path = '/dbfs/FileStore'
-) -> str:
-    foldername = folderpath[folderpath.rfind("/"):]
-    with tempfile.NamedTemporaryFile(suffix='.zip') as zf:
-        with zipfile.ZipFile(zf.name, 'w', zipfile.ZIP_DEFLATED) as zip_ref:
-            for folder_name, subfolders, filenames in os.walk(folderpath):
-                for filename in filenames:
-                    file_path = os.path.join(folder_name, filename)
-                    zip_ref.write(file_path, arcname=os.path.relpath(file_path, folderpath))
-    return download_file(f"{filestore_path}/{foldername}.zip", filestore_path=filestore_path, copy=True)
+        shutil.copy(filepath, f'/dbfs/FileStore/{name}')
+    workspace = spark.conf.get('spark.databricks.workspaceUrl')
+    org = spark.conf.get('spark.databricks.clusterUsageTags.orgId')
+    url = f'https://{workspace}/files/{name}?o={org}'
+    if not return_over_display:
+        displayHTML(f"Download: <a href={url} target='_blank'>{name}</a>")
+    else:
+        return url

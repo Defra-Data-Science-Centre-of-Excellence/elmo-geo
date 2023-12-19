@@ -5,4 +5,4 @@ from .esri import ingest_esri
 from .file import to_gpq_partitioned as to_gpq
 from .osm import ingest_osm_pbf
 from .sentinel import download_sentinel
-from .download import download_link_file, download_link_dir
+from .download import download_link

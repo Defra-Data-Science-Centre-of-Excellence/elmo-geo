@@ -54,225 +54,200 @@ import geopandas as gpd
 from pyspark.sql import functions as F, types as T
 
 import elmo_geo
-from elmo_geo.io import to_gpq, load_sdf, download_link_file, download_link_dir
+from elmo_geo.io import to_gpq, load_sdf, download_link
 from elmo_geo.io.file import st_simplify
 from elmo_geo.st import sjoin
-from elmo_geo.utils.misc import gtypes  # debug
 
 elmo_geo.register()
 
 # COMMAND ----------
 
-tile = 'TL49'
-
-sdf_parcels = spark.read.format('geoparquet').load(f'dbfs:/mnt/lab/restricted/ELM-Project/ods/rpa-parcels-adas.parquet/sindex={tile}*')
-sdf_hedges = spark.read.format('geoparquet').load(f'dbfs:/mnt/lab/restricted/ELM-Project/ods/rpa-hedge-adas.parquet/sindex={tile}*')
-sdf_hedges_2023 = spark.read.format('geoparquet').load(f'dbfs:/mnt/lab/restricted/ELM-Project/ods/rpa-hedge-2023_11_13.parquet/sindex={tile}*')
-
-print(sdf_parcels.count(), sdf_hedges.count(), sdf_hedges_2023.count())
-
-calc_parcels_with_hedges = lambda n: sjoin(sdf_parcels, sdf_hedges, how='inner', distance=n).select('id_parcel').distinct().count()
-
-df = pd.DataFrame({'spatial_join_distance': range(0, 200, 4)})
-df['parcels_with_hedges'] = df['spatial_join_distance'].apply(calc_parcels_with_hedges)
-
-df.plot(x='spatial_join_distance', y='parcels_with_hedges')
+# stg2ods
+mode = 'ignore'
 
 
-sf = 'dbfs:/mnt/lab/restricted/ELM-Project/ods/{}.parquet/sindex={}'
-f = '/dbfs/mnt/lab/restricted/ELM-Project/ods/{}.parquet/sindex={}'
+sdf_rpa_parcel = (spark.read.format('parquet')
+    .load('dbfs:/mnt/lab/restricted/ELM-Project/stg/rpa-parcel-adas.parquet')
+    .select(
+        F.expr('CONCAT(RLR_RW_REFERENCE_PARCELS_DEC_21_SHEET_ID, RLR_RW_REFERENCE_PARCELS_DEC_21_PARCEL_ID) AS id_parcel'),
+        F.expr('ST_SetSRID(ST_GeomFromWKB(Shape), 27700) AS geometry'),
+    )
+)
+to_gpq(sdf_rpa_parcel, 'dbfs:/mnt/lab/restricted/ELM-Project/ods/rpa-parcel-adas.parquet', mode=mode)
 
-sdf_parcel = spark.read.format('geoparquet').load(sf.format('rpa-parcels-adas', tile)).select('id_parcel', 'geometry')
-sdf_hedge = spark.read.format('geoparquet').load(sf.format('rpa-hedge-2023_11_13', tile)).select('geometry')
-gdf_parcel = gpd.read_parquet(f.format('rpa-parcels-adas', tile))
-gdf_hedge = gpd.read_parquet(f.format('rpa-hedge-2023_11_13', tile))
-
-
-sdf = sjoin(sdf_parcel, sdf_hedge, rsuffix='', how='inner', distance=12)
-gdf = sdf.toPandas()
-
-
-a, b = gdf['id_parcel'].nunique(), gdf_parcel['id_parcel'].nunique()
-print(a, b, a/b)
-
-ax = gpd.GeoSeries(gdf['geometry_left']).plot(figsize=(16,16), color='darkgoldenrod')
-ax = gdf_parcel.plot(ax=ax, color='darkgoldenrod', alpha=.3, edgecolor='k', linewidth=.5)
-ax = gdf_hedge.plot(ax=ax, color='r')
-ax = gpd.GeoSeries(gdf['geometry']).plot(ax=ax, color='g')
-ax.axis('off')
-
-# COMMAND ----------
-
-def st_valid(col:str='geometry'):
-    null = 'ST_GeomFromText("Point EMPTY")'
-    expr = f'COALESCE(ST_MakeValid({col}), {null})'
-    expr = f'{expr} AS {col}'
-    return F.expr(expr)
-
-def st_to_polygon(col:str='geometry', precision:float=3) -> F.expr:
-    '''Convert Points and LineStrings to Polygons
-    This is required for the union of geometries of different dimentionality
-    '''
-    return F.expr(f'ST_Buffer({expr}, {10**-precision}) AS {col}')
-
-def fn_m(name):
-    '''Calculate the length of overlap between the named feature and parcel
-    '''
-    null = 'ST_GeomFromText("Point EMPTY")'
-    expr = f'COALESCE(ST_MakeValid(geometry_{name}), {null})'
-    expr = f'ST_MakeValid(ST_Intersection(geometry, {expr}))'
-    expr = f'ST_Length({expr})'
-    expr = f'{expr} AS m_{name}'
-    return F.expr(expr)
-
-def fn_ha(name, buf):
-    '''Calculate the buffered area overlap between the named feature and parcel
-    '''
-    null = 'ST_GeomFromText("Point EMPTY")'
-    expr = f'COALESCE(ST_MakeValid(geometry_{name}), {null})'
-    expr = f'ST_MakeValid(ST_Buffer({expr}, {buf}))' if buf else expr
-    expr = f'ST_MakeValid(ST_Intersection(geometry, {expr}))'
-    expr = f'ST_Area({expr})'
-    expr = f'{expr} AS ha_{name}_buf{buf}m' if buf else f'{expr} AS ha_{name}'
-    return F.expr(expr)
+sdf_rpa_parcel_2023 = (spark.read.format('parquet')
+    .load('dbfs:/mnt/lab/restricted/ELM-Project/stg/rpa-parcel-2023_12_13.parquet')
+    .select(
+        # id_parcel,
+        F.expr('ST_SetSRID(ST_GeomFromWKB(geom), 27700) AS geometry'),
+    )
+)
+to_gpq(sdf_rpa_parcel_2023, 'dbfs:/mnt/lab/restricted/ELM-Project/ods/rpa-parcel-2023_12_13.parquet', mode=mode)
 
 
-# COMMAND ----------
 
-# MAGIC %ls /dbfs/mnt/lab/restricted/ELM-Project/ods/
+sdf_rpa_hedge = (spark.read.format('parquet')
+    .load('dbfs:/mnt/lab/restricted/ELM-Project/stg/rpa-hedge-2023_12_13.parquet')
+    .select(
+        F.expr('CONCAT(REF_PARCEL_SHEET_ID, REF_PARCEL_PARCEL_ID) AS id_parcel'),
+        F.expr('ADJACENT_PARCEL_PARCEL_ID IS NOT NULL AS adj'),
+        F.expr('TO_TIMESTAMP(VALID_FROM, "yyyyMMddHHmmss") AS valid_from'),
+        F.expr('TO_TIMESTAMP(VALID_TO, "yyyyMMddHHmmss") AS valid_to'),
+        F.expr('ST_SetSRID(ST_GeomFromWKB(GEOM), 27700) AS geometry'),
+    )
+)
+to_gpq(sdf_rpa_hedge, 'dbfs:/mnt/lab/restricted/ELM-Project/ods/rpa-hedge-2023_12_13.parquet', mode=mode)
+
+
+os_schema = T.StructType([
+    T.StructField('theme', T.StringType(), True),
+    T.StructField('description', T.StringType(), True),
+    T.StructField('watermark', T.StringType(), True),
+    T.StructField('width', T.DoubleType(), True),
+    T.StructField('geometry', T.BinaryType(), True),
+])
+
+sdf_os_water = (spark.read.format('parquet')
+    .schema(os_schema)
+    .load('dbfs:/mnt/lab/restricted/ELM-Project/stg/os-ngd-2022.parquet/wtr_*')
+    .select(
+        'theme',
+        'description',
+        'watermark',
+        'width',
+        F.expr('ST_SetSRID(ST_GeomFromWKB(geometry), 27700) AS geometry'),
+    )
+    .withColumn('geometry', F.expr('CASE WHEN (width IS NOT NULL) THEN ST_Buffer(geometry, width) ELSE geometry END'))
+)
+to_gpq(sdf_os_water, 'dbfs:/mnt/lab/restricted/ELM-Project/ods/os-water-2022.parquet', mode=mode)
+
+sdf_os_wall = (spark.read.format('parquet')
+    .schema(os_schema)
+    .load('dbfs:/mnt/lab/restricted/ELM-Project/stg/os-ngd-2022.parquet')
+    .filter('description REGEXP " Wall"')
+    .select(
+        'theme',
+        'description',
+        F.expr('ST_SetSRID(ST_GeomFromWKB(geometry), 27700) AS geometry'),
+    )
+)
+to_gpq(sdf_os_wall, 'dbfs:/mnt/lab/restricted/ELM-Project/ods/os-wall-2022.parquet', mode=mode)
+
 
 # COMMAND ----------
 
 # gsjoin
 mode = 'ignore'
 
-distance = 12
 drains = ['Ditch', 'Named Ditch', 'Moat']
-sdf_parcels = load_sdf('rpa-parcels-adas').select('id_parcel', 'geometry')
-sdf_hedges = load_sdf('rpa-hedge-adas').select('geometry')
-sdf_hedges_new = load_sdf('rpa-hedge-2023_11_13').select('id_parcel', 'geometry')
+sdf_parcel = load_sdf('rpa-parcel-adas').select('id_parcel', 'geometry')
+# sdf_hedge = load_sdf('rpa-hedge').select('geometry')
 sdf_water = load_sdf('os-water-2022').filter(~F.col('description').isin(drains)).select('geometry')
-sdf_ditchs = load_sdf('os-water-2022').filter(F.col('description').isin(drains)).select('geometry')
-sdf_walls = load_sdf('os-wall-2022').select('geometry')
+# sdf_ditch = load_sdf('os-water-2022').filter(F.col('description').isin(drains)).select('geometry')
+# sdf_wall = load_sdf('os-wall-2022').select('geometry')
 
 
-def add_extra_hedges(sdf, check):
-    if check:
-        sdf = sdf.unionByName(
-            sdf_hedges_new.join(sdf.select('id_parcel'), on='id_parcel', how='inner'),
-            allowMissingColumns = True,
-        )
-    return sdf
-
-
-for name, sdf_other in {
-    'hedge': sdf_hedges,
-    # 'water': sdf_water,
-    # 'ditch': sdf_ditchs,
-    # 'wall': sdf_walls,
+for name, sdf_right in {
+    # 'hedge': sdf_hedge,
+    'water': sdf_water,
+    # 'ditch': sdf_ditch,
+    # 'wall': sdf_wall,
 }.items():
-    print(name, sdf_parcels.columns, sdf_other.columns)
-    sdf = (
-        sjoin(sdf_parcels, sdf_other, rsuffix='', how='left', distance=12)
-        # .select('id_parcel', 'geometry').join(sdf_parcels.select('id_parcel'), on='id_parcel', how='right')  # left join bug
-        # .transform(add_extra_hedges, name=='hedge')
-        .withColumn('geometry', F.expr('ST_MakeValid(ST_Buffer(geometry, 0.001))'))  # to polygon
-        # .withColumn('geometry', F.expr('EXPLODE(ST_Dump(geometry))'))
-        # .withColumn('gtype', F.expr('ST_GeometryType(geometry)'))
-        # .groupby('id_parcel', 'gtype').agg(F.expr('ST_Union_Aggr(geometry) AS geometry'))
-        .groupby('id_parcel').agg(F.expr('ST_Union_Aggr(geometry) AS geometry'))
-        .withColumn('geometry', st_simplify())
-    )
-    print(f'{name}\tParcels: {sdf_parcels.count():,}    Other: {sdf_other.count():,}   Out: {sdf.count():,}')
-    sf = f'dbfs:/mnt/lab/restricted/ELM-Project/ods/elmo_geo-{name}_sjoin-2023_12_12.parquet'
+    sdf_parcel.createOrReplaceTempView('left')
+    sdf_right.createOrReplaceTempView('right')
+    sdf = spark.sql('''
+        SELECT 
+            l.id_parcel,
+            r.gtype,
+            ST_MakeValid(ST_SimplifyPreserveTopology(ST_MakeValid(ST_Union_Aggr(r.geometry)), 0.1)) AS geometry
+        FROM (
+            SELECT
+                id_parcel,
+                ST_MakeValid(ST_SimplifyPreserveTopology(ST_MakeValid(ST_Buffer(geometry, 12)), 0.1)) AS geometry
+            FROM left
+        ) AS l
+        JOIN (
+            SELECT
+                gtype,
+                ST_MakeValid(geometry) AS geometry
+            FROM (
+                SELECT
+                    SUBSTRING(ST_GeometryType(ST_Multi(geometry)), 9) AS gtype,
+                    ST_SubDivideExplode(ST_MakeValid(ST_SimplifyPreserveTopology(geometry, 0.1)), 256) AS geometry
+                FROM right
+            )
+        ) AS r
+        ON ST_Intersects(l.geometry, r.geometry)
+        GROUP BY
+            l.id_parcel,
+            r.gtype
+    ''')
+    spark.sql('DROP TABLE left')
+    spark.sql('DROP TABLE right')
+    sf = f'dbfs:/mnt/lab/restricted/ELM-Project/ods/elmo_geo-{name}_gsjoin-2023_12_12.parquet'
     to_gpq(sdf, sf, mode=mode)
 
 
 # COMMAND ----------
 
-sdf_parcels = load_sdf('rpa-parcels-adas').drop('sindex')
-sdf_hedges = load_sdf('elmo-hedge-2023_12_05').drop('sindex')
-sdf_water = load_sdf('elmo-water-2023_12_05').drop('sindex')
-sdf_ditchs = load_sdf('elmo-ditch-2023_12_05').drop('sindex')
-sdf_walls = load_sdf('elmo-wall-2023_12_05').drop('sindex')
+f = '/dbfs/mnt/lab/restricted/ELM-Project/out/elmo-buffers-2023_12_05.feather'
+sdf_parcel = load_sdf('rpa-parcel-adas').drop('sindex')
 names = 'hedge', 'water', 'ditch', 'wall'
 bufs = 0, 4, 8, 12
 
 
+def merge_gtypes(sdf, col:str='geometry', buf:float=1):
+    if 'gtype' in sdf.columns and 1 < sdf.select('gtype').distinct().count():
+        sdf = (sdf
+            .withColumn(col, F.expr(f'ST_MakeValid(ST_Buffer({col}, {buf}))'))
+        )
+    return sdf
+
+
 null = 'ST_GeomFromText("Point EMPTY")'
-sdf = (sdf_parcels
-    .join(sdf_hedges.withColumnRenamed('geometry', 'geometry_hedge'), on='id_parcel', how='left').withColumn('geometry_hedge', F.expr(f'COALESCE(geometry_hedge, {null})'))
-    .join(sdf_water.withColumnRenamed('geometry', 'geometry_water'), on='id_parcel', how='left').withColumn('geometry_water', F.expr(f'COALESCE(geometry_water, {null})'))
-    .join(sdf_ditchs.withColumnRenamed('geometry', 'geometry_ditch'), on='id_parcel', how='left').withColumn('geometry_ditch', F.expr(f'COALESCE(geometry_ditch, {null})'))
-    .join(sdf_walls.withColumnRenamed('geometry', 'geometry_wall'), on='id_parcel', how='left').withColumn('geometry_wall', F.expr(f'COALESCE(geometry_wall, {null})'))
+sdf_geoms = sdf_parcel
+for name in names:
+    sdf_other = (
+        load_sdf(f'elmo_geo-{name}_gsjoin-2023_12_12').drop('sindex')
+        .transform(merge_gtypes)
+        .withColumnRenamed('geometry', f'geometry_{name}')
+    )
+    sdf_geoms = (sdf_geoms
+        .join(sdf_other, on='id_parcel', how='left')
+        .withColumn(f'geometry_{name}', F.expr(f'COALESCE(geometry_{name}, {null})'))
+    )
+display(sdf_geoms)
+
+sdf = (sdf_geoms
     .select(
         'id_parcel',
-        *(F.expr(f'ST_Length(ST_Intersection(geometry, geometry_{name})) AS m_{name}') for name in names),
-        *(F.expr(f'ST_Area(ST_Intersection(geometry, ST_Buffer(geometry_{name}, {buf})))/10000 AS ha_{name}_buf{buf}m') for name in names for buf in bufs),
+        *(
+            F.expr(f'ST_Length(ST_MakeValid(ST_Intersection(geometry, geometry_{name}))) AS m_{name}')
+            for name in names
+        ),
+        *(
+            F.expr(f'ST_Area(ST_MakeValid(ST_Intersection(geometry, ST_MakeValid(ST_Buffer(geometry_{name}, {buf}))))) / 10000 AS ha_{name}_buf{buf}m')
+            for name in names
+            for buf in bufs
+        ),
     )
 )
-df = sdf.toPandas()
-df.to_feather('/dbfs/mnt/lab/restricted/ELM-Project/out/elmo-buffers-2023_12_05.feather')
 
+
+df = sdf.toPandas()
+df.to_feather(f)
+download_link(f)
 df
 
 # COMMAND ----------
 
-displayHTML('<br>'.join([
-    # download_link_dir('/dbfs/mnt/lab/restricted/ELM-Project/ods/elmo-hedge-2023_12_05.parquet'),
-    # download_link_dir('/dbfs/mnt/lab/restricted/ELM-Project/ods/elmo-water-2023_12_05.parquet'),
-    # download_link_dir('/dbfs/mnt/lab/restricted/ELM-Project/ods/elmo-ditch-2023_12_05.parquet'),
-    # download_link_dir('/dbfs/mnt/lab/restricted/ELM-Project/ods/elmo-wall-2023_12_05.parquet'),
-    download_link_file('/dbfs/mnt/lab/restricted/ELM-Project/ods/elmo-buffer-2023_12_05.feather'),
-]))
-
-# COMMAND ----------
-
-sdf_parcel = load_sdf('rpa-parcels-adas')
-sdf_hedge = load_sdf('elmo-hedge')
-sdf_water = load_sdf('elmo-water')
-sdf_ditch = load_sdf('elmo-ditch')
-names = 'hedge', 'water', 'ditch'
-bufs = 0, 4, 8, 12
-
-
-def fn_m(name):
-    '''Calculate the length of overlap between the named feature and parcel
-    '''
-    null = 'ST_GeomFromText("Point EMPTY")'
-    expr = f'COALESCE(geometry_{name}, {null})'
-    expr = f'ST_MakeValid(ST_Intersection(geometry, {expr}))'
-    expr = f'ST_Length({expr})'
-    expr = f'{expr} AS m_{name}'
-    return F.expr(expr)
-
-
-def fn_ha(name, buf):
-    '''Calculate the buffered area overlap between the named feature and parcel
-    '''
-    null = 'ST_GeomFromText("Point EMPTY")'
-    expr = f'COALESCE(geometry_{name}, {null})'
-    expr = f'ST_MakeValid(ST_Buffer({expr}, {buf}))' if buf else expr
-    expr = f'ST_MakeValid(ST_Intersection(geometry, {expr}))'
-    expr = f'ST_Area({expr})'
-    expr = f'{expr} AS ha_{name}_buf{buf}m' if buf else f'{expr} AS ha_{name}'
-    return F.expr(expr)
-
-
-sdf_out = (sdf_parcel
-    .join(sdf_hedge.withColumnRenamed('geometry', 'geometry_hedge'), on='id_parcel', how='left')
-    .join(sdf_water.withColumnRenamed('geometry', 'geometry_water'), on='id_parcel', how='left')
-    .join(sdf_ditch.withColumnRenamed('geometry', 'geometry_ditch'), on='id_parcel', how='left')
-    .select(
-        'id_parcel',
-        *(fn_m(name) for name in names),
-        *(fn_ha(name, buf) for name in names for buf in bufs),
-    )
-)
-
-
-sdf_out.filter('0<m_hedge').show()
-df = sdf_out.toPandas()
-df.to_feather('/dbfs/mnt/lab/restricted/ELM-Project/out/parcel_features.feather')
-display(df)
-df.sum()
+col = 'hedge'
+{
+    'parcels': f"{df['id_parcel'].nunique():,}",
+    f'parcels with {col}': f"{(0<df[f'm_{col}']).mean():.1%}",
+    f'total m_{col}': f"{df[f'm_{col}'].sum()/1e6:,.1f} Mm",
+    f'total ha_{col}_buf0m': f"{df[f'ha_{col}_buf0m'].sum()/1e6:,.1f} ha",
+    f'total ha_{col}_buf4m': f"{df[f'ha_{col}_buf4m'].sum()/1e6:,.1f} ha",
+    f'total ha_{col}_buf8m': f"{df[f'ha_{col}_buf8m'].sum()/1e6:,.1f} ha",
+    f'total ha_{col}_buf12m': f"{df[f'ha_{col}_buf12m'].sum()/1e6:,.1f} ha",
+}

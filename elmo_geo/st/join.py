@@ -63,10 +63,45 @@ def sjoin_sql(
     # Join
     sdf = spark.sql("""
         SELECT id_left, id_right
-        FROM left, right
-        WHERE ST_Intersects(left.geometry, right.geometry)
-    """)
+        FROM left JOIN right
+        ON ST_Intersects(left.geometry, right.geometry)
+    """)  # nothing else does a quadtree, consider a manual partition rect tree?
     # Remove from SQL
+    spark.sql("DROP TABLE left")
+    spark.sql("DROP TABLE right")
+    return sdf
+
+
+def sjoin_partenv(
+    sdf_left: SparkDataFrame,
+    sdf_right: SparkDataFrame,
+    distance: float = 0,
+):
+    '''Partition-Envelope Spatial Join
+    '''
+    method = f'{distance} > ST_Distance' if distance else 'ST_Intersects'
+    sdf_left.withColumn('_pl', F.spark_partition_id()).createOrReplaceTempView('left')
+    sdf_right.withColumn('_pr', F.spark_partition_id()).createOrReplaceTempView('right')
+    sdf = spark.sql('''
+        SELECT left.* EXCEPT (_pl), right.* EXCEPT (_pr)
+        FROM (
+            SELECT l._pl, r._pr
+            FROM (
+                SELECT _pl, ST_Envelope_Aggr(geometry{0}) AS bbox
+                FROM left
+                GROUP BY _pl
+            ) AS l
+            JOIN (
+                SELECT _pr, ST_Envelope_Aggr(geometry{1}) AS bbox
+                FROM right
+                GROUP BY _pr
+            ) AS r
+            ON {2}(l.bbox, r.bbox)
+        )
+        JOIN left USING (_pl)
+        JOIN right USING (_pr)
+        WHERE {2}(left.geometry{0}, right.geometry{1})
+    ''').format(lsuffix, rsuffix, method)
     spark.sql("DROP TABLE left")
     spark.sql("DROP TABLE right")
     return sdf
