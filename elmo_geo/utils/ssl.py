@@ -1,6 +1,7 @@
-import requests
 import contextlib
 import warnings
+
+import requests
 from urllib3.exceptions import InsecureRequestWarning
 
 
@@ -12,6 +13,7 @@ def no_ssl_verification():
         # download stuff
     ```
     """
+
     def merge_environment_settings(self, url, proxies, stream, verify, cert):
         opened_adapters.add(self.get_adapter(url))
         settings = original_merge_environment_settings(self, url, proxies, stream, verify, cert)
@@ -30,5 +32,5 @@ def no_ssl_verification():
         for adapter in opened_adapters:
             try:
                 adapter.close()
-            except:
+            except Exception:
                 pass
