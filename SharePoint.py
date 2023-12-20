@@ -4,6 +4,7 @@
 
 # COMMAND ----------
 
+from getpass import getpass
 import dotenv
 from cryptography.fernet import Fernet
 
@@ -17,20 +18,62 @@ import warnings
 from urllib3.exceptions import InsecureRequestWarning
 
 
-def hash_pass(value):
-    return Fernet(dotenv.get_key('.env', 'SHA_KEY')).encrypt(value.encode('utf8'))
+class SPOL:
+    '''SharePoint OnLine sync tool.
+    Connects to SPOL using dotenv or manually enter your password.
 
-def get_hash_pass(key):
-    return Fernet(dotenv.get_key('.env', 'SHA_KEY')).decrypt(dotenv.get_key('.env', key)).decode('utf8')
+    '''
+    def __init__(self, **kwargs):
+        self.spol_base_url = 'https://defra.sharepoint.com/'
+        self.spol_username = self.get_user()
+        self.spol_password = self.get_pass()
+        self.default_location = '/dbfs/FileStore/'
+        self.__dict__.update(kwargs)
+        self.ctx = self.get_context()
+        self.ssl = self.check_ssl()
 
-def spol_ctx(
-    spol_base_url:str = 'https://defra.sharepoint.com/teams/Team1645',
-    spol_username:str = dotenv.get_key('.env', 'SPOL_USER'),
-    spol_password:str = get_hash_pass('SPOL_PASS_SHA'),
-):
-    ctx = ClientContext(spol_base_url).with_user_credentials(spol_username, spol_password)
-    ctx.web.get().execute_query().url  # Test
-    return ctx
+    # .env
+    def encrypt_value(value):
+        return Fernet(dotenv.get_key('.env', 'SHA_KEY')).encrypt(value.encode('utf8'))
+
+    def decrpyt_key(key):
+        return Fernet(dotenv.get_key('.env', 'SHA_KEY')).decrypt(dotenv.get_key('.env', key)).decode('utf8')
+
+    def get_user():
+        return dotenv.get_key('.env', 'SPOL_USER')
+
+    def get_pass():
+        return self.decrpyt_key('SPOL_PASS_SHA')
+
+    # setup
+    def get_context(self):
+        return ClientContext(spol_base_url).with_user_credentials(spol_username, spol_password)
+
+    def check_ssl(self):
+        try:
+            self.ctx.web.get().execute_query().url
+            return lambda: None
+        except Exception:
+            with no_ssl_verification():
+                self.ctx.web.get().execute_query().url
+            return no_ssl_verification
+
+    # tools
+    @self.ssl
+    def list_files(self, target):
+        files = self.ctx.web.get_folder_by_server_relative_path(target).get_files(True).execute_query()
+        return [f.properties['ServerRelativeUrl'] for f in files]
+
+    @self.ssl
+    def dl_file(self, target):
+        response = File.open_binary(self.ctx, target)
+        filename = self.default_location + target.split('/')[-1]
+        with open(filename, 'wb') as f:
+            f.write(response.content)
+
+    @self.ssl
+    def dl_folder(ctx, target):
+        pass
 
 
 @contextlib.contextmanager
@@ -61,32 +104,18 @@ def no_ssl_verification():
                 pass
 
 
+# COMMAND ----------
+
+import geopandas as gpd
+
 with no_ssl_verification():
     ctx = spol_ctx()
+    target = '/teams/Team1645/Restricted_ELM_RPA_data_sharing/modelling_data_update/2023-update/Live_Parcel_Links.zip'
+    pl_file(ctx, target)
+df
 
 # COMMAND ----------
 
-def enum_folder(parent_folder, fn):
-    """
-    :type parent_folder: Folder
-    :type fn: (File)-> None
-    """
-    parent_folder.expand(["Files", "Folders"]).get().execute_query()
-    for file in parent_folder.files:  # type: File
-        fn(file)
-    for folder in parent_folder.folders:  # type: Folder
-        enum_folder(folder, fn)
-
-
-def print_file(f):
-    """
-    :type f: File
-    """
-    print(f.properties['ServerRelativeUrl'])
-
-
-with no_ssl_verification():
-    ctx = spol_ctx()
-    target = "Services"
-    files = ctx.web.get_folder_by_server_relative_path(target).get_files(True).execute_query()
-    [print_file(f) for f in files]
+# MAGIC %sh
+# MAGIC # unzip Live_Parcel_Links
+# MAGIC ls -lh

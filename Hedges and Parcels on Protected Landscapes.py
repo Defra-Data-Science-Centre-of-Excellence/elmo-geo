@@ -1,11 +1,23 @@
 # Databricks notebook source
 # MAGIC %md
 # MAGIC # Hedges and Parcels on Protected Landscapes
-# MAGIC **Protected Landscapes,** (PL) are both National Parks (NP) and National Landscapes (NL) (previously known as Areas of Outstanding National Beauty, AONB).  An additional unified PL geometry is appeneded (in v2023_12_15).  
+# MAGIC **Protected Landscapes,** (PL) are both National Parks (NP) and National Landscapes (NL) (previously known as Areas of Outstanding National Beauty, AONB).  An additional unified PL geometry is appended (in v2023_12_15).  
 # MAGIC **Hedges,** are spatially joined to PL using ST_Intersects, but not clipped to the PL.  After joining, they are groupby PL Type + PL Name, I then calculate the area for PL and the length for all hedgerows in that PL.  
 # MAGIC **Parcels,** are spatially joined to PL using the same method.  No groupby is done, but I drop the geometries only keeping unique id_parcels on each PL and the proportion of that parcel's overlap with that PL, so near zero overlaps can be filtered later.  Latest supply from RPA is used (in v2023_12_15).  
 # MAGIC
+# MAGIC ### Assumptions
+# MAGIC - **Generalisations** are made to geometries, PL at 1m, parcels at 0.1m, hedges are not simplified.
+# MAGIC - The length of hedges is calculated individually and summed, assuming hedges are not **duplicated**.
+# MAGIC - Calculating the length prior also means that hedgerow the starts within the PL and ends outside is entirely included and **not clipped**.
+# MAGIC - All PL geometries are checked to be in England (BFC), but not clipped, small inconsistencies exist due to England geometry **CRS transform**.
+# MAGIC - Parcels are spatially joined to PLs and a **proportion** is calculated, where they share a border that proportion will be very small, and judgement on whether they are considered in or not is required.
+# MAGIC - Hedgerow data is sourced from RPA, utilising; OS data, agreements, and site visits.  It only contains hedgerows **attached to parcels**.
+# MAGIC
+# MAGIC ### Future
+# MAGIC RPA are developing a **new dataset** of hedgerows as polygons using aerial photography.  This dataset would provide a more accurate representation of hedges, and provide better coverage outside of farms.  Assignment to a specific parcel and linearisation of these geometries would not be necessary.
+# MAGIC
 # MAGIC ### Data
+# MAGIC - ons-countries_bfc-2022_12
 # MAGIC - ne-national_parks-2023_11_17
 # MAGIC - ne-aonb-2020_08_25
 # MAGIC - rpa-parcel-2023_12_13

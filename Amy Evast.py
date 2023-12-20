@@ -157,34 +157,36 @@ for name, sdf_right in {
     sdf_right.createOrReplaceTempView('right')
     sdf = spark.sql('''
         SELECT 
-            l.id_parcel,
-            r.gtype,
-            ST_MakeValid(ST_SimplifyPreserveTopology(ST_MakeValid(ST_Union_Aggr(r.geometry)), 0.1)) AS geometry
+            id_parcel,
+            gtype,
+            ST_MakeValid(ST_SimplifyPreserveTopology(ST_MakeValid(ST_Union_Aggr(COALESCE(geometry, ST_GeomFromText('Point EMPTY')))), 0.1)) AS geometry
         FROM (
             SELECT
-                id_parcel,
-                ST_MakeValid(ST_SimplifyPreserveTopology(ST_MakeValid(ST_Buffer(geometry, 12)), 0.1)) AS geometry
-            FROM left
-        ) AS l
-        JOIN (
-            SELECT
-                gtype,
-                ST_MakeValid(geometry) AS geometry
+                l.id_parcel,
+                SUBSTRING(ST_GeometryType(ST_Multi(r.geometry)), 9) AS gtype,
+                ST_MakeValid(r.geometry) AS geometry
             FROM (
-                SELECT
-                    SUBSTRING(ST_GeometryType(ST_Multi(geometry)), 9) AS gtype,
-                    ST_SubDivideExplode(ST_MakeValid(ST_SimplifyPreserveTopology(geometry, 0.1)), 256) AS geometry
-                FROM right
-            )
-        ) AS r
-        ON ST_Intersects(l.geometry, r.geometry)
-        GROUP BY
-            l.id_parcel,
-            r.gtype
+                SELECT  -- make valid, simplify, buffer (x2 to avoid donut bug)
+                    id_parcel,
+                    ST_MakeValid(ST_SimplifyPreserveTopology(ST_MakeValid(ST_Buffer(ST_MakeValid(ST_Buffer(geometry, 0.001)), 12-0.001)), 0.1)) AS geometry
+                FROM left
+                WHERE geometry IS NOT NULL
+            ) AS l
+            JOIN (SELECT ST_MakeValid(geometry) AS geometry  -- make valid, dump, subdivide, dump, simplify
+                FROM (SELECT EXPLODE(ST_Dump(geometry)) AS geometry
+                    FROM (SELECT ST_SubDivideExplode(geometry, 256) AS geometry
+                        FROM (SELECT EXPLODE(ST_Dump(geometry)) AS geometry
+                            FROM (SELECT ST_MakeValid(ST_SimplifyPreserveTopology(geometry, 0.1)) AS geometry
+                                FROM right
+                                WHERE geometry IS NOT NULL
+            ))))) AS r
+            ON ST_Intersects(l.geometry, r.geometry)
+        )
+        GROUP BY id_parcel, gtype
     ''')
     spark.sql('DROP TABLE left')
     spark.sql('DROP TABLE right')
-    sf = f'dbfs:/mnt/lab/restricted/ELM-Project/ods/elmo_geo-{name}_gsjoin-2023_12_12.parquet'
+    sf = f'dbfs:/mnt/lab/restricted/ELM-Project/ods/elmo_geo-{name}-2023_12_20.parquet'
     to_gpq(sdf, sf, mode=mode)
 
 
