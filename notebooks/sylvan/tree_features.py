@@ -244,6 +244,7 @@ def get_hedgerow_trees_features(
     hrDF: SparkDataFrame,
     bufferDistances: List[float],
     double_count: Optional[bool] = True,
+    calculate_counts: Optional[bool] = False,
 ) -> Tuple:
     """
     Produces the hedgerow trees features.
@@ -298,34 +299,30 @@ def get_hedgerow_trees_features(
         double_count,
     )
     counts = {}
-    '''
-    counts = feature_tree_and_parcel_counts(
-        hrDF, hrtreesDF, hrtreesPerParcelDF, bufferDistances, [featureName]
-    )
+    
+    if calculate_counts:
+        counts = feature_tree_and_parcel_counts(
+            hrDF, hrtreesDF, hrtreesPerParcelDF, bufferDistances, [featureName]
+        )
 
-    # 13,996,711 - with old params - ws=4 hmin=3 buffer=5
-    # 41,632,825 - with new method - ws=2 hmin=2.5 buffer=2
-    # Get count of trees when duplicates are not removed.
+        report_buffer_distance = 2
 
-    report_buffer_distance = 2
+        feature_counts = counts[featureName]
 
-    feature_counts = counts[featureName]
-
-    nHRTreesDup = hrtreesDF.filter(F.col(featureName + str(report_buffer_distance)) == 1).count()
-    LOG.info(
-        f"Number of hedgerow trees (number without duplicate geoms dropped): {feature_counts[report_buffer_distance]['nFeatureTrees']} ({nHRTreesDup})"
-    )
-    LOG.info(
-        f"Number of hedgerow trees in parcels: {feature_counts[report_buffer_distance]['nFeatureParcelTrees']}"
-    )
-    LOG.info("\n")
-    LOG.info(
-        f"Number of parcels w hedgerows: {feature_counts[report_buffer_distance]['nFeatureParcels']}"
-    )
-    LOG.info(
-        f"Number of parcels w hedgerow trees: {feature_counts[report_buffer_distance]['nFeatureTreeParcels']}"
-    )
-    '''
+        nHRTreesDup = hrtreesDF.filter(F.col(featureName + str(report_buffer_distance)) == 1).count()
+        LOG.info(
+            f"Number of hedgerow trees (number without duplicate geoms dropped): {feature_counts[report_buffer_distance]['nFeatureTrees']} ({nHRTreesDup})"
+        )
+        LOG.info(
+            f"Number of hedgerow trees in parcels: {feature_counts[report_buffer_distance]['nFeatureParcelTrees']}"
+        )
+        LOG.info("\n")
+        LOG.info(
+            f"Number of parcels w hedgerows: {feature_counts[report_buffer_distance]['nFeatureParcels']}"
+        )
+        LOG.info(
+            f"Number of parcels w hedgerow trees: {feature_counts[report_buffer_distance]['nFeatureTreeParcels']}"
+        )
 
     return hrtreesDF, hrtreesPerParcelDF, counts
 
