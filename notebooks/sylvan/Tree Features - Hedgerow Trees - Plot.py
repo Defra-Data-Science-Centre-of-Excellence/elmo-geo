@@ -17,29 +17,21 @@ from pyspark.sql import functions as F
 from shapely.geometry import Polygon
 from tree_features import get_hedgerow_trees_features
 
-from elmo_geo import LOG, register
-from elmo_geo.io.io2 import load_geometry
+#from elmo_geo import LOG, register
+#from elmo_geo.io.io2 import load_geometry
 from elmo_geo.utils.dbr import spark
 
 # COMMAND ----------
 
-
-# COMMAND ----------
-
-
-# COMMAND ----------
-
-
-# COMMAND ----------
-
-
-register()
+#register()
+from sedona.spark import SedonaContext
+SedonaContext.create(spark)
 
 # COMMAND ----------
 
 hedgerows_buffer_distance = 2
 
-timestamp = "20230602"
+timestamp = "202311231323" # 20230602 timestamp was used for original mmsg figures 
 
 hedgerows_path = (
     "dbfs:/mnt/lab/unrestricted/elm_data/rural_payments_agency/efa_hedges/2022_06_24.parquet"
@@ -70,20 +62,17 @@ parcel_hrtrees_csv_template = (
     "/dbfs/mnt/lab/unrestricted/elm/elmo/hrtrees/hrtrees_per_parcel_{timestamp}_{buf}mbuffer.csv"
 )
 
-output_trees_path = path_output_template.format(mtc="all", timestamp=timestamp)
-hrtrees_path_output = hrtrees_output_template.format(
-    timestamp=timestamp, buf=hedgerows_buffer_distance
+trees_output_template = (
+    "dbfs:/mnt/lab/unrestricted/elm/elmo/"
+    "tree_features/tree_detections/"
+    "tree_detections_{timestamp}.parquet"
 )
-parcel_hrtrees_output = parcel_hrtrees_template.format(
-    timestamp=timestamp, buf=hedgerows_buffer_distance
-)
-parcel_hrtrees_csv_output = parcel_hrtrees_csv_template.format(
-    timestamp=timestamp, buf=hedgerows_buffer_distance
-)
+output_trees_path = trees_output_template.format(timestamp=timestamp)
 
-old_output_trees_path = (
-    "dbfs:/mnt/lab/unrestricted/elm/elmo/hrtrees/tree_detections/all-tree-detections.parquet"
+features_output_template = (
+    "dbfs:/mnt/lab/unrestricted/elm/elmo/tree_features/tree_features_{timestamp}.parquet"
 )
+parcel_trees_output = features_output_template.format(timestamp=timestamp)
 
 tile_to_visualise = "SP65nw"
 
@@ -96,10 +85,17 @@ save_data = False
 
 # COMMAND ----------
 
-# treesDF = spark.read.parquet(old_output_trees_path)
 treesDF = spark.read.parquet(output_trees_path)
+treeFeaturesDF = (spark.read.parquet(parcel_trees_output)
+                  .select("SHEET_PARCEL_ID", "hrtrees_count2")
+)
 
-hrDF = spark.read.parquet(hedgerows_path)
+hrDF = (spark.read.parquet(hedgerows_path)
+        .withColumn("id_parcel", F.expr("Concat(REF_PARCEL_SHEET_ID, REF_PARCEL_PARCEL_ID)"))
+        .withColumn("length", F.expr("ST_Length(ST_GeomfromWKB(geometry))"))
+        .select("id_parcel", "length")
+        .groupBy("id_parcel").agg(F.expr("SUM(length) as length"))
+)
 parcelsDF = spark.read.parquet(parcels_path)
 hrLengthDF = spark.read.option("header", True).csv(hedges_length_path)
 
@@ -117,6 +113,8 @@ hrLengthDF = spark.read.option("header", True).csv(hedges_length_path)
 
 # COMMAND ----------
 
+# MAGIC %md
+# MAGIC ## Run hedgerow tree classification and get counts for plot
 
 # COMMAND ----------
 
@@ -281,40 +279,30 @@ f.show()
 
 # COMMAND ----------
 
-data = hrtreesPerParcelDF.toPandas()
-data.shape  # expect rows
+# Join hedgerow trees per parcel to hedgerow length per parcel
+hrTreeDensity = (treeFeaturesDF
+                 .join(
+                     hrLengthDF, treeFeaturesDF.SHEET_PARCEL_ID == hrLengthDF.id_parcel, "left"
+                 )
+                 .withColumn("hrtrees_per_m", F.col("hrtrees_count2") / F.col("hedge_length"))
+)
+
+data = hrTreeDensity.toPandas()
+data.shape
 
 # COMMAND ----------
 
-if save_data:
-    data.to_csv(parcel_hrtrees_csv_output)
+data.loc[ data['hrtrees_count2']==0, "hrtrees_count2"] = np.nan
+data.dropna(subset="hrtrees_count2").hrtrees_per_m.describe()
 
 # COMMAND ----------
 
-data["hrtrees_count"].describe()
+# 99.99th percentile is 0.95. This is believable (1 tree per meter) but more than this likely an outlier
+data.dropna(subset="hrtrees_count2").hrtrees_per_m.quantile(0.9999)
 
 # COMMAND ----------
 
-data["hrtrees_per_m"].describe()
-
-# COMMAND ----------
-
-print(data["hrtrees_count"].quantile(0.999))
-print(data["hrtrees_per_m"].quantile(0.999))
-data.loc[data["hrtrees_per_m"] > 1.0, "hrtrees_count"].describe()
-
-# COMMAND ----------
-
-# Why different number of 0.995 percentile for each metric?
-data.loc[data["hrtrees_count"] > data["hrtrees_count"].quantile(0.995)].shape, data.loc[
-    data["hrtrees_per_m"] > data["hrtrees_per_m"].quantile(0.995)
-].shape
-
-# COMMAND ----------
-
-# Explained by nulls in the hrtrees_per_m column
-print(data["hrtrees_count"].shape, data["hrtrees_per_m"].shape)
-print(data["hrtrees_count"].dropna().shape, data["hrtrees_per_m"].dropna().shape)
+print(data.dropna(subset="hrtrees_count2").hrtrees_per_m.describe())
 
 # COMMAND ----------
 
@@ -324,9 +312,15 @@ data.head()
 
 # where do nulls come from?
 # - come from parcels with hrtrees not looking up to enties in hedgerow length per parcel data.
-data["SHEET_PARCEL_ID"].isnull().value_counts(), data["id_parcel"].isnull().value_counts(), data[
-    "hedge_length"
-].isnull().value_counts(), data["hrtrees_per_m"].isnull().value_counts()
+print(data["SHEET_PARCEL_ID"].isnull().value_counts())
+print(data["id_parcel"].isnull().value_counts())
+print(data["hedge_length"].isnull().value_counts()) 
+print(data["hrtrees_per_m"].isnull().value_counts())
+
+# COMMAND ----------
+
+if save_data:
+    data.to_csv(parcel_hrtrees_csv_output)
 
 # COMMAND ----------
 
@@ -431,7 +425,7 @@ def plot_hrtree_dist(
 # COMMAND ----------
 
 f, ax = plot_hrtree_dist(
-    data["hrtrees_count"],
+    data["hrtrees_count2"],
     "Distribution of hedgerow trees",
     "Number of hedgerow trees",
     0.995,
@@ -472,6 +466,7 @@ f.show()
 # COMMAND ----------
 
 
+
 # COMMAND ----------
 
 hrParcelsDF = hrDF.withColumn(
@@ -481,8 +476,8 @@ allDF = (
     hrParcelsDF.join(
         hrtreesPerParcelDF, hrParcelsDF.SPID == hrtreesPerParcelDF.SHEET_PARCEL_ID, "left"
     )
-    .select(F.col("SPID").alias("SHEET_PARCEL_ID"), "hrtrees_count", "hrtrees_per_m")
-    .fillna(0, subset=["hrtrees_count", "hrtrees_per_m"])
+    .select(F.col("SPID").alias("SHEET_PARCEL_ID"), "hrtrees_count2", "hrtrees_per_m")
+    .fillna(0, subset=["hrtrees_count2", "hrtrees_per_m"])
     .drop_duplicates()
 )
 
@@ -494,7 +489,7 @@ hrpdf2 = allDF.toPandas()
 
 # COMMAND ----------
 
-hrpdf.loc[hrpdf["hrtrees_count"] == 0, "SHEET_PARCEL_ID"].drop_duplicates().shape
+hrpdf.loc[hrpdf["hrtrees_count2"] == 0, "SHEET_PARCEL_ID"].drop_duplicates().shape
 
 # COMMAND ----------
 
