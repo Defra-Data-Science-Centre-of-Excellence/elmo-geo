@@ -15,11 +15,11 @@ import seaborn as sns
 from matplotlib.ticker import FuncFormatter, PercentFormatter
 from pyspark.sql import functions as F
 from shapely.geometry import Polygon
-from tree_features import get_hedgerow_trees_features
+#from tree_features import get_hedgerow_trees_features
 
 #from elmo_geo import LOG, register
 #from elmo_geo.io.io2 import load_geometry
-from elmo_geo.utils.dbr import spark
+#from elmo_geo.utils.dbr import spark
 
 # COMMAND ----------
 
@@ -41,7 +41,8 @@ hedges_length_path = (
     "dbfs:/mnt/lab/unrestricted/elm/elmo/hedgerows_and_water/hedgerows_and_water.csv"
 )
 
-parcels_path = "dbfs:/mnt/lab/unrestricted/elm_data/rpa/reference_parcels/2023_02_07.parquet"
+#parcels_path = "dbfs:/mnt/lab/unrestricted/elm_data/rpa/reference_parcels/2021_03_16.parquet"
+parcels_path = "dbfs:/mnt/lab/restricted/ELM-Project/ods/rpa-parcel-adas.parquet"
 
 path_output_template = (
     "dbfs:/mnt/lab/unrestricted/elm/elmo/"
@@ -74,9 +75,13 @@ features_output_template = (
 )
 parcel_trees_output = features_output_template.format(timestamp=timestamp)
 
+hrtrees_output = "dbfs:/mnt/lab/unrestricted/elm/elmo/tree_features/hrtrees_2023parcels_with_hrlength_202311231323.parquet"
+
+hrtree_density_csv = "/dbfs/FileStore/hrtree_density_adas.csv"
+
 tile_to_visualise = "SP65nw"
 
-save_data = False
+save_data = True
 
 # COMMAND ----------
 
@@ -91,13 +96,17 @@ treeFeaturesDF = (spark.read.parquet(parcel_trees_output)
 )
 
 hrDF = (spark.read.parquet(hedgerows_path)
-        .withColumn("id_parcel", F.expr("Concat(REF_PARCEL_SHEET_ID, REF_PARCEL_PARCEL_ID)"))
+        .withColumn("SHEET_PARCEL_ID", F.concat("REF_PARCEL_SHEET_ID", "REF_PARCEL_PARCEL_ID"))
         .withColumn("length", F.expr("ST_Length(ST_GeomfromWKB(geometry))"))
-        .select("id_parcel", "length")
-        .groupBy("id_parcel").agg(F.expr("SUM(length) as length"))
+        .select("SHEET_PARCEL_ID", "length")
+        .groupBy("SHEET_PARCEL_ID").agg(F.expr("SUM(length) as length"))
 )
-parcelsDF = spark.read.parquet(parcels_path)
+parcelsDF = (spark.read.parquet(parcels_path)
+)
+
 hrLengthDF = spark.read.option("header", True).csv(hedges_length_path)
+
+hrTreesDF = spark.read.parquet(hrtrees_output)
 
 # COMMAND ----------
 
@@ -279,52 +288,6 @@ f.show()
 
 # COMMAND ----------
 
-# Join hedgerow trees per parcel to hedgerow length per parcel
-hrTreeDensity = (treeFeaturesDF
-                 .join(
-                     hrLengthDF, treeFeaturesDF.SHEET_PARCEL_ID == hrLengthDF.id_parcel, "left"
-                 )
-                 .withColumn("hrtrees_per_m", F.col("hrtrees_count2") / F.col("hedge_length"))
-)
-
-data = hrTreeDensity.toPandas()
-data.shape
-
-# COMMAND ----------
-
-data.loc[ data['hrtrees_count2']==0, "hrtrees_count2"] = np.nan
-data.dropna(subset="hrtrees_count2").hrtrees_per_m.describe()
-
-# COMMAND ----------
-
-# 99.99th percentile is 0.95. This is believable (1 tree per meter) but more than this likely an outlier
-data.dropna(subset="hrtrees_count2").hrtrees_per_m.quantile(0.9999)
-
-# COMMAND ----------
-
-print(data.dropna(subset="hrtrees_count2").hrtrees_per_m.describe())
-
-# COMMAND ----------
-
-data.head()
-
-# COMMAND ----------
-
-# where do nulls come from?
-# - come from parcels with hrtrees not looking up to enties in hedgerow length per parcel data.
-print(data["SHEET_PARCEL_ID"].isnull().value_counts())
-print(data["id_parcel"].isnull().value_counts())
-print(data["hedge_length"].isnull().value_counts()) 
-print(data["hrtrees_per_m"].isnull().value_counts())
-
-# COMMAND ----------
-
-if save_data:
-    data.to_csv(parcel_hrtrees_csv_output)
-
-# COMMAND ----------
-
-
 def plot_hrtree_dist(
     data: pd.Series,
     title: str,
@@ -462,10 +425,6 @@ pdf_all = allDF.select("hrtrees_per_m").toPandas()
 f, ax = plot_hrtree_dist(pdf_all["hrtrees_per_m"]*100, "Distribution of hedgerow tree density - all parcels", "Hedgerow trees per 100m of hedgerow", 0.995, dark = False, dp=3, bin_ratio=3)
 f.show()
 """
-
-# COMMAND ----------
-
-
 
 # COMMAND ----------
 

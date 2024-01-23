@@ -102,7 +102,9 @@
 # COMMAND ----------
 
 from tree_features import *
-
+from matplotlib import pyplot as plt
+import geopandas as gpd
+from shapely import from_wkb, from_wkt
 from sedona.spark import SedonaContext
 #from sedona.register import SedonaRegistrator
 from elmo_geo.utils.dbr import spark
@@ -117,20 +119,21 @@ SedonaContext.create(spark)
 hedgerowBufferDistances = [2]
 parcelBufferDistances = [2, 4]
 waterbodyBufferDistances = [2, 4]
+parcel_buffer_distance = 4
 
 timestamp = "202311231323"  # 202311231323 timestamp is tree detection version with best F1 score so far.
 
-hedgerows_path = (
-    "dbfs:/mnt/lab/unrestricted/elm_data/rural_payments_agency/efa_hedges/2022_06_24.parquet"
+elmo_geo_hedgerows_path = (
+    "dbfs:/mnt/lab/restricted/ELM-Project/ods/elmo_geo-hedge-2024_01_08.parquet"
 )
+efa_hedges_path = "dbfs:/mnt/lab/unrestricted/elm_data/rural_payments_agency/efa_hedges/2022_06_24.parquet"
 
 waterbodies_path = "dbfs:/mnt/lab/restricted/ELM-Project/out/water.parquet"
 
-hedges_length_path = (
-    "dbfs:/mnt/lab/unrestricted/elm/elmo/hedgerows_and_water/hedgerows_and_water.csv"
+rpa_2021_parcels_path = (
+    "dbfs:/mnt/lab/unrestricted/elm_data/rpa/reference_parcels/2021_03_16.parquet" # original used
 )
-
-parcels_path = "dbfs:/mnt/lab/unrestricted/elm_data/rpa/reference_parcels/2021_03_16.parquet"
+adas_parcels_path = "dbfs:/mnt/lab/restricted/ELM-Project/ods/rpa-parcel-adas.parquet"
 
 trees_output_template = (
     "dbfs:/mnt/lab/unrestricted/elm/elmo/"
@@ -143,6 +146,8 @@ features_output_template = (
     "dbfs:/mnt/lab/unrestricted/elm/elmo/tree_features/tree_features_{timestamp}.parquet"
 )
 parcel_trees_output = features_output_template.format(timestamp=timestamp)
+parcel_trees_output = "dbfs:/mnt/lab/unrestricted/elm/elmo/tree_features/hrtrees_adas_parcels_elmogeo_hedges_202311231323.parquet"
+#parcel_trees_output = "dbfs:/mnt/lab/unrestricted/elm/elmo/tree_features/hrtrees_adas_parcels_efa_hedge_202311231323.parquet"
 
 # COMMAND ----------
 
@@ -161,29 +166,132 @@ output_trees_path
 
 # COMMAND ----------
 
-# MAGIC %md
-# MAGIC
-# MAGIC ## Load data
-
-# COMMAND ----------
-
+# DBTITLE 1,Load Data
 treesDF = spark.read.parquet(output_trees_path)
-parcelsDF = spark.read.parquet(parcels_path)
-hrDF = spark.read.parquet(hedgerows_path)
-wbDF = spark.read.parquet(waterbodies_path)
+parcelsDF = (spark.read.format("geoparquet").load(adas_parcels_path)
+)
+parcelsRPA21DF = spark.read.parquet(rpa_2021_parcels_path)
+elmoGeoHedgesDF = (spark.read.format("geoparquet").load(elmo_geo_hedgerows_path)
+)
+efaHedgesDF = spark.read.parquet(efa_hedges_path)
+#wbDF = spark.read.parquet(waterbodies_path)
 #wbDF = None
 
-# COMMAND ----------
-
-#treesDF.count(), hrDF.count(), parcelsDF.count()
-wbDF.count()
-
-# COMMAND ----------
-
 treesDF = treesDF.repartition(100_000)
-hrDF = hrDF.repartition(1_000)
-parcelsDF = parcelsDF.repartition(100)
-wbDF = wbDF.repartition(1_000)
+#wbDF = wbDF.repartition(1_000)
+
+# COMMAND ----------
+
+# DBTITLE 1,Check ADAS parcels align with elmo-geo hedgerows
+compDF = (parcelsDF
+          .join(elmoGeoHedgesDF, elmoGeoHedgesDF.id_parcel == parcelsDF.id_parcel, "inner")
+)
+
+print(f"N Parcels: {parcelsDF.dropDuplicates(subset=['id_parcel']).count():,}")
+print(f"N hedge parcels: {elmoGeoHedgesDF.dropDuplicates(subset=['id_parcel']).count()} ")
+print(f"N EFA hedges parcels: {efaHedgesDF.dropDuplicates(subset=['REF_PARCEL_SHEET_ID', 'REF_PARCEL_PARCEL_ID']).count()} ")
+print(f"N hedge parcels in ADAS parcels: {compDF.dropDuplicates(subset = ['id_parcel']).count()}")
+
+# COMMAND ----------
+
+# DBTITLE 1,Check ADAS parcels align with EFA Hedgerows
+efaHedgesDF = (efaHedgesDF
+               .withColumn("id_parcel", F.concat("REF_PARCEL_SHEET_ID", "REF_PARCEL_PARCEL_ID"))
+)
+compDF = (parcelsDF
+          .join(efaHedgesDF, efaHedgesDF.id_parcel == parcelsDF.id_parcel, "inner")
+)
+
+print(f"N Parcels: {parcelsDF.dropDuplicates(subset=['id_parcel']).count():,}")
+print(f"N hedge parcels: {efaHedgesDF.dropDuplicates(subset=['id_parcel']).count():,}")
+print(f"N EFA hedges parcels: {efaHedgesDF.dropDuplicates(subset=['REF_PARCEL_SHEET_ID', 'REF_PARCEL_PARCEL_ID']).count():,} ")
+print(f"N hedge parcels in ADAS parcels: {compDF.dropDuplicates(subset = ['id_parcel']).count():,}")
+
+# COMMAND ----------
+
+# DBTITLE 1,Check RPA 2021 parcels align with elmo-geo hedgerows
+parcelsRPA21DF = (parcelsRPA21DF
+                .withColumn("id_parcel", F.concat("SHEET_ID", "PARCEL_ID"))
+                )
+compDF = (parcelsRPA21DF
+          .join(elmoGeoHedgesDF, elmoGeoHedgesDF.id_parcel == parcelsRPA21DF.id_parcel, "inner")
+)
+
+print(f"N Parcels: {parcelsRPA21DF.dropDuplicates(subset=['id_parcel']).count():,}")
+print(f"N hedge parcels: {elmoGeoHedgesDF.dropDuplicates(subset=['id_parcel']).count():,} ")
+print(f"N EFA hedges parcels: {efaHedgesDF.dropDuplicates(subset=['REF_PARCEL_SHEET_ID', 'REF_PARCEL_PARCEL_ID']).count():,} ")
+print(f"N hedge parcels in ADAS parcels: {compDF.dropDuplicates(subset = ['id_parcel']).count():,}")
+
+# COMMAND ----------
+
+# DBTITLE 1,Prep EFA hedge data for hrtree classification
+# hrDF = (efaHedgesDF
+#         .withColumn("id_parcel", F.concat("REF_PARCEL_SHEET_ID", "REF_PARCEL_PARCEL_ID"))
+#         .withColumn("geometry", F.expr("ST_GeomFromWKB(geometry)"))
+#         .withColumn("hedge_length", F.expr("ST_Length(geometry)"))
+#         .select("id_parcel", 
+#                 "geometry", 
+#                 "hedge_length")
+# )
+
+# COMMAND ----------
+
+# DBTITLE 1,Prep elmo geo hedge data for hrtree classification
+# elmo-hedges assigns any hedge within 12m of a parcel to that parcel
+pDF = (parcelsDF
+       .withColumnRenamed("geometry", "geometry_parcel")
+       .withColumnRenamed("id_parcel", "id_parcel_main")
+       .select("id_parcel_main", "geometry_parcel")
+)
+hrDF = (elmoGeoHedgesDF
+        .join(pDF, pDF.id_parcel_main == elmoGeoHedgesDF.id_parcel, "inner")
+        .withColumn("geometry", F.expr(f"""
+                                             ST_Intersection(
+                                                 geometry,
+                                                 ST_Buffer(geometry_parcel, {parcel_buffer_distance})
+                                                 )"""))
+        .withColumn("hedge_length", F.expr("ST_Length(geometry)"))
+        .select("id_parcel", "geometry", "hedge_length", "sindex")
+)
+
+# COMMAND ----------
+
+# DBTITLE 1,Map hedge data to check it
+geo_cols = ["geometry"]
+gdf = (hrDF
+       .select(
+           [
+               "id_parcel",
+               "sindex",
+           *[F.expr(f"ST_AsBinary({c}) as {c}") for c in geo_cols]
+           ]
+       )
+       .filter(F.col("sindex") == "SP53")).toPandas()
+for c in geo_cols:
+    gdf[c] = gdf[c].map(lambda x: from_wkb(x))
+
+gdf = gpd.GeoDataFrame(gdf, geometry="geometry", crs = "epsg:27700")
+m = gdf.explore()
+outfp = "/dbfs/FileStore/hedge_map.html"
+m.save(outfp)
+
+def download_link(filepath, move=True):
+    # NB filepath must be in the format dbfs:/ not /dbfs/
+    # Get filename
+    filename = filepath[filepath.rfind("/"):]
+    # Move file to FileStore
+    '''
+    if move:
+        dbutils.fs.mv(filepath, f"dbfs:/FileStore/{filename}")
+    else:
+        dbutils.fs.cp(filepath, f"dbfs:/FileStore/{filename}")
+    '''
+    # Construct download url
+    url = f"https://{spark.conf.get('spark.databricks.workspaceUrl')}/files/{filename}?o={spark.conf.get('spark.databricks.clusterUsageTags.orgId')}"
+    # Return html snippet
+    return f"<a href={url} target='_blank'>Download file: {filename}</a>"
+
+download_link(outfp, move=False)
 
 # COMMAND ----------
 
@@ -197,18 +305,13 @@ wbDF = wbDF.repartition(1_000)
 
 # COMMAND ----------
 
-# MAGIC %md
-# MAGIC
-# MAGIC # Get tree features
-
-# COMMAND ----------
-
+# DBTITLE 1,Get tree features
 pTreesDF = get_parcel_tree_features(
     spark,
     treesDF,
     parcelsDF,
     hrDF,
-    wbDF,
+    None,
     parcelBufferDistances,
     hedgerowBufferDistances,
     waterbodyBufferDistances,
@@ -217,66 +320,30 @@ pTreesDF = get_parcel_tree_features(
 
 # COMMAND ----------
 
+# DBTITLE 1,Add hedgerow length
+hLengthDF = (hrDF
+             .withColumnRenamed("id_parcel", "idp")
+             .groupBy("idp")
+             .agg(F.sum("hedge_length").alias("hedge_length"))
+)
+pTreesDF = (pTreesDF
+       .join(
+           hLengthDF,
+           hLengthDF.idp == pTreesDF.id_parcel,
+           "left")
+       .drop("idp")
+)
+
+# COMMAND ----------
+
 parcel_trees_output
 
 # COMMAND ----------
 
+# DBTITLE 1,Save the data
 # Save the data
 pTreesDF.write.mode("overwrite").parquet(parcel_trees_output)
 
 # COMMAND ----------
 
-# MAGIC %md
-# MAGIC
-# MAGIC # Check data
-
-# COMMAND ----------
-
-# MAGIC %sh
-# MAGIC
-# MAGIC ls "/dbfs/mnt/lab/unrestricted/elm/elmo/tree_features/"
-
-# COMMAND ----------
-
-parcels_path
-
-# COMMAND ----------
-
-sdf_parcels = spark.read.parquet(parcels_path)
-sdf_tf_old = spark.read.parquet(parcel_trees_output.replace("202311231323", "202308032321"))
-sdf_tf_new = spark.read.parquet(parcel_trees_output)
-
-# COMMAND ----------
-
-sdf_tf_new.createOrReplaceTempView("tf")
-
-# COMMAND ----------
-
-# MAGIC %sql
-# MAGIC select * from tf
-
-# COMMAND ----------
-
-parcel_ids = sdf_parcels.select("SHEET_ID", "PARCEL_ID").toPandas()
-tf_old_ids = sdf_tf_old.select("SHEET_PARCEL_ID").toPandas()
-tf_new_ids = sdf_tf_new.select("SHEET_PARCEL_ID").toPandas()
-
-# COMMAND ----------
-
-import pandas as pd
-
-# COMMAND ----------
-
-parcel_ids['SHEET_PARCEL_ID'] = parcel_ids['SHEET_ID'] + parcel_ids['PARCEL_ID']
-
-parcel_ids = pd.merge(parcel_ids, tf_old_ids, on = 'SHEET_PARCEL_ID', suffixes = ("", "_old"), indicator=True, how = 'outer').rename(columns = {'_merge':'old_merge'})
-
-parcel_ids = pd.merge(parcel_ids, tf_new_ids, on = 'SHEET_PARCEL_ID', suffixes = ("", "_new"), indicator=True, how = 'outer').rename(columns = {'_merge':'new_merge'})
-
-# COMMAND ----------
-
-parcel_ids['old_merge'].value_counts()
-
-# COMMAND ----------
-
-parcel_ids['new_merge'].value_counts()
+pTreesDF.display()
