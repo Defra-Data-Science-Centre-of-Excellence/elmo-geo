@@ -30,6 +30,8 @@
 
 # COMMAND ----------
 
+import matplotlib.pyplot as plt
+import contextily as ctx
 import pandas as pd
 import geopandas as gpd
 from pyspark.sql import functions as F
@@ -39,6 +41,42 @@ from elmo_geo.io import load_sdf, to_gpq, download_link
 from elmo_geo.st import sjoin
 
 elmo_geo.register()
+
+# COMMAND ----------
+
+import requests
+import contextlib
+import warnings
+from urllib3.exceptions import InsecureRequestWarning
+
+
+@contextlib.contextmanager
+def no_ssl_verification():
+    opened_adapters = set()
+    original_merge_environment_settings = requests.Session.merge_environment_settings
+
+    def merge_environment_settings(self, url, proxies, stream, verify, cert):
+        opened_adapters.add(self.get_adapter(url))
+
+        settings = original_merge_environment_settings(self, url, proxies, stream, verify, cert)
+        settings['verify'] = False
+
+        return settings
+
+    requests.Session.merge_environment_settings = merge_environment_settings
+
+    try:
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', InsecureRequestWarning)
+            yield
+    finally:
+        requests.Session.merge_environment_settings = original_merge_environment_settings
+        for adapter in opened_adapters:
+            try:
+                adapter.close()
+            except:
+                pass
+
 
 # COMMAND ----------
 
@@ -153,3 +191,25 @@ sdf = spark.sql('''
 sdf.toPandas().to_feather(f)
 download_link(f)
 display(sdf)
+
+# COMMAND ----------
+
+f = '/dbfs/mnt/lab/restricted/ELM-Project/ods/elmo_geo-protected_landscapes-2023_12_15.parquet'
+gdf_pl = gpd.read_parquet(f)
+fig, ax = plt.subplots(figsize=[16,9])
+ax = gdf_pl.plot(ax=ax, column='PL Type', legend=True, edgecolor='k', linewidth=.5, alpha=.5, cmap='summer_r')
+with no_ssl_verification():
+    ctx.add_basemap(ax=ax, crs='epsg:27700')
+ax.axis('off');
+
+# COMMAND ----------
+
+f = '/dbfs/mnt/lab/restricted/ELM-Project/ods/rpa-hedge-2023_12_13.parquet/sindex=NY76'
+gdf_hedge = gpd.read_parquet(f)
+fig, ax = plt.subplots(figsize=[16,9])
+xmin, ymin, xmax, ymax = gdf2.total_bounds
+ax = gdf_pl.clip(gdf2.total_bounds).plot(ax=ax, column='PL Type', legend=True, edgecolor='k', linewidth=.5, alpha=.5, cmap='summer_r')
+ax = gdf_hedge.plot(ax=ax, alpha=.5, color='g', label='hedge')
+with no_ssl_verification():
+    ctx.add_basemap(ax=ax, crs='epsg:27700')
+ax.axis('off');

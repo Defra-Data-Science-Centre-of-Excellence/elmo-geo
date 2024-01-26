@@ -21,7 +21,8 @@ def append_to_catalogue(dataset: dict):
 
 def load_sdf(name: str) -> SparkDataFrame:
     """Load a SparkDataFrame from our data catalogue."""
-    files = glob(f"{FOLDER_STG}/*{name}*.parquet")
+    files = []
+    files.extend(glob(f"{FOLDER_STG}/*{name}*.parquet"))
     files.extend(glob(f"{FOLDER_ODS}/*{name}*.parquet"))
     if len(files):
         f = files[-1]  # Selecting most recent

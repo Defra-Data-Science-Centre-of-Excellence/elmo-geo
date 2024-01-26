@@ -1,48 +1,46 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC # EVAST geospatial parcel features
-# MAGIC provide evast with hedge+ features for parcels, not geospatial  
-# MAGIC remove polygon from buffer  
+# MAGIC # Hedgerow and Waterbodies on Parcels
+# MAGIC This project identifies potential hedgerow and waterbody datasets.  Spatially joins them to parcels, then calculates some metrics on the length and areas potentials for buffer strips.
 # MAGIC
+# MAGIC ### Methodology
+# MAGIC **Parcels,** from November 2021 are a requirement for this project, as they align with the parcels used in WFM and by CEH-EVAST.  
+# MAGIC **Hedgerows,** are sourced from RPA's Environmental Focus Areas, they are linear features attached to parcels.  Except hedgerows from November 2021 are unavailable, so latest hedgerows are used and spatially joined to old parcels.  They are grouped together to create a **single MultiLineString per parcel**.  
+# MAGIC **Waterbodies,** are sourced from OS NGD December 2022, a still in development replacement for master map.  All "wtr" features and networks are included, except catchment areas (wtr_fts_riverbasindistrictcatchment, wtr_fts_waterbodycatchment), these are merged together as a single dataframe and spatially joined with parcels, they are grouped together creating a **single GeometryCollection per parcel**.  However, to calculate length and area overlap they geometries need to be of the same type, and such for the metrics the geometry collection is buffered 1mm, to create a single MultiPolygon per parcel.  
+# MAGIC **Spatial joins,** are at 12 meters distance, so buffering can be applied to more distant features.
 # MAGIC
-# MAGIC ### Impact
-# MAGIC This will feed directly into EVAST modelling so we will better understand impact of hedges, waterbody actions and possibly peatland restoration with batter baseline data.
-# MAGIC I 
+# MAGIC ### Data Sources
+# MAGIC - RPA - Reference Parcels - 2021 November
+# MAGIC     *(This version is used by LEEP-WFM)*
+# MAGIC - RPA - LF_MANAGED_MV - 2023 December
+# MAGIC     *(This is managed hedgerows eligible for agreements, the latest version is used as Nov 2021 was unavailable.)*
+# MAGIC - OS - NGD - 2022 December
+# MAGIC     *(This contains OS waterbody features, and is was the latest version of NGD ingested.)*
 # MAGIC
+# MAGIC ### Output Data
+# MAGIC - elmo_geo-hedge-2024_01_08.gpkg:  id_parcel, geometry_hedge
+# MAGIC - elmo_geo-water-2024_01_08.gpkg:  id_parcel, geometry_water
+# MAGIC - elmo_geo-buffers-2024_01_08.csv:  id_parcel, m_hedge, m_water, ha_hedge_buf0m, ha_hedge_buf4m, ha_hedge_buf8m, ha_hedge_buf12m, ha_water_buf0m, ha_water_buf4m, ha_water_buf8m, ha_water_buf12m
+# MAGIC Upload to: [ukceh sharepoint](https://cehacuk.sharepoint.com/sites/EVAST/DEFRA%20Data%20Share/Forms/AllItems.aspx?id=%2Fsites%2FEVAST%2FDEFRA%20Data%20Share%2FIncoming%20Data%2FHedges%20And%20Water%20Body%20data%20Dec&viewid=2ea78def%2D1f62%2D4d01%2D9671%2D188ffdc282c6&OR=Teams%2DHL&CT=1702481423149&clickparams=eyJBcHBOYW1lIjoiVGVhbXMtRGVza3RvcCIsIkFwcFZlcnNpb24iOiI0OS8yMzExMDIzMTgxMCIsIkhhc0ZlZGVyYXRlZFVzZXIiOmZhbHNlfQ)
 # MAGIC
-# MAGIC ### Data
-# MAGIC - rpa-parcels  (~~[DQ]()~~)
-# MAGIC - rpa-hedge  (~~[DQ]()~~)
-# MAGIC - os-ngd  (~~[DQ]()~~)
+# MAGIC ### Output Columns
+# MAGIC - id_parcel: RPA reference parcel SHEET_ID + PARCEL_ID from Nov 2021.
 # MAGIC
+# MAGIC - geometry_parcel: RPA reference parcel geometries from Nov 2021, this version is commonly used within ELM Modelling, EVAST, and ADAS.
+# MAGIC - geometry_hedge: RPA managed hedgerow geometries from Dec 2023, spatially joined with a 12 meters distance to 2021 parcels.  These are all linear features grouped together per parcel, individual geometries are duplicated for each parcel, i.e. 1 MultiLineString per id_parcel.
+# MAGIC - geometry_water: OS NGD water features (excluding basins) and networks, spatially joined within 12 meters to 2021 parcels.  Points and linear features are buffered 1mm for conversion to a polygon.  These features are also grouped together, i.e. 1 MultiPolygon per id_parcel.
 # MAGIC
-# MAGIC ### Outputs
-# MAGIC - elmo_geo-hedge_sjoin:  id_hedge, id_parcel, geometry  (~~[DQ]()~~)
-# MAGIC - elmo_geo-water_sjoin:  osid, id_parcel, geometry  (~~[DQ]()~~)
-# MAGIC - elmo_geo-ditch_sjoin:  osid, id_parcel, geometry  (~~[DQ]()~~)
-# MAGIC - elmo_geo-unified_buffer_features
-# MAGIC     - water:  id_parcel, m, ha (buf: 0, 4, 8, 12)
-# MAGIC     - ditch:  id_parcel, m, ha (buf: 0, 4, 8, 12)
-# MAGIC     - ~~sylvan_~~hedge:  id_parcel, m, ha (buf: 0, 4, 8, 12)
-# MAGIC     - ~~sylvan_wood~~:  
-# MAGIC     - ~~sylvan_relict~~:  
-# MAGIC     - ~~wall~~:  
-# MAGIC     - ~~available~~:  
+# MAGIC - m_hedge: meterage of hedgerow that are within the parcel geometry.  `st_length(st_intersects(geometry_parcel, geometry_hedge))`
+# MAGIC - ha_hedge_buf0m: hectarage of hedgerow within the parcel geometry, this should be zero as hedgerows are linear features.  `st_area(st_intersects(geometry_parcel, geometry_hedge))`
+# MAGIC - ha_hedge_buf4m: hectarage of parcels within 4 meters from a hedgerow, meters is ensured by using CRS=BNG/EPSG:27700.  `st_area(st_intersects(geometry_parcel, st_buffer(geometry_hedge, 4)))`
+# MAGIC - ha_hedge_buf8m: same as previous but with an 8 meter buffer.
+# MAGIC - ha_hedge_buf12m: same as previous but with a 12 meter buffer.
 # MAGIC
-# MAGIC *elmo_geo-water_sjoin is 448GB, I rethink saving sjoin*
-# MAGIC
-# MAGIC
-# MAGIC ### QA
-# MAGIC | ☐/🗹 | Task | Person | Date | Notes |
-# MAGIC | --- | --- | --- | --- | --- |
-# MAGIC | 🗹   | Author | Andrew West | 2023-12-04 |
-# MAGIC | ☐   | Impact | Andrew West | 2023-12-04 | Low |
-# MAGIC | ☐   | Data | Andrew West | 2023-12-04 |
-# MAGIC | ☐   | QA |
-# MAGIC
-# MAGIC ### RACI
-# MAGIC Responsible, Accountable, Consulted, Informed
-# MAGIC
+# MAGIC - m_water: meterage of waterbody that are within the parcel geometry.  `st_length(st_intersects(geometry_parcel, st_boundary(geometry_hedge)))`, ST_Boundary is added due to the waterbody being a MultiPolygon.
+# MAGIC - ha_water_buf0m: hectarage of waterbodies within the parcel geometry.
+# MAGIC - ha_water_buf4m: hectarage of parcels within 4 meters from a waterbody.
+# MAGIC - ha_water_buf8m: same as previous but with an 8 meter buffer.
+# MAGIC - ha_water_buf12m: same as previous but with a 12 meter buffer.
 # MAGIC
 
 # COMMAND ----------
@@ -57,32 +55,32 @@ import elmo_geo
 from elmo_geo.io import to_gpq, load_sdf, download_link
 from elmo_geo.io.file import st_simplify
 from elmo_geo.st import sjoin
+from elmo_geo.st.udf import st_union
 
 elmo_geo.register()
 
 # COMMAND ----------
 
 # stg2ods
-mode = 'ignore'
-
-
 sdf_rpa_parcel = (spark.read.format('parquet')
     .load('dbfs:/mnt/lab/restricted/ELM-Project/stg/rpa-parcel-adas.parquet')
     .select(
         F.expr('CONCAT(RLR_RW_REFERENCE_PARCELS_DEC_21_SHEET_ID, RLR_RW_REFERENCE_PARCELS_DEC_21_PARCEL_ID) AS id_parcel'),
         F.expr('ST_SetSRID(ST_GeomFromWKB(Shape), 27700) AS geometry'),
     )
+    .transform(to_gpq, 'dbfs:/mnt/lab/restricted/ELM-Project/ods/rpa-parcel-adas.parquet')
 )
-to_gpq(sdf_rpa_parcel, 'dbfs:/mnt/lab/restricted/ELM-Project/ods/rpa-parcel-adas.parquet', mode=mode)
 
 sdf_rpa_parcel_2023 = (spark.read.format('parquet')
     .load('dbfs:/mnt/lab/restricted/ELM-Project/stg/rpa-parcel-2023_12_13.parquet')
     .select(
-        # id_parcel,
-        F.expr('ST_SetSRID(ST_GeomFromWKB(geom), 27700) AS geometry'),
+        F.expr('CONCAT(SHEET_ID, PARCEL_ID) AS id_parcel'),
+        F.expr('TO_TIMESTAMP(VALID_FROM, "yyyyMMddHHmmss") AS valid_from'),
+        F.expr('TO_TIMESTAMP(VALID_TO, "yyyyMMddHHmmss") AS valid_to'),
+        F.expr('ST_SetSRID(ST_GeomFromWKB(GEOM), 27700) AS geometry'),
     )
+    .transform(to_gpq, 'dbfs:/mnt/lab/restricted/ELM-Project/ods/rpa-parcel-2023_12_13.parquet')
 )
-to_gpq(sdf_rpa_parcel_2023, 'dbfs:/mnt/lab/restricted/ELM-Project/ods/rpa-parcel-2023_12_13.parquet', mode=mode)
 
 
 
@@ -95,22 +93,24 @@ sdf_rpa_hedge = (spark.read.format('parquet')
         F.expr('TO_TIMESTAMP(VALID_TO, "yyyyMMddHHmmss") AS valid_to'),
         F.expr('ST_SetSRID(ST_GeomFromWKB(GEOM), 27700) AS geometry'),
     )
+    .transform(to_gpq, 'dbfs:/mnt/lab/restricted/ELM-Project/ods/rpa-hedge-2023_12_13.parquet')
 )
-to_gpq(sdf_rpa_hedge, 'dbfs:/mnt/lab/restricted/ELM-Project/ods/rpa-hedge-2023_12_13.parquet', mode=mode)
 
 
 os_schema = T.StructType([
+    T.StructField('layer', T.StringType(), True),
     T.StructField('theme', T.StringType(), True),
     T.StructField('description', T.StringType(), True),
-    T.StructField('watermark', T.StringType(), True),
     T.StructField('width', T.DoubleType(), True),
     T.StructField('geometry', T.BinaryType(), True),
 ])
 
 sdf_os_water = (spark.read.format('parquet')
     .schema(os_schema)
-    .load('dbfs:/mnt/lab/restricted/ELM-Project/stg/os-ngd-2022.parquet/wtr_*')
+    .load('dbfs:/mnt/lab/restricted/ELM-Project/stg/os-ngd-2022.parquet/layer=wtr_*')
+    .filter('description != "Waterbody Catchment"')
     .select(
+        'layer',
         'theme',
         'description',
         'watermark',
@@ -118,113 +118,79 @@ sdf_os_water = (spark.read.format('parquet')
         F.expr('ST_SetSRID(ST_GeomFromWKB(geometry), 27700) AS geometry'),
     )
     .withColumn('geometry', F.expr('CASE WHEN (width IS NOT NULL) THEN ST_Buffer(geometry, width) ELSE geometry END'))
+    .transform(to_gpq, 'dbfs:/mnt/lab/restricted/ELM-Project/ods/os-water-2022.parquet')
 )
-to_gpq(sdf_os_water, 'dbfs:/mnt/lab/restricted/ELM-Project/ods/os-water-2022.parquet', mode=mode)
+
 
 sdf_os_wall = (spark.read.format('parquet')
     .schema(os_schema)
     .load('dbfs:/mnt/lab/restricted/ELM-Project/stg/os-ngd-2022.parquet')
     .filter('description REGEXP " Wall"')
     .select(
+        'layer',
         'theme',
         'description',
         F.expr('ST_SetSRID(ST_GeomFromWKB(geometry), 27700) AS geometry'),
     )
+    .transform(to_gpq, 'dbfs:/mnt/lab/restricted/ELM-Project/ods/os-wall-2022.parquet')
 )
-to_gpq(sdf_os_wall, 'dbfs:/mnt/lab/restricted/ELM-Project/ods/os-wall-2022.parquet', mode=mode)
-
 
 # COMMAND ----------
 
 # gsjoin
-mode = 'ignore'
-
 drains = ['Ditch', 'Named Ditch', 'Moat']
 sdf_parcel = load_sdf('rpa-parcel-adas').select('id_parcel', 'geometry')
-# sdf_hedge = load_sdf('rpa-hedge').select('geometry')
+sdf_hedge = load_sdf('rpa-hedge').select('geometry')
 sdf_water = load_sdf('os-water-2022').filter(~F.col('description').isin(drains)).select('geometry')
-# sdf_ditch = load_sdf('os-water-2022').filter(F.col('description').isin(drains)).select('geometry')
-# sdf_wall = load_sdf('os-wall-2022').select('geometry')
+sdf_ditch = load_sdf('os-water-2022').filter(F.col('description').isin(drains)).select('geometry')
+sdf_wall = load_sdf('os-wall-2022').select('geometry')
 
 
-for name, sdf_right in {
-    # 'hedge': sdf_hedge,
+for name, sdf_other in {
+    'hedge': sdf_hedge,
     'water': sdf_water,
-    # 'ditch': sdf_ditch,
-    # 'wall': sdf_wall,
+    'ditch': sdf_ditch,
+    'wall': sdf_wall,
 }.items():
-    sdf_parcel.createOrReplaceTempView('left')
-    sdf_right.createOrReplaceTempView('right')
-    sdf = spark.sql('''
-        SELECT 
-            id_parcel,
-            gtype,
-            ST_MakeValid(ST_SimplifyPreserveTopology(ST_MakeValid(ST_Union_Aggr(COALESCE(geometry, ST_GeomFromText('Point EMPTY')))), 0.1)) AS geometry
-        FROM (
-            SELECT
-                l.id_parcel,
-                SUBSTRING(ST_GeometryType(ST_Multi(r.geometry)), 9) AS gtype,
-                ST_MakeValid(r.geometry) AS geometry
-            FROM (
-                SELECT  -- make valid, simplify, buffer (x2 to avoid donut bug)
-                    id_parcel,
-                    ST_MakeValid(ST_SimplifyPreserveTopology(ST_MakeValid(ST_Buffer(ST_MakeValid(ST_Buffer(geometry, 0.001)), 12-0.001)), 0.1)) AS geometry
-                FROM left
-                WHERE geometry IS NOT NULL
-            ) AS l
-            JOIN (SELECT ST_MakeValid(geometry) AS geometry  -- make valid, dump, subdivide, dump, simplify
-                FROM (SELECT EXPLODE(ST_Dump(geometry)) AS geometry
-                    FROM (SELECT ST_SubDivideExplode(geometry, 256) AS geometry
-                        FROM (SELECT EXPLODE(ST_Dump(geometry)) AS geometry
-                            FROM (SELECT ST_MakeValid(ST_SimplifyPreserveTopology(geometry, 0.1)) AS geometry
-                                FROM right
-                                WHERE geometry IS NOT NULL
-            ))))) AS r
-            ON ST_Intersects(l.geometry, r.geometry)
+    sdf = (
+        sjoin(
+            sdf_parcel,
+            sdf_other.withColumn('geometry', F.expr('ST_SubDivideExplode(geometry, 256)')),
+            rsuffix = '',
+            distance = 12,
         )
-        GROUP BY id_parcel, gtype
-    ''')
-    spark.sql('DROP TABLE left')
-    spark.sql('DROP TABLE right')
-    sf = f'dbfs:/mnt/lab/restricted/ELM-Project/ods/elmo_geo-{name}-2023_12_20.parquet'
-    to_gpq(sdf, sf, mode=mode)
-
+        .transform(st_union, 'id_parcel')
+        .transform(to_gpq, f'dbfs:/mnt/lab/restricted/ELM-Project/ods/elmo_geo-{name}-2024_01_08.parquet')
+    )
 
 # COMMAND ----------
 
-f = '/dbfs/mnt/lab/restricted/ELM-Project/out/elmo-buffers-2023_12_05.feather'
+# metrics
+f = '/dbfs/mnt/lab/restricted/ELM-Project/out/elmo-buffers-2024_01_08.feather'
 sdf_parcel = load_sdf('rpa-parcel-adas').drop('sindex')
-names = 'hedge', 'water', 'ditch', 'wall'
+names = 'hedge', 'water'#, 'ditch', 'wall'
 bufs = 0, 4, 8, 12
-
-
-def merge_gtypes(sdf, col:str='geometry', buf:float=1):
-    if 'gtype' in sdf.columns and 1 < sdf.select('gtype').distinct().count():
-        sdf = (sdf
-            .withColumn(col, F.expr(f'ST_MakeValid(ST_Buffer({col}, {buf}))'))
-        )
-    return sdf
 
 
 null = 'ST_GeomFromText("Point EMPTY")'
 sdf_geoms = sdf_parcel
 for name in names:
     sdf_other = (
-        load_sdf(f'elmo_geo-{name}_gsjoin-2023_12_12').drop('sindex')
-        .transform(merge_gtypes)
+        load_sdf(f'elmo_geo-{name}-2024_01_08').drop('sindex')
         .withColumnRenamed('geometry', f'geometry_{name}')
     )
+    if name!='hedge':
+        sdf_other = sdf_other.withColumn(f'geometry_{name}', F.expr(f'ST_Buffer(geometry_{name},  1)'))
     sdf_geoms = (sdf_geoms
         .join(sdf_other, on='id_parcel', how='left')
         .withColumn(f'geometry_{name}', F.expr(f'COALESCE(geometry_{name}, {null})'))
     )
-display(sdf_geoms)
 
 sdf = (sdf_geoms
     .select(
         'id_parcel',
         *(
-            F.expr(f'ST_Length(ST_MakeValid(ST_Intersection(geometry, geometry_{name}))) AS m_{name}')
+            F.expr(f'ST_Length(ST_MakeValid(ST_Intersection(geometry, geometry_{name}))) / 2 AS m_{name}')
             for name in names
         ),
         *(
@@ -238,18 +204,35 @@ sdf = (sdf_geoms
 
 df = sdf.toPandas()
 df.to_feather(f)
-download_link(f)
 df
 
 # COMMAND ----------
 
-col = 'hedge'
-{
+# summary
+{k: v for col in ('hedge', 'water', 'ditch', 'wall') for k, v in {
     'parcels': f"{df['id_parcel'].nunique():,}",
-    f'parcels with {col}': f"{(0<df[f'm_{col}']).mean():.1%}",
-    f'total m_{col}': f"{df[f'm_{col}'].sum()/1e6:,.1f} Mm",
-    f'total ha_{col}_buf0m': f"{df[f'ha_{col}_buf0m'].sum()/1e6:,.1f} ha",
-    f'total ha_{col}_buf4m': f"{df[f'ha_{col}_buf4m'].sum()/1e6:,.1f} ha",
-    f'total ha_{col}_buf8m': f"{df[f'ha_{col}_buf8m'].sum()/1e6:,.1f} ha",
-    f'total ha_{col}_buf12m': f"{df[f'ha_{col}_buf12m'].sum()/1e6:,.1f} ha",
-}
+    f'parcels with {col}': f"{(0 < df[f'm_{col}']).mean():.1%}",
+    f'total m_{col}': f"{df[f'm_{col}'].sum() / 1e6:,.1f} Mm",
+    f'total ha_{col}_buf0m': f"{df[f'ha_{col}_buf0m'].sum() / 1e6:,.1f} ha",
+    f'total ha_{col}_buf4m': f"{df[f'ha_{col}_buf4m'].sum() / 1e6:,.1f} ha",
+    f'total ha_{col}_buf8m': f"{df[f'ha_{col}_buf8m'].sum() / 1e6:,.1f} ha",
+    f'total ha_{col}_buf12m': f"{df[f'ha_{col}_buf12m'].sum() / 1e6:,.1f} ha"
+}.items()}
+
+# COMMAND ----------
+
+# Download
+
+# Metrics
+f_in = '/dbfs/mnt/lab/restricted/ELM-Project/out/elmo-buffers-2024_01_08.feather'
+f_out = '/tmp/elmo-buffers-2024_01_08.csv'
+pd.read_feather(f_in).to_csv(f_out)
+download_link(f_out)
+
+# Geometries
+for name in 'hedge', 'water':
+    f_in = f'/dbfs/mnt/lab/restricted/ELM-Project/ods/elmo_geo-{name}-2024_01_08.parquet'
+    f_out = f'/tmp/elmo_geo-{name}-2024_01_08.gpkg'
+    # gpd.read_parquet(f_in).set_crs(epsg=27700).drop(columns=['sindex']).to_file(f_out)
+    download_link(f_out)
+

@@ -7,7 +7,7 @@ from elmo_geo.utils.misc import sh_run, dbfs
 from elmo_geo.utils.types import SparkDataFrame
 
 
-def st_simplify(col:str='geometry', precision:float=1) -> F.expr:
+def st_simplify(col:str='geometry', precision:int=1) -> F.expr:
     '''Simplifies geometries
     Ensuring they are valid for other processes
     And to avoid non-noded intersection errors
@@ -15,8 +15,8 @@ def st_simplify(col:str='geometry', precision:float=1) -> F.expr:
     precision=1 for BNG (EPSG:27700) is 100mm
     '''
     null = 'ST_GeomFromText("Point EMPTY")'
-    expr = f'COALESCE(ST_MakeValid({col}), {null})'
-    expr = f'ST_MakeValid(ST_SimplifyPreserveTopology(ST_MakeValid(ST_PrecisionReduce({expr}, {precision})), {10**-precision}))'
+    expr = f'ST_MakeValid(COALESCE({col}, {null}))'
+    expr = f'ST_MakeValid(ST_PrecisionReduce(ST_MakeValid(ST_SimplifyPreserveTopology({expr}, {10**-precision})), {precision}))'
     expr = f'{expr} AS {col}'
     return F.expr(expr)
 
@@ -40,14 +40,11 @@ def repartitonBy(sdf: SparkDataFrame, by: str) -> SparkDataFrame:
 def to_gpq_partitioned(sdf: SparkDataFrame, sf: str, **kwargs):
     """SparkDataFrame to GeoParquet, partitioned by BNG index"""
     sdf = (sdf
-        .withColumn('geometry', st_simplify())
+        .withColumn("geometry", st_simplify())
         .transform(sindex)
-        .transform(repartitonBy, 'sindex')  # coalesce per parition
+        .transform(repartitonBy, "sindex")
     )
-    (sdf
-        .write.format("geoparquet")
-        .save(sf, partitionBy="sindex", **kwargs)
-    )
+    sdf.write.format("geoparquet").save(sf, partitionBy="sindex", **kwargs)
     LOG.info(f'''
         Wrote GeoParquet: {sf}
         Count: {sdf.count()}
@@ -55,6 +52,7 @@ def to_gpq_partitioned(sdf: SparkDataFrame, sf: str, **kwargs):
         Partitions: {sdf.rdd.getNumPartitions()}
         Files: {count_files(dbfs(sf, False))}
     ''')
+    return sdf
 
 
 def to_gpq_sorted(sdf: SparkDataFrame, sf: str, **kwargs):
@@ -62,8 +60,7 @@ def to_gpq_sorted(sdf: SparkDataFrame, sf: str, **kwargs):
     (sdf
         .transform(centroid_index, resolution="1km")
         .sort("sindex")
-        .write.format("geoparquet")
-        .save(sf, **kwargs)
+        .write.format("geoparquet").save(sf, **kwargs)
     )
 
 
@@ -73,8 +70,7 @@ def to_gpq_zsorted(sdf: SparkDataFrame, sf: str, **kwargs):
         .transform(sindex, resolution="1km", index_join=chipped_index)
         .withColumn("geohash", F.expr('ST_GeoHash(ST_FlipCoordinates(ST_Transform(geometry, "EPSG:27700", "EPSG:4326")))'))
         .sort("geohash")
-        .write.format("geoparquet")
-        .save(sf, **kwargs)
+        .write.format("geoparquet").save(sf, **kwargs)
     )
 
 

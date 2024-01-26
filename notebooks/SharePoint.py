@@ -4,6 +4,7 @@
 
 # COMMAND ----------
 
+import os
 from getpass import getpass
 import dotenv
 from cryptography.fernet import Fernet
@@ -24,30 +25,32 @@ class SPOL:
 
     '''
     def __init__(self, **kwargs):
-        self.spol_base_url = 'https://defra.sharepoint.com/'
-        self.spol_username = self.get_user()
-        self.spol_password = self.get_pass()
-        self.default_location = '/dbfs/FileStore/'
+        self.dl_location = '/dbfs/FileStore/SharePoint/'
+        self.env = '/Workspace/Repos/andrew.west@defra.gov.uk/elmo_geo/.env'
+        self.base_url = 'https://defra.sharepoint.com/'
+        self.username = self.get_user()
+        self.password = self.get_pass()
         self.__dict__.update(kwargs)
         self.ctx = self.get_context()
         self.ssl = self.check_ssl()
+        os.makedirs(self.dl_location, exist_ok=True)
 
     # .env
-    def encrypt_value(value):
-        return Fernet(dotenv.get_key('.env', 'SHA_KEY')).encrypt(value.encode('utf8'))
+    def encrypt_value(self, value):
+        return Fernet(dotenv.get_key(self.env, 'SHA_KEY')).encrypt(value.encode('utf8'))
 
-    def decrpyt_key(key):
-        return Fernet(dotenv.get_key('.env', 'SHA_KEY')).decrypt(dotenv.get_key('.env', key)).decode('utf8')
+    def decrpyt_key(self, key):
+        return Fernet(dotenv.get_key(self.env, 'SHA_KEY')).decrypt(dotenv.get_key(self.env, key)).decode('utf8')
 
-    def get_user():
-        return dotenv.get_key('.env', 'SPOL_USER')
+    def get_user(self):
+        return dotenv.get_key(self.env, 'SPOL_USER')
 
-    def get_pass():
+    def get_pass(self):
         return self.decrpyt_key('SPOL_PASS_SHA')
 
     # setup
     def get_context(self):
-        return ClientContext(spol_base_url).with_user_credentials(spol_username, spol_password)
+        return ClientContext(self.base_url).with_user_credentials(self.username, self.password)
 
     def check_ssl(self):
         try:
@@ -56,24 +59,31 @@ class SPOL:
         except Exception:
             with no_ssl_verification():
                 self.ctx.web.get().execute_query().url
+            print('Using no_ssl_verification')
             return no_ssl_verification
 
     # tools
-    @self.ssl
     def list_files(self, target):
-        files = self.ctx.web.get_folder_by_server_relative_path(target).get_files(True).execute_query()
-        return [f.properties['ServerRelativeUrl'] for f in files]
+        with self.ssl():
+            files = self.ctx.web.get_folder_by_server_relative_path(target).get_files(True).execute_query()
+            return [f.properties['ServerRelativeUrl'] for f in files]
 
-    @self.ssl
     def dl_file(self, target):
-        response = File.open_binary(self.ctx, target)
-        filename = self.default_location + target.split('/')[-1]
-        with open(filename, 'wb') as f:
-            f.write(response.content)
+        with self.ssl():
+            filename = self.dl_location + target.split('/')[-1]
+            self.ctx.web.get_file_by_server_relative_url(target).download(filename).execute_query()
 
-    @self.ssl
-    def dl_folder(ctx, target):
-        pass
+    def dl_folder(self, target):
+        with self.ssl():
+            pass
+
+    def up_file(self, filepath, target):
+        with self.ssl():
+            pass
+
+    def up_folder(self, folderpath, target):
+        with self.ssl():
+            pass
 
 
 @contextlib.contextmanager
@@ -106,16 +116,9 @@ def no_ssl_verification():
 
 # COMMAND ----------
 
-import geopandas as gpd
-
+spol = SPOL(base_url = 'https://defra.sharepoint.com/teams/Team1645/')
 with no_ssl_verification():
-    ctx = spol_ctx()
-    target = '/teams/Team1645/Restricted_ELM_RPA_data_sharing/modelling_data_update/2023-update/Live_Parcel_Links.zip'
-    pl_file(ctx, target)
-df
-
-# COMMAND ----------
-
-# MAGIC %sh
-# MAGIC # unzip Live_Parcel_Links
-# MAGIC ls -lh
+    target = 'Restricted_ELM_RPA_data_sharing/modelling_data_update/2023-update/rpa-parcel-2023_12_13.parquet.zip'
+    filepath = '/dbfs/FileStore/SharePoint/rpa-parcel-2023_12_13.parquet.zip'
+    file = spol.ctx.web.get_file_by_server_relative_path(target).download(filepath).execute_query()
+file
