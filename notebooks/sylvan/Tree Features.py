@@ -97,10 +97,6 @@
 
 # COMMAND ----------
 
-# MAGIC %pip install rich
-
-# COMMAND ----------
-
 from tree_features import *
 from matplotlib import pyplot as plt
 import geopandas as gpd
@@ -126,14 +122,9 @@ timestamp = "202311231323"  # 202311231323 timestamp is tree detection version w
 elmo_geo_hedgerows_path = (
     "dbfs:/mnt/lab/restricted/ELM-Project/ods/elmo_geo-hedge-2024_01_08.parquet"
 )
-efa_hedges_path = "dbfs:/mnt/lab/unrestricted/elm_data/rural_payments_agency/efa_hedges/2022_06_24.parquet"
+elmo_geo_waterbodies_path = "dbfs:/mnt/lab/restricted/ELM-Project/ods/elmo_geo-water-2024_01_08.parquet"
 
-waterbodies_path = "dbfs:/mnt/lab/restricted/ELM-Project/out/water.parquet"
-
-rpa_2021_parcels_path = (
-    "dbfs:/mnt/lab/unrestricted/elm_data/rpa/reference_parcels/2021_03_16.parquet" # original used
-)
-adas_parcels_path = "dbfs:/mnt/lab/restricted/ELM-Project/ods/rpa-parcel-adas.parquet"
+adas_parcels_path = "dbfs:/mnt/lab/restricted/ELM-Project/ods/rpa-parcel-adas.parquet" # november 2021 parcels
 
 trees_output_template = (
     "dbfs:/mnt/lab/unrestricted/elm/elmo/"
@@ -146,8 +137,6 @@ features_output_template = (
     "dbfs:/mnt/lab/unrestricted/elm/elmo/tree_features/tree_features_{timestamp}.parquet"
 )
 parcel_trees_output = features_output_template.format(timestamp=timestamp)
-parcel_trees_output = "dbfs:/mnt/lab/unrestricted/elm/elmo/tree_features/hrtrees_adas_parcels_elmogeo_hedges_202311231323.parquet"
-#parcel_trees_output = "dbfs:/mnt/lab/unrestricted/elm/elmo/tree_features/hrtrees_adas_parcels_efa_hedge_202311231323.parquet"
 
 # COMMAND ----------
 
@@ -167,84 +156,46 @@ output_trees_path
 # COMMAND ----------
 
 # DBTITLE 1,Load Data
-treesDF = spark.read.parquet(output_trees_path)
+treesDF = (spark.read.parquet(output_trees_path)
+           .repartition(200_000, "major_grid", "chm_path")
+)
 parcelsDF = (spark.read.format("geoparquet").load(adas_parcels_path)
+             .repartition(1_250, "sindex")
 )
-parcelsRPA21DF = spark.read.parquet(rpa_2021_parcels_path)
-elmoGeoHedgesDF = (spark.read.format("geoparquet").load(elmo_geo_hedgerows_path)
+hrDF = (spark.read.format("geoparquet").load(elmo_geo_hedgerows_path)
+        .repartition(1_250, "sindex")
 )
-efaHedgesDF = spark.read.parquet(efa_hedges_path)
-#wbDF = spark.read.parquet(waterbodies_path)
-#wbDF = None
-
-treesDF = treesDF.repartition(100_000)
-#wbDF = wbDF.repartition(1_000)
+wbDF = (spark.read.parquet(elmo_geo_waterbodies_path)
+        .repartition(1_250, "sindex")
+)
 
 # COMMAND ----------
 
-# DBTITLE 1,Check ADAS parcels align with elmo-geo hedgerows
-compDF = (parcelsDF
-          .join(elmoGeoHedgesDF, elmoGeoHedgesDF.id_parcel == parcelsDF.id_parcel, "inner")
-)
-
-print(f"N Parcels: {parcelsDF.dropDuplicates(subset=['id_parcel']).count():,}")
-print(f"N hedge parcels: {elmoGeoHedgesDF.dropDuplicates(subset=['id_parcel']).count()} ")
-print(f"N EFA hedges parcels: {efaHedgesDF.dropDuplicates(subset=['REF_PARCEL_SHEET_ID', 'REF_PARCEL_PARCEL_ID']).count()} ")
-print(f"N hedge parcels in ADAS parcels: {compDF.dropDuplicates(subset = ['id_parcel']).count()}")
+for DF in [parcelsDF, hrDF, wbDF, treesDF]:
+    c = DF.count()
+    p = DF.rdd.getNumPartitions()
+    print(f"Rows per partition: {c/p}")
 
 # COMMAND ----------
 
-# DBTITLE 1,Check ADAS parcels align with EFA Hedgerows
-efaHedgesDF = (efaHedgesDF
-               .withColumn("id_parcel", F.concat("REF_PARCEL_SHEET_ID", "REF_PARCEL_PARCEL_ID"))
-)
-compDF = (parcelsDF
-          .join(efaHedgesDF, efaHedgesDF.id_parcel == parcelsDF.id_parcel, "inner")
-)
-
-print(f"N Parcels: {parcelsDF.dropDuplicates(subset=['id_parcel']).count():,}")
-print(f"N hedge parcels: {efaHedgesDF.dropDuplicates(subset=['id_parcel']).count():,}")
-print(f"N EFA hedges parcels: {efaHedgesDF.dropDuplicates(subset=['REF_PARCEL_SHEET_ID', 'REF_PARCEL_PARCEL_ID']).count():,} ")
-print(f"N hedge parcels in ADAS parcels: {compDF.dropDuplicates(subset = ['id_parcel']).count():,}")
+hrDF.display()
 
 # COMMAND ----------
 
-# DBTITLE 1,Check RPA 2021 parcels align with elmo-geo hedgerows
-parcelsRPA21DF = (parcelsRPA21DF
-                .withColumn("id_parcel", F.concat("SHEET_ID", "PARCEL_ID"))
-                )
-compDF = (parcelsRPA21DF
-          .join(elmoGeoHedgesDF, elmoGeoHedgesDF.id_parcel == parcelsRPA21DF.id_parcel, "inner")
-)
-
-print(f"N Parcels: {parcelsRPA21DF.dropDuplicates(subset=['id_parcel']).count():,}")
-print(f"N hedge parcels: {elmoGeoHedgesDF.dropDuplicates(subset=['id_parcel']).count():,} ")
-print(f"N EFA hedges parcels: {efaHedgesDF.dropDuplicates(subset=['REF_PARCEL_SHEET_ID', 'REF_PARCEL_PARCEL_ID']).count():,} ")
-print(f"N hedge parcels in ADAS parcels: {compDF.dropDuplicates(subset = ['id_parcel']).count():,}")
+treesDF.select(F.col("chm_path")).display()
 
 # COMMAND ----------
 
-# DBTITLE 1,Prep EFA hedge data for hrtree classification
-# hrDF = (efaHedgesDF
-#         .withColumn("id_parcel", F.concat("REF_PARCEL_SHEET_ID", "REF_PARCEL_PARCEL_ID"))
-#         .withColumn("geometry", F.expr("ST_GeomFromWKB(geometry)"))
-#         .withColumn("hedge_length", F.expr("ST_Length(geometry)"))
-#         .select("id_parcel", 
-#                 "geometry", 
-#                 "hedge_length")
-# )
-
-# COMMAND ----------
-
-# DBTITLE 1,Prep elmo geo hedge data for hrtree classification
+# DBTITLE 1,Prepare elmo geo hedge data for hrtree classification
 # elmo-hedges assigns any hedge within 12m of a parcel to that parcel
 pDF = (parcelsDF
        .withColumnRenamed("geometry", "geometry_parcel")
        .withColumnRenamed("id_parcel", "id_parcel_main")
        .select("id_parcel_main", "geometry_parcel")
 )
-hrDF = (elmoGeoHedgesDF
-        .join(pDF, pDF.id_parcel_main == elmoGeoHedgesDF.id_parcel, "inner")
+
+hrDF = (hrDF
+        .join(pDF, pDF.id_parcel_main == hrDF.id_parcel, "inner")
         .withColumn("geometry", F.expr(f"""
                                              ST_Intersection(
                                                  geometry,
@@ -253,6 +204,20 @@ hrDF = (elmoGeoHedgesDF
         .withColumn("hedge_length", F.expr("ST_Length(geometry)"))
         .select("id_parcel", "geometry", "hedge_length", "sindex")
 )
+
+wbDF = (wbDF
+        .join(pDF, pDF.id_parcel_main == wbDF.id_parcel, "inner")
+        .withColumn("geometry", F.expr(f"""
+                                             ST_Intersection(
+                                                 geometry,
+                                                 ST_Buffer(geometry_parcel, {parcel_buffer_distance})
+                                                 )"""))
+        .select("id_parcel", "geometry", "sindex")
+)
+
+# COMMAND ----------
+
+#wbDF.display()
 
 # COMMAND ----------
 
@@ -306,21 +271,28 @@ download_link(outfp, move=False)
 # COMMAND ----------
 
 # DBTITLE 1,Get tree features
+# was taking over 12hrs so I cancelled - need to find a better way.
 pTreesDF = get_parcel_tree_features(
     spark,
     treesDF,
     parcelsDF,
     hrDF,
-    None,
+    None, # wbDF not working currently.
     parcelBufferDistances,
     hedgerowBufferDistances,
     waterbodyBufferDistances,
     double_count=True,
+    report_counts=False,
 )
 
 # COMMAND ----------
 
+pTreesDF.write.mode("overwrite").parquet(parcel_trees_output)
+
+# COMMAND ----------
+
 # DBTITLE 1,Add hedgerow length
+pTreesDF = spark.read.parquet(parcel_trees_output)
 hLengthDF = (hrDF
              .withColumnRenamed("id_parcel", "idp")
              .groupBy("idp")

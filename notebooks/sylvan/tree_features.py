@@ -89,10 +89,13 @@ def sjoin(
 
 
 def make_parcel_geometries(parcelsDF: SparkDataFrame) -> SparkDataFrame:
-    # Get permieter of parcel as a LineString, then buffer
-    # parcelsDF = parcelsDF.withColumn(
-    #     "parcel_geom", "geometry"
-    # )
+    parcelsDF = parcelsDF.withColumn(
+        "geometry", F.expr("ST_SimplifyPreserveTopology(geometry,1)")
+    )
+        
+    parcelsDF = parcelsDF.withColumn(
+        "parcel_geom", F.col("geometry")
+    )
     parcelsDF = parcelsDF.withColumn(
         "perimeter_geom", F.expr("ST_MakeValid(ST_Boundary(geometry))")
     )
@@ -220,12 +223,12 @@ def feature_tree_and_parcel_counts(
             nFeatureParcels = (
                 featuresDF
                 # .dropna(subset=featureName+str(c))
-                .select("SHEET_PARCEL_ID")
+                .select("id_parcel")
                 .distinct()
                 .count()  # Number of parcels with features
             )
             nFeatureTreeParcels = (
-                bufferFeatureTreesDF.select("SHEET_PARCEL_ID").distinct().count()
+                bufferFeatureTreesDF.select("id_parcel").distinct().count()
             )  # parcels with feature trees
 
             counts[featureName][b] = {
@@ -244,14 +247,14 @@ def get_hedgerow_trees_features(
     hrDF: SparkDataFrame,
     bufferDistances: List[float],
     double_count: Optional[bool] = True,
-    calculate_counts: Optional[bool] = False,
+    report_counts: Optional[bool] = False,
 ) -> Tuple:
     """
     Produces the hedgerow trees features.
 
     Old counts method:
 
-    n_parcels = df_parcels.select("SHEET_PARCEL_ID").distinct().count()
+    n_parcels = df_parcels.select("id_parcel").distinct().count()
 
     # Number of parcels with hedgerows but not hedgerow trees
     n_hr_parcels = hrDFr.select("PARCEL_ID").distinct().count()
@@ -300,7 +303,7 @@ def get_hedgerow_trees_features(
     )
     counts = {}
     
-    if calculate_counts:
+    if report_counts:
         counts = feature_tree_and_parcel_counts(
             hrDF, hrtreesDF, hrtreesPerParcelDF, bufferDistances, [featureName]
         )
@@ -334,6 +337,7 @@ def get_waterbody_trees_features(
     bufferDistances: List[float],
     waterbodies_to_exclude: Optional[list] = ["Sea", "Named Area Of Sea", "Unknown Or No Physical Feature", "Swimming Pool", "Paddling Pool", "Named Estuary"],
     double_count: Optional[bool] = True,
+    report_counts: Optional[bool] = False,
 ) -> Tuple:
     """
     Produces the riparian trees features.
@@ -386,25 +390,26 @@ def get_waterbody_trees_features(
         num_partitions=num_partitions,
     )
 
-    counts = feature_tree_and_parcel_counts(
-        wbDF, wbTreesDF, wbTreesPerParcelDF, bufferDistances, [featureName]
-    )
+    if report_counts:
+        counts = feature_tree_and_parcel_counts(
+            wbDF, wbTreesDF, wbTreesPerParcelDF, bufferDistances, [featureName]
+        )
 
-    feature_counts = counts[featureName]
-    report_buffer_distance = 2
-    LOG.info(
-        f"Number of waterbody trees: {feature_counts[report_buffer_distance]['nFeatureTrees']}"
-    )
-    LOG.info(
-        f"Number of waterbody trees in parcels: {feature_counts[report_buffer_distance]['nFeatureParcelTrees']}"
-    )
-    LOG.info("\n")
-    LOG.info(
-        f"Number of parcels w waterbodies: {feature_counts[report_buffer_distance]['nFeatureParcels']}"
-    )
-    LOG.info(
-        f"Number of parcels w waterbody trees: {feature_counts[report_buffer_distance]['nFeatureTreeParcels']}"
-    )
+        feature_counts = counts[featureName]
+        report_buffer_distance = 2
+        LOG.info(
+            f"Number of waterbody trees: {feature_counts[report_buffer_distance]['nFeatureTrees']}"
+        )
+        LOG.info(
+            f"Number of waterbody trees in parcels: {feature_counts[report_buffer_distance]['nFeatureParcelTrees']}"
+        )
+        LOG.info("\n")
+        LOG.info(
+            f"Number of parcels w waterbodies: {feature_counts[report_buffer_distance]['nFeatureParcels']}"
+        )
+        LOG.info(
+            f"Number of parcels w waterbody trees: {feature_counts[report_buffer_distance]['nFeatureTreeParcels']}"
+        )
 
     return wbTreesDF, wbTreesPerParcelDF, counts
 
@@ -478,7 +483,7 @@ def get_perimeter_trees_features(
     report_buffer_distance = 2
     nTreeParcels = (
         perimTreesPerParcelDF.dropna(subset=countFeatureName + str(report_buffer_distance))
-        .select("SHEET_PARCEL_ID")
+        .select("id_parcel")
         .distinct()
         .count()  # Number of parcels with trees in perimeter
     )
@@ -548,7 +553,7 @@ def get_interior_trees_features(
     nIntTreeParcels = (
         intTreesPerParcelDF.dropna(subset=featureName + str(report_buffer_distance))
         .filter(F.col(featureName + str(report_buffer_distance)) > 0)
-        .select("SHEET_PARCEL_ID")
+        .select("id_parcel")
         .distinct()
         .count()  # Number of parcels with trees in interior
     )
@@ -590,8 +595,6 @@ def get_parcel_perimeter_and_interior_tree_features(
     parcelsDF = make_parcel_geometries(parcelsDF, parcel_buffer_distance)
     treesDF = treesDF.withColumn("top_point", F.expr("ST_GeomFromWKT(top_point)"))
 
-    # Create unique parcel id
-    parcelsDF = parcelsDF.withColumn("SHEET_PARCEL_ID", F.concat("SHEET_ID", "PARCEL_ID"))
 
     parcelPerimTreesDF = get_perimeter_trees_features(
         spark, treesDF, parcelsDF, double_count=double_count
@@ -600,26 +603,26 @@ def get_parcel_perimeter_and_interior_tree_features(
 
     # Combine datasets
     pDF = parcelsDF.select(
-        "SHEET_ID", "PARCEL_ID", F.col("SHEET_PARCEL_ID").alias("SPID"), "perimeter_length"
+        "SHEET_ID", "PARCEL_ID", F.col("id_parcel").alias("idp"), "perimeter_length"
     )
     parcelTreeCountsDF = (
-        pDF.join(parcelPerimTreesDF, pDF.SPID == parcelPerimTreesDF.SHEET_PARCEL_ID, "left")
-        .drop("SHEET_PARCEL_ID")
-        .join(parcelInterTreesDF, pDF.SPID == parcelInterTreesDF.SHEET_PARCEL_ID, "left")
-        .drop("SHEET_PARCEL_ID")
+        pDF.join(parcelPerimTreesDF, pDF.SPID == parcelPerimTreesDF.id_parcel, "left")
+        .drop("id_parcel")
+        .join(parcelInterTreesDF, pDF.SPID == parcelInterTreesDF.id_parcel, "left")
+        .drop("id_parcel")
         .fillna(0, subset=["perim_trees_count", "perim_trees_length", "int_trees_count"])
-        .withColumn("SHEET_PARCEL_ID", F.col("SPID"))
-        .drop("SPID")
+        .withColumn("id_parcel", F.col("idp"))
+        .drop("idp")
     )
 
     nRows = parcelTreeCountsDF.count()
     LOG.info(f"Number of rows in parcel tree features DF: {nRows}")
 
-    nParcels = parcelsDF.select("SHEET_PARCEL_ID").distinct().count()  # All parcels
+    nParcels = parcelsDF.select("id_parcel").distinct().count()  # All parcels
     LOG.info(f"Number of parcels: {nParcels}")
 
     # Should be no duplicated parcels
-    nP = parcelTreeCountsDF.select("SHEET_PARCEL_ID").count()
+    nP = parcelTreeCountsDF.select("id_parcel").count()
     assert nP == nParcels
 
     return parcelTreeCountsDF
@@ -629,12 +632,13 @@ def get_parcel_tree_features(
     spark: SparkSession,
     treesDF: SparkDataFrame,
     parcelsDF: SparkDataFrame,
-    hrDF: SparkDataFrame,
-    wbDF: SparkDataFrame,
+    hrDF: Optional[SparkDataFrame],
+    wbDF: Optional[SparkDataFrame],
     parcelBufferDistances: List[float],
     hedgerowBufferDistances: List[float],
     waterbodyBufferDistances: List[float],
     double_count: Optional[bool] = False,
+    report_counts: Optional[bool] = False,
 ) -> SparkDataFrame:
     """
     Produces parcel trees features - counts of hedgerow trees, counts of waterbody trees, counts of interior trees, counts of perimeter trees and the perimieter length
@@ -672,37 +676,26 @@ def get_parcel_tree_features(
     SparkDataFrame: Tree statistics per parcel.
     """
 
+
     # Create geometries
     parcelsDF = make_parcel_geometries(parcelsDF)
     treesDF = treesDF.withColumn("top_point", F.expr("ST_GeomFromWKT(top_point)"))
     hrDF = (hrDF
             .withColumnRenamed("geometry", "geometry_hedge")
-            .withColumn("hedge_length", F.expr("ST_Length(geometry_hedge)"))
     )
-    #wbDF = wbDF.withColumn("SHEET_PARCEL_ID", F.col("id_parcel"))
-    
-    # parcelPerimTreesDF = get_perimeter_trees_features(
-    #     spark, treesDF, parcelsDF, parcelBufferDistances, double_count=double_count
-    # )
-    # parcelInterTreesDF = get_interior_trees_features(
-    #     spark, treesDF, parcelsDF, parcelBufferDistances
-    # )
 
-    hrtreesDF, hrtreesPerParcelDF, hrCounts = get_hedgerow_trees_features(
-        spark, treesDF, hrDF, hedgerowBufferDistances, double_count=double_count
-    )
-    
-    # wbTreesDF, wbTreesPerParcelDF, wbCounts = get_waterbody_trees_features(
-    #     spark, treesDF, wbDF, waterbodyBufferDistances, double_count=double_count
-    # )
-
-    # Get column names that contain tree metrics
+    # Recod names of tree feature metrics
     allFeatureNames = []
-    for df in [#parcelInterTreesDF,
-               hrtreesPerParcelDF, 
-               #wbTreesPerParcelDF
-               ]:
-        allFeatureNames += [i for i in df.columns if i != "id_parcel"]
+    
+    parcelPerimTreesDF = get_perimeter_trees_features(
+        spark, treesDF, parcelsDF, parcelBufferDistances, double_count=double_count
+    )
+    parcelInterTreesDF = get_interior_trees_features(
+        spark, treesDF, parcelsDF, parcelBufferDistances
+    )
+
+    allFeatureNames += [i for i in parcelPerimTreesDF.columns if i != "id_parcel"]
+    allFeatureNames += [i for i in parcelInterTreesDF.columns if i != "id_parcel"]
 
     # Combine datasets
     pDF = (parcelsDF
@@ -710,27 +703,56 @@ def get_parcel_tree_features(
            .withColumnRenamed("id_parcel", "idp")
     )
     parcelTreeCountsDF = (
-        pDF.join(hrtreesPerParcelDF, pDF.idp == hrtreesPerParcelDF.id_parcel, "left")
+        pDF
+        .join(parcelPerimTreesDF, pDF.idp == parcelPerimTreesDF.id_parcel, "left")
         .drop("id_parcel")
-        # .join(wbTreesPerParcelDF, pDF.SPID == wbTreesPerParcelDF.SHEET_PARCEL_ID, "left")
-        # .drop("SHEET_PARCEL_ID")
-        # .join(parcelPerimTreesDF, pDF.SPID == parcelPerimTreesDF.SHEET_PARCEL_ID, "left")
-        # .drop("SHEET_PARCEL_ID")
-        # .join(parcelInterTreesDF, pDF.SPID == parcelInterTreesDF.SHEET_PARCEL_ID, "left")
-        # .drop("SHEET_PARCEL_ID")
-        #.fillna(0, subset=["perim_trees_count", "perim_trees_length", "int_trees_count", "hrtrees_count", "wbtrees_count"])
+        .join(parcelInterTreesDF, pDF.idp == parcelInterTreesDF.id_parcel, "left")
+        .drop("id_parcel")
+    )
+
+    if hrDF is not None:
+        hrtreesDF, hrtreesPerParcelDF, hrCounts = get_hedgerow_trees_features(
+            spark, treesDF, hrDF, hedgerowBufferDistances, double_count=double_count, report_counts=report_counts
+        )
+        allFeatureNames += [i for i in hrtreesPerParcelDF.columns if i != "id_parcel"]
+
+        # Add to output data frame
+        parcelTreeCountsDF = (
+            parcelTreeCountsDF
+            .join(hrtreesPerParcelDF, pDF.idp == hrtreesPerParcelDF.id_parcel, "left")
+            .drop("id_parcel")
+        )
+    
+    if wbDF is not None:
+        wbTreesDF, wbTreesPerParcelDF, wbCounts = get_waterbody_trees_features(
+            spark, treesDF, wbDF, waterbodyBufferDistances, double_count=double_count, report_counts=report_counts
+        )
+        allFeatureNames += [i for i in wbTreesPerParcelDF.columns if i != "id_parcel"]
+
+        # Add to output data frame
+        parcelTreeCountsDF = (
+            parcelTreeCountsDF
+            .join(wbTreesPerParcelDF, pDF.idp == wbTreesPerParcelDF.id_parcel, "left")
+            .drop("id_parcel")
+        )
+
+    # Clean up
+    parcelTreeCountsDF = (
+        parcelTreeCountsDF
         .fillna(0, subset=allFeatureNames)
         .withColumnRenamed("idp", "id_parcel")
     )
 
     nRows = parcelTreeCountsDF.count()
-    LOG.info(f"Number of rows in parcel tree features DF: {nRows}")
+    LOG.info(f"Number of rows in parcel tree features DF: {nRows:,}")
 
     nParcels = parcelsDF.select("id_parcel").distinct().count()  # All parcels
-    LOG.info(f"Number of parcels: {nParcels}")
+    LOG.info(f"Number of parcels: {nParcels:,}")
 
     # Should be no duplicated parcels
     nP = parcelTreeCountsDF.select("id_parcel").count()
-    assert nP == nParcels
+    if nP != nParcels:
+        msg = "Number of output parcels does not match number of input parcels."
+        ValueError(msg)
 
     return parcelTreeCountsDF
