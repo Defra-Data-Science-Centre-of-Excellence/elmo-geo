@@ -5,6 +5,11 @@
 # MAGIC ### Input Data
 # MAGIC - wfm-field
 # MAGIC - rpa-parcel
+# MAGIC - rpa-hedge_managed-2021
+# MAGIC - rpa-hedge_control-2023
+# MAGIC - os-ngd
+# MAGIC - osm-uk
+# MAGIC
 # MAGIC
 # MAGIC ### Output Data
 # MAGIC - elmo_geo-boundary: id_parcel, geometry
@@ -424,12 +429,6 @@ display(sdf_water)
 
 # COMMAND ----------
 
-sdf = spark.read.format('parquet').load('dbfs:/mnt/lab/restricted/ELM-Project/stg/os-field_boundary-sample_v1_2.parquet')
-
-sdf.select('description').distinct().display()
-
-# COMMAND ----------
-
 # Wall
 sdf_rpa_parcel = load_sdf('rpa-parcel-adas').select('id_parcel', 'geometry')
 
@@ -516,4 +515,6 @@ sdf_boundary = load_sdf('elmo_geo-boundary')
 sdf_hedge = load_sdf('elmo_geo-hedge')
 sdf_water = load_sdf('elmo_geo-water')
 sdf_wall = load_sdf('elmo_geo-wall')
+
+
 

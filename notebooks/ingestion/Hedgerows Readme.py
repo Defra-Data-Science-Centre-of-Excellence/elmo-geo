@@ -23,10 +23,10 @@
 # MAGIC     - Wall / other heritage bufferables: Devon bank/Cornish hedge, dry stone wall, relict sites, archeological sites.
 # MAGIC
 # MAGIC - **Top 5 Hedgerow Projects in 2024**
-# MAGIC     - **NCEA - Trees Outside Woodland**  *(Height + Optical Classification: Bluesky - Tree Map (LiDAR) + Bluesky - Aerial Photography)*
-# MAGIC     - **RPA - Classified Hedges**  *(Height + Optical + Agreements Classification: NE - LiDAR + Sentinel - S2A MSI (Satellite Photography) )*
-# MAGIC     - **OS - Field Boundaries**  *(unknown source)*
-# MAGIC     - **UKCEH - Land Cover Map Plus: Hedgerows**  *(OS data + NE LiDAR)*
+# MAGIC     - **FR - NCEA: Trees Outside Woodland**
+# MAGIC     - **RPA - Classified Hedges**
+# MAGIC     - **OS - Field Boundaries**
+# MAGIC     - **UKCEH - Land Cover Map Plus: Hedgerows**
 # MAGIC     - elmo_geo - Sylvan *(identifies relict hedges)*
 # MAGIC     - elmo_geo - Boundary *(merging all on parcels)*
 # MAGIC
@@ -59,7 +59,7 @@
 # MAGIC | Restricted | RPA | Hedge Managed | Superceeded by Control | fine | OS Field Boundaries + AES Agreements |  | Linear
 # MAGIC | Restricted | RPA | Hedge Control |  | fine | Tidied RPA - Hedge Managed, eligible hedges only |  | Linear
 # MAGIC | Restricted | RPA | Classified Hedges | WIP | best | AI image recognition model using Sentinel + NE - LiDAR + AES Agreements, verified against RPA - Hedge Control |  | Polygon
-# MAGIC | Restricted | FR | Trees Outside Woodland | V2  | fine | Bluesky National Tree Map plus classification of aerial photography.  Hedgerows over 20m long, under 4m wide, and under 3m tall included. 336,000 km of hedgerow in England. | Ben.Ditchburn@ncea.gov.uk, Freddie.Hunter@forestresearch.gov.uk | Polygon
+# MAGIC | Restricted | FR | NCEA: Trees Outside Woodland | V2  | fine | Bluesky National Tree Map plus classification of aerial photography.  Hedgerows over 20m long, under 4m wide, and under 3m tall included. 336,000 km of hedgerow in England. | Ben.Ditchburn@ncea.gov.uk, Freddie.Hunter@forestresearch.gov.uk | Polygon
 # MAGIC | PSGA? | OS | Field Boundaries | WIP | ? | ? |  | Linear
 # MAGIC | Restricted | UKCEH | Land Cover Map Plus: Hedgerows |  | ? | NE-LiDAR + UKCEH-LCM validated against "OS data" | [ceh-catalogue](https://catalogue.ceh.ac.uk/documents/d90a3733-2949-4dfa-8ac2-a88aef8699be) [ceh-description](https://www.ceh.ac.uk/press/high-tech-aerial-mapping-reveals-englands-hedgerow-landscape) | ? |
 # MAGIC | Internal | elmo_geo | hedge | WIP |  | Joins hedges to parcels and assigns the parcel boundary as hedge. | Andrew.West@defra.gov.uk | Linear
@@ -91,7 +91,7 @@
 # MAGIC | +75  |      494,000,000 | A target of +75e6m of hedgerow, defined using Adj, by 2050
 # MAGIC | +45  |      464,000,000 | A intermediate target of +45e6m of hedgerow by 2037
 # MAGIC | Adj 2023 |  575,100,528 | Recalculated using RPA - Hedge Control - 2023_12_18
-# MAGIC | TOW 2023 |  336,000,000 | NCEA - Trees Outside Woodland model's hedgerow features
+# MAGIC | TOW 2023 |  336,000,000 | FR - NCEA: Trees Outside Woodland model's hedgerow features
 # MAGIC | CEH 2024 |  390,000,000 | UKCEH - Land Cover Map Plus: Hedgerows, [press release](https://www.ceh.ac.uk/press/high-tech-aerial-mapping-reveals-englands-hedgerow-landscape) figure
 # MAGIC
 # MAGIC This table was originally created Dec 2022
@@ -121,30 +121,3 @@
 # MAGIC - RPA.Hegdes - Yajnaseni.Palchowdhuri@rpa.gov.uk
 # MAGIC - Defra.TreeTeam - Iain Dummett, Chris McGurk, Rory Lunny
 # MAGIC - Protected Landscapes - Liz Bingham
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC non agricultural hedgerows: rural, peri, urban
-# MAGIC
-# MAGIC
-# MAGIC
-
-# COMMAND ----------
-
-
-On RPA – Classified Hedges  vs  NCEA – Trees Outside Woodland,
-
-I think these projects are doing a similar thing.  I’d have to ask their creators if they’re in contact.
-Farming Today also had someone at Plymouth University doing this with drones too, and I’ve reached out to learn more.
-
-I think both their methodologies merge 2 techniques:
-  1, Optical colour photography can be used with AI models to identify clusters of pixels that look like linear features, probably using neural networks but some might have other CV algorithms.
-  2, LiDAR heightmap data can calculate the locations and size of individual trees, pycrown call this a “canopy height model”, Bluesky have “Tree Map”, and internally we have “VOM tree detection”.
-  RPA also have agreement data to verify against, and I presume both additionally verify against previous and open datasets.
-
-My simplified understanding of their data lineage:
-  RPA use NE – LiDAR, Sentinel – Satellite Photography, and Agreements
-  NCEA use Bluesky – Tree Map, and Bluesky – Aerial Photography
-
-
