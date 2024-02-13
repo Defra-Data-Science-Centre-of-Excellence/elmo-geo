@@ -3,7 +3,7 @@
 
 # COMMAND ----------
 
-from typing import Optional, Tuple
+from typing import Optional, Tuple, List, Dict
 
 import contextily as ctx
 import geopandas as gpd
@@ -15,7 +15,8 @@ import seaborn as sns
 from matplotlib.ticker import FuncFormatter, PercentFormatter
 from pyspark.sql import functions as F
 from shapely.geometry import Polygon
-#from tree_features import get_hedgerow_trees_features
+from elmo_geo.utils.types import SparkDataFrame, SparkSession
+from tree_features import get_hedgerow_trees_features, make_parcel_geometries
 
 #from elmo_geo import LOG, register
 #from elmo_geo.io.io2 import load_geometry
@@ -30,38 +31,15 @@ SedonaContext.create(spark)
 # COMMAND ----------
 
 hedgerows_buffer_distance = 2
+parcel_buffer_distance = 4
 
 timestamp = "202311231323" # 20230602 timestamp was used for original mmsg figures 
 
-hedgerows_path = (
-    "dbfs:/mnt/lab/unrestricted/elm_data/rural_payments_agency/efa_hedges/2022_06_24.parquet"
+elmo_geo_hedgerows_path = (
+    "dbfs:/mnt/lab/restricted/ELM-Project/ods/elmo_geo-hedge-2024_01_08.parquet"
 )
 
-hedges_length_path = (
-    "dbfs:/mnt/lab/unrestricted/elm/elmo/hedgerows_and_water/hedgerows_and_water.csv"
-)
-
-#parcels_path = "dbfs:/mnt/lab/unrestricted/elm_data/rpa/reference_parcels/2021_03_16.parquet"
-parcels_path = "dbfs:/mnt/lab/restricted/ELM-Project/ods/rpa-parcel-adas.parquet"
-
-path_output_template = (
-    "dbfs:/mnt/lab/unrestricted/elm/elmo/"
-    "hrtrees/tree_detections/"
-    "{mtc}_tree_detections_{timestamp}.parquet"
-)
-
-hrtrees_output_template = (
-    "dbfs:/mnt/lab/unrestricted/elm/elmo/" "hrtrees/hrtrees_{timestamp}_{buf}mbuffer.parquet"
-)
-
-parcel_hrtrees_template = (
-    "dbfs:/mnt/lab/unrestricted/elm/elmo/"
-    "hrtrees/hrtrees_per_parcel_{timestamp}_{buf}mbuffer.parquet"
-)
-
-parcel_hrtrees_csv_template = (
-    "/dbfs/mnt/lab/unrestricted/elm/elmo/hrtrees/hrtrees_per_parcel_{timestamp}_{buf}mbuffer.csv"
-)
+adas_parcels_path = "dbfs:/mnt/lab/restricted/ELM-Project/ods/rpa-parcel-adas.parquet"
 
 trees_output_template = (
     "dbfs:/mnt/lab/unrestricted/elm/elmo/"
@@ -75,10 +53,6 @@ features_output_template = (
 )
 parcel_trees_output = features_output_template.format(timestamp=timestamp)
 
-hrtrees_output = "dbfs:/mnt/lab/unrestricted/elm/elmo/tree_features/hrtrees_2023parcels_with_hrlength_202311231323.parquet"
-
-hrtree_density_csv = "/dbfs/FileStore/hrtree_density_adas.csv"
-
 tile_to_visualise = "SP65nw"
 
 save_data = True
@@ -90,29 +64,25 @@ save_data = True
 
 # COMMAND ----------
 
-treesDF = spark.read.parquet(output_trees_path)
+treesDF = (spark.read.parquet(output_trees_path)
+           .repartition(200_000, "major_grid", "chm_path")
+)
+parcelsDF = (spark.read.format("geoparquet").load(adas_parcels_path)
+             .repartition(1_250, "sindex")
+)
+hrDF = (spark.read.format("geoparquet").load(elmo_geo_hedgerows_path)
+        .repartition(1_250, "sindex")
+)
 treeFeaturesDF = (spark.read.parquet(parcel_trees_output)
-                  .select("SHEET_PARCEL_ID", "hrtrees_count2")
+                  .select("id_parcel", "hrtrees_count2", "hedge_length")
+                  .withColumn("hrtrees_per_m", F.col("hrtrees_count2") / F.col("hedge_length"))
 )
-
-hrDF = (spark.read.parquet(hedgerows_path)
-        .withColumn("SHEET_PARCEL_ID", F.concat("REF_PARCEL_SHEET_ID", "REF_PARCEL_PARCEL_ID"))
-        .withColumn("length", F.expr("ST_Length(ST_GeomfromWKB(geometry))"))
-        .select("SHEET_PARCEL_ID", "length")
-        .groupBy("SHEET_PARCEL_ID").agg(F.expr("SUM(length) as length"))
-)
-parcelsDF = (spark.read.parquet(parcels_path)
-)
-
-hrLengthDF = spark.read.option("header", True).csv(hedges_length_path)
-
-hrTreesDF = spark.read.parquet(hrtrees_output)
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC
-# MAGIC ## Select just one tile to test methods with
+# MAGIC ## Filter to single tile for testing
 
 # COMMAND ----------
 
@@ -128,89 +98,72 @@ hrTreesDF = spark.read.parquet(hrtrees_output)
 # COMMAND ----------
 
 # Create geometry and parcel ID fields
-hrDF = hrDF.withColumn("wkb", load_geometry("geometry")).withColumn(
-    "geometry", F.expr(f"ST_Buffer(geometry, {hedgerows_buffer_distance})")
+pDF = (parcelsDF
+            .withColumnRenamed("geometry", "geometry_parcel")
+            .withColumnRenamed("id_parcel", "id_parcel_main")
+            .select("id_parcel_main", "geometry_parcel")
 )
 
-treesDF = treesDF.withColumn("geometry", F.expr("ST_Point(top_x, top_y)"))
+hrDF = (hrDF
+        .join(pDF, pDF.id_parcel_main == hrDF.id_parcel, "inner")
+        .withColumn("geometry", F.expr(f"""
+                                             ST_Intersection(
+                                                 geometry,
+                                                 ST_Buffer(geometry_parcel, {parcel_buffer_distance})
+                                                 )"""))
+        .withColumn("hedge_length", F.expr("ST_Length(geometry)"))
+        .select("id_parcel", "geometry", "hedge_length", "sindex")
+)
 
-# Create unique parcel id
-hrDF = hrDF.withColumn("SHEET_PARCEL_ID", F.concat("REF_PARCEL_SHEET_ID", "REF_PARCEL_PARCEL_ID"))
-parcelsDF = parcelsDF.withColumn("SHEET_PARCEL_ID", F.concat("SHEET_ID", "PARCEL_ID"))
+parcelsDF = make_parcel_geometries(parcelsDF)
+treesDF = treesDF.withColumn("top_point", F.expr("ST_GeomFromWKT(top_point)"))
+hrDF = (hrDF
+        .withColumnRenamed("geometry", "geometry_hedge")
+)
 
-# COMMAND ----------
-
-hrtreesDF, hrtreesPerParcelDF, counts = get_hedgerow_trees_features(
+_hrtreesDF, _hrtreesPerParcelDF, counts = get_hedgerow_trees_features(
     spark,
     treesDF,
     hrDF,
-    parcelsDF,
-    hedgerows_buffer_distance,
+    [hedgerows_buffer_distance],
+    double_count = True,
+    report_counts = True,
 )
-
-# COMMAND ----------
-
-hrLengthDF.show(5)
-
-# COMMAND ----------
-
-# Join with hedgerow length per parcel
-hrtreesPerParcelDF = hrtreesPerParcelDF.join(
-    hrLengthDF, hrtreesPerParcelDF.SHEET_PARCEL_ID == hrLengthDF.id_parcel, "left"
-)
-hrtreesPerParcelDF = hrtreesPerParcelDF.withColumn(
-    "hrtrees_per_m", F.col("hrtrees_count") / F.col("hedge_length")
-)
-
-# COMMAND ----------
-
-# Get total coverage of hr trees
-area = hrtreesDF.select(
-    F.expr(
-        """
-                                                        ST_Area(
-                                                            ST_GeomFromWKT(crown_poly_raster)
-                                                        )
-                                                    """
-    ).alias("crown_area")
-)
-
-area.select(F.sum(F.col("crown_area"))).show()
-
-# COMMAND ----------
-
-# save data
-if save_data:
-    hrtreesDF.write.mode("overwrite").parquet(hrtrees_path_output)
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC
-# MAGIC # Figures
+# MAGIC # Figures for all tiles
 # MAGIC
 # MAGIC ## Plot number of parcels by classification (contains hedgerows, contains hedgerow trees, etc)
 
 # COMMAND ----------
 
-n_unknown = 38592  # geometry difference method
+n_unknown = 38592  # geometry difference method - comparing gaps in vom data to parcel geometries (I think)
 # n_unknown = 7257 # vom tile comparison method
 
 # COMMAND ----------
 
-nParcels = parcelsDF.select("SHEET_PARCEL_ID").distinct().count()  # All parcels
-counts["nParcels"] = nParcels
+nParcels = parcelsDF.select("id_parcel").distinct().count()  # All parcels
+nParcels
 
 # COMMAND ----------
 
+counts
+
+# COMMAND ----------
+
+nHRParcels = counts["hrtrees_count"][2]["nFeatureParcels"]
+nHRTParcels = counts["hrtrees_count"][2]["nFeatureTreeParcels"]
+
 parcel_count = pd.Series(
     index=["All Parcels", "HR Parcels", "HR Tree Parcels"],
-    data=[counts["nParcels"], counts["nHRParcels"], counts["nHRTParcels"]],
+    data=[nParcels, nHRParcels, nHRTParcels],
 )
 parcel_count
 
 # COMMAND ----------
-
 
 def stacked_bar_parcel_counts(
     data: pd.Series,
@@ -306,13 +259,13 @@ def plot_hrtree_dist(
     """
     # summarise the data
     count = data.shape[0]
-    LOG.info(f"There are {count:,.0f} parcels in the dataset")
+    print(f"There are {count:,.0f} parcels in the dataset")
     mean = data.mean()
-    LOG.info(f"Mean number of hedgerow trees {mean:.{dp}f}")
+    print(f"Mean number of hedgerow trees {mean:.{dp}f}")
     median = data.median()
-    LOG.info(f"Median number of hedgerow trees {median:.1f}")
+    print(f"Median number of hedgerow trees {median:.1f}")
     mq = data.quantile(max_quantile)
-    LOG.info(f"{max_quantile} quantile number of hedgerow trees {mq:.3f}")
+    print(f"{max_quantile} quantile number of hedgerow trees {mq:.3f}")
 
     n_above_max_quantile = data.loc[data > mq].shape[0]
     pcnt_above_max = 1 - max_quantile
@@ -356,7 +309,7 @@ def plot_hrtree_dist(
         ha="left",
     )
     ax.annotate(
-        f"{n_above_max_quantile} parcels > {mq:.1f}\n({pcnt_above_max:.1%} of parcels)",
+        f"{n_above_max_quantile:,.0f} parcels > {mq:.1f}\n({pcnt_above_max:.1%} of parcels)",
         xy=(mq, pd.cut(data_filtered, bins=bins).value_counts().iloc[0]),
         xycoords="data",
         # color="black",
@@ -387,9 +340,23 @@ def plot_hrtree_dist(
 
 # COMMAND ----------
 
+data = treeFeaturesDF.toPandas()
+
+# COMMAND ----------
+
+for c in ["hedge_length", "hrtrees_count2"]:
+    print(data[c].isnull().value_counts())
+
+# COMMAND ----------
+
+assert data.loc[ (data.hedge_length.isnull()) & (data.hrtrees_count2 > 0)].shape[0]==0
+assert data.loc[data.hedge_length.notnull()].shape[0] > data.loc[data.hrtrees_count2 > 0].shape[0]
+
+# COMMAND ----------
+
 f, ax = plot_hrtree_dist(
     data["hrtrees_count2"],
-    "Distribution of hedgerow trees",
+    "Distribution of hedgerow trees - all parcels",
     "Number of hedgerow trees",
     0.995,
     dark=False,
@@ -400,8 +367,8 @@ f.show()
 # COMMAND ----------
 
 f, ax = plot_hrtree_dist(
-    data["hrtrees_per_m"] * 100,
-    "Distribution of hedgerow tree density",
+    data["hrtrees_per_m"].fillna(0) * 100,
+    "Distribution of hedgerow tree density - all parcels",
     "Hedgerow trees per 100m of hedgerow",
     0.995,
     dark=False,
@@ -412,54 +379,22 @@ f.show()
 
 # COMMAND ----------
 
-"""
-parcelsDF = parcelsDF.withColumn("SPID", F.concat("SHEET_ID","PARCEL_ID"))
-allDF = (parcelsDF
-            .join(hrtreesPerParcelDF, parcelsDF.SPID==hrtreesPerParcelDF.SHEET_PARCEL_ID, 'left')
-            .select(F.col("SPID").alias("SHEET_PARCEL_ID"), "hrtrees_count", "hrtrees_per_m")
-            .fillna(0, subset=["hrtrees_count", "hrtrees_per_m"])
-        )
-allDF.columns
-pdf_all = allDF.select("hrtrees_per_m").toPandas()
-
-f, ax = plot_hrtree_dist(pdf_all["hrtrees_per_m"]*100, "Distribution of hedgerow tree density - all parcels", "Hedgerow trees per 100m of hedgerow", 0.995, dark = False, dp=3, bin_ratio=3)
-f.show()
-"""
-
-# COMMAND ----------
-
-hrParcelsDF = hrDF.withColumn(
-    "SPID", F.concat("REF_PARCEL_SHEET_ID", "REF_PARCEL_PARCEL_ID")
-).drop_duplicates()
-allDF = (
-    hrParcelsDF.join(
-        hrtreesPerParcelDF, hrParcelsDF.SPID == hrtreesPerParcelDF.SHEET_PARCEL_ID, "left"
-    )
-    .select(F.col("SPID").alias("SHEET_PARCEL_ID"), "hrtrees_count2", "hrtrees_per_m")
-    .fillna(0, subset=["hrtrees_count2", "hrtrees_per_m"])
-    .drop_duplicates()
+f, ax = plot_hrtree_dist(
+    data.dropna(subset="hedge_length")["hrtrees_per_m"] * 100,
+    "Distribution of hedgerow tree density - all parcels with hedgerows",
+    "Hedgerow trees per 100m of hedgerow",
+    0.995,
+    dark=False,
+    dp=3,
+    bin_ratio=3,
 )
-
-hrpdf = allDF.select("hrtrees_per_m").toPandas()
-
-# COMMAND ----------
-
-hrpdf2 = allDF.toPandas()
-
-# COMMAND ----------
-
-hrpdf.loc[hrpdf["hrtrees_count2"] == 0, "SHEET_PARCEL_ID"].drop_duplicates().shape
-
-# COMMAND ----------
-
-hrpdf_dd = hrpdf.drop_duplicates()
-hrpdf_dd.shape
+f.show()
 
 # COMMAND ----------
 
 f, ax = plot_hrtree_dist(
-    hrpdf_dd["hrtrees_per_m"] * 100,
-    "Distribution of hedgerow tree density - all parcels with hedgerows",
+    data.loc[data['hrtrees_count2']>0, "hrtrees_per_m"] * 100,
+    "Distribution of hedgerow tree density - all parcels with hedgerow trees",
     "Hedgerow trees per 100m of hedgerow",
     0.995,
     dark=False,
@@ -478,7 +413,7 @@ f.show()
 
 treesSubDF = treesDF.filter(f"chm_path like '%{tile_to_visualise}%'")
 hrSubDF = hrDF.filter(f"REF_PARCEL_SHEET_ID like '{tile_to_visualise[:2]}%'")
-hrtreesSubDF = hrtreesDF.filter(f"REF_PARCEL_SHEET_ID like '{tile_to_visualise[:2]}%'")
+hrtreesSubDF = treeFeaturesDF.filter(f"id_parcel like '{tile_to_visualise[:2]}%'")
 
 # COMMAND ----------
 
