@@ -16,7 +16,8 @@ verify:
 	black --diff --check .
 	flake8 . --extend-exclude=notebooks/
 	flake8 notebooks --builtins=spark,sc,dbutils,display,displayHTML
-	pytest .
+	PYTHONDONTWRITEBYTECODE=1 pytest -m without_cluster  -v -p no:cacheprovider .
+
 
 clean:
 	rm -r *.egg-info 2> /dev/null || true

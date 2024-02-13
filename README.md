@@ -81,3 +81,17 @@ To install the package and all required development dependencies:
 ```{bash}
 pip install -e .[dev]
 ```
+
+## Testing
+
+There are currently two ways to run the tests located in the ./tests/ directory.
+
+1. Running the "./tests/Run Tests" notebook.
+
+Because the notebook can be connected to a Databricks compute resource (i.e. a cluster) this notebook runs all tests, including those that require access to an active spark session and dbutils.
+
+2. Runing "make verify" or "make test" from the command line.
+
+This only runs tests that have been marked as "without_cluster" as when running from the command line some features of Databricks comute resources are not available. If these features can be effectively mocked the "without_cluster" marker may not be required. Separating out these tests enables some test to be run as part of a continuous integration process.
+
+For more information on using pytest with Databricks see https://docs.databricks.com/en/notebooks/testing.html
