@@ -1,7 +1,7 @@
 import pytest
 from elmo_geo.utils.register import register
 
-def test_registersedona():
+def test_register():
     try:
         register()
     except Exception:
