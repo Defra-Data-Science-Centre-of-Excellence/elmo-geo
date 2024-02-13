@@ -1,8 +1,8 @@
 # Databricks notebook source
-# Databricks notebook source
-import pytest
 import os
 import sys
+
+import pytest
 
 repo_name = "elmo-geo"
 
