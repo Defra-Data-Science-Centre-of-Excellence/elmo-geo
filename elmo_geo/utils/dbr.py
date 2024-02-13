@@ -4,5 +4,5 @@ except Exception:
     from pyspark.dbutils import DBUtils
     from pyspark.sql import SparkSession
 
-    spark = SparkSession.getActiveSession()
+    spark = SparkSession.builder.getOrCreate()
     dbutils = DBUtils(spark)
