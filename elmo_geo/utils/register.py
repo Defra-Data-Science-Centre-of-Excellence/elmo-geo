@@ -1,5 +1,5 @@
-from elmo_geo.utils.log import LOG
 from elmo_geo.utils.dbr import spark
+from elmo_geo.utils.log import LOG
 from elmo_geo.utils.types import SparkSession
 
 try:
