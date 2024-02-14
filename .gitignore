@@ -45,7 +45,3 @@ site/
 # keep all .gitkeep files and their parent folders
 !.gitkeep
 .databricks
-
-# Logs
-logs/
-tests/logs/
