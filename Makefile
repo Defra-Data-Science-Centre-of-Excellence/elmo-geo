@@ -8,12 +8,12 @@ freeze:
 	pip freeze --exclude-editable | grep -v "file:///" > requirements.txt
 
 fmt:
-	isort .
-	black .
+	isort . 
+	black . 
 
 verify:
-	isort --check-only .
-	black --diff --check .
+	isort --check-only --skip-glob=./notebooks/ .
+	black --diff --check --exclude "./notebooks/" .
 	flake8 . --extend-exclude=notebooks/
 	flake8 notebooks --builtins=spark,sc,dbutils,display,displayHTML
 	PYTHONDONTWRITEBYTECODE=1 pytest -m without_cluster  -v -p no:cacheprovider .
