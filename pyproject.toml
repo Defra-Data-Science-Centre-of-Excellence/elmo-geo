@@ -7,7 +7,7 @@ exclude = '''(
   | build
   | dist
   | .*.ipynb
-  | ^\notebooks\
+  | ^\notebooks\*
 )'''
 
 [tool.isort]
