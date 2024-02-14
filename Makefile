@@ -12,8 +12,8 @@ fmt:
 	black . 
 
 verify:
-	isort --check-only --skip-glob=./notebooks/ .
-	black --diff --check --force-exclude "^/notebooks/" .
+	isort --check-only .
+	black --diff --check .
 	flake8 . --extend-exclude=notebooks/
 	flake8 notebooks --builtins=spark,sc,dbutils,display,displayHTML
 	PYTHONDONTWRITEBYTECODE=1 pytest -m without_cluster  -v -p no:cacheprovider .
