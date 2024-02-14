@@ -15,3 +15,4 @@ except Exception:
 def register(spark: SparkSession = spark):
     register_sedona(spark)
     LOG.info("Registered: Sedona")
+    return True
