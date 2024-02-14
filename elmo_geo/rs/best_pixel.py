@@ -61,9 +61,11 @@ def process_ndvi_cloud_prob(dataset: str, inc_tci: bool = False) -> xr.Dataset:
     ds["cloud_prob"] = ds["cloud_prob"].rio.reproject_match(ds["red"])
     ds["cloud_prob"] = ds["cloud_prob"].astype("float64") / 100.0  # cloud prob to float 0-1
     ds = dict(
-        (k, set_nodata(v, 0).astype("float64") / 10000.0)
-        if k not in ("tci", "cloud_prob")
-        else (k, v)
+        (
+            (k, set_nodata(v, 0).astype("float64") / 10000.0)
+            if k not in ("tci", "cloud_prob")
+            else (k, v)
+        )
         for k, v in ds.items()
     )
 

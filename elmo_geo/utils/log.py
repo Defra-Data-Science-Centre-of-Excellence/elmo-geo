@@ -1,4 +1,5 @@
 """ Pretty logger to be imported anywhere."""
+
 import logging
 import os
 from dataclasses import dataclass
