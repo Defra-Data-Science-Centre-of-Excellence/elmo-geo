@@ -115,9 +115,9 @@ SedonaContext.create(spark)
 hedgerowBufferDistances = [2]
 parcelBufferDistances = [2, 4]
 waterbodyBufferDistances = [2, 4]
-parcel_buffer_distance = 4
+hedgerow_distance_threshold = 8
 
-timestamp = "202311231323"  # 202311231323 timestamp is tree detection version with best F1 score so far.
+tree_detection_timestamp = "202311231323"  # 202311231323 timestamp is tree detection version with best F1 score so far.
 
 elmo_geo_hedgerows_path = (
     "dbfs:/mnt/lab/restricted/ELM-Project/ods/elmo_geo-hedge-2024_01_08.parquet"
@@ -131,12 +131,12 @@ trees_output_template = (
     "tree_features/tree_detections/"
     "tree_detections_{timestamp}.parquet"
 )
-output_trees_path = trees_output_template.format(timestamp=timestamp)
+output_trees_path = trees_output_template.format(timestamp=tree_detection_timestamp)
 
 features_output_template = (
-    "dbfs:/mnt/lab/unrestricted/elm/elmo/tree_features/tree_features_{timestamp}.parquet"
+    "dbfs:/mnt/lab/unrestricted/elm/elmo/tree_features/tree_features_hr{threshold}_td{timestamp}.parquet"
 )
-parcel_trees_output = features_output_template.format(timestamp=timestamp)
+parcel_trees_output = features_output_template.format(threshold = hedgerow_distance_threshold, timestamp=tree_detection_timestamp)
 
 # COMMAND ----------
 
@@ -199,7 +199,7 @@ hrDF = (hrDF
         .withColumn("geometry", F.expr(f"""
                                              ST_Intersection(
                                                  geometry,
-                                                 ST_Buffer(geometry_parcel, {parcel_buffer_distance})
+                                                 ST_Buffer(geometry_parcel, {hedgerow_distance_threshold})
                                                  )"""))
         .withColumn("hedge_length", F.expr("ST_Length(geometry)"))
         .select("id_parcel", "geometry", "hedge_length", "sindex")
@@ -210,7 +210,7 @@ wbDF = (wbDF
         .withColumn("geometry", F.expr(f"""
                                              ST_Intersection(
                                                  geometry,
-                                                 ST_Buffer(geometry_parcel, {parcel_buffer_distance})
+                                                 ST_Buffer(geometry_parcel, {hedgerow_distance_threshold})
                                                  )"""))
         .select("id_parcel", "geometry", "sindex")
 )
@@ -318,4 +318,6 @@ pTreesDF.write.mode("overwrite").parquet(parcel_trees_output)
 
 # COMMAND ----------
 
+# DBTITLE 1,Load and display
+pTreesDF = spark.read.parquet(parcel_trees_output)
 pTreesDF.display()
