@@ -93,42 +93,42 @@ treeFeaturesDF = (spark.read.parquet(parcel_trees_output)
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Run hedgerow tree classification and get counts for plot
+# MAGIC ## Run hedgerow tree classification (for debugging or checking results with duplicates removed/retained)
 
 # COMMAND ----------
 
 # Create geometry and parcel ID fields
-pDF = (parcelsDF
-            .withColumnRenamed("geometry", "geometry_parcel")
-            .withColumnRenamed("id_parcel", "id_parcel_main")
-            .select("id_parcel_main", "geometry_parcel")
-)
+# pDF = (parcelsDF
+#             .withColumnRenamed("geometry", "geometry_parcel")
+#             .withColumnRenamed("id_parcel", "id_parcel_main")
+#             .select("id_parcel_main", "geometry_parcel")
+# )
 
-hrDF = (hrDF
-        .join(pDF, pDF.id_parcel_main == hrDF.id_parcel, "inner")
-        .withColumn("geometry", F.expr(f"""
-                                             ST_Intersection(
-                                                 geometry,
-                                                 ST_Buffer(geometry_parcel, {hedgerow_distance_threshold})
-                                                 )"""))
-        .withColumn("hedge_length", F.expr("ST_Length(geometry)"))
-        .select("id_parcel", "geometry", "hedge_length", "sindex")
-)
+# hrDF = (hrDF
+#         .join(pDF, pDF.id_parcel_main == hrDF.id_parcel, "inner")
+#         .withColumn("geometry", F.expr(f"""
+#                                              ST_Intersection(
+#                                                  geometry,
+#                                                  ST_Buffer(geometry_parcel, {hedgerow_distance_threshold})
+#                                                  )"""))
+#         .withColumn("hedge_length", F.expr("ST_Length(geometry)"))
+#         .select("id_parcel", "geometry", "hedge_length", "sindex")
+# )
 
-parcelsDF = make_parcel_geometries(parcelsDF)
-treesDF = treesDF.withColumn("top_point", F.expr("ST_GeomFromWKT(top_point)"))
-hrDF = (hrDF
-        .withColumnRenamed("geometry", "geometry_hedge")
-)
+# parcelsDF = make_parcel_geometries(parcelsDF)
+# treesDF = treesDF.withColumn("top_point", F.expr("ST_GeomFromWKT(top_point)"))
+# hrDF = (hrDF
+#         .withColumnRenamed("geometry", "geometry_hedge")
+# )
 
-_hrtreesDF, _hrtreesPerParcelDF, counts = get_hedgerow_trees_features(
-    spark,
-    treesDF,
-    hrDF,
-    [hedgerows_buffer_distance],
-    double_count = True,
-    report_counts = True,
-)
+# _hrtreesDF, _hrtreesPerParcelDF, counts = get_hedgerow_trees_features(
+#     spark,
+#     treesDF,
+#     hrDF,
+#     [hedgerows_buffer_distance],
+#     double_count = True,
+#     report_counts = True,
+# )
 
 # COMMAND ----------
 
@@ -146,16 +146,8 @@ n_unknown = 38592  # geometry difference method - comparing gaps in vom data to 
 # COMMAND ----------
 
 nParcels = parcelsDF.select("id_parcel").distinct().count()  # All parcels
-nParcels
-
-# COMMAND ----------
-
-counts
-
-# COMMAND ----------
-
-nHRParcels = counts["hrtrees_count"][2]["nFeatureParcels"]
-nHRTParcels = counts["hrtrees_count"][2]["nFeatureTreeParcels"]
+nHRParcels = treeFeaturesDF.filter(F.col("hedge_length").isNotNull()).count() # Parcels with hedgerows
+nHRTParcels = treeFeaturesDF.filter(F.col("hrtrees_count2")>0).count() # Parcels with hedgerow trees
 
 parcel_count = pd.Series(
     index=["All Parcels", "HR Parcels", "HR Tree Parcels"],
