@@ -3,6 +3,7 @@
 # MAGIC %pip install contextily
 
 # COMMAND ----------
+
 import geopandas as gpd
 import matplotlib.pyplot as plt
 import numpy as np
@@ -16,6 +17,7 @@ from elmo_geo.st.joins import spatial_join
 from elmo_geo.utils.dbr import spark
 
 # COMMAND ----------
+
 
 
 # COMMAND ----------
@@ -794,5 +796,3 @@ hrTreesDF, hrTreesPerParcelDF, counts = get_hedgerow_trees_features(
 # COMMAND ----------
 
 counts
-
-# COMMAND ----------
