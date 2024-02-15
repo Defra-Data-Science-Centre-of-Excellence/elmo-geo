@@ -31,9 +31,9 @@ SedonaContext.create(spark)
 # COMMAND ----------
 
 hedgerows_buffer_distance = 2
-parcel_buffer_distance = 4
+hedgerow_distance_threshold = 8
 
-timestamp = "202311231323" # 20230602 timestamp was used for original mmsg figures 
+tree_detection_timestamp = "202311231323" # 20230602 timestamp was used for original mmsg figures 
 
 elmo_geo_hedgerows_path = (
     "dbfs:/mnt/lab/restricted/ELM-Project/ods/elmo_geo-hedge-2024_01_08.parquet"
@@ -46,12 +46,12 @@ trees_output_template = (
     "tree_features/tree_detections/"
     "tree_detections_{timestamp}.parquet"
 )
-output_trees_path = trees_output_template.format(timestamp=timestamp)
+output_trees_path = trees_output_template.format(timestamp=tree_detection_timestamp)
 
 features_output_template = (
-    "dbfs:/mnt/lab/unrestricted/elm/elmo/tree_features/tree_features_{timestamp}.parquet"
+    "dbfs:/mnt/lab/unrestricted/elm/elmo/tree_features/tree_features_hr{threshold}_td{timestamp}.parquet"
 )
-parcel_trees_output = features_output_template.format(timestamp=timestamp)
+parcel_trees_output = features_output_template.format(threshold = hedgerow_distance_threshold, timestamp=tree_detection_timestamp)
 
 tile_to_visualise = "SP65nw"
 
@@ -109,7 +109,7 @@ hrDF = (hrDF
         .withColumn("geometry", F.expr(f"""
                                              ST_Intersection(
                                                  geometry,
-                                                 ST_Buffer(geometry_parcel, {parcel_buffer_distance})
+                                                 ST_Buffer(geometry_parcel, {hedgerow_distance_threshold})
                                                  )"""))
         .withColumn("hedge_length", F.expr("ST_Length(geometry)"))
         .select("id_parcel", "geometry", "hedge_length", "sindex")
@@ -402,155 +402,3 @@ f, ax = plot_hrtree_dist(
     bin_ratio=3,
 )
 f.show()
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC
-# MAGIC ## Visualise spatial join
-
-# COMMAND ----------
-
-treesSubDF = treesDF.filter(f"chm_path like '%{tile_to_visualise}%'")
-hrSubDF = hrDF.filter(f"REF_PARCEL_SHEET_ID like '{tile_to_visualise[:2]}%'")
-hrtreesSubDF = treeFeaturesDF.filter(f"id_parcel like '{tile_to_visualise[:2]}%'")
-
-# COMMAND ----------
-
-hrtreesSubDF.show(5)
-
-# COMMAND ----------
-
-# Define a bounding box to use for the map
-xmin = 462000
-xmax = 463000
-ymin = 255000
-ymax = 256000
-
-bbox_coords = [(xmin, ymin), (xmax, ymin), (xmax, ymax), (xmin, ymax), (xmin, ymin)]
-
-bbox = Polygon(bbox_coords)
-gdfbb = gpd.GeoDataFrame({"geometry": [bbox]}, crs="EPSG:27700").to_crs("EPSG:3857")
-
-# COMMAND ----------
-
-# Convert to geopandas and plot
-
-hrSubDF = hrSubDF.withColumn("wkb", F.col("geometry")).withColumn(
-    "geometry", F.expr(f"ST_Buffer(ST_GeomFromWKB(wkb), {hedgerows_buffer_distance})")
-)
-treesSubDF = treesSubDF.withColumn("geometry", F.expr("ST_Point(top_x, top_y)"))
-
-hrSubDF = hrSubDF.filter(
-    F.expr(
-        f"""
-                                ST_Contains(
-                                    ST_GeomFromWKT('{bbox.wkt}'),geometry
-                                )
-                                """
-    )
-)
-
-treesSubDF = treesSubDF.filter(
-    F.expr(
-        f"""
-                                ST_Contains(
-                                    ST_GeomFromWKT('{bbox.wkt}'),geometry
-                                )
-                                """
-    )
-)
-
-hrtreesSubDF = hrtreesSubDF.filter(
-    F.expr(
-        f"""
-                                ST_Contains(
-                                    ST_GeomFromWKT('{bbox.wkt}'),geom_right
-                                )
-                                """
-    )
-)
-
-gdf_tile_trees = gpd.GeoDataFrame(treesSubDF.toPandas(), geometry="geometry")
-
-ghrtreesDF = gpd.GeoDataFrame(hrtreesSubDF.toPandas(), geometry="geom_right")
-
-ghrDFr = gpd.GeoDataFrame(hrSubDF.toPandas(), geometry="geometry")
-
-# COMMAND ----------
-
-ghrDFr_plot = ghrDFr.loc[ghrDFr["geometry"].map(lambda g: g.intersects(bbox))]
-
-# COMMAND ----------
-
-gdf_tile_trees.head()
-
-# COMMAND ----------
-
-f, ax = plt.subplots(figsize=(15, 15))
-
-cmap = plt.get_cmap("gist_rainbow")
-parcels = ghrDFr_plot["PARCEL_FK"].unique()
-cmap_inputs = np.linspace(0, 1, len(parcels))
-# parcel_colours = cmap(cmap_inputs)
-dict_parcel_colours = dict(zip(parcels, cmap_inputs))
-ghrDFr_plot["c"] = ghrDFr_plot["PARCEL_FK"].replace(dict_parcel_colours)
-
-ghrDFr_plot.plot(ax=ax, facecolor="c", cmap=mpl.cm.gist_rainbow, alpha=0.5)
-
-
-gdf_tile_trees.plot(ax=ax, markersize=45, alpha=1, marker="x", color="black")
-
-ghrtreesDF.plot(ax=ax, markersize=50, alpha=1, marker="o", color="forestgreen")
-
-ax.set_xlim(xmin=462000, xmax=463000)
-ax.set_ylim(ymin=255000, ymax=256000)
-ax.set_axis_off()
-ctx.add_basemap(ax=ax, source=ctx.providers.OpenStreetMap.Mapnik, crs="EPSG:27700")
-
-# COMMAND ----------
-
-f, ax = plt.subplots(figsize=(15, 15))
-ghrDFr_plot.plot(ax=ax, facecolor="cornflowerblue", alpha=0.5)
-gdf_tile_trees.plot(ax=ax, markersize=45, alpha=1, marker="x", color="black")
-ghrtreesDF.plot(ax=ax, markersize=50, alpha=1, marker="o", color="forestgreen")
-
-ax.set_xlim(xmin=462000, xmax=463000)
-ax.set_ylim(ymin=255000, ymax=256000)
-ax.set_axis_off()
-
-# COMMAND ----------
-
-# Investigating hedges - are there duplicated geometries?
-ghrDFr.FEATURE_ID.duplicated().value_counts()
-
-# COMMAND ----------
-
-ghrDFr.columns
-
-# COMMAND ----------
-
-ghrDFr["SHEET_PARCEL_ID"] = ghrDFr.apply(
-    lambda row: f"{row['REF_PARCEL_SHEET_ID']}{row['REF_PARCEL_PARCEL_ID']}"
-)
-ghrDFr.SHEET_PARCEL_ID.duplicated().value_counts()
-
-# COMMAND ----------
-
-ghrDFr.geometry.duplicated().value_counts()
-
-# COMMAND ----------
-
-ghrDFr.PARCEL_FK.duplicated().value_counts()
-
-# COMMAND ----------
-
-ghrDFr.columns
-
-# COMMAND ----------
-
-gdfbb.to_crs(epsg=4326).total_bounds
-
-# COMMAND ----------
-
-bbox
