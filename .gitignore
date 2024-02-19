@@ -2,7 +2,6 @@
 .*
 !.gitkeep
 /data/
-/data_sync/
 
 # Manual
 !/.github/workflows/verify.yaml
