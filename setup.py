@@ -25,7 +25,7 @@ REQUIRED_PACKAGES = [
 ]
 
 TEST_PACKAGES = [
-    "ruff>=0.2.2",
+    "ruff<=0.1.15",
     "pytest>=7.2.1",
 ]
 
