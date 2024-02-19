@@ -8,11 +8,7 @@ repo_name = "elmo-geo"
 
 # Get the path to this notebook, for example "/Workspace/Repos/{username}/{repo-name}".
 notebook_path = (
-    dbutils.notebook.entry_point.getDbutils()
-    .notebook()
-    .getContext()
-    .notebookPath()
-    .get()
+    dbutils.notebook.entry_point.getDbutils().notebook().getContext().notebookPath().get()
 )
 
 # Get the repo's root directory name.

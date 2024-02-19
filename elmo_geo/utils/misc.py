@@ -46,12 +46,18 @@ def total_bounds(sdf: SparkDataFrame, col: str = "geometry"):
     LOG.info(f"total_bounds:  {sdf.head().asDict()}")
     return sdf
 
+
 def cache(sdf: SparkDataFrame) -> SparkDataFrame:
-    '''sdf.transform(cache) to fully run your dataframe'''
-    sdf.write.format('noop').mode('overwrite').save()
+    """sdf.transform(cache) to fully run your dataframe"""
+    sdf.write.format("noop").mode("overwrite").save()
     return sdf
 
-def isolate_error(sdf: SparkDataFrame, fn:callable, keys:list[str]|str=['sindex', 'id_parcel']) -> list:
+
+def isolate_error(
+    sdf: SparkDataFrame,
+    fn: callable,
+    keys: list[str] | str = ["sindex", "id_parcel"],
+) -> list:
     if isinstance(keys, str):
         keys = [keys]
     key = keys[0]
@@ -59,8 +65,8 @@ def isolate_error(sdf: SparkDataFrame, fn:callable, keys:list[str]|str=['sindex'
         sdf2 = sdf.filter(F.col(key).isin())
         try:
             sdf2.transform(fn).transform(cache)
-        except Exception as err:
+        except Exception:
             result = [k]
-            if 1<len(keys):
+            if 1 < len(keys):
                 result.extend(isolate_error(sdf2, fn, keys[1:]))
             yield result
