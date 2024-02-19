@@ -46,9 +46,11 @@ with sentinel_api_session() as api:
 # add some columns and summarise
 # df["usefulpercentage"] = df.notvegetatedpercentage + df.vegetationpercentage
 df["size"] = [
-    round(float(i.split(" ")[0])) / 1000
-    if i.split(" ")[1] == "MB"
-    else round(float(i.split(" ")[0]))
+    (
+        round(float(i.split(" ")[0])) / 1000
+        if i.split(" ")[1] == "MB"
+        else round(float(i.split(" ")[0]))
+    )
     for i in df["size"]
 ]
 # mimicking updated usefulness (if size is small then not all image is there)

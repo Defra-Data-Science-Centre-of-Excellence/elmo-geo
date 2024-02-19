@@ -23,6 +23,8 @@ def test_no_ssl_verification_ctx_basemap():
     except Exception:
         assert False
 
+
+@pytest.mark.without_cluster()
 def test_register():
     from elmo_geo.utils.register import register
 
