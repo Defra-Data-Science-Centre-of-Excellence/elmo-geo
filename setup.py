@@ -25,15 +25,12 @@ REQUIRED_PACKAGES = [
 ]
 
 TEST_PACKAGES = [
-    "black>=23.1.0",
-    "flake8>=6.0.0",
-    "isort>=5.12.0",
+    "ruff>=0.2.2",
     "pytest>=7.2.1",
 ]
 
 DEV_PACKAGES = [
     *TEST_PACKAGES,
-    "pylint>=2.16.2",
     "ipython>=8.10.0",
     "ipykernel>=6.21.2",
     "ipywidgets>=8.0.4",
