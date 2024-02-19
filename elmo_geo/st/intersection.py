@@ -42,9 +42,8 @@ def intersect_parcels(
     df_parcels = (
         spark.read.parquet(path_parcels)  # .limit(1000)
         # .withColumn("geometry", F.hex(F.col("geometry")))
-        .withColumn("parcel_geom", F.expr("ST_GeomFromWKB(hex(geometry))")).repartition(
-            n_parcel_partitions
-        )
+        .withColumn("parcel_geom", F.expr("ST_GeomFromWKB(hex(geometry))"))
+        .repartition(n_parcel_partitions)
     )
     LOG.info(f"Reading in the dataset from {path_read}")
     df_feature = (
@@ -64,9 +63,7 @@ def intersect_parcels(
         SELECT p.parcel_geom, p.id as id_parcel, f.feature_geom, {cols}
         FROM parcels p, feature f
         WHERE ST_Intersects(p.parcel_geom, f.feature_geom)
-    """.format(
-            cols=", ".join(f"f.{col}" for col in feature_cols)
-        )
+    """.format(cols=", ".join(f"f.{col}" for col in feature_cols))
     )
 
     # result = result.localCheckpoint()
