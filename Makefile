@@ -8,8 +8,8 @@ freeze:
 	pip freeze --exclude-editable | grep -v "file:///" > requirements.txt
 
 fmt:
-	isort . 
-	black . 
+	isort .
+	black .
 
 verify:
 	isort --check-only --skip-glob=./notebooks/ .
@@ -18,7 +18,11 @@ verify:
 	flake8 notebooks --builtins=spark,sc,dbutils,display,displayHTML
 	PYTHONDONTWRITEBYTECODE=1 pytest -m without_cluster  -v -p no:cacheprovider .
 
-
 clean:
-	rm -r *.egg-info 2> /dev/null || true
+	rm -r \
+		.pytest_cache/ \
+		build/ \
+		*.egg-info \
+		2> /dev/null || true
 	py3clean .
+	clear
