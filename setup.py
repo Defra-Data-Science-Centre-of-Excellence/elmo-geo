@@ -18,7 +18,7 @@ REQUIRED_PACKAGES = [
     "bs4",
     "pyogrio",
     "contextily",
-    "databricks",
+    "databricks-sdk",
     "esridump",
     "osdatahub",
     "osmnx",

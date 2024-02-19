@@ -17,5 +17,10 @@ verify:
 	PYTHONDONTWRITEBYTECODE=1 pytest -m without_cluster  -v -p no:cacheprovider .
 
 clean:
-	rm -r *.egg-info 2> /dev/null || true
+	rm -r \
+		.pytest_cache/ \
+		build/ \
+		*.egg-info \
+		2> /dev/null || true
 	py3clean .
+	clear

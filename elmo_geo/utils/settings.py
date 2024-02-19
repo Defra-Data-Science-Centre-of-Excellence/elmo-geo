@@ -1,5 +1,8 @@
 BATCHSIZE: int = 10_000
 
+FILEPATH_CATALOGUE: str = "data/catalogue.json"
+
+FOLDER_CONDA: str = "/databricks/miniconda/bin"  # for installing rogue tools like ogr2ogr>3.7
 FOLDER_STG: str = "/dbfs/mnt/lab/restricted/ELM-Project/stg"  # data staging - lake
 FOLDER_ODS: str = "/dbfs/mnt/lab/restricted/ELM-Project/ods"  # operational data storage - warehouse
 
