@@ -44,7 +44,9 @@ def st_explode(sdf: SparkDataFrame) -> SparkDataFrame:
     )
 
 
-def st_union(sdf: SparkDataFrame, keys: list[str]|str = ["id_parcel"], col: str = "geometry") -> SparkDataFrame:
+def st_union(
+    sdf: SparkDataFrame, keys: list[str] | str = ["id_parcel"], col: str = "geometry"
+) -> SparkDataFrame:
     if isinstance(keys, str):
         keys = [keys]
 
@@ -52,12 +54,9 @@ def st_union(sdf: SparkDataFrame, keys: list[str]|str = ["id_parcel"], col: str 
         gdf = gpd.GeoDataFrame(pdf, geometry=gpd.GeoSeries.from_wkb(pdf[col]))
         return gdf.dissolve(by=keys).reset_index().to_wkb()
 
-    _sdf = (sdf
-        .select(*keys, col)
-        .withColumn(col, F.expr(f"ST_AsBinary({col})"))
-    )
-    return (_sdf
-        .groupby(keys)
+    _sdf = sdf.select(*keys, col).withColumn(col, F.expr(f"ST_AsBinary({col})"))
+    return (
+        _sdf.groupby(keys)
         .applyInPandas(_fn, _sdf.schema)
         .withColumn(col, F.expr(f"ST_GeomFromWKB({col})"))
     )

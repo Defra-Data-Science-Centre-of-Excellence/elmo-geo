@@ -56,16 +56,23 @@ def sjoin_sql(
     """
     # Distance Join
     if 0 < distance:
-        sdf_left = sdf_left.withColumn("geometry", F.expr(f"ST_MakeValid(ST_Buffer(ST_MakeValid(ST_Buffer(geometry, 0.001)), {distance-0.001}))"))
+        sdf_left = sdf_left.withColumn(
+            "geometry",
+            F.expr(
+                f"ST_MakeValid(ST_Buffer(ST_MakeValid(ST_Buffer(geometry, 0.001)), {distance-0.001}))"  # noqa:E501
+            ),
+        )
     # Add to SQL
     sdf_left.createOrReplaceTempView("left")
     sdf_right.createOrReplaceTempView("right")
     # Join
-    sdf = spark.sql("""
+    sdf = spark.sql(
+        """
         SELECT id_left, id_right
         FROM left JOIN right
         ON ST_Intersects(left.geometry, right.geometry)
-    """)  # nothing else does a quadtree, consider a manual partition rect tree?
+    """
+    )  # nothing else does a quadtree, consider a manual partition rect tree?
     # Remove from SQL
     spark.sql("DROP TABLE left")
     spark.sql("DROP TABLE right")
@@ -76,17 +83,18 @@ def sjoin_partenv(
     sdf_left: SparkDataFrame,
     sdf_right: SparkDataFrame,
     distance: float = 0,
-    lsuffix: str = '_left',
-    rsuffix: str = '_right',
+    lsuffix: str = "_left",
+    rsuffix: str = "_right",
 ):
-    '''Partition-Envelope Spatial Join
+    """Partition-Envelope Spatial Join
     This does an envelope join, before doing the spatial join
     This should avoid Sedona's quadtree.
-    '''
-    method = f'{distance} > ST_Distance' if distance else 'ST_Intersects'
-    sdf_left.withColumn('_pl', F.spark_partition_id()).createOrReplaceTempView('left')
-    sdf_right.withColumn('_pr', F.spark_partition_id()).createOrReplaceTempView('right')
-    sdf = spark.sql('''
+    """
+    method = f"{distance} > ST_Distance" if distance else "ST_Intersects"
+    sdf_left.withColumn("_pl", F.spark_partition_id()).createOrReplaceTempView("left")
+    sdf_right.withColumn("_pr", F.spark_partition_id()).createOrReplaceTempView("right")
+    sdf = spark.sql(
+        """
         SELECT left.* EXCEPT (_pl), right.* EXCEPT (_pr)
         FROM (
             SELECT l._pl, r._pr
@@ -105,7 +113,10 @@ def sjoin_partenv(
         JOIN left USING (_pl)
         JOIN right USING (_pr)
         WHERE {2}(left.geometry{0}, right.geometry{1})
-    '''.format(lsuffix, rsuffix, method))
+    """.format(
+            lsuffix, rsuffix, method
+        )
+    )
     spark.sql("DROP TABLE left")
     spark.sql("DROP TABLE right")
     return sdf
@@ -146,8 +157,8 @@ def sjoin(
             sdf_right = sdf_right.withColumnRenamed(col, col + rsuffix)
     geometry_left, geometry_right = f"geometry{lsuffix}", f"geometry{rsuffix}"
     # Regular Join
-    return (sdf
-        .join(sdf_left, how=how_left, on="id_left")
+    return (
+        sdf.join(sdf_left, how=how_left, on="id_left")
         .join(sdf_right, how=how_right, on="id_right")
         .withColumn(geometry_left, load_missing(geometry_left))
         .withColumn(geometry_right, load_missing(geometry_right))

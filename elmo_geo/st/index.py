@@ -23,7 +23,7 @@ def get_bng_resolution(n: int, /, target: int) -> str:
 
 def get_bng_grid(resolution: str) -> SparkDataFrame:
     sf = "dbfs:/mnt/lab/restricted/ELM-Project/stg/os-bng-2023_08_24.parquet/" + resolution
-    return spark.read.format("geoparquet").load(sf).withColumnRenamed('tile_name', 'sindex')
+    return spark.read.format("geoparquet").load(sf).withColumnRenamed("tile_name", "sindex")
 
 
 def get_grid(method: str, resolution: Union[str, int]) -> SparkDataFrame:
@@ -46,8 +46,8 @@ def multi_index(sdf: SparkDataFrame, grid: SparkDataFrame) -> SparkDataFrame:
 
 def centroid_index(sdf: SparkDataFrame, grid: SparkDataFrame) -> SparkDataFrame:
     # there is the chance a centroid is on a grid line
-    return (sdf
-        .withColumnRenamed("geometry", "geometry_feature")
+    return (
+        sdf.withColumnRenamed("geometry", "geometry_feature")
         .withColumn("geometry", F.expr("ST_Centroid(geometry_feature)"))
         .transform(sjoin, grid, lsuffix="")
         .drop("geometry", "geometry_right")
@@ -56,8 +56,8 @@ def centroid_index(sdf: SparkDataFrame, grid: SparkDataFrame) -> SparkDataFrame:
 
 
 def chipped_index(sdf: SparkDataFrame, grid: SparkDataFrame) -> SparkDataFrame:
-    return (sdf
-        .transform(sjoin, grid, lsuffix="")
+    return (
+        sdf.transform(sjoin, grid, lsuffix="")
         .withColumn("geometry", F.expr("ST_Intersection(geometry, geometry_right)"))
         .drop("geometry_right")
     )
