@@ -13,7 +13,6 @@ from elmo_geo.utils.misc import sh_run
 from elmo_geo.utils.settings import FOLDER_STG
 
 
-
 def get_esri_name(url):
     if "JJzESW51TqeY9uat" in url:
         source = "ne"
