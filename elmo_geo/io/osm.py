@@ -7,6 +7,7 @@ Download and Ingest OSM data, there are 2 options;
 2. Download specific tags and bounds using Overpass API
   - Try: [tag finder](https://tagfinder.osm.ch/)
 """  # noqa:E501
+
 import osmnx  # noqa:F401
 
 from elmo_geo.io.datasets import append_to_catalogue

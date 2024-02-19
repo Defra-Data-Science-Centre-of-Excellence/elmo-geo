@@ -2,6 +2,7 @@
 
 Used to ingest data from sources like Natural England and Office of National Statistics.
 """
+
 from datetime import date
 
 import esridump  # noqa:F401
