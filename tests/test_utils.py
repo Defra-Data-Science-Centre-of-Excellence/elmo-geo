@@ -22,3 +22,8 @@ def test_no_ssl_verification_ctx_basemap():
         assert True
     except Exception:
         assert False
+
+def test_register():
+    from elmo_geo.utils.register import register
+
+    assert register()

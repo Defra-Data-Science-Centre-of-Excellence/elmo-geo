@@ -1,19 +1,18 @@
-import sedona
-
-from elmo_geo import LOG
 from elmo_geo.utils.dbr import spark
+from elmo_geo.utils.log import LOG
 from elmo_geo.utils.types import SparkSession
 
-if sedona.version < "1.4.1":
-    from sedona.register import SedonaRegistrator
-
-    register_sedona = SedonaRegistrator.registerAll
-else:
+try:
     from sedona.spark import SedonaContext
 
     register_sedona = SedonaContext.create
+except Exception:
+    from sedona.register import SedonaRegistrator
+
+    register_sedona = SedonaRegistrator.registerAll
 
 
 def register(spark: SparkSession = spark):
     register_sedona(spark)
-    LOG.info(f"Registered: Sedona {sedona.version}")
+    LOG.info("Registered: Sedona")
+    return True
