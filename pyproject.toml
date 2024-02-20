@@ -6,8 +6,85 @@ markers=[
 
 [tool.ruff]
 line-length = 100
-exclude = ["notebooks/**"]
 
 [tool.ruff.lint.per-file-ignores]
 "**/__init__.py" = ["F401"]
 "notebooks/*" = []
+
+[tool.ruff.lint]
+select = [
+    "D",     # pydocstyle
+    "E",     # pycodestyle
+    "F",     # Pyflakes
+    "UP",    # pyupgrade
+    "B",     # flake8-bugbear
+    "I",     # isort
+    "W",     # pycodestyle
+    "N",     # pep8-naming
+    "YTT",   # flake8-2020
+    "ANN",   # flake8-annotations
+    "ASYNC", # flake8-async
+    "S",     # flake8-bandit
+    "BLE",   # flake8-blind-except
+    # "FBT", # flake8-boolean-trap IGNORED FOR NOW
+    # "A", # flake8-builtins IGNORED
+    #"COM", # flake8-commas IGNORED
+    # "CPY", # flake8-copyright IGNORED
+    # "C4", # flake8-comprehensions
+    # "DTZ", # flake8-datetimez IGNORED
+    "T10", # flake8-debugger
+    "EM",  # flake8-errmsg
+    "EXE", # flake8-executable
+    # "FA", # flake8-future-annotations IGNORED BUT TODO(ed): https://github.com/Defra-Data-Science-Centre-of-Excellence/elm_modelling_strategy/issues/317
+    "ISC",  # flake8-implicit-str-concat
+    "ICN",  # flake8-import-conventions
+    "G",    # flake8-logging-format
+    "INP",  # flake8-no-pep420
+    "PIE",  # flake8-pie
+    "T20",  # flake8-print
+    "PYI",  # flake8-pyi
+    "PT",   # flake8-pytest-style
+    "Q",    # flake8-quotes
+    "RSE",  # flake8-raise
+    "RET",  # flake8-return
+    "SLF",  # flake8-self
+    "SLOT", # flake8-slots
+    "SIM",  # flake8-simplify
+    "TID",  # flake8-tidy-imports
+    "INT",  # flake8-gettext
+    "ARG",  # flake8-unused-arguments
+    "PTH",  # flake8-use-pathlib
+    "TD",   # flake8-todos 
+    #"FIX", # flake8-fixme IGNORED BUT USEFUL FOR FINDING TODOS
+    "ERA",  # eradicate 
+    "PD",   # pandas-vet
+    "PGH",  # pygrep-hooks
+    "PL",   # Pylint
+    "TRY",  # tryceratops 
+    "FLY",  # flynt
+    "NPY",  # NumPy-specific rules
+    "PERF", # Perflint
+    #"FURB", # refurb IGNORED AS PREVIEW ONLY
+    #"LOG", # flake8-logging IGNORED AS PREVIEW ONLY
+    "RUF", # Ruff-specific rules
+]
+ignore = [
+    "N805",    # First argument of a method should be named `self`
+    "ANN101",  # Missing type annotation for `self` in method
+    "ANN102",  # Missing type annotation for `cls` in method
+    "ANN401",  # Dynamically typed expressions (typing.Any)
+    "ANN002",  # Missing type annotation for *{name}
+    "ANN003",  # Missing type annotation for **{name}
+    "S101",    # Use of `assert` detected
+    "ISC001",  # Implicitly concatenated string literals on one line, ignored due to warning of formatting clash
+    "PD901",   # Avoid using the generic variable name df for DataFrames - disagree with this one for our context
+    "PD008",   # Use .loc instead of .at. If speed is important, use NumPy. - agree but don't care too much
+    "PD010",   # .pivot_table is preferred to .pivot or .unstack; provides same functionality - agree TODO
+    "PLR0913", # Too many arguments in function definition ({c_args} > {max_args}) - don't care - we need lots of args for plotting
+    "PLR2004", # Magic value used in comparison, consider replacing {value} with a constant variable - agree in principal but too many cases where this would be too verbose
+    "PLR0912", # Too many branches ({branches} > {max_branches}) - agree in principal but too many cases where this is needed (plotting)
+    "PLR0915", # Too many statements ({statements} > {max_statements}) - agree in principal but too many cases where this is needed (plotting)
+    "PERF203", # try-except within a loop incurs performance overhead - agree in principal but don't care for some of our use cases
+    "RUF009",  # Do not perform function call {name} in dataclass defaults - yes but this is failing to pickup pydantic Field(default_factory=...) as ok...
+    "B023",    # Late binding closures - seems to flag issues where there are none in lambda statements...
+]
