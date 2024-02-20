@@ -4,7 +4,7 @@ databricks-cli==0.17.7
 databricks-sdk==0.20.0
 dbx==0.8.18
 esridump==1.13.0
-geopandas==0.14.2
+geopandas==0.13.2
 matplotlib==3.5.2
 Office365-REST-Python-Client==2.5.4
 osdatahub==1.2.9
