@@ -5,7 +5,7 @@ dbx:
 	dbx sync repo -d elmo-geo-dev
 
 freeze:
-	pip-compile -q --all-extras
+	pip-compile -qU --all-extras
 
 fmt:
 	isort .
