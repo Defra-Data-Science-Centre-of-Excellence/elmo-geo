@@ -5,7 +5,7 @@ dbx:
 	dbx sync repo -d elmo-geo-dev
 
 freeze:
-	pip freeze --exclude-editable | grep -v "file:///" > requirements.txt
+	pip-compile -q --all-extras
 
 fmt:
 	isort .
@@ -19,10 +19,11 @@ verify:
 	PYTHONDONTWRITEBYTECODE=1 pytest -m without_cluster  -v -p no:cacheprovider .
 
 clean:
+	ruff clean
+	py3clean .
 	rm -r \
 		.pytest_cache/ \
 		build/ \
 		*.egg-info \
 		2> /dev/null || true
-	py3clean .
 	clear
