@@ -5,39 +5,43 @@ __description__ = "Environmental Land Management Geospatial Analysis"
 __version__ = "0.1"
 
 REQUIRED_PACKAGES = [
-    "pandas>=1.5.3",
-    "seaborn>=0.12.2",
-    "pydantic>=1.10.5",
-    "pyarrow>=10.0.1",
-    "rich>=12.5.1",
-    "geopandas>=0.12.2",
-    "pyspark>=3.3.2",
-    "sedona>=1.0.4",
-    "rioxarray>=0.13.3",
-    "sentinelsat>=1.1.1",
-    "bs4",
-    "pyogrio",
+    "apache-sedona==1.4.1",
+    "beautifulsoup4",
     "contextily",
+    "databricks-cli",
     "databricks-sdk",
     "esridump",
+    "geopandas",
+    "mapclassify",
+    "numpy",
     "osdatahub",
     "osmnx",
+    "pandas<=1.5.3",
+    "pyarrow",
+    "pydantic",
+    "pyogrio",
+    "pyspark==3.3.2",
+    "rich",
+    "rasterio",
+    "rioxarray",
+    "seaborn",
+    "sentinelsat",
+    "shapely",
+    "xarray",
 ]
 
 TEST_PACKAGES = [
-    "black>=23.1.0",
-    "flake8>=6.0.0",
-    "isort>=5.12.0",
-    "pytest>=7.2.1",
+    "ruff<=0.1.15",
+    "pip-tools",
+    "pytest",
 ]
 
 DEV_PACKAGES = [
     *TEST_PACKAGES,
-    "pylint>=2.16.2",
-    "ipython>=8.10.0",
-    "ipykernel>=6.21.2",
-    "ipywidgets>=8.0.4",
-    "dbx>=0.7.0",
+    "dbx",
+    "ipykernel",
+    "ipython",
+    "ipywidgets",
 ]
 
 

@@ -1,13 +1,17 @@
-[tool.black]
-line-length = 100
-exclude = '''(
-    \.eggs
-  | \.git
-  | \.mypy_cache
-  | build
-  | dist
-  | .*.ipynb
-)'''
+[tool.pytest.ini_options]
+python_files = "tests/*.py"
+markers = ["without_cluster: test that can be run without being attached to databricks cluster"]
 
-[tool.isort]
-profile = "black"
+[tool.ruff]
+line-length = 100
+unsafe-fixes = false
+
+[tool.ruff.lint.per-file-ignores]
+"**/__init__.py" = ["F401"]
+"notebooks/*" = []
+"elmo_geo/*" = []
+"tests/*" = []
+
+[tool.ruff.lint]
+select = []
+ignore = ["D203", "D212", "COM812", "ISC001"]
