@@ -34,9 +34,9 @@ def to_gdf(
             crs=crs,
         ).drop(columns=[column])
     elif isinstance(x, GeoSeries):
-        gdf = x.to_GeoDataFrame(crs=crs)
+        gdf = GeoDataFrame(geometry=x, crs=crs)
     elif isinstance(x, BaseGeometry):
-        gdf = GeoSeries(x).to_GeoDataFrame(crs=crs)
+        gdf = GeoDataFrame(geometry=GeoSeries(x), crs=crs)
     else:
         raise TypeError(f"Unknown type: {type(x)}")
     return gdf
@@ -53,5 +53,5 @@ def to_sdf(
     elif isinstance(x, PandasDataFrame):
         sdf = spark.createDataFrame(x).withColumn(column, load_geometry(column))
     else:  # likely a GeoSeries or Geometry, or to_gdf will fail
-        sdf = to_sdf(to_gdf(x, column, crs), column, crs)
+        sdf = to_sdf(to_gdf(x, column, crs).to_wkb(), column, crs)
     return sdf
