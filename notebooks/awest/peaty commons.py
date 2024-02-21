@@ -26,12 +26,9 @@ df
 
 x = 10_000_000
 
-(
-    df_peat["shape_area"].sum() // x,
-    df_commons["Shape__Area"].sum() // x,
-    df.area.sum() // x,
-    (df.area.sum() / df_commons["Shape__Area"].sum()).round(3),
-)
+df_peat["shape_area"].sum() // x, df_commons["Shape__Area"].sum() // x, df.area.sum() // x, (
+    df.area.sum() / df_commons["Shape__Area"].sum()
+).round(3)
 
 # COMMAND ----------
 

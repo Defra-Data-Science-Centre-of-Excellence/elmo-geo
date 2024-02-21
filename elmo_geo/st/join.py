@@ -113,7 +113,9 @@ def sjoin_partenv(
         JOIN left USING (_pl)
         JOIN right USING (_pr)
         WHERE {2}(left.geometry{0}, right.geometry{1})
-    """.format(lsuffix, rsuffix, method)
+    """.format(
+            lsuffix, rsuffix, method
+        )
     )
     spark.sql("DROP TABLE left")
     spark.sql("DROP TABLE right")
