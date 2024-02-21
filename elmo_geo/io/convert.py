@@ -23,10 +23,9 @@ def to_gdf(
     if isinstance(x, GeoDataFrame):
         gdf = x
     elif isinstance(x, SparkDataFrame):
-        # TODO: withColumns
-        for column in x.columns:
-            if isinstance(x.schema[column].dataType, SedonaType):
-                x = x.withColumn(column, F.expr(f"ST_AsBinary({column})"))
+        for c in x.columns:
+            if isinstance(x.schema[c].dataType, SedonaType):
+                x = x.withColumn(c, F.expr(f"ST_AsBinary({c})"))
         gdf = to_gdf(x.toPandas(), column, crs)
     elif isinstance(x, PandasDataFrame):
         gdf = GeoDataFrame(
@@ -35,9 +34,9 @@ def to_gdf(
             crs=crs,
         ).drop(columns=[column])
     elif isinstance(x, GeoSeries):
-        gdf = x.to_GeoDataFrame(crs=crs)
+        gdf = GeoDataFrame(geometry=x, crs=crs)
     elif isinstance(x, BaseGeometry):
-        gdf = GeoSeries(x).to_GeoDataFrame(crs=crs)
+        gdf = GeoDataFrame(geometry=GeoSeries(x), crs=crs)
     else:
         raise TypeError(f"Unknown type: {type(x)}")
     return gdf
@@ -53,6 +52,6 @@ def to_sdf(
         sdf = x
     elif isinstance(x, PandasDataFrame):
         sdf = spark.createDataFrame(x).withColumn(column, load_geometry(column))
-    else:
-        sdf = to_sdf(to_gdf(x, column, crs), column, crs)
+    else:  # likely a GeoSeries or Geometry, or to_gdf will fail
+        sdf = to_sdf(to_gdf(x, column, crs).to_wkb(), column, crs)
     return sdf
