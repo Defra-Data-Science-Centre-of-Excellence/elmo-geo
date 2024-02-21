@@ -4,7 +4,8 @@ import zipfile
 from glob import iglob
 
 from elmo_geo import LOG
-from elmo_geo.io.datasets import append_to_catalogue
+
+# from elmo_geo.io.datasets import append_to_catalogue
 from elmo_geo.io.file import convert_file
 from elmo_geo.utils.dbr import spark
 from elmo_geo.utils.misc import sh_run
@@ -40,17 +41,17 @@ def ingest_dash(f_in: str, f_out: str = None, broken: bool = False) -> str:
         f_in = rewrite_vector_file(f_in)
     if f_out is None:
         f_out = create_outpath(f_in)
-    name = f_out.split("/")[-1].split(".")[0]
+    # name = f_out.split("/")[-1].split(".")[0]
     convert_file(f_in, f_out)
-    append_to_catalogue(
-        {
-            name: {
-                "url": f_in,
-                "filepath": f_out,
-                "function": "ingest_dash",
-            }
-        }
-    )
+    # append_to_catalogue(
+    #     {
+    #         name: {
+    #             "url": f_in,
+    #             "filepath": f_out,
+    #             "function": "ingest_dash",
+    #         }
+    #     }
+    # )
 
 
 def search_dash(
