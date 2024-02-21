@@ -1,10 +1,10 @@
 import importlib
 from glob import glob
 
-import pytest
+# import pytest
 
 
-@pytest.mark.without_cluster
+# @pytest.mark.without_cluster
 def test_dbr():
     from elmo_geo.utils.dbr import dbutils, spark  # noqa:F401
 
