@@ -147,7 +147,6 @@ display(df)
 
 # COMMAND ----------
 
-(
-    df.query("is_damaged==True")["filepath"].str.split("/").str[5].unique().tolist(),
-    df.query("is_damaged==True")["filepath"].str.split("/").str[6].unique().tolist(),
-)
+df.query("is_damaged==True")["filepath"].str.split("/").str[5].unique().tolist(), df.query(
+    "is_damaged==True"
+)["filepath"].str.split("/").str[6].unique().tolist()
