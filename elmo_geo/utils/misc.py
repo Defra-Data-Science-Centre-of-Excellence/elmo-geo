@@ -67,6 +67,6 @@ def isolate_error(
             sdf2.transform(fn).transform(cache)
         except Exception:
             result = [k]
-            if 1 < len(keys):
+            if len(keys) > 1:
                 result.extend(isolate_error(sdf2, fn, keys[1:]))
             yield result

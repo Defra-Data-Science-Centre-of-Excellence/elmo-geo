@@ -25,9 +25,7 @@ dark_style = {
 }
 
 
-def plot_bare_soil_dist(
-    data: pd.Series, title: str, dark: bool = False
-) -> Tuple[plt.Figure, plt.Axes]:
+def plot_bare_soil_dist(data: pd.Series, title: str, dark: bool = False) -> Tuple[plt.Figure, plt.Axes]:
     """Plot the distribution of bare soil
     Parameters:
         data: A pandas series of bare soil proportions between 0-1 or na for each parcel
@@ -86,9 +84,7 @@ def plot_bare_soil_dist(
         fontsize="large",
     )
     fig.supxlabel(
-        f"Source: Sentinel-2 L2A imagery. "
-        f"No data for {na_count:,.0f} of {count:,.0f} parcels ({na_count/count:.3%}) "
-        "due to cloud cover",
+        f"Source: Sentinel-2 L2A imagery. No data for {na_count:,.0f} of {count:,.0f} parcels ({na_count/count:.3%}) " "due to cloud cover",
         x=0.09,
         y=-0.04,
         ha="left",
@@ -99,31 +95,29 @@ def plot_bare_soil_dist(
     return fig, ax
 
 
-def plot_parcel_bare_soil(
-    parcel_id: str, geometry: gpd.GeoSeries, ds: xr.Dataset, dark: bool = False
-) -> Tuple[plt.Figure, List[plt.Axes]]:
+def plot_parcel_bare_soil(parcel_id: str, geometry: gpd.GeoSeries, ds: xr.Dataset, dark: bool = False) -> Tuple[plt.Figure, List[plt.Axes]]:
     """Produce a figure of subplots for a parcel showing its calculated NVDI, bare soil
         classification, true colour image, and cloud probability.
-    Parameters:
+
+    Parameters
+    ----------
         parcel_id: The id of the parcel for the plot's title
         geometry: The geometry of the parcel
         ds: The dataset of arrays including `ndvi`, `tci` and `cloud_prob`
     Returns:
         A tuple of the matplotlib figure and axes objects
-    """
 
+    """
     ds_parcel = xr.Dataset(
         data_vars={
             "ndvi_clipped": ds["ndvi"].rio.clip(geometry, all_touched=False),
             "ndvi_boxed": ds["ndvi"].rio.clip_box(*geometry.bounds.iloc[0].tolist()),
             "cloud_prob": ds["cloud_prob"].rio.clip_box(*geometry.bounds.iloc[0].tolist()),
             "tci": ds["tci"].rio.clip_box(*geometry.bounds.iloc[0].tolist()),
-        }
+        },
     )
     ds_parcel["vegetated"] = xr.where(ds_parcel["ndvi_clipped"] > 0.25, 1, 0)
-    ds_parcel["vegetated"] = xr.where(
-        ds_parcel["ndvi_clipped"].isnull(), ds_parcel["ndvi_clipped"], ds_parcel["vegetated"]
-    )
+    ds_parcel["vegetated"] = xr.where(ds_parcel["ndvi_clipped"].isnull(), ds_parcel["ndvi_clipped"], ds_parcel["vegetated"])
 
     if dark:
         sns.set_style("darkgrid", rc=dark_style)
@@ -162,8 +156,7 @@ def plot_parcel_bare_soil(
     imgs[2].colorbar.set_ticks([1.0, 0.0])
     imgs[2].colorbar.set_ticklabels(["Vegetated", "Bare"])
     fig.suptitle(
-        f"Parcel ID: {parcel_id}, Area: {float(geometry.area)/10000:,.1f}ha, "
-        "Dates: November-December 2021, Resolution: 10m²",
+        f"Parcel ID: {parcel_id}, Area: {float(geometry.area)/10000:,.1f}ha, " "Dates: November-December 2021, Resolution: 10m²",
         x=0.005,
         y=1.05,
         ha="left",

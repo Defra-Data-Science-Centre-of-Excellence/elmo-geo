@@ -1,6 +1,6 @@
 from pyspark.sql import functions as F
 
-from elmo_geo.st import join
+from elmo_geo.st.join import sjoin
 from elmo_geo.utils.dbr import spark
 from elmo_geo.utils.settings import BATCHSIZE
 from elmo_geo.utils.types import SparkDataFrame, Union
@@ -22,8 +22,8 @@ def get_bng_resolution(n: int, /, target: int) -> str:
 
 
 def get_bng_grid(resolution: str) -> SparkDataFrame:
-    sf = "dbfs:/mnt/lab/unrestricted/elm/ods/os/bng_grid_{resolution}/2023.parquet"
-    return spark.read.parquet(sf)
+    sf = "dbfs:/mnt/lab/restricted/ELM-Project/stg/os-bng-2023_08_24.parquet/" + resolution
+    return spark.read.format("geoparquet").load(sf).withColumnRenamed("tile_name", "sindex")
 
 
 def get_grid(method: str, resolution: Union[str, int]) -> SparkDataFrame:
@@ -37,11 +37,11 @@ def get_grid(method: str, resolution: Union[str, int]) -> SparkDataFrame:
         raise NotImplementedError(method)
     else:
         methods = ["BNG", "GeoHash", "H3", "S2"]
-        raise TypeError(f"{method} not in {methods}")
+        raise ValueError(f"{method} not in {methods}")
 
 
 def multi_index(sdf: SparkDataFrame, grid: SparkDataFrame) -> SparkDataFrame:
-    return sdf.transform(join, grid, lsuffix="").drop("geometry_right")
+    return sdf.transform(sjoin, grid, lsuffix="").drop("geometry_right")
 
 
 def centroid_index(sdf: SparkDataFrame, grid: SparkDataFrame) -> SparkDataFrame:
@@ -49,18 +49,14 @@ def centroid_index(sdf: SparkDataFrame, grid: SparkDataFrame) -> SparkDataFrame:
     return (
         sdf.withColumnRenamed("geometry", "geometry_feature")
         .withColumn("geometry", F.expr("ST_Centroid(geometry_feature)"))
-        .transform(join, grid, lsuffix="")
+        .transform(sjoin, grid, lsuffix="")
         .drop("geometry", "geometry_right")
         .withColumnRenamed("geometry_feature", "geometry")
     )
 
 
 def chipped_index(sdf: SparkDataFrame, grid: SparkDataFrame) -> SparkDataFrame:
-    return (
-        sdf.transform(join, grid, lsuffix="")
-        .withColumn("geometry", F.expr("ST_Intersection(geometry, geometry_right)"))
-        .drop("geometry_right")
-    )
+    return sdf.transform(sjoin, grid, lsuffix="").withColumn("geometry", F.expr("ST_Intersection(geometry, geometry_right)")).drop("geometry_right")
 
 
 def sindex(

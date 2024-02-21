@@ -28,9 +28,7 @@ dbutils.widgets.multiselect("years", all_string, years_to_choose)
 
 def _read_file(year, path):
     """Reading parquet files for comare_years notebook"""
-    return spark.read.parquet(path.format(year=year)).withColumnRenamed(
-        "bare_soil_percent", str(year)
-    )
+    return spark.read.parquet(path.format(year=year)).withColumnRenamed("bare_soil_percent", str(year))
 
 
 years: list = [str(n) for n in sorted(dbutils.widgets.get("years").split(","))]
@@ -69,9 +67,7 @@ df.groupby("tile", dropna=False).count().applymap(lambda x: f"{x:,.0f}")
 # COMMAND ----------
 
 # Check proportion of na values in each tile
-df.groupby("tile", dropna=False)[[str(y) for y in years]].apply(
-    lambda x: x.isna().sum() / x.count()
-).applymap(lambda x: f"{x:.2%}")
+df.groupby("tile", dropna=False)[[str(y) for y in years]].apply(lambda x: x.isna().sum() / x.count()).applymap(lambda x: f"{x:.2%}")
 
 # COMMAND ----------
 

@@ -14,53 +14,6 @@ from elmo_geo.utils.types import (
 )
 
 
-def GeoDataFrame_to_PandasDataFrame(df: GeoDataFrame) -> PandasDataFrame:
-    return df.to_wkb()
-
-
-def PandasDataFrame_to_SparkDataFrame(
-    df: PandasDataFrame,
-    column: str,
-) -> SparkDataFrame:
-    return spark.createDataFrame(df).withColumn(column, load_geometry(column))
-
-
-def GeoDataFrame_to_SparkDataFrame(
-    gdf: GeoDataFrame,
-    column: str,
-) -> SparkDataFrame:
-    return gdf.pipe(GeoDataFrame_to_PandasDataFrame).pipe(
-        PandasDataFrame_to_SparkDataFrame, column=column
-    )
-
-
-def SparkDataFrame_to_PandasDataFrame(df: SparkDataFrame) -> PandasDataFrame:
-    for column in df.columns:
-        if isinstance(df.schema[column].dataType, SedonaType):
-            df = df.withColumn(column, F.expr(f"ST_AsBinary({column})"))
-    return df.toPandas()
-
-
-def PandasDataFrame_to_GeoDataFrame(
-    pdf: PandasDataFrame,
-    column: str,
-    crs: Union[int, str],
-) -> GeoDataFrame:
-    return GeoDataFrame(pdf, geometry=GeoSeries.from_wkb(pdf[column], crs=crs), crs=crs).drop(
-        columns=[column]
-    )
-
-
-def SparkDataFrame_to_GeoDataFrame(
-    df: SparkDataFrame,
-    column: str,
-    crs: Union[int, str],
-) -> GeoDataFrame:
-    return SparkDataFrame_to_PandasDataFrame(df).pipe(
-        PandasDataFrame_to_GeoDataFrame, column=column, crs=crs
-    )
-
-
 def to_gdf(
     x: Union[SparkDataFrame, Geometry],
     column: str = "geometry",
@@ -70,13 +23,20 @@ def to_gdf(
     if isinstance(x, GeoDataFrame):
         gdf = x
     elif isinstance(x, SparkDataFrame):
-        gdf = SparkDataFrame_to_GeoDataFrame(x, column=column, crs=crs)
+        for c in x.columns:
+            if isinstance(x.schema[c].dataType, SedonaType):
+                x = x.withColumn(c, F.expr(f"ST_AsBinary({c})"))
+        gdf = to_gdf(x.toPandas(), column, crs)
     elif isinstance(x, PandasDataFrame):
-        gdf = PandasDataFrame_to_GeoDataFrame(x, column=column, crs=crs)
+        gdf = GeoDataFrame(
+            x,
+            geometry=GeoSeries.from_wkb(x[column], crs=crs),
+            crs=crs,
+        ).drop(columns=[column])
     elif isinstance(x, GeoSeries):
-        gdf = x.to_GeoDataFrame(crs=crs)
+        gdf = GeoDataFrame(geometry=x, crs=crs)
     elif isinstance(x, BaseGeometry):
-        gdf = GeoSeries(x).to_GeoDataFrame(crs=crs)
+        gdf = GeoDataFrame(geometry=GeoSeries(x), crs=crs)
     else:
         raise TypeError(f"Unknown type: {type(x)}")
     return gdf
@@ -85,13 +45,13 @@ def to_gdf(
 def to_sdf(
     x: Union[SparkDataFrame, Geometry],
     column: str = "geometry",
-    crs: Union[int, str] = None,
+    crs: Union[int, str] = 27700,
 ) -> SparkDataFrame:
     """Convert anything-ish to SparkDataFrame"""
     if isinstance(x, SparkDataFrame):
         sdf = x
     elif isinstance(x, PandasDataFrame):
-        sdf = PandasDataFrame_to_SparkDataFrame(x, column=column)
-    else:
-        sdf = GeoDataFrame_to_SparkDataFrame(to_gdf(x, crs), column=column)
+        sdf = spark.createDataFrame(x).withColumn(column, load_geometry(column))
+    else:  # likely a GeoSeries or Geometry, or to_gdf will fail
+        sdf = to_sdf(to_gdf(x, column, crs).to_wkb(), column, crs)
     return sdf
