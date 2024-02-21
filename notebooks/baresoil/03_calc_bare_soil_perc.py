@@ -27,25 +27,16 @@ LOG.info(f" The tile selected: {tile}\n The year selected: {year}")
 path_parcels = f"dbfs:/mnt/lab/unrestricted/elm/sentinel/tiles/{version}/output.parquet"
 month_fm = f"{year-1}-11"
 month_to = f"{year}-02"
-path_ndvi = (
-    "/dbfs/mnt/lab/unrestricted/elm/elmo/baresoil/ndvi/T{tile}-{month_fm}-{month_to}.tif".format(
-        tile=tile, month_fm=month_fm, month_to=month_to
-    )
-)
+path_ndvi = "/dbfs/mnt/lab/unrestricted/elm/elmo/baresoil/ndvi/T{tile}-{month_fm}-{month_to}.tif".format(tile=tile, month_fm=month_fm, month_to=month_to)
 ndvi_thresh = 0.25
 # raster resolution - reproject to higher resolutions than 10m to speed up (but loose accuracy)
 resolution = None
 simplify = None  # geometry simplification tolerence - set this to speed up (but loose accuracy)
 batch_size = 10000  # number of parcels to process in each batch
-path_output = (
-    "dbfs:/mnt/lab/unrestricted/elm/elmo/baresoil/"
-    "bare_parcels/{tile}-{month_fm}-{month_to}.parquet".format(
-        tile=tile, month_fm=month_fm, month_to=month_to
-    )
+path_output = "dbfs:/mnt/lab/unrestricted/elm/elmo/baresoil/" "bare_parcels/{tile}-{month_fm}-{month_to}.parquet".format(
+    tile=tile, month_fm=month_fm, month_to=month_to
 )  # -{ndvi_thresh} , ndvi_thresh=ndvi_thresh
-path_save_figure = (
-    f"/dbfs/mnt/lab/unrestricted/elm/elmo/baresoil/figures/hist_bare_{tile}_{year}.png"
-)
+path_save_figure = f"/dbfs/mnt/lab/unrestricted/elm/elmo/baresoil/figures/hist_bare_{tile}_{year}.png"
 
 spark.conf.set("spark.sql.execution.arrow.maxRecordsPerBatch", str(batch_size))
 
@@ -78,10 +69,7 @@ result = spark.read.parquet(path_output).toPandas()
 LOG.info(result.bare_soil_percent.describe())
 fig, ax = plot_bare_soil_dist(
     data=result.bare_soil_percent,
-    title=(
-        f"Distribution of parcels in tile T{tile} by bare soil "
-        f"cover November {year-1} - February {year}"
-    ),
+    title=(f"Distribution of parcels in tile T{tile} by bare soil " f"cover November {year-1} - February {year}"),
 )
 fig.savefig(path_save_figure)
 fig.show()

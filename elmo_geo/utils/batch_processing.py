@@ -17,9 +17,7 @@ def run_with_retry(notebook: str, timeout_seconds: int = 8000, max_retries: int 
         LOG.info(f"Starting {args}")
         for n in range(max_retries):
             try:
-                return dbutils.notebook.run(
-                    path=notebook, timeout_seconds=timeout_seconds, arguments=args
-                )
+                return dbutils.notebook.run(path=notebook, timeout_seconds=timeout_seconds, arguments=args)
             except Exception:
                 if n > max_retries:
                     LOG.warning(f"Ran out of retries for {args}")

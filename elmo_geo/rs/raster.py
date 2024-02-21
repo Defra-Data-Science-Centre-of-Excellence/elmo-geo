@@ -65,20 +65,12 @@ def set_nodata(band: DataArray, val: Union[int, float], nodataval=np.nan) -> Dat
 
 def _check_bands(bands: Dict[str, DataArray], required_bands: Set[str]):
     bands_present = set(bands.keys())
-    assert required_bands.issubset(
-        bands_present
-    ), f"Could not find required bands {required_bands} in {bands_present}"
+    assert required_bands.issubset(bands_present), f"Could not find required bands {required_bands} in {bands_present}"
     for band1 in required_bands:
         for band2 in required_bands:
-            assert (
-                bands[band1].rio.crs == bands[band2].rio.crs
-            ), "CRS mismatch between {band1} and {band2}"
-            assert (
-                bands[band1].rio.bounds() == bands[band2].rio.bounds()
-            ), "Bounds mismatch between {band1} and {band2}"
-            assert (
-                bands[band1].rio.resolution() == bands[band2].rio.resolution()
-            ), "Resolution mismatch between {band1} and {band2}"
+            assert bands[band1].rio.crs == bands[band2].rio.crs, "CRS mismatch between {band1} and {band2}"
+            assert bands[band1].rio.bounds() == bands[band2].rio.bounds(), "Bounds mismatch between {band1} and {band2}"
+            assert bands[band1].rio.resolution() == bands[band2].rio.resolution(), "Resolution mismatch between {band1} and {band2}"
 
 
 def normalised_diff(a: DataArray, b: DataArray) -> DataArray:

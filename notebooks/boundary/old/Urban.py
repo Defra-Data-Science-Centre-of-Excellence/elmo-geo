@@ -68,9 +68,7 @@ class OSTileProvider(TileProvider):
     """
 
     def __init__(self, key: str, layer: str = "Light_3857", **kwargs):
-        assert (
-            layer in AvailableLayers
-        ), f'{layer} not in AvailableLayers: {", ".join(AvailableLayers)}'
+        assert layer in AvailableLayers, f'{layer} not in AvailableLayers: {", ".join(AvailableLayers)}'
         if layer.endswith("_27700"):
             warn(f"{layer}, CRS=EPSG:27700 is not recognised by contextily or folium.")
         super().__init__(
@@ -95,9 +93,7 @@ crs = "EPSG:27700"
 f = f"/dbfs/mnt/lab/unrestricted/elm_data/os/{product}.parquet"
 
 extent = osdatahub.Extent.from_bbox([0, 0, 0.7e6, 1.3e6], crs)
-df = gpd.GeoDataFrame.from_features(
-    osdatahub.FeaturesAPI(key, product, extent).query(100_000)
-).set_crs(crs)
+df = gpd.GeoDataFrame.from_features(osdatahub.FeaturesAPI(key, product, extent).query(100_000)).set_crs(crs)
 df.to_parquet(f)
 
 df
@@ -174,12 +170,8 @@ df = spark.read.parquet(sf_geom_out).select(
     "id_parcel",
     F.expr("ST_Area(geometry_parcel) AS sqm_parcel"),
     F.expr("ST_Area(ST_Intersection(geometry_parcel, geometry_urban)) AS sqm_urban"),
-    F.expr(
-        "ST_Area(ST_Intersection(geometry_parcel, geometry_urban_regional)) AS sqm_urban_regional"
-    ),
-    F.expr(
-        "ST_Area(ST_Intersection(geometry_parcel, geometry_urban_national)) AS sqm_urban_national"
-    ),
+    F.expr("ST_Area(ST_Intersection(geometry_parcel, geometry_urban_regional)) AS sqm_urban_regional"),
+    F.expr("ST_Area(ST_Intersection(geometry_parcel, geometry_urban_national)) AS sqm_urban_national"),
 )
 
 df.write.parquet(sf_out)

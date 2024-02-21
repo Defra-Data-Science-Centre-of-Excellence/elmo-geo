@@ -47,9 +47,4 @@ def ingest_osm_overpass(place, tags, name):
     """
     osmnx.settings.cache_folder = "/databricks/driver/"
     osmnx.settings.timeout = 600
-    (
-        osmnx.geometries_from_place(place, tags)
-        .reset_index()[["osmid", *tags.keys(), "geometry"]]
-        .to_crs(epsg=27700)
-        .to_parquet(f"{FOLDER_STG}/{name}.parquet")
-    )
+    (osmnx.geometries_from_place(place, tags).reset_index()[["osmid", *tags.keys(), "geometry"]].to_crs(epsg=27700).to_parquet(f"{FOLDER_STG}/{name}.parquet"))

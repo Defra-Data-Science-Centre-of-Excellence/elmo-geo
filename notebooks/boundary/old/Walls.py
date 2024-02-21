@@ -37,9 +37,7 @@ st_register()
 
 from sedona.sql.types import GeometryType
 
-buffer = (
-    gpd.tools.util.BaseGeometry.buffer if not hasattr(shapely, "buffer") else shapely.buffer
-)  # osmnx dependency issue
+buffer = gpd.tools.util.BaseGeometry.buffer if not hasattr(shapely, "buffer") else shapely.buffer  # osmnx dependency issue
 
 
 def st_buffer_udf(g, res, **kwargs):
@@ -72,12 +70,7 @@ tags = {"wall": "dry_stone"}
 
 # Download
 df_england = ox.geocode_to_gdf(place).to_crs("epsg:27700")
-df_wall = (
-    ox.geometries_from_place(place, tags)
-    .to_crs("epsg:27700")
-    .reset_index()[["osmid", "geometry"]]
-    .query('geometry.geom_type == "LineString"')
-)
+df_wall = ox.geometries_from_place(place, tags).to_crs("epsg:27700").reset_index()[["osmid", "geometry"]].query('geometry.geom_type == "LineString"')
 
 
 # Save
@@ -100,11 +93,7 @@ df_wall = spark.read.parquet(sf_wall)
 sdf_geoms = (
     st_join(
         df_parcel,
-        (
-            df_wall.withColumnRenamed("geometry", "geometry_wall").withColumn(
-                "geometry", F.expr("ST_Buffer(geometry_wall, 2)")
-            )
-        ),
+        (df_wall.withColumnRenamed("geometry", "geometry_wall").withColumn("geometry", F.expr("ST_Buffer(geometry_wall, 2)"))),
         lsuffix="_parcel",
         rsuffix="",
     )
@@ -115,9 +104,7 @@ sdf_geoms = (
         F.first("id_business").alias("id_business"),
         F.collect_set("osmid").alias("osmid"),
         F.first("geometry_parcel").alias("geometry_parcel"),
-        F.expr("ST_SimplifyPreserveTopology(ST_Union_Aggr(geometry_wall), 0.001)").alias(
-            "geometry_wall"
-        ),
+        F.expr("ST_SimplifyPreserveTopology(ST_Union_Aggr(geometry_wall), 0.001)").alias("geometry_wall"),
     )
 )
 
@@ -130,33 +117,19 @@ display(sdf_geoms)
 sdf = (
     spark.read.parquet(sf_geoms)
     .withColumn("buf", F.expr("ST_MakeValid(ST_Buffer(geometry_wall, 0.001))"))
-    .withColumn(
-        "uncapped_buf2", F.expr("ST_Buffer(buf, 2)")
-    )  # st_buffer_udf('buf', 2, cap_style='flat'))
+    .withColumn("uncapped_buf2", F.expr("ST_Buffer(buf, 2)"))  # st_buffer_udf('buf', 2, cap_style='flat'))
     .select(
         "id_business",
         "id_parcel",
         F.expr("ST_Length(geometry_parcel)").alias("m_parcel_boundary"),
         F.expr("ST_Length(geometry_wall)").alias("m_wall"),
-        F.expr("ST_Length(ST_Difference(ST_Boundary(geometry_parcel), uncapped_buf2))").alias(
-            "m_none_wall_boundary"
-        ),
+        F.expr("ST_Length(ST_Difference(ST_Boundary(geometry_parcel), uncapped_buf2))").alias("m_none_wall_boundary"),
         F.expr("ST_Area(ST_MakeValid(ST_Buffer(buf, 12)))").alias("sqm_buf12_unclipped"),
-        F.expr("ST_Area(ST_Intersection(ST_MakeValid(ST_Buffer(buf, 12)), geometry_parcel))").alias(
-            "sqm_buf12"
-        ),
-        F.expr("ST_Area(ST_Intersection(ST_MakeValid(ST_Buffer(buf, 10)), geometry_parcel))").alias(
-            "sqm_buf10"
-        ),
-        F.expr("ST_Area(ST_Intersection(ST_MakeValid(ST_Buffer(buf, 8)), geometry_parcel))").alias(
-            "sqm_buf8"
-        ),
-        F.expr("ST_Area(ST_Intersection(ST_MakeValid(ST_Buffer(buf, 6)), geometry_parcel))").alias(
-            "sqm_buf6"
-        ),
-        F.expr("ST_Area(ST_Intersection(ST_MakeValid(ST_Buffer(buf, 4)), geometry_parcel))").alias(
-            "sqm_buf4"
-        ),
+        F.expr("ST_Area(ST_Intersection(ST_MakeValid(ST_Buffer(buf, 12)), geometry_parcel))").alias("sqm_buf12"),
+        F.expr("ST_Area(ST_Intersection(ST_MakeValid(ST_Buffer(buf, 10)), geometry_parcel))").alias("sqm_buf10"),
+        F.expr("ST_Area(ST_Intersection(ST_MakeValid(ST_Buffer(buf, 8)), geometry_parcel))").alias("sqm_buf8"),
+        F.expr("ST_Area(ST_Intersection(ST_MakeValid(ST_Buffer(buf, 6)), geometry_parcel))").alias("sqm_buf6"),
+        F.expr("ST_Area(ST_Intersection(ST_MakeValid(ST_Buffer(buf, 4)), geometry_parcel))").alias("sqm_buf4"),
     )
 )
 

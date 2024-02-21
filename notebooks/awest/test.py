@@ -48,12 +48,10 @@ month_to = f"{year}-02"
 version = "2023_02_07"
 
 path_parcels = f"dbfs:/mnt/lab/unrestricted/elm/sentinel/tiles/{version}/parcels.parquet"
-path_ndvi = (
-    "/dbfs/mnt/lab/unrestricted/elm/elmo/baresoil/ndvi/T{tile}-{month_fm}-{month_to}.tif".format(
-        tile=tile,
-        month_fm=month_fm,
-        month_to=month_to,
-    )
+path_ndvi = "/dbfs/mnt/lab/unrestricted/elm/elmo/baresoil/ndvi/T{tile}-{month_fm}-{month_to}.tif".format(
+    tile=tile,
+    month_fm=month_fm,
+    month_to=month_to,
 )
 
 # COMMAND ----------
@@ -98,9 +96,7 @@ gdf = gpd.GeoDataFrame(pdf, geometry=gpd.GeoSeries.from_wkb(pdf["geometry"], crs
 # COMMAND ----------
 
 fig, ax = plt.subplots(figsize=(6, 6), constrained_layout=True)
-da.plot.imshow(
-    ax=ax, vmin=-1, vmax=1, cmap=sns.color_palette("blend:blue,#FFFFFF,#00A33B", as_cmap=True)
-)
+da.plot.imshow(ax=ax, vmin=-1, vmax=1, cmap=sns.color_palette("blend:blue,#FFFFFF,#00A33B", as_cmap=True))
 ax.axis("off")
 None
 
@@ -158,9 +154,7 @@ def fn(f, year, threshold):
     da = rxr.open_rasterio(f_ndvi).squeeze()
 
     pdf = pd.read_parquet(f)
-    gdf = gpd.GeoDataFrame(
-        pdf, geometry=gpd.GeoSeries.from_wkb(pdf["geometry"], crs=32630), crs=32630
-    )
+    gdf = gpd.GeoDataFrame(pdf, geometry=gpd.GeoSeries.from_wkb(pdf["geometry"], crs=32630), crs=32630)
 
     def calc_bs(g):
         try:

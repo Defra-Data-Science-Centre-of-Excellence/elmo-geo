@@ -20,9 +20,7 @@ def vector_file_to_geoparquet(f_in, f_out, *, chunksize: int = 10_000, crs: (int
     def convert(lower):
         """Convert Vector Files to GeoParquet"""
         upper = min(lower + chunksize, n)
-        read_file(f_in, rows=slice(lower, upper)).to_crs(crs).to_parquet(
-            f_out + f"/{lower}-{upper}.parquet.snappy"
-        )
+        read_file(f_in, rows=slice(lower, upper)).to_crs(crs).to_parquet(f_out + f"/{lower}-{upper}.parquet.snappy")
         return True
 
     return all(sc.parallelize(range(0, n, chunksize)).map(convert).collect())

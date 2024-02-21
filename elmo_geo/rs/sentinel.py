@@ -160,10 +160,7 @@ def find_sentinel_data(
     """
 
     DEFAULT_LOCATION = "/dbfs/mnt/lab/unrestricted/sentinel"
-    PATH_STR = (
-        ".*{mission}_{product}_{year}{month}{day}T{hour}{minute}{second}"
-        "_{pdgs}_{orbit}_T{tile}_{discrim}.SAFE"
-    )
+    PATH_STR = ".*{mission}_{product}_{year}{month}{day}T{hour}{minute}{second}" "_{pdgs}_{orbit}_T{tile}_{discrim}.SAFE"
 
     if root_dir is None:
         root_dir = DEFAULT_LOCATION
@@ -252,14 +249,10 @@ def find_sentinel_qi_data(data_path: str, name: str) -> str:
     try:
         return next(iter(resolution_dirs))
     except StopIteration:
-        raise FileNotFoundError(
-            f"Could not find {name}.jp2 in the QI_DATA directory of {data_path}"
-        )
+        raise FileNotFoundError(f"Could not find {name}.jp2 in the QI_DATA directory of {data_path}")
 
 
-def find_sentinel_bands(
-    data_path: str, resolution: int, band: str = None, type: Optional[str] = None
-) -> str:
+def find_sentinel_bands(data_path: str, resolution: int, band: str = None, type: Optional[str] = None) -> str:
     """Search a sentinel data directory for bands at a given resolution
     Parameters:
         data_path: The data directory to search for the bands (e.g. that returned from a
@@ -350,9 +343,7 @@ def sort_datasets_by_usefulness(datasets: List[str]) -> List[str]:
     return [x[0] for x in sorted(usefulness_dict.items(), key=lambda x: x[1], reverse=True)]
 
 
-def plot_products(
-    df: gpd.GeoDataFrame, title: str, show_nmax: int = 0
-) -> Tuple[plt.Figure, plt.Axes]:
+def plot_products(df: gpd.GeoDataFrame, title: str, show_nmax: int = 0) -> Tuple[plt.Figure, plt.Axes]:
     """Plot a view of products within a timeframe
     Parameters:
         df: A dataframe of Sentinel 2A products with `beginposition`
@@ -368,8 +359,7 @@ def plot_products(
     fig, ax = plt.subplots(figsize=(20, 6))
     fig.suptitle(title, x=0.12, ha="left", fontsize="xx-large")
     fig.supxlabel(
-        "Note: Usefulness is defined as the sum of estimated vegetation and"
-        "bare ground cover in %.",
+        "Note: Usefulness is defined as the sum of estimated vegetation and" "bare ground cover in %.",
         x=0.12,
         ha="left",
     )
@@ -398,15 +388,9 @@ def plot_products(
             c="#007DBA",
             label="Useful",
         )
-        top_n_mean = df.loc[
-            df.usefulpercentage.rank(ascending=False) <= show_nmax, "usefulpercentage"
-        ].mean()
-        top_n_max = df.loc[
-            df.usefulpercentage.rank(ascending=False) <= show_nmax, "usefulpercentage"
-        ].max()
-        top_n_min = df.loc[
-            df.usefulpercentage.rank(ascending=False) <= show_nmax, "usefulpercentage"
-        ].min()
+        top_n_mean = df.loc[df.usefulpercentage.rank(ascending=False) <= show_nmax, "usefulpercentage"].mean()
+        top_n_max = df.loc[df.usefulpercentage.rank(ascending=False) <= show_nmax, "usefulpercentage"].max()
+        top_n_min = df.loc[df.usefulpercentage.rank(ascending=False) <= show_nmax, "usefulpercentage"].min()
         ax.axhline(top_n_max, color="#007DBA", lw=1, alpha=0.3, zorder=0)
         ax.axhline(top_n_mean, ls="--", color="black", lw=1, zorder=0)
         ax.axhline(top_n_min, color="#007DBA", lw=1, alpha=0.3, zorder=0)

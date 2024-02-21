@@ -79,10 +79,7 @@ def download_link(path: str) -> str:
     filename = path.split("/")[-1]
     shutil.copyfile(path, f"/dbfs/FileStore/{filename}")
     # Construct download url
-    url = (
-        f"https://{spark.conf.get('spark.databricks.workspaceUrl')}/files/{filename}"
-        f"?o={spark.conf.get('spark.databricks.clusterUsageTags.orgId')}"
-    )
+    url = f"https://{spark.conf.get('spark.databricks.workspaceUrl')}/files/{filename}" f"?o={spark.conf.get('spark.databricks.clusterUsageTags.orgId')}"
     # Return html snippet
     return f"<a href={url} target='_blank'>Download file: {filename}</a>"
 

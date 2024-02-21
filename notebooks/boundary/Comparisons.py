@@ -188,12 +188,7 @@ df_cats
 
 # COMMAND ----------
 
-df = (
-    df_cats.merge(df_base)
-    .groupby(["feature", "category_group", "category", "metric"])["value"]
-    .agg(["sum", "mean"])
-    .reset_index()
-)
+df = df_cats.merge(df_base).groupby(["feature", "category_group", "category", "metric"])["value"].agg(["sum", "mean"]).reset_index()
 
 df
 

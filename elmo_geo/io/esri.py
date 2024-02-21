@@ -20,13 +20,7 @@ def get_esri_name(url):
     elif "ESMARspQHYMw9BZ9" in url:
         source = "ons"
     dataset = url.split("/services/")[1].split("/FeatureServer")[0]
-    isodate = (
-        date.fromtimestamp(
-            esridump.EsriDumper(url).get_metadata()["editingInfo"]["dataLastEditDate"] / 1000
-        )
-        .isoformat()
-        .replace("-", "_")
-    )
+    isodate = date.fromtimestamp(esridump.EsriDumper(url).get_metadata()["editingInfo"]["dataLastEditDate"] / 1000).isoformat().replace("-", "_")
     return f"{source}-{dataset}-{isodate}"
 
 

@@ -40,11 +40,7 @@ def repartitonBy(sdf: SparkDataFrame, by: str) -> SparkDataFrame:
 
 def to_gpq_partitioned(sdf: SparkDataFrame, sf: str, **kwargs):
     """SparkDataFrame to GeoParquet, partitioned by BNG index"""
-    sdf = (
-        sdf.withColumn("geometry", st_simplify())
-        .transform(sindex)
-        .transform(repartitonBy, "sindex")
-    )
+    sdf = sdf.withColumn("geometry", st_simplify()).transform(sindex).transform(repartitonBy, "sindex")
     sdf.write.format("geoparquet").save(sf, partitionBy="sindex", **kwargs)
     LOG.info(
         f"""
@@ -60,12 +56,7 @@ def to_gpq_partitioned(sdf: SparkDataFrame, sf: str, **kwargs):
 
 def to_gpq_sorted(sdf: SparkDataFrame, sf: str, **kwargs):
     """SparkDataFrame to GeoParquet, sorted by BNG index"""
-    (
-        sdf.transform(centroid_index, resolution="1km")
-        .sort("sindex")
-        .write.format("geoparquet")
-        .save(sf, **kwargs)
-    )
+    (sdf.transform(centroid_index, resolution="1km").sort("sindex").write.format("geoparquet").save(sf, **kwargs))
 
 
 def to_gpq_zsorted(sdf: SparkDataFrame, sf: str, **kwargs):
@@ -74,9 +65,7 @@ def to_gpq_zsorted(sdf: SparkDataFrame, sf: str, **kwargs):
         sdf.transform(sindex, resolution="1km", index_join=chipped_index)
         .withColumn(
             "geohash",
-            F.expr(
-                'ST_GeoHash(ST_FlipCoordinates(ST_Transform(geometry, "EPSG:27700", "EPSG:4326")))'
-            ),
+            F.expr('ST_GeoHash(ST_FlipCoordinates(ST_Transform(geometry, "EPSG:27700", "EPSG:4326")))'),
         )
         .sort("geohash")
         .write.format("geoparquet")

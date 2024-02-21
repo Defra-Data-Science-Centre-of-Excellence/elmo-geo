@@ -164,25 +164,13 @@ sdf_rpa_hedge = (
         "m_efa",
         "m_adj",
         #'m_adj_elg',
-        F.expr("ST_Length(ST_Difference(ST_Boundary(geometry_parcel), uncapped_buf2))").alias(
-            "m_none_hedge_boundary"
-        ),
+        F.expr("ST_Length(ST_Difference(ST_Boundary(geometry_parcel), uncapped_buf2))").alias("m_none_hedge_boundary"),
         F.expr("ST_Area(ST_MakeValid(ST_Buffer(buf, 12)))").alias("sqm_buf12_unclipped"),
-        F.expr("ST_Area(ST_Intersection(ST_MakeValid(ST_Buffer(buf, 12)), geometry_parcel))").alias(
-            "sqm_buf12"
-        ),
-        F.expr("ST_Area(ST_Intersection(ST_MakeValid(ST_Buffer(buf, 10)), geometry_parcel))").alias(
-            "sqm_buf10"
-        ),
-        F.expr("ST_Area(ST_Intersection(ST_MakeValid(ST_Buffer(buf, 8)), geometry_parcel))").alias(
-            "sqm_buf8"
-        ),
-        F.expr("ST_Area(ST_Intersection(ST_MakeValid(ST_Buffer(buf, 6)), geometry_parcel))").alias(
-            "sqm_buf6"
-        ),
-        F.expr("ST_Area(ST_Intersection(ST_MakeValid(ST_Buffer(buf, 4)), geometry_parcel))").alias(
-            "sqm_buf4"
-        ),
+        F.expr("ST_Area(ST_Intersection(ST_MakeValid(ST_Buffer(buf, 12)), geometry_parcel))").alias("sqm_buf12"),
+        F.expr("ST_Area(ST_Intersection(ST_MakeValid(ST_Buffer(buf, 10)), geometry_parcel))").alias("sqm_buf10"),
+        F.expr("ST_Area(ST_Intersection(ST_MakeValid(ST_Buffer(buf, 8)), geometry_parcel))").alias("sqm_buf8"),
+        F.expr("ST_Area(ST_Intersection(ST_MakeValid(ST_Buffer(buf, 6)), geometry_parcel))").alias("sqm_buf6"),
+        F.expr("ST_Area(ST_Intersection(ST_MakeValid(ST_Buffer(buf, 4)), geometry_parcel))").alias("sqm_buf4"),
     )
 )
 
@@ -192,12 +180,7 @@ display(sdf_rpa_hedge)
 
 # COMMAND ----------
 
-df = (
-    spark.read.parquet(sf_out)
-    .drop("m_adj_elg")
-    .withColumnRenamed("m_efa", "m_hedgerow")
-    .withColumnRenamed("m_adj", "m_hedgerow_adjusted_for_adjacency")
-)
+df = spark.read.parquet(sf_out).drop("m_adj_elg").withColumnRenamed("m_efa", "m_hedgerow").withColumnRenamed("m_adj", "m_hedgerow_adjusted_for_adjacency")
 display(df)
 df.count()
 
@@ -259,17 +242,13 @@ import geopandas as gpd
 import matplotlib.pyplot as plt
 
 
-def add_basemap(
-    ax=None, basemap="Light", crs=27700, key="WxgUdETn6cy58WZkfwZ7wdMVLlt5eDsX", **kwargs
-):
+def add_basemap(ax=None, basemap="Light", crs=27700, key="WxgUdETn6cy58WZkfwZ7wdMVLlt5eDsX", **kwargs):
     if ax is None:
         ax = plt.gca()
     basemaps = ["Road", "Outdoor", "Light"]
     if basemap not in basemaps:
         raise f"BasemapError: {basemap} not in {basemaps}."
-    basemap_url = (
-        f'https://api.os.uk/maps/raster/v1/zxy/{basemap}_3857/{"{z}/{x}/{y}"}.png?key={key}'
-    )
+    basemap_url = f'https://api.os.uk/maps/raster/v1/zxy/{basemap}_3857/{"{z}/{x}/{y}"}.png?key={key}'
     ctx.add_basemap(ax=ax, crs=crs, source=basemap_url, **kwargs)
     ax.axis("off")
     return ax
@@ -286,21 +265,14 @@ loc = 'id_parcel REGEXP "NY9271.*"'
 
 # COMMAND ----------
 
-df_parcel = (
-    spark.read.parquet(sf_parcels)
-    .filter(loc)
-    .toPandas()
-    .pipe(lambda df: gpd.GeoDataFrame(df, geometry="geometry", crs=crs))
-)
+df_parcel = spark.read.parquet(sf_parcels).filter(loc).toPandas().pipe(lambda df: gpd.GeoDataFrame(df, geometry="geometry", crs=crs))
 
 df_hedge = (
     spark.read.parquet(sf_rpa_hedge)
     .select(
         "id",
         F.concat("REF_PARCEL_SHEET_ID", "REF_PARCEL_PARCEL_ID").alias("id_parcel"),
-        F.expr("CASE WHEN (ADJACENT_PARCEL_PARCEL_ID IS NULL) THEN 1.0 ELSE 0.5 END").alias(
-            "adjacent"
-        ),
+        F.expr("CASE WHEN (ADJACENT_PARCEL_PARCEL_ID IS NULL) THEN 1.0 ELSE 0.5 END").alias("adjacent"),
         st_fromwkb("wkb_geometry", 27700).alias("geometry"),
     )
     .filter(loc)

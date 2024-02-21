@@ -52,9 +52,7 @@ df_gis = (
     .agg(
         F.collect_set("id_right").alias("ids"),
         F.collect_set("id_parcel_right").alias("ids_parcel"),
-        F.expr("ST_SimplifyPreserveTopology(ST_Union_Aggr(geometry_right), 0.001)").alias(
-            "geometry_right"
-        ),
+        F.expr("ST_SimplifyPreserveTopology(ST_Union_Aggr(geometry_right), 0.001)").alias("geometry_right"),
     )
     .join(df, on="id", how="right")
     .withColumn("geometry_right", st_valid("geometry_right"))
@@ -141,9 +139,5 @@ pd.DataFrame(
 
 fig, (ax0, ax1) = plt.subplots(2, figsize=[8, 4.5], tight_layout=True)
 (pdf["length"].hist(ax=ax0, bins=20).set(title="Hedgrow Lengths"))
-(
-    (pdf["length_overlap0.75"] / pdf["length"])
-    .hist(ax=ax1, bins=20)
-    .set(title="Single-Sidedness (at 0.75m)")
-)
+((pdf["length_overlap0.75"] / pdf["length"]).hist(ax=ax1, bins=20).set(title="Single-Sidedness (at 0.75m)"))
 pass

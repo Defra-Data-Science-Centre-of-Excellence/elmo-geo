@@ -70,21 +70,13 @@ SF,SG,SH,SJ,SK,TF,TG
 SL,SM,SN,SO,SP,TL,TM
 SQ,SR,SS,ST,SU,TQ,TR
 SV,SW,SX,SY,SZ,TV,TW"""
-BNG_LOOKUP = {
-    (i * BNG_STEP, j * BNG_STEP): pair
-    for j, row in enumerate(reversed(BNG_LETTERS.split("\n")))
-    for i, pair in enumerate(row.split(","))
-}
+BNG_LOOKUP = {(i * BNG_STEP, j * BNG_STEP): pair for j, row in enumerate(reversed(BNG_LETTERS.split("\n"))) for i, pair in enumerate(row.split(","))}
 
 
 def bng(x: int, y: int, *, precision: int = 1) -> str:
     assert 0 <= precision <= 5, f"{precision:d} not within precision range[0, 5]"
-    assert (
-        BNG_LIMITS[0] <= x < BNG_LIMITS[2]
-    ), f"{x:_} not within BNG range[{BNG_LIMITS[0]:_}, {BNG_LIMITS[2]:_})"
-    assert (
-        BNG_LIMITS[1] <= y < BNG_LIMITS[3]
-    ), f"{y:_} not within BNG range[{BNG_LIMITS[1]:_}, {BNG_LIMITS[3]:_})"
+    assert BNG_LIMITS[0] <= x < BNG_LIMITS[2], f"{x:_} not within BNG range[{BNG_LIMITS[0]:_}, {BNG_LIMITS[2]:_})"
+    assert BNG_LIMITS[1] <= y < BNG_LIMITS[3], f"{y:_} not within BNG range[{BNG_LIMITS[1]:_}, {BNG_LIMITS[3]:_})"
     L = lambda a: (a // 100_000) * 100_000
     D = lambda b: f"{int(b)%100_000:05d}"[:precision]
     return BNG_LOOKUP[L(x), L(y)] + D(x) + D(y)
@@ -110,9 +102,7 @@ def log(x: float, b: float) -> float:
     return 1 + log(x / b, b)
 
 
-def os_features(
-    key: str, product: str, bbox: list, crs: str = "EPSG:27700", max_query: int = 100_000
-):
+def os_features(key: str, product: str, bbox: list, crs: str = "EPSG:27700", max_query: int = 100_000):
     return FeaturesAPI(
         key,
         product,
@@ -141,9 +131,7 @@ def writer_os(key: str, product: str, bbox: list, path_out: str, name: str) -> i
 def os_initalise_df(precision: int, bbox: list = None) -> PandasDataFrame:
     if bbox is None:
         bbox = [0, 0, 700_000, 1_300_000]
-    assert (
-        -1 <= precision <= 5
-    ), f"Precision: {precision} not in [-1, 5], -1 is a letter, 0 is both letters, 1+ adds two numbers"
+    assert -1 <= precision <= 5, f"Precision: {precision} not in [-1, 5], -1 is a letter, 0 is both letters, 1+ adds two numbers"
     step = 10 ** (5 - precision)
     return PandasDataFrame.merge(
         PandasDataFrame({"x": range(bbox[0], bbox[2], step)}),

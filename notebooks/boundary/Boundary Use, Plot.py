@@ -47,9 +47,7 @@ df = (
     .toPandas()
 )
 
-gdf = df.assign(**{col: gpd.GeoSeries.from_wkb(df[col]).set_crs(27700) for col in cols}).pipe(
-    gpd.GeoDataFrame, geometry="geometry_boundary", crs=27700
-)
+gdf = df.assign(**{col: gpd.GeoSeries.from_wkb(df[col]).set_crs(27700) for col in cols}).pipe(gpd.GeoDataFrame, geometry="geometry_boundary", crs=27700)
 
 C = ["darkgoldenrod", "goldenrod", "royalblue", "slateblue", "forestgreen", "sienna"]
 
@@ -99,12 +97,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
 
-gdf = (
-    gpd.read_parquet("/dbfs/tmp/awest/boundaries.parquet")
-    .melt("id_parcel", var_name="layer", value_name="geometry")
-    .set_geometry("geometry")
-    .set_crs(27700)
-)
+gdf = gpd.read_parquet("/dbfs/tmp/awest/boundaries.parquet").melt("id_parcel", var_name="layer", value_name="geometry").set_geometry("geometry").set_crs(27700)
 gdf.to_parquet("/dbfs/tmp/awest/tmp.parquet")
 
 
@@ -196,9 +189,7 @@ def setup_plot():
     ax.set(xlim=[446450, 446650], ylim=[349550, 349850])
     ctx.add_basemap(
         ax=ax,
-        source=ctx.providers.Thunderforest.Landscape(
-            apikey="25a2eb26caa6466ebc5c2ddd50c5dde8", attribution=None
-        ),
+        source=ctx.providers.Thunderforest.Landscape(apikey="25a2eb26caa6466ebc5c2ddd50c5dde8", attribution=None),
         crs="EPSG:27700",
     )
     return ax
@@ -209,16 +200,12 @@ def setup_plot():
 sf_neighbour = "dbfs:/mnt/lab/unrestricted/elm/elm_se/neighbouring_land_use_geometries.parquet"
 sf_boundary = "dbfs:/mnt/lab/unrestricted/elm/elm_se/boundary_use_geometries.parquet"
 
-gdf_neighbour = elm_se.io.SparkDataFrame_to_PandasDataFrame(
-    spark.read.parquet(sf_neighbour).filter('id_parcel == "SK46495469"')
-)
+gdf_neighbour = elm_se.io.SparkDataFrame_to_PandasDataFrame(spark.read.parquet(sf_neighbour).filter('id_parcel == "SK46495469"'))
 for col in gdf_neighbour.columns[1:]:
     gdf_neighbour[col] = gpd.GeoSeries.from_wkb(gdf_neighbour[col], crs=27700)
 gdf_neighbour = gpd.GeoDataFrame(gdf_neighbour, geometry="geometry_boundary", crs=27700)
 
-gdf_boundary = elm_se.io.to_gdf(
-    spark.read.parquet(sf_boundary).filter('id_parcel == "SK46495469"'), column="geometry_boundary"
-)
+gdf_boundary = elm_se.io.to_gdf(spark.read.parquet(sf_boundary).filter('id_parcel == "SK46495469"'), column="geometry_boundary")
 
 display(gdf_neighbour)
 display(gdf_boundary)
@@ -247,18 +234,10 @@ None
 ax = setup_plot()
 
 gdf_neighbour["geometry_water"].plot(ax=ax, color="tab:blue", alpha=0.4, linewidth=4)
-gdf_boundary.query("elg_adj==True & elg_water==True").plot(
-    ax=ax, color="#00F", linewidth=2, linestyle="--"
-)
-gdf_boundary.query("elg_adj==False & elg_water==True").plot(
-    ax=ax, color="#00F", linewidth=2, linestyle="-"
-)
-gdf_boundary.query("elg_adj==True & elg_water==False").plot(
-    ax=ax, color="#000", linewidth=2, linestyle="--"
-)
-gdf_boundary.query("elg_adj==False & elg_water==False").plot(
-    ax=ax, color="#000", linewidth=2, linestyle="-"
-)
+gdf_boundary.query("elg_adj==True & elg_water==True").plot(ax=ax, color="#00F", linewidth=2, linestyle="--")
+gdf_boundary.query("elg_adj==False & elg_water==True").plot(ax=ax, color="#00F", linewidth=2, linestyle="-")
+gdf_boundary.query("elg_adj==True & elg_water==False").plot(ax=ax, color="#000", linewidth=2, linestyle="--")
+gdf_boundary.query("elg_adj==False & elg_water==False").plot(ax=ax, color="#000", linewidth=2, linestyle="-")
 
 None
 
@@ -267,33 +246,15 @@ None
 ax = setup_plot()
 
 gdf_neighbour["geometry_hedge"].plot(ax=ax, color="tab:green", alpha=0.4, linewidth=4)
-gpd.GeoSeries(shapely.LineString([[446521, 349767], [446550, 349740]])).plot(
-    ax=ax, color="tab:green", alpha=0.4, linewidth=4
-)
-gdf_boundary.query("elg_adj==True & elg_water==True & elg_hedge==True").plot(
-    ax=ax, color="#F00", linewidth=2, linestyle="--"
-)
-gdf_boundary.query("elg_adj==False & elg_water==True & elg_hedge==True").plot(
-    ax=ax, color="#F00", linewidth=2, linestyle="-"
-)
-gdf_boundary.query("elg_adj==True & elg_water==False & elg_hedge==True").plot(
-    ax=ax, color="#0F0", linewidth=2, linestyle="--"
-)
-gdf_boundary.query("elg_adj==False & elg_water==False & elg_hedge==True").plot(
-    ax=ax, color="#0F0", linewidth=2, linestyle="-"
-)
-gdf_boundary.query("elg_adj==True & elg_water==True & elg_hedge==False").plot(
-    ax=ax, color="#00F", linewidth=2, linestyle="--"
-)
-gdf_boundary.query("elg_adj==False & elg_water==True & elg_hedge==False").plot(
-    ax=ax, color="#00F", linewidth=2, linestyle="-"
-)
-gdf_boundary.query("elg_adj==True & elg_water==False & elg_hedge==False").plot(
-    ax=ax, color="#000", linewidth=2, linestyle="--"
-)
-gdf_boundary.query("elg_adj==False & elg_water==False & elg_hedge==False").plot(
-    ax=ax, color="#000", linewidth=2, linestyle="-"
-)
+gpd.GeoSeries(shapely.LineString([[446521, 349767], [446550, 349740]])).plot(ax=ax, color="tab:green", alpha=0.4, linewidth=4)
+gdf_boundary.query("elg_adj==True & elg_water==True & elg_hedge==True").plot(ax=ax, color="#F00", linewidth=2, linestyle="--")
+gdf_boundary.query("elg_adj==False & elg_water==True & elg_hedge==True").plot(ax=ax, color="#F00", linewidth=2, linestyle="-")
+gdf_boundary.query("elg_adj==True & elg_water==False & elg_hedge==True").plot(ax=ax, color="#0F0", linewidth=2, linestyle="--")
+gdf_boundary.query("elg_adj==False & elg_water==False & elg_hedge==True").plot(ax=ax, color="#0F0", linewidth=2, linestyle="-")
+gdf_boundary.query("elg_adj==True & elg_water==True & elg_hedge==False").plot(ax=ax, color="#00F", linewidth=2, linestyle="--")
+gdf_boundary.query("elg_adj==False & elg_water==True & elg_hedge==False").plot(ax=ax, color="#00F", linewidth=2, linestyle="-")
+gdf_boundary.query("elg_adj==True & elg_water==False & elg_hedge==False").plot(ax=ax, color="#000", linewidth=2, linestyle="--")
+gdf_boundary.query("elg_adj==False & elg_water==False & elg_hedge==False").plot(ax=ax, color="#000", linewidth=2, linestyle="-")
 
 None
 
@@ -317,12 +278,8 @@ sf_peatland = "dbfs:/mnt/lab/unrestricted/elm/elmo/peatland/polygons.parquet"
 sf_out = "dbfs:/mnt/lab/unrestricted/elm/elm_se/peatland.parquet"
 
 null = 'ST_GeomFromText("Point EMPTY")'
-sdf_parcel = spark.read.parquet(sf_parcel).withColumn(
-    "geometry", F.expr(f"COALESCE(geometry, {null})")
-)
-sdf_peatland = spark.read.parquet(sf_peatland).withColumn(
-    "geometry", F.expr(f"COALESCE(ST_GeomFromWKB(geometry), {null})")
-)
+sdf_parcel = spark.read.parquet(sf_parcel).withColumn("geometry", F.expr(f"COALESCE(geometry, {null})"))
+sdf_peatland = spark.read.parquet(sf_peatland).withColumn("geometry", F.expr(f"COALESCE(ST_GeomFromWKB(geometry), {null})"))
 
 sdf = elm_se.st.sjoin(sdf_parcel, sdf_peatland, lsuffix="_parcel", rsuffix="_peatland", distance=12)
 
@@ -370,9 +327,7 @@ sdf.count()
 
 # plot ditches and peatland
 
-gdf_neighbour = elm_se.io.SparkDataFrame_to_PandasDataFrame(
-    spark.read.parquet(sf_neighbour).filter("elg_ditch AND peatland")
-)
+gdf_neighbour = elm_se.io.SparkDataFrame_to_PandasDataFrame(spark.read.parquet(sf_neighbour).filter("elg_ditch AND peatland"))
 
 
 # COMMAND ----------

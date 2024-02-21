@@ -44,9 +44,7 @@ sdf = (
     spark.read.parquet(sf)
     .withColumn(
         "sindex",
-        F.expr(
-            'ST_GeoHash(ST_FlipCoordinates(ST_Transform(geometry, "EPSG:27700", "EPSG:4326")), 4)'
-        ),
+        F.expr('ST_GeoHash(ST_FlipCoordinates(ST_Transform(geometry, "EPSG:27700", "EPSG:4326")), 4)'),
     )
     .withColumn(
         "sindex_batch",

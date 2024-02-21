@@ -178,8 +178,6 @@ pd.DataFrame(
             "Livestock Farm",
         ],
         "Sum": pd.Series([c, d, e, f, g, h, i, j, k, l]).map("{:,.0f}".format),
-        "Proportion": pd.Series(
-            [c / a, d / b, e / c, f / d, g / c, h / d, i / c, j / d, k / c, l / d]
-        ).map("{:,.1%}".format),
+        "Proportion": pd.Series([c / a, d / b, e / c, f / d, g / c, h / d, i / c, j / d, k / c, l / d]).map("{:,.1%}".format),
     }
 ).set_index(["Metric", "Group"]).sort_index()

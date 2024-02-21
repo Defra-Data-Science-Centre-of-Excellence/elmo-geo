@@ -44,10 +44,7 @@ def make_geometry_valid(df: gpd.GeoDataFrame, geometry_col: str = "geometry") ->
     """
     invalid = ~df[geometry_col].is_valid
     if invalid.sum() > 0:
-        LOG.info(
-            f"Found {invalid.sum():,.0f} invalid geometries of "
-            f"{invalid.size:,.0f} ({invalid.mean():.2%})"
-        )
+        LOG.info(f"Found {invalid.sum():,.0f} invalid geometries of " f"{invalid.size:,.0f} ({invalid.mean():.2%})")
         df[geometry_col] = df[geometry_col].map(make_valid)
         assert df[geometry_col].is_valid.all()
         LOG.info("Fixed invlid geometries")
@@ -103,10 +100,5 @@ def preprocess_dataset(
     LOG.info(f"Dataset has {df.size:,.0f} rows")
     LOG.info(f"Dataset has the following columns: {df.columns.tolist()}")
     # TODO: save to geoparquet to preserve metadata
-    (
-        spark.createDataFrame(df)
-        .repartition(n_partitions)
-        .write.format("parquet")
-        .save(path_write, mode="overwrite")
-    )
+    (spark.createDataFrame(df).repartition(n_partitions).write.format("parquet").save(path_write, mode="overwrite"))
     LOG.info(f"Saved preprocessed dataset to {path_write}")

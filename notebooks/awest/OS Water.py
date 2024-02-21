@@ -94,13 +94,7 @@ def spark_read_geojsons(path, subset=[]):
 
     filepaths = glob(path + "*.geojson")
     schema = spark.createDataFrame(read(filepaths[0])).schema
-    return (
-        DataFrame({"filepath": filepaths})
-        .pipe(spark.createDataFrame)
-        .repartition("filepath")
-        .groupby("filepath")
-        .applyInPandas(read_udf, schema)
-    )
+    return DataFrame({"filepath": filepaths}).pipe(spark.createDataFrame).repartition("filepath").groupby("filepath").applyInPandas(read_udf, schema)
 
 
 # COMMAND ----------

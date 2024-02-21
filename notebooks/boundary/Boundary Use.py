@@ -118,9 +118,7 @@ sdf_adj.count()
 # COMMAND ----------
 
 # DBTITLE 1,Neighbouring Land Use
-st_union = lambda col: F.expr(
-    f"ST_MakeValid(ST_SimplifyPreserveTopology(ST_PrecisionReduce(ST_MakeValid(ST_Union_Aggr({col})), 3), 0)) AS {col}"
-)
+st_union = lambda col: F.expr(f"ST_MakeValid(ST_SimplifyPreserveTopology(ST_PrecisionReduce(ST_MakeValid(ST_Union_Aggr({col})), 3), 0)) AS {col}")
 # cross_compliance = lambda col, buf: F.expr(f'ST_MakeValid(CASE WHEN ST_GeometryType({col})!="ST_Polygon" THEN {col} ELSE ST_Buffer({col}, {buf}) END)')
 cross_compliance = lambda col, buf: F.expr(f"ST_MakeValid(ST_Buffer({col}, {buf}))")
 
@@ -253,11 +251,7 @@ sdf_ha = (
     )
 )
 
-sdf_m = (
-    spark.read.parquet(sf_boundary)
-    .withColumn("m", F.expr("ST_Length(geometry_boundary)"))
-    .drop("geometry_boundary")
-)
+sdf_m = spark.read.parquet(sf_boundary).withColumn("m", F.expr("ST_Length(geometry_boundary)")).drop("geometry_boundary")
 
 
 sdf_ph = spark.read.parquet(sf_ph).select(
@@ -323,9 +317,7 @@ sdf_ph.count(), sdf_peat.count(), sdf_wet.count(), sdf_evast.count()
 
 # COMMAND ----------
 
-spark.read.parquet(sf_uptake).select(
-    "elg_adj", "elg_water", "elg_ditch", "elg_wall", "elg_hedge", "m"
-).display()
+spark.read.parquet(sf_uptake).select("elg_adj", "elg_water", "elg_ditch", "elg_wall", "elg_hedge", "m").display()
 
 # COMMAND ----------
 
@@ -336,12 +328,8 @@ spark.read.parquet(sf_uptake).select(
     F.expr("boundary * CAST(elg_ditch AS DOUBLE)").alias("ditch"),
     F.expr("boundary * CAST(elg_wall AS DOUBLE)").alias("wall"),
     F.expr("boundary * CAST(elg_hedge AS DOUBLE)").alias("hedge"),
-    F.expr(
-        "boundary * CAST(NOT (elg_water OR elg_ditch OR elg_wall OR elg_hedge) AS DOUBLE)"
-    ).alias("available"),
-    F.expr(
-        "boundary * CAST(elg_hedge AND NOT (elg_water OR elg_ditch OR elg_wall) AS DOUBLE)"
-    ).alias("hedge_only"),
+    F.expr("boundary * CAST(NOT (elg_water OR elg_ditch OR elg_wall OR elg_hedge) AS DOUBLE)").alias("available"),
+    F.expr("boundary * CAST(elg_hedge AND NOT (elg_water OR elg_ditch OR elg_wall) AS DOUBLE)").alias("hedge_only"),
     F.expr("boundary * CAST(elg_hedge AND woodland AS DOUBLE)").alias("hedge_on_ewco"),
     F.expr("boundary * CAST(elg_ditch AND .1<peatland AS DOUBLE)").alias("ditch_on_peatland"),
 ).groupby().sum().display()
@@ -363,12 +351,8 @@ df = (
         # F.expr('SUM(m*CAST(elg_wall AS DOUBLE)) AS m_wall'),
         F.expr("SUM(m*CAST(elg_hedge AS DOUBLE)) AS m_hedge"),
         F.expr("SUM(m*CAST(woodland AS DOUBLE)) AS m_evast"),
-        F.expr(
-            "SUM(m*CAST(NOT (elg_water OR elg_ditch OR elg_wall OR elg_hedge) AS DOUBLE)) AS m_available"
-        ),
-        F.expr(
-            "SUM(m*CAST(elg_hedge AND (NOT (elg_water OR elg_ditch OR elg_wall OR woodland)) AS DOUBLE)) AS m_hedge_only"
-        ),
+        F.expr("SUM(m*CAST(NOT (elg_water OR elg_ditch OR elg_wall OR elg_hedge) AS DOUBLE)) AS m_available"),
+        F.expr("SUM(m*CAST(elg_hedge AND (NOT (elg_water OR elg_ditch OR elg_wall OR woodland)) AS DOUBLE)) AS m_hedge_only"),
         F.expr("SUM(m*CAST(elg_water AND woodland AS DOUBLE)) AS m_hedge_and_evast"),
         # Meters per Hectare
         F.expr("SUM(m_unadj/ha) AS mpha_boundary_unadj"),
@@ -378,12 +362,8 @@ df = (
         # F.expr('SUM(m/ha*CAST(elg_wall AS DOUBLE)) AS mpha_wall'),
         F.expr("SUM(m/ha*CAST(elg_hedge AS DOUBLE)) AS mpha_hedge"),
         F.expr("SUM(m/ha*CAST(woodland AS DOUBLE)) AS mpha_evast"),
-        F.expr(
-            "SUM(m/ha*CAST(NOT (elg_water OR elg_ditch OR elg_wall OR elg_hedge) AS DOUBLE)) AS mpha_available"
-        ),
-        F.expr(
-            "SUM(m/ha*CAST(elg_hedge AND (NOT (elg_water OR elg_ditch OR elg_wall OR woodland)) AS DOUBLE)) AS mpha_hedge_only"
-        ),
+        F.expr("SUM(m/ha*CAST(NOT (elg_water OR elg_ditch OR elg_wall OR elg_hedge) AS DOUBLE)) AS mpha_available"),
+        F.expr("SUM(m/ha*CAST(elg_hedge AND (NOT (elg_water OR elg_ditch OR elg_wall OR woodland)) AS DOUBLE)) AS mpha_hedge_only"),
         F.expr("SUM(m/ha*CAST(elg_water AND woodland AS DOUBLE)) AS mpha_hedge_and_evast"),
     )
     .toPandas()

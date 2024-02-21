@@ -58,13 +58,7 @@ def batch_status(path_out):
 
 def batch_convert_folder(path_in, ext, path_out, batch=10_000, engine="pyogrio"):
     f_status = batch_status(path_out)
-    df = (
-        pd.read_parquet(f_status)
-        .pipe(spark.createDataFrame)
-        .repartition(sdf.count())
-        .withColumn("status", convert())
-        .toPandas()
-    )
+    df = pd.read_parquet(f_status).pipe(spark.createDataFrame).repartition(sdf.count()).withColumn("status", convert()).toPandas()
     sdf.to_parquet(f_status)
     display(sdf)
 
@@ -136,9 +130,7 @@ sdf_geom.write.parquet(sf_geom)
 display(sdf_geom)
 
 
-buf = (
-    lambda x: f"ST_Area(ST_Intersection(ST_MakeValid(ST_Buffer(geometry_water, {x})), geometry_parcel))/10000 AS ha_buf{x}"
-)
+buf = lambda x: f"ST_Area(ST_Intersection(ST_MakeValid(ST_Buffer(geometry_water, {x})), geometry_parcel))/10000 AS ha_buf{x}"
 
 sdf = (
     spark.read.parquet(sf_geom)

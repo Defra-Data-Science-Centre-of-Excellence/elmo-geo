@@ -87,25 +87,17 @@ gdf = (
 
 
 fig, ((ax0, ax1), (ax2, ax3)) = plt.subplots(2, 2, figsize=(9, 9))
-gdf["geometry_parcel"].plot(
-    ax=ax0, color="darkgoldenrod", alpha=0.6, edgecolor="darkgoldenrod"
-).set(title="BNG: NY9170-NY9271")
+gdf["geometry_parcel"].plot(ax=ax0, color="darkgoldenrod", alpha=0.6, edgecolor="darkgoldenrod").set(title="BNG: NY9170-NY9271")
 gdf["geometry_hedge"].plot(ax=ax0, color="C2", linewidth=1)
 gdf["geometry_water"].plot(ax=ax0, color="C0", linewidth=1)
 
-gdf["geometry_parcel"].boundary.plot(ax=ax1, color="darkgoldenrod", linewidth=0.2).set(
-    title="Available Boundaries"
-)
-gdf["geometry_3"].explode()[lambda g: g.type != "Point"].plot(
-    ax=ax1, color="darkgoldenrod", linewidth=1, label="Parcel"
-)
+gdf["geometry_parcel"].boundary.plot(ax=ax1, color="darkgoldenrod", linewidth=0.2).set(title="Available Boundaries")
+gdf["geometry_3"].explode()[lambda g: g.type != "Point"].plot(ax=ax1, color="darkgoldenrod", linewidth=1, label="Parcel")
 
 gdf["geometry_hedge"].plot(ax=ax2, color="C2", linewidth=1, label="Hedgerow").set(title="Hedgerows")
 gdf["geometry_1"].plot(ax=ax2, color="darkgoldenrod", linewidth=0.2)
 
-gdf["geometry_water"].plot(ax=ax3, color="C0", linewidth=1, label="Waterbody").set(
-    title="Waterbodies"
-)
+gdf["geometry_water"].plot(ax=ax3, color="C0", linewidth=1, label="Waterbody").set(title="Waterbodies")
 gdf["geometry_2"].plot(ax=ax3, color="darkgoldenrod", linewidth=0.2)
 
 ax0.axis("off")

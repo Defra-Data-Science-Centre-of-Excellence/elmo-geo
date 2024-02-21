@@ -134,15 +134,10 @@ elif res.params[1] < 0:
     comment_corr = "This means that it has a negative carroelation."
 
 if res.pvalues[1] <= 0.05:
-    comment_outcome = (
-        "This means we can reject the hypothesis which states the "
-        "coefficients in the model do not describe the data."
-    )
+    comment_outcome = "This means we can reject the hypothesis which states the " "coefficients in the model do not describe the data."
 elif res.pvalues[1] > 0.05:
     comment_outcome = (
-        "This means we can don't have sufficient evidence "
-        "to reject the hypothesis ehich states the "
-        "coefficients in the model do not describe the data."
+        "This means we can don't have sufficient evidence " "to reject the hypothesis ehich states the " "coefficients in the model do not describe the data."
     )
 
 print(
@@ -185,9 +180,7 @@ def test_normality(data: pd.Series):
     }
     for name, test in tests.items():
         res = test(pdf.ndvi)
-        print(
-            f"{name} test statistic is ", f"{res.statistic:.4f} with a p-value of {res.pvalue:.4f}"
-        )
+        print(f"{name} test statistic is ", f"{res.statistic:.4f} with a p-value of {res.pvalue:.4f}")
         if res.pvalue > 0.05:
             print(
                 "As the p-value is > 0.05, we accept the null hypothesis ",

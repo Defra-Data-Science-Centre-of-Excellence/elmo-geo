@@ -60,14 +60,7 @@ def process_ndvi_cloud_prob(dataset: str, inc_tci: bool = False) -> xr.Dataset:
     # reproject 60m and 20m bands to 10m resolution
     ds["cloud_prob"] = ds["cloud_prob"].rio.reproject_match(ds["red"])
     ds["cloud_prob"] = ds["cloud_prob"].astype("float64") / 100.0  # cloud prob to float 0-1
-    ds = dict(
-        (
-            (k, set_nodata(v, 0).astype("float64") / 10000.0)
-            if k not in ("tci", "cloud_prob")
-            else (k, v)
-        )
-        for k, v in ds.items()
-    )
+    ds = dict(((k, set_nodata(v, 0).astype("float64") / 10000.0) if k not in ("tci", "cloud_prob") else (k, v)) for k, v in ds.items())
 
     # cloud_prob is impossible to separate nodata from 0% so need to get from another band e.g. red
     ds["cloud_prob"].data = xr.where(ds["red"].isnull(), np.nan, ds["cloud_prob"], keep_attrs=True)
@@ -94,13 +87,9 @@ def replace_ndvi_cloud_prob(ds: xr.Dataset, ds_new: xr.Dataset) -> xr.Dataset:
 
 def finally_ndvi_cloud_prob(ds: xr.Dataset) -> xr.Dataset:
     CLOUD_PROB_THRESHOLD = 0.2  # remaining pixels with cloud prob above this will be np.nan
-    remaining_clouds = float(
-        xr.where(ds["cloud_prob"] > CLOUD_PROB_THRESHOLD, 1, 0).sum() / ds["cloud_prob"].size
-    )
+    remaining_clouds = float(xr.where(ds["cloud_prob"] > CLOUD_PROB_THRESHOLD, 1, 0).sum() / ds["cloud_prob"].size)
     LOG.info(f"Remaining clouds: {remaining_clouds:.2%}")
-    ds["ndvi"] = xr.where(
-        ds["cloud_prob"] > CLOUD_PROB_THRESHOLD, np.nan, ds["ndvi"], keep_attrs=True
-    )
+    ds["ndvi"] = xr.where(ds["cloud_prob"] > CLOUD_PROB_THRESHOLD, np.nan, ds["ndvi"], keep_attrs=True)
     return ds
 
 
@@ -195,10 +184,7 @@ def process_ndvi_and_ndsi(dataset: str, inc_tci: bool = False) -> xr.Dataset:
     # reproject 20m bands to 10m resolution
     ds["swir"] = ds["swir"].rio.reproject_match(ds["red"])
 
-    ds = dict(
-        (k, set_nodata(v, 0).astype("float64") / 10000.0) if k not in ("tci") else (k, v)
-        for k, v in ds.items()
-    )
+    ds = dict((k, set_nodata(v, 0).astype("float64") / 10000.0) if k not in ("tci") else (k, v) for k, v in ds.items())
     ds = xr.Dataset(data_vars=ds)
 
     # Calc NDVI and NDSI

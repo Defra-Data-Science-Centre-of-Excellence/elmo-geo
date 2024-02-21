@@ -69,11 +69,7 @@ df_living_england_woodland_points = (
     .withColumn("A_prob", F.when(F.col("A_prob") == 0, 100).otherwise(F.col("A_prob")))
     .withColumn(
         "prob",
-        F.when(A, F.col("A_prob"))
-        .when(B, F.col("B_prob"))
-        .when(A & B, F.col("A_prob") + F.col("B_prob"))
-        .otherwise(0)
-        / 100,
+        F.when(A, F.col("A_prob")).when(B, F.col("B_prob")).when(A & B, F.col("A_prob") + F.col("B_prob")).otherwise(0) / 100,
     )
     .withColumn("area", F.lit(area))
     .select("prob", "area", "geometry")
@@ -125,9 +121,7 @@ fl = df_felling_licences.filter(
 
 
 # National Forest Inventory
-nfi = df_national_forest_inventory.filter(
-    (F.col("COUNTRY") == F.lit("England")) & (F.col("CATEGORY") == F.lit("Woodland"))
-).select(
+nfi = df_national_forest_inventory.filter((F.col("COUNTRY") == F.lit("England")) & (F.col("CATEGORY") == F.lit("Woodland"))).select(
     F.col("IFT_IOA").alias("nfi_cat"),
     F.col("Area_ha").alias("nfi_area"),
     "geometry",
@@ -166,9 +160,7 @@ display(df)
 
 df2 = df.withColumn(
     "geometry",
-    F.expr(
-        "ST_Difference(ST_GeomFromWKB(hex(geometry_left)), ST_Union(ST_GeomFromWKB(hex(geometry_right))))"
-    ),
+    F.expr("ST_Difference(ST_GeomFromWKB(hex(geometry_left)), ST_Union(ST_GeomFromWKB(hex(geometry_right))))"),
 )
 display(df2)
 

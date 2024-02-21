@@ -37,11 +37,7 @@ done_tiles = [
 tiles = [item for item in sentinel_tiles if item not in done_tiles][:6]
 notebook = "02_process_ndvi"
 
-LOG.info(
-    f"The tiles that are selected are: {tiles}\n"
-    f"The years selected are: {years}\n"
-    f"The notebook selected is: {notebook}"
-)
+LOG.info(f"The tiles that are selected are: {tiles}\n" f"The years selected are: {years}\n" f"The notebook selected is: {notebook}")
 
 # COMMAND ----------
 

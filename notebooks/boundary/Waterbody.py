@@ -78,11 +78,7 @@ print(
 
 
 # Drop ST_Points
-sdf_os_water = (
-    sdf_os_water.filter('ST_GeometryType(geometry) != "ST_Point"')
-    .withColumn("geometry", F.expr("EXPLODE(ST_Dump(geometry))"))
-    .transform(re_part)
-)
+sdf_os_water = sdf_os_water.filter('ST_GeometryType(geometry) != "ST_Point"').withColumn("geometry", F.expr("EXPLODE(ST_Dump(geometry))")).transform(re_part)
 
 print(
     "OS Water (no st_points):",
@@ -169,13 +165,15 @@ m_boundary = lambda buf: F.expr(
   ))) AS m_boundary_buf{buf}
 """
 )  # Length of parcel boundary in the above area
-m_water = lambda buf: F.expr(
-    f"""
+m_water = (
+    lambda buf: F.expr(
+        f"""
   ST_Length(ST_MakeValid(ST_Intersection(
     ST_MakeValid(ST_Boundary(geometry_water)),
     ST_MakeValid(ST_Buffer(geometry_parcel, {buf}))
   ))) AS m_water_buf{buf}
 """
+    )
 )  # Length of water-line beside and inside a parcel (all waterbody geometries are polygons, this may be double for water-lines inside or very close to a parcel)
 
 
