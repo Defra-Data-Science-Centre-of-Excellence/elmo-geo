@@ -83,9 +83,14 @@ f"Overlap={a/10_000:,.0f}ha  England={b/10_000:,.0f}ha  Percent={a/b:%}"
 ids0 = df.query(".01<prop").pipe(lambda df: set(df["id_left"]).union(df["id_right"]))
 ids1 = df.query(".99<prop").pipe(lambda df: set(df["id_left"]).union(df["id_right"]))
 
-df2.query("1e-5<prop")["id_left"].nunique(), df2.query(" .01<prop")["id_left"].nunique(), df2.query(
-    " .1 <prop"
-)["id_left"].nunique(), df2.query(" .5 <prop")["id_left"].nunique(), len(ids0), len(ids1)
+(
+    df2.query("1e-5<prop")["id_left"].nunique(),
+    df2.query(" .01<prop")["id_left"].nunique(),
+    df2.query(" .1 <prop")["id_left"].nunique(),
+    df2.query(" .5 <prop")["id_left"].nunique(),
+    len(ids0),
+    len(ids1),
+)
 
 # COMMAND ----------
 
