@@ -1,5 +1,5 @@
 try:
-    from databricks.sdk.runtime import dbutils, spark  # noqa:F401
+    from databricks.sdk.runtime import dbutils, spark
 except Exception:
     ImportWarning("noop dbr")
     from databricks.sdk.core import Config, credentials_provider
@@ -17,5 +17,5 @@ except Exception:
             host="http://localhost",
             cluster_id="x",
             credentials_provider=noop_credentials,
-        )
+        ),
     )

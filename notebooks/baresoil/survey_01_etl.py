@@ -58,7 +58,7 @@ col_names = [
 ]
 survey_df = spark.read.csv(next(files_iter), header=True, inferSchema=True).select(col_names)
 for f in files_iter:
-    survey_df = survey_df.union((spark.read.csv(f, header=True, inferSchema=True).select(col_names)))
+    survey_df = survey_df.union(spark.read.csv(f, header=True, inferSchema=True).select(col_names))
 survey_df = (
     survey_df.withColumnRenamed("Groundcover-QuadratLocation-Latitude", "latitude")
     .withColumnRenamed("Groundcover-QuadratLocation-Longitude", "longitude")
@@ -97,7 +97,7 @@ df = (
             },
             crs=27700,
             geometry="point_geometry",
-        )
+        ),
     )
 )
 
@@ -121,15 +121,15 @@ def get_ndvi(gdf: GeoDataFrame, path_ndvi: str) -> GeoDataFrame:
         raise ValueError("Geometries must be points to lookup NDVI")
     da = rxr.open_rasterio(path_ndvi).squeeze(drop=True)
     if gdf.crs != da.rio.crs.to_epsg():
-        raise ValueError(f"CRS of geometries must manage that of the image. Image is {da.rio.crs.to_epsg()}, " f"geometries are {gdf.crs}")
+        raise ValueError(f"CRS of geometries must manage that of the image. Image is {da.rio.crs.to_epsg()}, geometries are {gdf.crs}")
     return gdf.assign(ndvi=gdf.geometry.map(lambda p: da.sel(x=p.x, y=p.y, method="nearest").values.item()))
 
 
 df = df.groupby("tile", group_keys=False).apply(
     lambda gdf: get_ndvi(
         gdf,
-        path_ndvi=(f"/dbfs/mnt/lab/unrestricted/elm/elmo/baresoil/" f"ndvi/T{gdf.name}-{month_fm}-survey.tif"),
-    )
+        path_ndvi=(f"/dbfs/mnt/lab/unrestricted/elm/elmo/baresoil/ndvi/T{gdf.name}-{month_fm}-survey.tif"),
+    ),
 )
 
 # COMMAND ----------

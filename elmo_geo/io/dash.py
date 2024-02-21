@@ -24,7 +24,7 @@ def create_outpath(f_in: str) -> str:
     """Create an output filepath based on the DASH filepath.
     dash: /dbfs/mnt/base/unrestricted/source_<source>/dataset_<dataset>_<source>/FORMAT_<format>_<source>_<dataset>/SNAPSHOT_<version>/...
     elmo: <FOLDER_STG>/<source>-<dataset>-<version>.parquet/<layer>
-    """  # noqa:E501
+    """
     source = f_in.split("/source_")[1].split("/")[0]
     dataset = f_in.split("/dataset_")[1].split("/")[0]
     version = f_in.split("/SNAPSHOT_")[1].split("/")[0]
@@ -68,18 +68,23 @@ def download_link(path: str) -> str:
     """Returns html for a download link
     Parameters:
         path: Path to the file to be downloaded, must be in the format `/dbfs/` not `dbfs:/`.
+
     Returns:
+    -------
         html for a download link as a string to be shown using the displayHTML
             function: `displayHTML(download_link(path))`.
+
     Note:
+    ----
         This copies the file to `FileStore` - you may want to clean up afterwards!
+
     """
     # filepath must be in the format `/dbfs/` not `dbfs:/`
     # Get filename
     filename = path.split("/")[-1]
     shutil.copyfile(path, f"/dbfs/FileStore/{filename}")
     # Construct download url
-    url = f"https://{spark.conf.get('spark.databricks.workspaceUrl')}/files/{filename}" f"?o={spark.conf.get('spark.databricks.clusterUsageTags.orgId')}"
+    url = f"https://{spark.conf.get('spark.databricks.workspaceUrl')}/files/{filename}?o={spark.conf.get('spark.databricks.clusterUsageTags.orgId')}"
     # Return html snippet
     return f"<a href={url} target='_blank'>Download file: {filename}</a>"
 

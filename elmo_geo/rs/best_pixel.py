@@ -27,7 +27,6 @@ def process_ndvi_cloud_prob(dataset: str, inc_tci: bool = False) -> xr.Dataset:
     Returns:
         A dataset with arrays for `ndvi`, `cloud_prob`, and sometimes `tci`.
     """
-
     LOG.info(f"Processing: {dataset}")
 
     # preprocess bands
@@ -103,7 +102,9 @@ def get_clean_image(
     """Generate a clean dataset for a tile/granule by backfilling other datasets
     Requires injection of at least two dependant functions to process each dataset,
     replace pixels from one with the next, and do some final clean up.
-    Parameters:
+
+    Parameters
+    ----------
         datasets: A list of paths to downloaded Sentinel granules
         process_func: The function to read in each dataset from the path and process it
         replace_func: The function with logic to replace some pixels in the first
@@ -113,6 +114,7 @@ def get_clean_image(
     Returns:
         A dataset with arrays for `ndvi`, and potentially other metrics such as
             `tci` depending on the injected functions.
+
     """
     # sort by the function chosen
     if sorting_algorithm is not None:
@@ -134,16 +136,17 @@ def get_clean_image(
 
 # New functions for NDVI processing
 def process_ndvi_and_ndsi(dataset: str, inc_tci: bool = False) -> xr.Dataset:
-    """
-    Read in required bands and calculate NDVI and NDSI.
-    Parameters:
+    """Read in required bands and calculate NDVI and NDSI.
+
+    Parameters
+    ----------
         dataset: The path of the dataset directory
         inc_tci: Whether or not to include the true color image `tci` - used for
             validation but is slower
     Returns:
         A dataset with arrays for `ndvi`, `ndsi`, and sometimes `tci`.
-    """
 
+    """
     LOG.info(f"Processing: {dataset}")
 
     # preprocess bands
@@ -199,8 +202,7 @@ def replace_ndvi_low_ndsi(
     ds_new: xr.Dataset,
     ndsi_threshold: float = 0.32,
 ) -> xr.Dataset:
-    """
-    Replacing cpotential cloud pixel or null values with next image in the ordered list of dataets.
+    """Replacing cpotential cloud pixel or null values with next image in the ordered list of dataets.
     We are using a threshold here (0.32) to identify if pixels are cloud. We have researched and
     found that the best way to isolate cloud pixel with the NDSI logic is aboutr 30%, we found the
     NDSI value in the proces_ndvi_And_ndsi function and now we are using the threshold to isolate

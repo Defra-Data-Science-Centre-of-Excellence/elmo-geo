@@ -12,8 +12,8 @@ from elmo_geo import LOG
 
 def to_raster(da: DataArray, path: str):
     """Save a DataArray to dbfs e.g. .tif
-    temp file then move it..."""
-
+    temp file then move it...
+    """
     filename = path.split("/")[-1]
     temp_loc = f"/tmp/{filename}"
     da.rio.to_raster(temp_loc)

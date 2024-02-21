@@ -5,14 +5,13 @@
 
 import sedona
 from pyspark.sql import functions as F
-from pyspark.sql import types as T
 
 sedona.register.SedonaRegistrator.registerAll(spark)
 
 import geopandas as gpd
 import matplotlib.pyplot as plt
 import pandas as pd
-from cdap_geo import area, intersection_area, st_join, to_gdf
+from cdap_geo import area, st_join, to_gdf
 
 # COMMAND ----------
 
@@ -150,7 +149,7 @@ for g in wfm_gdf.geometry:
 wfm_ids = sorted(d.values(), key=len, reverse=True)
 
 print(sum(len(v) for v in wfm_ids), wfm_gdf["id_parcel"].nunique())
-wfm_ids = [j for j in wfm_ids if 1 < len(j)]
+wfm_ids = [j for j in wfm_ids if len(j) > 1]
 
 wfm_ids
 

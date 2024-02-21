@@ -34,9 +34,7 @@ import numpy as np
 import pandas as pd
 import rioxarray as rxr
 import seaborn as sns
-import xarray as xr
 from pyspark.sql import functions as F
-from pyspark.sql import types as T
 from pyspark.sql import window as W
 
 # COMMAND ----------
@@ -48,11 +46,7 @@ month_to = f"{year}-02"
 version = "2023_02_07"
 
 path_parcels = f"dbfs:/mnt/lab/unrestricted/elm/sentinel/tiles/{version}/parcels.parquet"
-path_ndvi = "/dbfs/mnt/lab/unrestricted/elm/elmo/baresoil/ndvi/T{tile}-{month_fm}-{month_to}.tif".format(
-    tile=tile,
-    month_fm=month_fm,
-    month_to=month_to,
-)
+path_ndvi = f"/dbfs/mnt/lab/unrestricted/elm/elmo/baresoil/ndvi/T{tile}-{month_fm}-{month_to}.tif"
 
 # COMMAND ----------
 

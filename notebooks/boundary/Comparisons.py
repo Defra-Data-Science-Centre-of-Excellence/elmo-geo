@@ -5,7 +5,6 @@
 
 # COMMAND ----------
 
-from glob import glob
 
 import pandas as pd
 
@@ -55,7 +54,7 @@ pd.DataFrame(
         "Buffer": bufs,
         "Waterbody": [df_water.query(f"ha_water_buf{buf} > 0").shape[0] for buf in bufs],
         "Drain": [df_drain.query(f"ha_water_buf{buf} > 0").shape[0] for buf in bufs],
-    }
+    },
 )
 
 # COMMAND ----------
@@ -68,7 +67,7 @@ hedge = (
         feature="hedge",
         count=lambda df: df[f"sqm_buf{buf}"] > 0,
         hectarage=lambda df: df[f"sqm_buf{buf}"].fillna(0) / 10_000,
-        boundary=lambda df: df[f"m_adj"].fillna(0),
+        boundary=lambda df: df["m_adj"].fillna(0),
     )
     .melt(
         id_vars=["id_parcel", "feature"],
@@ -83,7 +82,7 @@ wall = (
         feature="wall",
         count=lambda df: df[f"sqm_buf{buf}"] > 0,
         hectarage=lambda df: df[f"sqm_buf{buf}"].fillna(0) / 10_000,
-        boundary=lambda df: df[f"m_wall"].fillna(0),
+        boundary=lambda df: df["m_wall"].fillna(0),
     )
     .melt(
         id_vars=["id_parcel", "feature"],
@@ -131,7 +130,7 @@ df_base = pd.concat(
         wall,
         water,
         drain,
-    ]
+    ],
 )
 
 df_base
@@ -155,7 +154,7 @@ farm_type = parcel.merge(df_farm, how="left").assign(
             7: "LFA Grazing",
             8: "Lowland Grazing",
             9: "Mixed",
-        }
+        },
     )
     .fillna("None"),
 )[["id_parcel", "category_group", "category"]]
@@ -181,7 +180,7 @@ df_cats = pd.concat(
         farm_type,
         priority_habitat,
         priority_habitat_low,
-    ]
+    ],
 )
 
 df_cats

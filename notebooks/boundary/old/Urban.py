@@ -45,15 +45,19 @@ AvailableLayers = [
 
 
 class OSTileProvider(TileProvider):
-    """
-    Main class for using OS MapsAPI
+    """Main class for using OS MapsAPI
     (https://osdatahub.os.uk/docs/wmts/)
+
     Args:
+    ----
         key (str): A valid OS MapsAPI key.
         layer (str): A valid Layer Name in the format <Style>_<projection>, Default "Light_3857", Options `osdatahub.MapsAPI.AvailableLayers`.
+
     Returns:
+    -------
         OSTileProvider (TileProvider)
-    Examples
+
+    Examples:
     --------
     AvailableLayers
     >>> from osdatahub.MapsAPI import AvailableLayers
@@ -65,6 +69,7 @@ class OSTileProvider(TileProvider):
     >>> ctx.add_basemap(ax=ax, provider=provider)
     Folium
     >>> m = folium.Map(tile=provider)
+
     """
 
     def __init__(self, key: str, layer: str = "Light_3857", **kwargs):
@@ -111,7 +116,6 @@ df.assign(geometry=df.geometry.simplify(10)).explore()
 
 from cdap_geo.sedona import st_join, st_load, st_register
 from pyspark.sql import functions as F
-from pyspark.sql import types as T
 
 st_register()
 
@@ -179,7 +183,6 @@ display(df)
 
 # COMMAND ----------
 
-import numpy as np
 import seaborn as sns
 
 # COMMAND ----------

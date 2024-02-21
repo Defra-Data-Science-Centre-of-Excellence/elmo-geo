@@ -194,7 +194,7 @@ boundary_use = lambda sdf, use, buf: (
             """EXPLODE(Array(
     Array(ST_Intersection(geometry_boundary, tmp), ST_Point(1,1)),
     Array(ST_Difference(geometry_boundary, tmp), ST_Point(0,0))
-  ))"""
+  ))""",
         ),
     )
     .withColumn("geometry_boundary", F.expr("tmp[0]"))
@@ -235,8 +235,8 @@ sdf_type = (
                 7: "LFA Grazing",
                 8: "Lowland Grazing",
                 9: "Mixed",
-            }
-        )
+            },
+        ),
     )
     .pipe(spark.createDataFrame)
 )
@@ -263,7 +263,7 @@ sdf_evast = pd.DataFrame(
     {
         "id_parcel": pd.read_csv(f_evast)["x"],
         "woodland": True,
-    }
+    },
 ).pipe(spark.createDataFrame)
 
 sdf_peat = spark.read.parquet(sf_peat).select(

@@ -3,7 +3,6 @@
 
 # COMMAND ----------
 
-import os
 
 import geopandas as gpd
 import osmnx as ox
@@ -93,7 +92,7 @@ gdf = pd.concat(
     [
         gdf_from_product("Topography_TopographicArea"),
         gdf_from_product("Topography_TopographicLine"),
-    ]
+    ],
 )
 
 

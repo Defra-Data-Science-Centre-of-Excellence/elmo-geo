@@ -28,9 +28,8 @@ import urllib3
 urllib3.disable_warnings()
 ox.settings.requests_kwargs = {"verify": False}
 
-from cdap_geo.sedona import st_join, st_load, st_register, st_valid
+from cdap_geo.sedona import st_join, st_register
 from pyspark.sql import functions as F
-from pyspark.sql import types as T
 
 st_register()
 

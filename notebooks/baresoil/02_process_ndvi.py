@@ -45,7 +45,7 @@ datasets
 
 # COMMAND ----------
 
-LOG.info(f"The tile selected: {tile}\n" f"The year selected: {year}\n" f"The number of images to combine will be: {n_datasets_filtered}")
+LOG.info(f"The tile selected: {tile}\nThe year selected: {year}\nThe number of images to combine will be: {n_datasets_filtered}")
 
 # COMMAND ----------
 

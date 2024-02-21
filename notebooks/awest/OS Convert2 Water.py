@@ -3,7 +3,6 @@ import os
 from glob import glob
 from math import ceil
 
-import geopandas as gpd
 import pandas as pd
 import pyogrio
 from geopandas.io.arrow import _geopandas_to_arrow
@@ -21,7 +20,7 @@ def batch_file(f_in, f_out, batch):
             "i": range(ceil(n / batch)),
             "batch": batch,
             "status": False,
-        }
+        },
     )
 
 

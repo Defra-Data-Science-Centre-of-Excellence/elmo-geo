@@ -125,18 +125,18 @@ df = pd.concat(
             {
                 "filepath": list(set(success)),
                 "is_damaged": False,
-            }
+            },
         ),
         pd.DataFrame(
             {
                 "filepath": list(set(todo)),
                 "is_damaged": True,
-            }
+            },
         ),
-    ]
+    ],
 )
 
-df.to_csv(f"/dbfs/tmp/damaged_gpkg_@3s.csv")
+df.to_csv("/dbfs/tmp/damaged_gpkg_@3s.csv")
 display(df)
 
 # COMMAND ----------

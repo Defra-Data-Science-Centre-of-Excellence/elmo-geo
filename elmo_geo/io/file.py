@@ -17,7 +17,7 @@ def st_simplify(col: str = "geometry", precision: int = 1) -> F.expr:
     """
     null = 'ST_GeomFromText("Point EMPTY")'
     expr = f"ST_MakeValid(COALESCE({col}, {null}))"
-    expr = f"ST_MakeValid(ST_PrecisionReduce(ST_MakeValid(ST_SimplifyPreserveTopology({expr}, {10**-precision})), {precision}))"  # noqa:E501
+    expr = f"ST_MakeValid(ST_PrecisionReduce(ST_MakeValid(ST_SimplifyPreserveTopology({expr}, {10**-precision})), {precision}))"
     expr = f"{expr} AS {col}"
     return F.expr(expr)
 
@@ -49,7 +49,7 @@ def to_gpq_partitioned(sdf: SparkDataFrame, sf: str, **kwargs):
         sindexes: {sdf.select("sindex").distinct().count()}
         Partitions: {sdf.rdd.getNumPartitions()}
         Files: {count_files(dbfs(sf, False))}
-    """
+    """,
     )
     return sdf
 

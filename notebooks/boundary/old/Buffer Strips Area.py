@@ -44,9 +44,8 @@ from datetime import datetime
 import geopandas as gpd
 import matplotlib.pyplot as plt
 import pandas as pd
-from cdap_geo.sedona import st, st_join, st_load, st_register
+from cdap_geo.sedona import st_join, st_load, st_register
 from pyspark.sql import functions as F
-from pyspark.sql import types as T
 
 st_register()
 
@@ -72,7 +71,7 @@ def buf_area(left: str, buf: int, right: str = "geometry_parcel"):
       )),
       ST_MakeValid({right})
     ))
-  )"""
+  )""",
     )
 
 
@@ -111,7 +110,7 @@ sdf_hedge = (
         st_load("geometry").alias("geometry"),
     )
     .groupBy("id_parcel")
-    .agg(F.expr(f"ST_Union_Aggr(geometry)").alias("geometry"))
+    .agg(F.expr("ST_Union_Aggr(geometry)").alias("geometry"))
     .repartition(200, "id_parcel")
 )
 
@@ -134,11 +133,11 @@ sdf_water = (
             sdf_parcel.withColumn("geometry", F.expr(f"ST_Buffer(geometry, {WATERBODY_BUFFER_LINK})")),
             right,
             rsuffix="",
-        )
+        ),
     )
     .groupBy("id_parcel")
     .agg(
-        F.expr(f"ST_Union_Aggr(geometry)").alias("geometry"),
+        F.expr("ST_Union_Aggr(geometry)").alias("geometry"),
         F.first("geometry_left").alias("geometry_left"),
     )
     .withColumn(
@@ -257,28 +256,28 @@ df_parcel = to_gdf(
     df.select(
         "id_parcel",
         F.expr("ST_AsBinary(geometry_parcel)").alias("geometry"),
-    )
+    ),
 )
 
 df_hedge = to_gdf(
     df.select(
         "id_parcel",
         F.expr("ST_AsBinary(geometry_hedge)").alias("geometry"),
-    )
+    ),
 )
 
 df_buf4 = to_gdf(
     df.select(
         "id_parcel",
         F.expr("ST_AsBinary(ST_Buffer(geometry_hedge, 2))").alias("geometry"),
-    )
+    ),
 )
 
 df_buf12 = to_gdf(
     df.select(
         "id_parcel",
         F.expr("ST_AsBinary(ST_Buffer(geometry_hedge, 8))").alias("geometry"),
-    )
+    ),
 )
 
 fig, axs = plt.subplots(1, 4, figsize=(16, 9))

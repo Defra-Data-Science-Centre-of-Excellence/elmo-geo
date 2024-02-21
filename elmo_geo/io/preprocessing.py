@@ -7,11 +7,14 @@ from elmo_geo.utils.types import SparkSession
 
 def transform_crs(df: gpd.GeoDataFrame, target_epsg: int = 27700) -> gpd.GeoDataFrame:
     """If the CRS is not equal to the target CRS, then transform it.
-    Parameters:
+
+    Parameters
+    ----------
         df: A geopandas dataframe
         target_epsg: The European Petroleum Survey Group (ESPG) code for the target CRS
     Returns:
         The transformed geopandas dataframe
+
     """
     epsg = df.crs.to_epsg()
     if epsg != target_epsg:
@@ -44,7 +47,7 @@ def make_geometry_valid(df: gpd.GeoDataFrame, geometry_col: str = "geometry") ->
     """
     invalid = ~df[geometry_col].is_valid
     if invalid.sum() > 0:
-        LOG.info(f"Found {invalid.sum():,.0f} invalid geometries of " f"{invalid.size:,.0f} ({invalid.mean():.2%})")
+        LOG.info(f"Found {invalid.sum():,.0f} invalid geometries of {invalid.size:,.0f} ({invalid.mean():.2%})")
         df[geometry_col] = df[geometry_col].map(make_valid)
         assert df[geometry_col].is_valid.all()
         LOG.info("Fixed invlid geometries")
@@ -54,11 +57,14 @@ def make_geometry_valid(df: gpd.GeoDataFrame, geometry_col: str = "geometry") ->
 
 def geometry_to_wkb(df: gpd.GeoDataFrame, geometry_col: str = "geometry") -> gpd.GeoDataFrame:
     """Convert shapely geometry column to Well Known Binary (WKB)
-    Parameters:
+
+    Parameters
+    ----------
         df: A geopandas dataframe
         geometry_col: The name of the geometry column, must be in Shapely format
     Returns:
         The dataframe with the `geometry_col` converted to WKB
+
     """
     df["binary"] = df[geometry_col].to_wkb()
     df = df.drop(columns=geometry_col)
@@ -80,15 +86,17 @@ def preprocess_dataset(
     """Pre-process a geospatial file for further analysis. Reads the file, explodes
         multigeometries into separate rows, transforms the CRS, cleans up the columns,
         makes the geometry valid, converts the geometry to wkb and caches to parquet.
-    Parameters:
+
+    Parameters
+    ----------
         path_read: The geospatial file to be read by geopandas
         path_write: The parquet file to be written
         target_epsg: The European Petroleum Survey Group (ESPG) code for the target CRS
         keep_cols: The column names to keep
         rename_cols: A dictionary of column name changes
         geometry_col: The name of the geometry column, must be in Shapely format
-    """
 
+    """
     df = (
         gpd.read_file(path_read, **kwargs)
         .explode(index_parts=False)

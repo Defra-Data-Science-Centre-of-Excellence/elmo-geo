@@ -68,8 +68,11 @@ def get_tile(filename: str) -> str:
 def extract_sentinel_data(filename: str):
     """Extract a zipped Sentinel file from FileStore to
     /mnt/lab/unrestricted/sentinel/
-    Parameters:
+
+    Parameters
+    ----------
         filename: Name of the zip file
+
     """
     FROM = "/dbfs/FileStore/"
     TO = "/dbfs/mnt/lab/unrestricted/sentinel/"
@@ -152,15 +155,19 @@ def find_sentinel_data(
         discrim: A 15-character date string (the Product Discriminator) used to distinguish between
             different end user products from the same datatake. Depending on the instance, the time
             in this field can be earlier or slightly later than the datatake sensing time.
+
     Returns:
+    -------
         A list of datasets in the folder that match the criteria (full paths)
+
     Note:
+    ----
         See https://sentinel.esa.int/web/sentinel/user-guides/sentinel-2-msi/naming-convention
             for more information on the naming conventions.
-    """
 
+    """
     DEFAULT_LOCATION = "/dbfs/mnt/lab/unrestricted/sentinel"
-    PATH_STR = ".*{mission}_{product}_{year}{month}{day}T{hour}{minute}{second}" "_{pdgs}_{orbit}_T{tile}_{discrim}.SAFE"
+    PATH_STR = ".*{mission}_{product}_{year}{month}{day}T{hour}{minute}{second}_{pdgs}_{orbit}_T{tile}_{discrim}.SAFE"
 
     if root_dir is None:
         root_dir = DEFAULT_LOCATION
@@ -240,10 +247,13 @@ def find_sentinel_qi_data(data_path: str, name: str) -> str:
         data_path: The data directory to search for the bands (e.g. that returned from a
             `find_sentinel_data()` call)
         name: The required data name (e.g. MSK_CLDPRB_20m, MSK_CLDPRB_60m)
-    Returns:
+
+    Returns
+    -------
         The path of the required jp2 file
     Raises:
         FileNotFoundError: When no file with a name of data is found
+
     """
     resolution_dirs = glob.glob(f"{data_path}/GRANULE/*/QI_DATA/{name}.jp2")
     try:
@@ -260,8 +270,11 @@ def find_sentinel_bands(data_path: str, resolution: int, band: str = None, type:
         resolution: The resolution in metres (e.g. 10, 20, 60).
         band: The required band (e.g. B1, B2, B3, B4, B5, B6, B7, B8, B8A, B9, B10, B11,
             B12, AOT, TIC, WVP, SCL). Regex may be used to subset the bands.
-    Returns:
+
+    Returns
+    -------
         A list of bands in the folder that match the criteria (full paths)
+
     """
     if band is None:
         band = r"[0-9]{2}"
@@ -299,7 +312,7 @@ def get_image_usefulness(path: str) -> float:
     Returns:
         The proportion of the image that is estimated to have bare soil or vegetation
     """
-    with open(path + "/MTD_MSIL2A.xml", "r") as f:
+    with open(path + "/MTD_MSIL2A.xml") as f:
         data = f.read()
     data = BeautifulSoup(data, "xml")
     vegetation = float(data.find("VEGETATION_PERCENTAGE").contents[0])
@@ -315,13 +328,16 @@ def get_image_radiometric_offset(path: str, band: str) -> float:
     A radimetric offset of -1000 was applied to PB04.00 products (post Jan 25th 2022).
     This offset results in lower NDVI values and so we want to reverse it to align with previous
     data.
-    Parameters:
+
+    Parameters
+    ----------
         path: full path to the dataset folder
         band: a string reprasenting the band in question
     Returns:
         The integer offset applied to the reflectance values
+
     """
-    with open(path + "/MTD_MSIL2A.xml", "r") as f:
+    with open(path + "/MTD_MSIL2A.xml") as f:
         data = f.read()
     band = str(int(re.findall(r"\d+", "B08")[0]))
     tag = BeautifulSoup(data, "xml").find("BOA_ADD_OFFSET", band_id=band)
@@ -359,7 +375,7 @@ def plot_products(df: gpd.GeoDataFrame, title: str, show_nmax: int = 0) -> Tuple
     fig, ax = plt.subplots(figsize=(20, 6))
     fig.suptitle(title, x=0.12, ha="left", fontsize="xx-large")
     fig.supxlabel(
-        "Note: Usefulness is defined as the sum of estimated vegetation and" "bare ground cover in %.",
+        "Note: Usefulness is defined as the sum of estimated vegetation andbare ground cover in %.",
         x=0.12,
         ha="left",
     )
@@ -446,8 +462,7 @@ def plot_products(df: gpd.GeoDataFrame, title: str, show_nmax: int = 0) -> Tuple
 
 
 def sort_datasets_by_time(datasets: List[str]) -> List[str]:
-    """
-    Sorting datasets by highest date to lowest date.
+    """Sorting datasets by highest date to lowest date.
     Using regex, we have isolated is date in yyyymmdd form from the file name
     """
     regex = r"(?!_)([0-9]{8})(T[0-9]{6}_N?)"

@@ -55,12 +55,10 @@ def sjoin_sql(
     right.select('id_right', 'geometry')
     """
     # Distance Join
-    if 0 < distance:
+    if distance > 0:
         sdf_left = sdf_left.withColumn(
             "geometry",
-            F.expr(
-                f"ST_MakeValid(ST_Buffer(ST_MakeValid(ST_Buffer(geometry, 0.001)), {distance-0.001}))"  # noqa:E501
-            ),
+            F.expr(f"ST_MakeValid(ST_Buffer(ST_MakeValid(ST_Buffer(geometry, 0.001)), {distance-0.001}))"),
         )
     # Add to SQL
     sdf_left.createOrReplaceTempView("left")
@@ -71,7 +69,7 @@ def sjoin_sql(
         SELECT id_left, id_right
         FROM left JOIN right
         ON ST_Intersects(left.geometry, right.geometry)
-    """
+    """,
     )  # nothing else does a quadtree, consider a manual partition rect tree?
     # Remove from SQL
     spark.sql("DROP TABLE left")
@@ -94,26 +92,26 @@ def sjoin_partenv(
     sdf_left.withColumn("_pl", F.spark_partition_id()).createOrReplaceTempView("left")
     sdf_right.withColumn("_pr", F.spark_partition_id()).createOrReplaceTempView("right")
     sdf = spark.sql(
-        """
+        f"""
         SELECT left.* EXCEPT (_pl), right.* EXCEPT (_pr)
         FROM (
             SELECT l._pl, r._pr
             FROM (
-                SELECT _pl, ST_Envelope_Aggr(geometry{0}) AS bbox
+                SELECT _pl, ST_Envelope_Aggr(geometry{lsuffix}) AS bbox
                 FROM left
                 GROUP BY _pl
             ) AS l
             JOIN (
-                SELECT _pr, ST_Envelope_Aggr(geometry{1}) AS bbox
+                SELECT _pr, ST_Envelope_Aggr(geometry{rsuffix}) AS bbox
                 FROM right
                 GROUP BY _pr
             ) AS r
-            ON {2}(l.bbox, r.bbox)
+            ON {method}(l.bbox, r.bbox)
         )
         JOIN left USING (_pl)
         JOIN right USING (_pr)
-        WHERE {2}(left.geometry{0}, right.geometry{1})
-    """.format(lsuffix, rsuffix, method)
+        WHERE {method}(left.geometry{lsuffix}, right.geometry{rsuffix})
+    """,
     )
     spark.sql("DROP TABLE left")
     spark.sql("DROP TABLE right")

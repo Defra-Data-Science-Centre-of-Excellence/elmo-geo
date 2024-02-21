@@ -5,7 +5,7 @@ Used to ingest data from sources like Natural England and Office of National Sta
 
 from datetime import date
 
-import esridump  # noqa:F401
+import esridump
 import requests
 
 # from elmo_geo.io.datasets import append_to_catalogue
@@ -44,7 +44,7 @@ def ingest_esri(url, name=None):
 
 
 def esri_datasets(url):
-    """get a dict containing all avaiable datasets"""
+    """Get a dict containing all avaiable datasets"""
     r = requests.get(url + "?pjson").json()
     return dict(
         sorted(
@@ -54,8 +54,8 @@ def esri_datasets(url):
                     "function": "get_esri",
                 }
                 for d in r["services"]
-            }.items()
-        )
+            }.items(),
+        ),
     )
 
 

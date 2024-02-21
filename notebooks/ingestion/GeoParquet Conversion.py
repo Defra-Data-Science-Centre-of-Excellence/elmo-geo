@@ -6,7 +6,6 @@
 
 # COMMAND ----------
 
-from os import mkdir
 
 from geopandas import read_file
 from pyogrio import read_info

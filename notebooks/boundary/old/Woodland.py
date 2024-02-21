@@ -6,7 +6,6 @@
 import os
 
 import geopandas as gpd
-from cdap_geo.os import OSTileProvider
 
 key = "WxgUdETn6cy58WZkfwZ7wdMVLlt5eDsX"
 

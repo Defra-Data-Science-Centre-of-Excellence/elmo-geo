@@ -3,11 +3,8 @@
 
 # COMMAND ----------
 
-import cdap_geo
 import osdatahub
 import pandas as pd
-from pyspark.sql import functions as F
-from pyspark.sql import types as T
 
 key = "WxgUdETn6cy58WZkfwZ7wdMVLlt5eDsX"
 

@@ -3,10 +3,8 @@
 
 # COMMAND ----------
 
-import geopandas as gpd
-import numpy as np
 import pandas as pd
-from cdap_geo import buffer, pointify, st_join, st_register, to_gdf, to_sdf, unary_union
+from cdap_geo import buffer, pointify, st_join, st_register, unary_union
 from pyspark.sql import functions as F
 from pyspark.sql import types as T
 
@@ -88,7 +86,7 @@ display(df_living_england_woodland_points)
 # DBTITLE 1,Select Columns
 # Living England
 df_living_england_woodland_points = spark.read.parquet(
-    "dbfs:/mnt/lab/unrestricted/geoparquet/natural_england/living_england_woodland_points/2022_10_10.parquet/"
+    "dbfs:/mnt/lab/unrestricted/geoparquet/natural_england/living_england_woodland_points/2022_10_10.parquet/",
 )
 le = df_living_england_woodland_points.select("area", "geometry")
 
@@ -115,8 +113,8 @@ fl = df_felling_licences.filter(
             #'Single Tree',
             "Clear Fell (Unconditional)",
             "Sel Fell/Thin (Unconditional)",
-        ]
-    )
+        ],
+    ),
 ).select("geometry")
 
 

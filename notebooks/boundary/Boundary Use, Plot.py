@@ -118,7 +118,7 @@ df = pd.DataFrame(
         "Shapefile": timeit(lambda: gdf.to_file("/databricks/driver/tmp.shp")),
         "Zipped Shapefile": timeit(lambda: gdf.to_file("/databricks/driver/tmp.shp.zip")),
         "GeoParquet": timeit(lambda: gdf.to_parquet("/databricks/driver/tmp.parquet")),
-    }
+    },
 ).melt()
 df.to_feather("/dbfs/tmp/awest/write.feather")
 
@@ -130,7 +130,7 @@ df = pd.DataFrame(
         "Shapefile": timeit(lambda: gpd.read_file("/databricks/driver/tmp.shp")),
         "Zipped Shapefile": timeit(lambda: gpd.read_file("/databricks/driver/tmp.shp.zip")),
         "GeoParquet": timeit(lambda: gpd.read_parquet("/databricks/driver/tmp.parquet")),
-    }
+    },
 ).melt()
 df.to_feather("/dbfs/tmp/awest/read.feather")
 

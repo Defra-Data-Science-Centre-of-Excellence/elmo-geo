@@ -19,7 +19,6 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import pyspark.sql.functions as F
 import seaborn as sns
-from pyspark.sql import SparkSession
 from pyspark.sql.functions import col, concat, expr
 
 from elmo_geo import LOG, register
@@ -123,7 +122,7 @@ df_feature.createOrReplaceTempView("feature")
         SELECT parcels.id_parcel, feature.tile, parcels.geometry, feature.geometry AS geom_feature
         FROM parcels, feature
         WHERE ST_INTERSECTS(parcels.geometry, feature.geometry)
-        """
+        """,
     )
     .repartition("tile")
     .withColumn("area_parcel", expr("ST_Area(geometry)"))

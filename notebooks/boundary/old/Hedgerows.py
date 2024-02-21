@@ -69,7 +69,6 @@
 # COMMAND ----------
 
 import matplotlib.pyplot as plt
-import pandas as pd
 from pyspark.sql import functions as F
 from sedona.register import SedonaRegistrator
 
@@ -207,7 +206,7 @@ display(
     .withColumn("geometry", st_fromwkb("wkb_geometry", 27700))
     .select(
         F.sum(F.expr("ST_Length(geometry)")).alias("m_efa_unjoined"),
-    )
+    ),
 )
 
 display(
@@ -215,20 +214,20 @@ display(
         F.sum("m_length").alias("m_efa"),
         F.sum("m_adj"),
         F.sum("m_adj_elg"),
-    )
+    ),
 )
 
 display(
     spark.read.parquet(sf_osm_hedge).select(
         F.sum(F.expr("ST_Length(geometry)")).alias("m_osm"),
-    )
+    ),
 )
 
 
 display(
     sdf_osm_hedge.select(
         F.sum(F.expr("ST_Length(geometry)")).alias("m_osmp"),
-    )
+    ),
 )
 
 # COMMAND ----------

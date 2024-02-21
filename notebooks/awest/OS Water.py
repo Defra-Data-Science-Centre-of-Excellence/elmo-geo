@@ -36,7 +36,7 @@ def write(features, path, offset):
 
 def get_offset():
     if os.path.exists(path + "offset"):
-        with open(path + "offset", "r") as f:
+        with open(path + "offset") as f:
             offset = int(f.read())
     else:
         offset = 0

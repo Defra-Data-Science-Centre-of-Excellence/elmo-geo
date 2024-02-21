@@ -84,7 +84,7 @@ def plot_bare_soil_dist(data: pd.Series, title: str, dark: bool = False) -> Tupl
         fontsize="large",
     )
     fig.supxlabel(
-        f"Source: Sentinel-2 L2A imagery. " f"No data for {na_count:,.0f} of {count:,.0f} parcels ({na_count/count:.3%}) " "due to cloud cover",
+        f"Source: Sentinel-2 L2A imagery. No data for {na_count:,.0f} of {count:,.0f} parcels ({na_count/count:.3%}) " "due to cloud cover",
         x=0.09,
         y=-0.04,
         ha="left",
@@ -98,21 +98,23 @@ def plot_bare_soil_dist(data: pd.Series, title: str, dark: bool = False) -> Tupl
 def plot_parcel_bare_soil(parcel_id: str, geometry: gpd.GeoSeries, ds: xr.Dataset, dark: bool = False) -> Tuple[plt.Figure, List[plt.Axes]]:
     """Produce a figure of subplots for a parcel showing its calculated NVDI, bare soil
         classification, true colour image, and cloud probability.
-    Parameters:
+
+    Parameters
+    ----------
         parcel_id: The id of the parcel for the plot's title
         geometry: The geometry of the parcel
         ds: The dataset of arrays including `ndvi`, `tci` and `cloud_prob`
     Returns:
         A tuple of the matplotlib figure and axes objects
-    """
 
+    """
     ds_parcel = xr.Dataset(
         data_vars={
             "ndvi_clipped": ds["ndvi"].rio.clip(geometry, all_touched=False),
             "ndvi_boxed": ds["ndvi"].rio.clip_box(*geometry.bounds.iloc[0].tolist()),
             "cloud_prob": ds["cloud_prob"].rio.clip_box(*geometry.bounds.iloc[0].tolist()),
             "tci": ds["tci"].rio.clip_box(*geometry.bounds.iloc[0].tolist()),
-        }
+        },
     )
     ds_parcel["vegetated"] = xr.where(ds_parcel["ndvi_clipped"] > 0.25, 1, 0)
     ds_parcel["vegetated"] = xr.where(ds_parcel["ndvi_clipped"].isnull(), ds_parcel["ndvi_clipped"], ds_parcel["vegetated"])

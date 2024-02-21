@@ -82,7 +82,7 @@ def plot_bare_soil_dist(data: pd.Series, title: str, dark: bool = False) -> Tupl
         fontsize="large",
     )
     fig.supxlabel(
-        f"Source: Sentinel-2 L2A imagery. " f"No data for {na_count:,.0f} of {count:,.0f} parcels " f"({na_count/count:.3%}) due to cloud cover",
+        f"Source: Sentinel-2 L2A imagery. No data for {na_count:,.0f} of {count:,.0f} parcels ({na_count/count:.3%}) due to cloud cover",
         x=0.09,
         y=-0.04,
         ha="left",

@@ -8,7 +8,6 @@ from datetime import datetime
 
 import geopandas as gpd
 import matplotlib.pyplot as plt
-import pandas as pd
 from cdap_geo.sedona import F, st, st_register
 
 st_register()
@@ -148,7 +147,7 @@ pprint(
         "Margin not Hedgerow": (f"{n1:,.0f} m", f"{n1/p:.0%}"),
         "Margin not Waterbody": (f"{n2:,.0f} m", f"{n2/p:.0%}"),
         "Margin not Either": (f"{n3:,.0f} m", f"{n3/p:.0%}"),
-    }
+    },
 )
 
 # COMMAND ----------

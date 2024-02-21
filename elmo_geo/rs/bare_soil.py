@@ -23,7 +23,6 @@ def summarise_bare_soil(df: pd.DataFrame):
         df: A pandas dataframe of bare soil data with an `output`
             column holding the percentages
     """
-
     LOG.info(f"Mean: {df.output.mean():.3%}")
     LOG.info(f"Median: {df.output.median():.3%}")
     LOG.info(f"Min: {df.output.min():.3%}")
@@ -141,7 +140,7 @@ def calc_bare_soil_percent(
         da = rxr.open_rasterio(path_ndvi).squeeze(drop=True)
         if resolution is not None:
             if resolution <= 10:
-                raise ValueError("resolution must be a number higher than 10 in metres. " "Value provided: {resolution}.")
+                raise ValueError("resolution must be a number higher than 10 in metres. Value provided: {resolution}.")
             da = da.rio.reproject(dst_crs=da.rio.crs, resolution=resolution)
         # TODO: Think this is overwriting nan which is not intended! Check!
         da.data = xr.where(da < ndvi_thresh, 1.0, 0.0, keep_attrs=True)

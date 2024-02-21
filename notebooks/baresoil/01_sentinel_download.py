@@ -58,7 +58,7 @@ print(df.groupby(["useful", "downloaded"])["filename"].count())
 
 fig, _ = plot_products(
     df,
-    title=(f"Sentinel 2A products for tile {tile} between {date_from:%d/%m/%Y}" f" and {date_to:%d/%m/%Y}"),
+    title=(f"Sentinel 2A products for tile {tile} between {date_from:%d/%m/%Y} and {date_to:%d/%m/%Y}"),
     show_nmax=top_n,
 )
 fig.show()

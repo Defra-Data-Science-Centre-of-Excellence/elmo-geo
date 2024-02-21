@@ -122,7 +122,7 @@ LOG.info(f"Rows: {count:,.0f}")
 # check proportion is never > 1 - if it is might mean duplicate features int he dataset
 proportion_over_1 = (result.toPandas().proportion > 1.0).sum()
 if proportion_over_1:
-    LOG.info(f"{proportion_over_1:,.0f} parcels have a feature " f"overlapping by a proportion > 1 ({proportion_over_1/count:%})")
+    LOG.info(f"{proportion_over_1:,.0f} parcels have a feature overlapping by a proportion > 1 ({proportion_over_1/count:%})")
 result.display()
 
 # COMMAND ----------

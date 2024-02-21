@@ -6,9 +6,9 @@ Download and Ingest OSM data, there are 2 options;
   - [Britain and Ireland](https://download.geofabrik.de/europe/britain-and-ireland-latest.osm.pbf)
 2. Download specific tags and bounds using Overpass API
   - Try: [tag finder](https://tagfinder.osm.ch/)
-"""  # noqa:E501
+"""
 
-import osmnx  # noqa:F401
+import osmnx
 
 # from elmo_geo.io.datasets import append_to_catalogue
 from elmo_geo.io.file import convert_file
@@ -35,7 +35,9 @@ def ingest_osm_pbf(url, name):
 def ingest_osm_overpass(place, tags, name):
     """Download OSM data using Overpass API, place and tags
     Try: [tag finder](https://tagfinder.osm.ch/)
-    Example
+
+    Example:
+    -------
     ```py
     today = datetime.now().strfmt('%Y_%m_%d')
     ingest_osm_overpass(
@@ -44,6 +46,7 @@ def ingest_osm_overpass(place, tags, name):
         name = 'osm-dry_stone_wall-{today}',
     )
     ```
+
     """
     osmnx.settings.cache_folder = "/databricks/driver/"
     osmnx.settings.timeout = 600
