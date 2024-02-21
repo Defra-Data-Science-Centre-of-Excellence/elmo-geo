@@ -5,24 +5,23 @@ dbx:
 	dbx sync repo -d elmo-geo-dev
 
 freeze:
-	pip freeze --exclude-editable | grep -v "file:///" > requirements.txt
+	pip-compile -qU --all-extras
 
 fmt:
-	isort .
-	black .
+	ruff check . --fix
+	ruff format .
 
 verify:
-	isort --check-only --skip-glob=./notebooks/ .
-	black --diff --check --force-exclude "^/notebooks/" .
-	flake8 . --extend-exclude=notebooks/
-	flake8 notebooks --builtins=spark,sc,dbutils,display,displayHTML
+	ruff check .
+	ruff format . --check
 	PYTHONDONTWRITEBYTECODE=1 pytest -m without_cluster  -v -p no:cacheprovider .
 
 clean:
+	ruff clean
+	py3clean .
 	rm -r \
 		.pytest_cache/ \
 		build/ \
 		*.egg-info \
 		2> /dev/null || true
-	py3clean .
 	clear

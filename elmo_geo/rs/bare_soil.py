@@ -23,7 +23,6 @@ def summarise_bare_soil(df: pd.DataFrame):
         df: A pandas dataframe of bare soil data with an `output`
             column holding the percentages
     """
-
     LOG.info(f"Mean: {df.output.mean():.3%}")
     LOG.info(f"Median: {df.output.median():.3%}")
     LOG.info(f"Min: {df.output.min():.3%}")
@@ -60,17 +59,13 @@ def plot_bare_soil_distribution(vals: pd.Series, name: str = "", assumption: flo
     ax.annotate(f"Mean: {mean:.0%}", xy=(mean + 0.01, 0.05))
     if assumption is not None:
         ax.axvline(x=assumption, color="black", ls="-.")
-        ax.annotate(
-            f"Current assumption\nfor payment rate: {assumption:.0%}", xy=(assumption + 0.01, 0.05)
-        )
+        ax.annotate(f"Current assumption\nfor payment rate: {assumption:.0%}", xy=(assumption + 0.01, 0.05))
 
     xpos = 0.05
     nulls = vals.isnull().sum()
     count = vals.size
     name += " "
-    fig.suptitle(
-        f"Distribution of {name} by bare soil cover", x=xpos, y=0.92, ha="left", fontsize="large"
-    )
+    fig.suptitle(f"Distribution of {name} by bare soil cover", x=xpos, y=0.92, ha="left", fontsize="large")
     fig.supxlabel(
         "Source: Sentinel-2 L2A imagery, November 2021 - February 2022.\n"
         f"No data for {nulls:,.0f} of {count:,.0f} fields ({nulls/count:.3%}) "
@@ -145,10 +140,7 @@ def calc_bare_soil_percent(
         da = rxr.open_rasterio(path_ndvi).squeeze(drop=True)
         if resolution is not None:
             if resolution <= 10:
-                raise ValueError(
-                    "resolution must be a number higher than 10 in metres. "
-                    "Value provided: {resolution}."
-                )
+                raise ValueError("resolution must be a number higher than 10 in metres. Value provided: {resolution}.")
             da = da.rio.reproject(dst_crs=da.rio.crs, resolution=resolution)
         # TODO: Think this is overwriting nan which is not intended! Check!
         da.data = xr.where(da < ndvi_thresh, 1.0, 0.0, keep_attrs=True)

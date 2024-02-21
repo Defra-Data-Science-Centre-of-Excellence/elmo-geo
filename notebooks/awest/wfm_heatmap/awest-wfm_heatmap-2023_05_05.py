@@ -88,13 +88,7 @@ for res in [100_000, 10_000, 1000, 100]:
         .withColumn("y", F.expr(f"FLOOR(y/{res})*{res}"))
         .withColumn("count", F.lit(1))
         .groupby("x", "y")
-        .agg(
-            *[
-                F.expr(f"NVL(SUM(`{col}`), 0) AS `{col}`")
-                for col in ["count", *df.columns]
-                if col not in ["x", "y"]
-            ]
-        )
+        .agg(*[F.expr(f"NVL(SUM(`{col}`), 0) AS `{col}`") for col in ["count", *df.columns] if col not in ["x", "y"]])
         .withColumn("geometry", F.expr(f"ST_PolygonFromEnvelope(x, y, x+{res}, y+{res})"))
         .withColumn(
             "geometry",

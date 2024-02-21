@@ -11,9 +11,7 @@ def load_missing(column: str) -> callable:
     # return F.expr(f'CASE WHEN {column} IS NULL THEN {null} ELSE {column} END')
 
 
-def load_geometry(
-    column: str = "geometry", from_crs: str = "EPSG:27700", encoding_fn: str = "ST_GeomFromWKB"
-) -> callable:
+def load_geometry(column: str = "geometry", from_crs: str = "EPSG:27700", encoding_fn: str = "ST_GeomFromWKB") -> callable:
     """Load Geometry
     Useful for ingesting data.
     Missing

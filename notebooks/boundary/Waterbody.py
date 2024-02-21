@@ -28,7 +28,6 @@ from math import ceil
 
 from elmo_geo.io.io2 import load_missing
 from elmo_geo.st.st import join
-from elmo_geo.utils.types import SparkDataFrame
 
 
 def re_part(sdf):
@@ -78,11 +77,7 @@ print(
 
 
 # Drop ST_Points
-sdf_os_water = (
-    sdf_os_water.filter('ST_GeometryType(geometry) != "ST_Point"')
-    .withColumn("geometry", F.expr("EXPLODE(ST_Dump(geometry))"))
-    .transform(re_part)
-)
+sdf_os_water = sdf_os_water.filter('ST_GeometryType(geometry) != "ST_Point"').withColumn("geometry", F.expr("EXPLODE(ST_Dump(geometry))")).transform(re_part)
 
 print(
     "OS Water (no st_points):",
@@ -150,7 +145,8 @@ print(
 
 bufs = 4, 6, 8, 10, 12
 sdf_geom = spark.read.parquet(sf_geom).withColumn(
-    "geometry_water", F.expr("ST_MakeValid(ST_Buffer(geometry_water, 0.001))")
+    "geometry_water",
+    F.expr("ST_MakeValid(ST_Buffer(geometry_water, 0.001))"),
 )  # LineStrings into Polygons for ST_Union_Aggr
 
 ha_water = lambda buf: F.expr(
@@ -159,7 +155,7 @@ ha_water = lambda buf: F.expr(
     ST_MakeValid(ST_Buffer(geometry_water, {buf})),
     ST_MakeValid(geometry_parcel)
   )))/10000 AS ha_water_buf{buf}
-"""
+""",
 )  # Area of buffered water in a parcel (ha not sqm)
 m_boundary = lambda buf: F.expr(
     f"""
@@ -167,15 +163,17 @@ m_boundary = lambda buf: F.expr(
     ST_MakeValid(ST_Buffer(geometry_water, {buf})),
     ST_MakeValid(ST_Boundary(geometry_parcel))
   ))) AS m_boundary_buf{buf}
-"""
+""",
 )  # Length of parcel boundary in the above area
-m_water = lambda buf: F.expr(
-    f"""
+m_water = (
+    lambda buf: F.expr(
+        f"""
   ST_Length(ST_MakeValid(ST_Intersection(
     ST_MakeValid(ST_Boundary(geometry_water)),
     ST_MakeValid(ST_Buffer(geometry_parcel, {buf}))
   ))) AS m_water_buf{buf}
-"""
+""",
+    )
 )  # Length of water-line beside and inside a parcel (all waterbody geometries are polygons, this may be double for water-lines inside or very close to a parcel)
 
 

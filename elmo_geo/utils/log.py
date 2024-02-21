@@ -1,4 +1,4 @@
-""" Pretty logger to be imported anywhere."""
+"""Pretty logger to be imported anywhere."""
 
 import logging
 import os

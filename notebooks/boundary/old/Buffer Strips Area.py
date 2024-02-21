@@ -44,9 +44,8 @@ from datetime import datetime
 import geopandas as gpd
 import matplotlib.pyplot as plt
 import pandas as pd
-from cdap_geo.sedona import st, st_join, st_load, st_register
+from cdap_geo.sedona import st_join, st_load, st_register
 from pyspark.sql import functions as F
-from pyspark.sql import types as T
 
 st_register()
 
@@ -72,7 +71,7 @@ def buf_area(left: str, buf: int, right: str = "geometry_parcel"):
       )),
       ST_MakeValid({right})
     ))
-  )"""
+  )""",
     )
 
 
@@ -80,9 +79,7 @@ def buf_area(left: str, buf: int, right: str = "geometry_parcel"):
 
 # DBTITLE 1,Filepaths
 f_wfm = "/dbfs/mnt/lab/unrestricted/DSMT/LEEP/whole_farm_model/2022_07_27.feather"
-sf_hedge = (
-    "dbfs:/mnt/lab/unrestricted/geoparquet/rural_payments_agency/efa_hedges/2022_06_24.parquet"
-)
+sf_hedge = "dbfs:/mnt/lab/unrestricted/geoparquet/rural_payments_agency/efa_hedges/2022_06_24.parquet"
 sf_parcel = "dbfs:/mnt/lab/unrestricted/geoparquet/rural_payments_agency/reference_parcels/2021_03_16.parquet"
 sf_os = "dbfs:/mnt/lab/unrestricted/geoparquet/ordnance_survey/rivers_canals_streams_vector-WatercourseLink/2021_03_16.parquet"
 sf_osm = "dbfs:/mnt/lab/unrestricted/geoparquet/osm/england_water/2023-01-17.parquet"
@@ -93,11 +90,7 @@ sf = f"dbfs:/mnt/lab/unrestricted/DSMT/gis/buffer_strips/{today}.parquet"
 # COMMAND ----------
 
 # DBTITLE 1,Join Geometries
-sdf_wfm = (
-    pd.read_feather(f_wfm)[["id_business", "id_parcel"]]
-    .pipe(spark.createDataFrame)
-    .repartition(200, "id_parcel")
-)
+sdf_wfm = pd.read_feather(f_wfm)[["id_business", "id_parcel"]].pipe(spark.createDataFrame).repartition(200, "id_parcel")
 
 
 sdf_parcel = (
@@ -117,7 +110,7 @@ sdf_hedge = (
         st_load("geometry").alias("geometry"),
     )
     .groupBy("id_parcel")
-    .agg(F.expr(f"ST_Union_Aggr(geometry)").alias("geometry"))
+    .agg(F.expr("ST_Union_Aggr(geometry)").alias("geometry"))
     .repartition(200, "id_parcel")
 )
 
@@ -137,16 +130,14 @@ sdf_water = (
     )
     .transform(
         lambda right: st_join(
-            sdf_parcel.withColumn(
-                "geometry", F.expr(f"ST_Buffer(geometry, {WATERBODY_BUFFER_LINK})")
-            ),
+            sdf_parcel.withColumn("geometry", F.expr(f"ST_Buffer(geometry, {WATERBODY_BUFFER_LINK})")),
             right,
             rsuffix="",
-        )
+        ),
     )
     .groupBy("id_parcel")
     .agg(
-        F.expr(f"ST_Union_Aggr(geometry)").alias("geometry"),
+        F.expr("ST_Union_Aggr(geometry)").alias("geometry"),
         F.first("geometry_left").alias("geometry_left"),
     )
     .withColumn(
@@ -217,9 +208,7 @@ df = (
 
 
 fig, ax = plt.subplots(1, figsize=(9, 9))
-df["geometry_parcel"].plot(ax=ax, color="darkgoldenrod", alpha=0.6, edgecolor="darkgoldenrod").set(
-    title="BNG: NY9170-NY9271"
-)
+df["geometry_parcel"].plot(ax=ax, color="darkgoldenrod", alpha=0.6, edgecolor="darkgoldenrod").set(title="BNG: NY9170-NY9271")
 df["geometry_hedge"].plot(ax=ax, color="C2")
 df["geometry_water"].plot(ax=ax, color="C0")
 ax.axis("off")
@@ -261,36 +250,34 @@ display(spark.read.parquet(sf))
 import matplotlib.pyplot as plt
 from cdap_geo import to_gdf
 
-df = spark.read.parquet(sf_geo).filter(
-    F.col("id_parcel").isin(["SE12659143", "TL73394704", "SE92216981", "ST18041438"])
-)
+df = spark.read.parquet(sf_geo).filter(F.col("id_parcel").isin(["SE12659143", "TL73394704", "SE92216981", "ST18041438"]))
 
 df_parcel = to_gdf(
     df.select(
         "id_parcel",
         F.expr("ST_AsBinary(geometry_parcel)").alias("geometry"),
-    )
+    ),
 )
 
 df_hedge = to_gdf(
     df.select(
         "id_parcel",
         F.expr("ST_AsBinary(geometry_hedge)").alias("geometry"),
-    )
+    ),
 )
 
 df_buf4 = to_gdf(
     df.select(
         "id_parcel",
         F.expr("ST_AsBinary(ST_Buffer(geometry_hedge, 2))").alias("geometry"),
-    )
+    ),
 )
 
 df_buf12 = to_gdf(
     df.select(
         "id_parcel",
         F.expr("ST_AsBinary(ST_Buffer(geometry_hedge, 8))").alias("geometry"),
-    )
+    ),
 )
 
 fig, axs = plt.subplots(1, 4, figsize=(16, 9))

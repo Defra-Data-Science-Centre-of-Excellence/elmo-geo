@@ -23,7 +23,7 @@ def write(features, path, offset):
 
 def get_offset():
     if os.path.exists(path + "offset"):
-        with open(path + "offset", "r") as f:
+        with open(path + "offset") as f:
             offset = int(f.read())
     else:
         offset = 0
@@ -81,13 +81,7 @@ def spark_read_geojsons(path, subset=[]):
 
     filepaths = glob(path + "*.geojson")
     schema = spark.createDataFrame(read(filepaths[0])).schema
-    return (
-        DataFrame({"filepath": filepaths})
-        .pipe(spark.createDataFrame)
-        .repartition("filepath")
-        .groupby("filepath")
-        .applyInPandas(read_udf, schema)
-    )
+    return DataFrame({"filepath": filepaths}).pipe(spark.createDataFrame).repartition("filepath").groupby("filepath").applyInPandas(read_udf, schema)
 
 
 # COMMAND ----------

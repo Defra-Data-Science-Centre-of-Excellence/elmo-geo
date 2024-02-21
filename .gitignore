@@ -6,7 +6,6 @@
 # Manual
 !/.github/workflows/verify.yaml
 !/.vscode/settings.json
-!/.flake8
 !/data/catalogue.json
 !/data/*.csv
 

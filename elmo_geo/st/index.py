@@ -56,11 +56,7 @@ def centroid_index(sdf: SparkDataFrame, grid: SparkDataFrame) -> SparkDataFrame:
 
 
 def chipped_index(sdf: SparkDataFrame, grid: SparkDataFrame) -> SparkDataFrame:
-    return (
-        sdf.transform(sjoin, grid, lsuffix="")
-        .withColumn("geometry", F.expr("ST_Intersection(geometry, geometry_right)"))
-        .drop("geometry_right")
-    )
+    return sdf.transform(sjoin, grid, lsuffix="").withColumn("geometry", F.expr("ST_Intersection(geometry, geometry_right)")).drop("geometry_right")
 
 
 def sindex(

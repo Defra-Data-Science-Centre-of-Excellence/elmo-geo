@@ -23,7 +23,7 @@ f_ph = "/dbfs/mnt/lab/unrestricted/elm/elmo/priority_habitats/output.feather"
 df_wfm = pd.read_feather(f_wfm)[["id_business", "id_parcel", "ha_parcel_uaa"]]
 df_ph = pd.read_feather(f_ph)[["id_parcel", "Main_Habit", "confidence", "proportion"]]
 df = df_wfm.merge(df_ph).assign(
-    ha=lambda df: (df["ha_parcel_uaa"] * (0.1 < df["proportion"])).replace(0, np.NAN),
+    ha=lambda df: (df["ha_parcel_uaa"] * (df["proportion"] > 0.1)).replace(0, np.NAN),
     ha_ph=lambda df: df["ha_parcel_uaa"] * df["proportion"],
     count=1,
     log_ha=lambda df: np.log10(df["ha"]),
@@ -47,7 +47,7 @@ df_means = pd.DataFrame(
         "Mean Parcel Area": df.groupby("Main_Habit")["ha"].mean(),
         "Mean Parcel Count per Business": df_ph.groupby("Main_Habit")["count"].mean(),
         "Mean Business Habitat Area": df_ph.groupby("Main_Habit")["ha_ph"].mean(),
-    }
+    },
 ).reset_index()
 
 display(df_means)

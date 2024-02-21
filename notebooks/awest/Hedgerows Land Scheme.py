@@ -75,5 +75,5 @@ display(
         F.expr("m_adj * (1-p) AS m_hedge_adj_grassland"),
     )
     .groupby()
-    .sum()
+    .sum(),
 )

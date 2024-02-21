@@ -60,12 +60,7 @@ df = (
 
 LOG.info(f"Dataset has {df.size:,.0f} rows")
 LOG.info(f"Dataset has the following columns: {df.columns.tolist()}")
-(
-    spark.createDataFrame(df)
-    .repartition(n_partitions)
-    .write.format("parquet")
-    .save(dataset.path_polygons.format(version=version), mode="overwrite")
-)
+(spark.createDataFrame(df).repartition(n_partitions).write.format("parquet").save(dataset.path_polygons.format(version=version), mode="overwrite"))
 LOG.info(f"Saved preprocessed dataset to {dataset.path_polygons.format(version=version)}")
 
 # COMMAND ----------
@@ -127,10 +122,7 @@ LOG.info(f"Rows: {count:,.0f}")
 # check proportion is never > 1 - if it is might mean duplicate features int he dataset
 proportion_over_1 = (result.toPandas().proportion > 1.0).sum()
 if proportion_over_1:
-    LOG.info(
-        f"{proportion_over_1:,.0f} parcels have a feature "
-        f"overlapping by a proportion > 1 ({proportion_over_1/count:%})"
-    )
+    LOG.info(f"{proportion_over_1:,.0f} parcels have a feature overlapping by a proportion > 1 ({proportion_over_1/count:%})")
 result.display()
 
 # COMMAND ----------
@@ -138,12 +130,8 @@ result.display()
 # download
 pandas_df = result.toPandas()
 path_parquet = "/dbfs" + dataset.path_output.format(version=version).replace("output", dataset.name)
-path_feather = "/dbfs" + dataset.path_output.format(version=version).replace(
-    "output", dataset.name
-).replace(".parquet", ".feather")
-path_csv = "/dbfs" + dataset.path_output.format(version=version).replace(
-    "output", dataset.name
-).replace(".parquet", ".csv")
+path_feather = "/dbfs" + dataset.path_output.format(version=version).replace("output", dataset.name).replace(".parquet", ".feather")
+path_csv = "/dbfs" + dataset.path_output.format(version=version).replace("output", dataset.name).replace(".parquet", ".csv")
 
 # convert types
 for col, newtype in dataset.output_coltypes.items():

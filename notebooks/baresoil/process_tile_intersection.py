@@ -19,7 +19,6 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import pyspark.sql.functions as F
 import seaborn as sns
-from pyspark.sql import SparkSession
 from pyspark.sql.functions import col, concat, expr
 
 from elmo_geo import LOG, register
@@ -53,9 +52,7 @@ required_tiles = sentinel_tiles.copy()
 
 # take a look at the raw data
 pdf = pd.read_parquet(path_read)
-gdf = gpd.GeoDataFrame(
-    pdf, geometry=gpd.GeoSeries.from_wkb(pdf["geometry"], crs=target_epsg), crs=target_epsg
-)
+gdf = gpd.GeoDataFrame(pdf, geometry=gpd.GeoSeries.from_wkb(pdf["geometry"], crs=target_epsg), crs=target_epsg)
 gdf
 
 # COMMAND ----------
@@ -72,12 +69,7 @@ df = (
 
 LOG.info(f"Dataset has {df.size:,.0f} rows")
 LOG.info(f"Dataset has the following columns: {df.columns.tolist()}")
-(
-    spark.createDataFrame(df)
-    .repartition(n_partitions)
-    .write.format("parquet")
-    .save(tiles.path_polygons.format(version=version), mode="overwrite")
-)
+(spark.createDataFrame(df).repartition(n_partitions).write.format("parquet").save(tiles.path_polygons.format(version=version), mode="overwrite"))
 LOG.info(f"Saved preprocessed dataset to {tiles.path_polygons.format(version=version)}")
 
 # COMMAND ----------
@@ -130,7 +122,7 @@ df_feature.createOrReplaceTempView("feature")
         SELECT parcels.id_parcel, feature.tile, parcels.geometry, feature.geometry AS geom_feature
         FROM parcels, feature
         WHERE ST_INTERSECTS(parcels.geometry, feature.geometry)
-        """
+        """,
     )
     .repartition("tile")
     .withColumn("area_parcel", expr("ST_Area(geometry)"))
@@ -160,9 +152,7 @@ pandas_df.sort_values("proportion", ascending=False).head(5)
 # COMMAND ----------
 
 # count number of proprtions less than 1
-pandas_df["bins"] = pd.cut(
-    pandas_df["proportion"], [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]
-)
+pandas_df["bins"] = pd.cut(pandas_df["proportion"], [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1])
 proportion_df = pandas_df.groupby(by="bins").count()
 proportion_df
 

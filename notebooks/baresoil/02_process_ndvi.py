@@ -45,11 +45,7 @@ datasets
 
 # COMMAND ----------
 
-LOG.info(
-    f"The tile selected: {tile}\n"
-    f"The year selected: {year}\n"
-    f"The number of images to combine will be: {n_datasets_filtered}"
-)
+LOG.info(f"The tile selected: {tile}\nThe year selected: {year}\nThe number of images to combine will be: {n_datasets_filtered}")
 
 # COMMAND ----------
 
@@ -80,9 +76,7 @@ to_raster(ndvi, path)
 ndvi = rxr.open_rasterio(path).squeeze()
 sns.set_context("talk")
 fig, ax = plt.subplots(figsize=(12, 12), constrained_layout=True)
-ndvi.plot.imshow(
-    ax=ax, vmin=-1, vmax=1, cmap=sns.color_palette("blend:blue,#FFFFFF,#00A33B", as_cmap=True)
-)
+ndvi.plot.imshow(ax=ax, vmin=-1, vmax=1, cmap=sns.color_palette("blend:blue,#FFFFFF,#00A33B", as_cmap=True))
 ax.set_axis_off()
 ax.set_title("")
 footnote = f"Processed from Sentinel 2 imagery from November {year-1} to February {year}."
