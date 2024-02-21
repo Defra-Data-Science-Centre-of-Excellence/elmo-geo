@@ -1,5 +1,7 @@
 # Databricks notebook source
 import os
+import numpy as np
+import matplotlib.pyplot as plt
 import geopandas as gpd
 import rasterio as rio
 from rasterio.features import rasterize
@@ -32,53 +34,51 @@ gdf
 
 # COMMAND ----------
 
-path = '/tmp/wfm-25m-2024_01_26'
+# path = '/tmp/wfm-25m-2024_01_26'
+path = '/dbfs/mnt/lab/unrestricted/elm/wfm/wfm-25m-2024_01_26'
 resolution = 25
 bounds = 0, 0, 700_000, 700_000  # gdf.total_bounds
 
 
-width, height = int((bounds[2] - bounds[0]) / resolution), int((bounds[3] - bounds[1]) / resolution)
-band_names = list(gdf.columns[:-1])
-dtype = 'float32'
+width, height = int((bounds[2] - bounds[0]) / resolution), int((bounds[3] - bounds[1]) / resolution)    
+save_kwargs = dict(
+    crs = gdf.crs,
+    width = width,
+    height = height,
+    transform = from_bounds(*bounds, width, height),
+    count = 1,
+    dtype = 'float32',
+    driver = 'GTiff',
+    compress = 'lzw',
+)
+band_kwargs = dict(
+    merge_alg = rio.enums.MergeAlg.add,
+    all_touched = False,
+    out_shape = (save_kwargs['height'], save_kwargs['width']),
+    transform = save_kwargs['transform'],
+    dtype = save_kwargs['dtype'],
+)
 
-# os.makedirs(path)
-for idx, col in enumerate(band_names, start=1):
+
+os.makedirs(path, exist_ok=True)
+for idx, col in enumerate(gdf.columns[:-1], start=1):
     f = f'{path}/{col}.geotiff'
-    with rio.open(
-        f,
-        'w',
-        driver = 'GTiff',
-        height = height,
-        width = width,
-        count = 1,
-        dtype = dtype,
-        crs = gdf.crs,
-        transform = from_bounds(*bounds, width, height)
-    ) as dst:
-        df = gdf[[col, 'geometry']].query(f'0<{col}')
-        df[col] *= resolution**2 / df.area
-        band = rasterize(
-            zip(df['geometry'], df[col].values),
-            out_shape = (height, width),
-            transform = dst.transform,
-            all_touched = False,
-            merge_alg = rio.enums.MergeAlg('ADD'),
-            dtype = dtype,
-        )
+    df = gdf[[col, 'geometry']].query(f'0<{col}')
+    df[col] *= resolution**2 / df.area
+    band = rasterize(zip(df['geometry'].values, df[col].values), **band_kwargs)
+    with rio.open(f, 'w', **save_kwargs) as dst:
         dst.write(band, 1)
-        print(f'{col}, {df.shape[0]}, {os.path.getsize(f)/2**20:,.1f}MB')
+    print(f'{col}, {df.shape[0]}, {os.path.getsize(f)/2**20:,.1f}MB, {f}')
+    break
 
+
+rs = rio.open(f).read(1)
+plt.imshow(rs)
+np.nanmain(rs), np.nanmax(rs)
 
 # COMMAND ----------
 
 # MAGIC %sh
-# MAGIC cp -r '/tmp/wfm-25m-2024_01_26.tif' '/dbfs/mnt/lab/unrestricted/elm/wfm/wfm-25m-2024_01_26.tif'
+# MAGIC rm -r '/dbfs/mnt/lab/unrestricted/elm/wfm/wfm-25m-2024_01_26'
 # MAGIC cp -r '/tmp/wfm-25m-2024_01_26' '/dbfs/mnt/lab/unrestricted/elm/wfm/wfm-25m-2024_01_26'
-# MAGIC
-# MAGIC du -sh '/dbfs/mnt/lab/unrestricted/elm/wfm/wfm-25m-2024_01_26.tif'
 # MAGIC du -sh '/dbfs/mnt/lab/unrestricted/elm/wfm/wfm-25m-2024_01_26'
-
-# COMMAND ----------
-
-rs = rio.open('/dbfs/mnt/lab/unrestricted/elm/wfm/wfm-25m-2024_01_26/t_peas.geotiff')
-rs
