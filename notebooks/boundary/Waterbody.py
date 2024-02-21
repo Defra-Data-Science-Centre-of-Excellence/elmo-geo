@@ -145,7 +145,8 @@ print(
 
 bufs = 4, 6, 8, 10, 12
 sdf_geom = spark.read.parquet(sf_geom).withColumn(
-    "geometry_water", F.expr("ST_MakeValid(ST_Buffer(geometry_water, 0.001))"),
+    "geometry_water",
+    F.expr("ST_MakeValid(ST_Buffer(geometry_water, 0.001))"),
 )  # LineStrings into Polygons for ST_Union_Aggr
 
 ha_water = lambda buf: F.expr(
