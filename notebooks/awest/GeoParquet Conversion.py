@@ -76,7 +76,7 @@ def batch_file(f_in, f_out, batch, engine):
             "mn": batch_lower,
             "mx": batch_upper,
             "status": False,
-        }
+        },
     ).pipe(spark.createDataFrame)
 
 

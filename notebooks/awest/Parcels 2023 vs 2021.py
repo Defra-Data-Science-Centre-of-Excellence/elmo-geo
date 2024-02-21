@@ -6344,11 +6344,7 @@ df23 = (
 # COMMAND ----------
 
 df = (
-    (
-        df21.join(df23, on="id_parcel", how="outer").select(
-            "id_parcel", F.expr("(sqm_area_2023 - sqm_area_2021)/10000").alias("ha_diff")
-        )
-    )
+    (df21.join(df23, on="id_parcel", how="outer").select("id_parcel", F.expr("(sqm_area_2023 - sqm_area_2021)/10000").alias("ha_diff")))
     .toPandas()
     .set_index("id_parcel")
 )

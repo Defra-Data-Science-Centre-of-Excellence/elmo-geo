@@ -17,7 +17,7 @@ def st_simplify(col: str = "geometry", precision: int = 1) -> F.expr:
     """
     null = 'ST_GeomFromText("Point EMPTY")'
     expr = f"ST_MakeValid(COALESCE({col}, {null}))"
-    expr = f"ST_MakeValid(ST_PrecisionReduce(ST_MakeValid(ST_SimplifyPreserveTopology({expr}, {10**-precision})), {precision}))"  # noqa:E501
+    expr = f"ST_MakeValid(ST_PrecisionReduce(ST_MakeValid(ST_SimplifyPreserveTopology({expr}, {10**-precision})), {precision}))"
     expr = f"{expr} AS {col}"
     return F.expr(expr)
 
@@ -40,11 +40,7 @@ def repartitonBy(sdf: SparkDataFrame, by: str) -> SparkDataFrame:
 
 def to_gpq_partitioned(sdf: SparkDataFrame, sf: str, **kwargs):
     """SparkDataFrame to GeoParquet, partitioned by BNG index"""
-    sdf = (
-        sdf.withColumn("geometry", st_simplify())
-        .transform(sindex)
-        .transform(repartitonBy, "sindex")
-    )
+    sdf = sdf.withColumn("geometry", st_simplify()).transform(sindex).transform(repartitonBy, "sindex")
     sdf.write.format("geoparquet").save(sf, partitionBy="sindex", **kwargs)
     LOG.info(
         f"""
@@ -53,19 +49,14 @@ def to_gpq_partitioned(sdf: SparkDataFrame, sf: str, **kwargs):
         sindexes: {sdf.select("sindex").distinct().count()}
         Partitions: {sdf.rdd.getNumPartitions()}
         Files: {count_files(dbfs(sf, False))}
-    """
+    """,
     )
     return sdf
 
 
 def to_gpq_sorted(sdf: SparkDataFrame, sf: str, **kwargs):
     """SparkDataFrame to GeoParquet, sorted by BNG index"""
-    (
-        sdf.transform(centroid_index, resolution="1km")
-        .sort("sindex")
-        .write.format("geoparquet")
-        .save(sf, **kwargs)
-    )
+    (sdf.transform(centroid_index, resolution="1km").sort("sindex").write.format("geoparquet").save(sf, **kwargs))
 
 
 def to_gpq_zsorted(sdf: SparkDataFrame, sf: str, **kwargs):
@@ -74,9 +65,7 @@ def to_gpq_zsorted(sdf: SparkDataFrame, sf: str, **kwargs):
         sdf.transform(sindex, resolution="1km", index_join=chipped_index)
         .withColumn(
             "geohash",
-            F.expr(
-                'ST_GeoHash(ST_FlipCoordinates(ST_Transform(geometry, "EPSG:27700", "EPSG:4326")))'
-            ),
+            F.expr('ST_GeoHash(ST_FlipCoordinates(ST_Transform(geometry, "EPSG:27700", "EPSG:4326")))'),
         )
         .sort("geohash")
         .write.format("geoparquet")

@@ -13,7 +13,7 @@ fmt:
 
 verify:
 	ruff check .
-	#ruff format . --check
+	ruff format . --check
 	PYTHONDONTWRITEBYTECODE=1 pytest -m without_cluster  -v -p no:cacheprovider .
 
 clean:

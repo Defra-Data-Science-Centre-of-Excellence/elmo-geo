@@ -134,21 +134,16 @@ elif res.params[1] < 0:
     comment_corr = "This means that it has a negative carroelation."
 
 if res.pvalues[1] <= 0.05:
-    comment_outcome = (
-        "This means we can reject the hypothesis which states the "
-        "coefficients in the model do not describe the data."
-    )
+    comment_outcome = "This means we can reject the hypothesis which states the coefficients in the model do not describe the data."
 elif res.pvalues[1] > 0.05:
     comment_outcome = (
-        "This means we can don't have sufficient evidence "
-        "to reject the hypothesis ehich states the "
-        "coefficients in the model do not describe the data."
+        "This means we can don't have sufficient evidence to reject the hypothesis ehich states the coefficients in the model do not describe the data."
     )
 
 print(
     f"All p values for the multiple regression model are significant. Each coefficients p values "
     f"are {res.pvalues[0]:.2%}, {res.pvalues[1]:.2%}, {res.pvalues[2]:.2%}, {res.pvalues[3]:.2%} "
-    f"respectively which means they are all significant to describe the model."
+    f"respectively which means they are all significant to describe the model.",
 )
 
 # COMMAND ----------
@@ -169,7 +164,7 @@ print(
     f"We now will check the correlation coefficent for these variables. We find"
     f"that the kendals coor is {kendall_corr.iloc[0,1]:.3f} {comment_k} We also "
     f"conducted a spearmans correlation coeffienct which is "
-    f"{spearmans_corr.iloc[0,1]:.3f}. {comment_s}"
+    f"{spearmans_corr.iloc[0,1]:.3f}. {comment_s}",
 )
 
 # COMMAND ----------
@@ -185,9 +180,7 @@ def test_normality(data: pd.Series):
     }
     for name, test in tests.items():
         res = test(pdf.ndvi)
-        print(
-            f"{name} test statistic is ", f"{res.statistic:.4f} with a p-value of {res.pvalue:.4f}"
-        )
+        print(f"{name} test statistic is ", f"{res.statistic:.4f} with a p-value of {res.pvalue:.4f}")
         if res.pvalue > 0.05:
             print(
                 "As the p-value is > 0.05, we accept the null hypothesis ",

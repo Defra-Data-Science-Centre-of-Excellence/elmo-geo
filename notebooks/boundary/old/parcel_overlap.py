@@ -5,14 +5,13 @@
 
 import sedona
 from pyspark.sql import functions as F
-from pyspark.sql import types as T
 
 sedona.register.SedonaRegistrator.registerAll(spark)
 
 import geopandas as gpd
 import matplotlib.pyplot as plt
 import pandas as pd
-from cdap_geo import area, intersection_area, st_join, to_gdf
+from cdap_geo import area, st_join, to_gdf
 
 # COMMAND ----------
 
@@ -63,12 +62,7 @@ df
 
 # COMMAND ----------
 
-df2 = (
-    df.groupby(["id_left"])
-    .agg({"area": "first", "area_overlap": "sum", "prop": "sum"})
-    .sort_values("prop", ascending=False)
-    .reset_index()
-)
+df2 = df.groupby(["id_left"]).agg({"area": "first", "area_overlap": "sum", "prop": "sum"}).sort_values("prop", ascending=False).reset_index()
 
 df2
 
@@ -83,15 +77,18 @@ f"Overlap={a/10_000:,.0f}ha  England={b/10_000:,.0f}ha  Percent={a/b:%}"
 ids0 = df.query(".01<prop").pipe(lambda df: set(df["id_left"]).union(df["id_right"]))
 ids1 = df.query(".99<prop").pipe(lambda df: set(df["id_left"]).union(df["id_right"]))
 
-df2.query("1e-5<prop")["id_left"].nunique(), df2.query(" .01<prop")["id_left"].nunique(), df2.query(
-    " .1 <prop"
-)["id_left"].nunique(), df2.query(" .5 <prop")["id_left"].nunique(), len(ids0), len(ids1)
+(
+    df2.query("1e-5<prop")["id_left"].nunique(),
+    df2.query(" .01<prop")["id_left"].nunique(),
+    df2.query(" .1 <prop")["id_left"].nunique(),
+    df2.query(" .5 <prop")["id_left"].nunique(),
+    len(ids0),
+    len(ids1),
+)
 
 # COMMAND ----------
 
-gdf = to_gdf(df_parcels.filter(F.col("id_parcel").isin(ids)), crs=27700).merge(
-    df2[["id_left", "prop"]].rename(columns={"id_left": "id_parcel"})
-)
+gdf = to_gdf(df_parcels.filter(F.col("id_parcel").isin(ids)), crs=27700).merge(df2[["id_left", "prop"]].rename(columns={"id_left": "id_parcel"}))
 
 f = "/dbfs/mnt/lab/unrestricted/DSMT/gis/parcels_that_overlap/2022-11-15.parquet"
 gdf.to_parquet(f)
@@ -152,7 +149,7 @@ for g in wfm_gdf.geometry:
 wfm_ids = sorted(d.values(), key=len, reverse=True)
 
 print(sum(len(v) for v in wfm_ids), wfm_gdf["id_parcel"].nunique())
-wfm_ids = [j for j in wfm_ids if 1 < len(j)]
+wfm_ids = [j for j in wfm_ids if len(j) > 1]
 
 wfm_ids
 
@@ -200,11 +197,7 @@ nybb = get_example("nybb")
 
 df_left = naturalearth_cities.copy().rename(columns={"name": "city"})[["city", "geometry"]]
 
-df_right = (
-    naturalearth_lowres.copy()
-    .rename(columns={"name": "country"})[["country", "geometry"]]
-    .buffer(1)
-)
+df_right = naturalearth_lowres.copy().rename(columns={"name": "country"})[["country", "geometry"]].buffer(1)
 
 df_left.plot(ax=df_right.plot(color="C0"), color="C1")
 

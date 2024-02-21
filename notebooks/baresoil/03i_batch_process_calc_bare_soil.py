@@ -38,11 +38,7 @@ done_tiles = [
 tiles = [item for item in sentinel_tiles if item not in done_tiles][:6]
 notebook = "03_calc_bare_soil_perc"
 
-LOG.info(
-    f"The tiles that are selected are: {tiles}\n"
-    f"The years selected are: {years}\n"
-    f"The notebook selected is: {notebook}"
-)
+LOG.info(f"The tiles that are selected are: {tiles}\nThe years selected are: {years}\nThe notebook selected is: {notebook}")
 
 # COMMAND ----------
 

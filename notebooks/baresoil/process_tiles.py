@@ -29,9 +29,7 @@ df = (
     # filter to get required tiles (over England)
     .loc[lambda df: df.Name.isin(sentinel_tiles)]
     # remove Z coords
-    .assign(
-        geometry=lambda df: df.geometry.map(lambda g: transform(lambda x, y, z=None: (x, y), g))
-    )
+    .assign(geometry=lambda df: df.geometry.map(lambda g: transform(lambda x, y, z=None: (x, y), g)))
     .to_crs(27700)
     .reset_index(drop=True)
 )

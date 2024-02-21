@@ -40,8 +40,7 @@ from sedona.register import SedonaRegistrator
 
 SedonaRegistrator.registerAll(spark)
 
-from cdap_geo import bng
-from cdap_geo.read import listlayers, read_gpkg
+from cdap_geo.read import read_gpkg
 from cdap_geo.sedona import st_load
 
 # COMMAND ----------

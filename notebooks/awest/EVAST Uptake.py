@@ -73,9 +73,9 @@ evast = pd.DataFrame(
     {
         "id_parcel": df_evast["x"],
         "woodland_uptake": True,
-    }
+    },
 )
-lfa = df_lfa.assign(lfa=lambda df: 0 < df["proportion"])[["id_parcel", "lfa"]]
+lfa = df_lfa.assign(lfa=lambda df: df["proportion"] > 0)[["id_parcel", "lfa"]]
 farm_type = (
     df_farm[["id_business", "farm_type"]]
     .assign(
@@ -89,9 +89,9 @@ farm_type = (
                 7: "Livestock",  # LFA Grazing
                 8: "Livestock",  # Lowland Grazing
                 9: "Mixed",
-            }
+            },
         )
-        .fillna("None")
+        .fillna("None"),
     )
     .merge(df_wfm[["id_business", "id_parcel"]])[["id_parcel", "farm_type"]]
 )
@@ -178,8 +178,6 @@ pd.DataFrame(
             "Livestock Farm",
         ],
         "Sum": pd.Series([c, d, e, f, g, h, i, j, k, l]).map("{:,.0f}".format),
-        "Proportion": pd.Series(
-            [c / a, d / b, e / c, f / d, g / c, h / d, i / c, j / d, k / c, l / d]
-        ).map("{:,.1%}".format),
-    }
+        "Proportion": pd.Series([c / a, d / b, e / c, f / d, g / c, h / d, i / c, j / d, k / c, l / d]).map("{:,.1%}".format),
+    },
 ).set_index(["Metric", "Group"]).sort_index()

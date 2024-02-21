@@ -58,9 +58,7 @@ col_names = [
 ]
 survey_df = spark.read.csv(next(files_iter), header=True, inferSchema=True).select(col_names)
 for f in files_iter:
-    survey_df = survey_df.union(
-        (spark.read.csv(f, header=True, inferSchema=True).select(col_names))
-    )
+    survey_df = survey_df.union(spark.read.csv(f, header=True, inferSchema=True).select(col_names))
 survey_df = (
     survey_df.withColumnRenamed("Groundcover-QuadratLocation-Latitude", "latitude")
     .withColumnRenamed("Groundcover-QuadratLocation-Longitude", "longitude")
@@ -68,9 +66,7 @@ survey_df = (
     .select(
         F.col("Farm-FieldRLR_Number").alias("Farm_number"),
         (F.col("Groundcover-BareGround") / 100).alias("bareground_percent_survey"),
-        F.expr('ST_Transform(ST_Point(latitude, longitude), "epsg:4326","epsg:27700")').alias(
-            "geometry"
-        ),
+        F.expr('ST_Transform(ST_Point(latitude, longitude), "epsg:4326","epsg:27700")').alias("geometry"),
     )
 )
 
@@ -79,19 +75,13 @@ survey_df = (
 # getting parcels compatible for survey
 parcel_df = spark.read.parquet(path_parcels)
 
-parcel_df = parcel_df.select("id_parcel", "tile", "geometry").withColumn(
-    "geometry", F.expr("ST_GeomFromWKB(hex(geometry))")
-)
+parcel_df = parcel_df.select("id_parcel", "tile", "geometry").withColumn("geometry", F.expr("ST_GeomFromWKB(hex(geometry))"))
 display(parcel_df)
 
 # COMMAND ----------
 
 # Combining parcel and survey data frames to check points inside each tile
-df = (
-    (st_join(parcel_df, survey_df))
-    .withColumnRenamed("geometry_left", "polygon_geometry")
-    .withColumnRenamed("geometry_right", "point_geometry")
-)
+df = (st_join(parcel_df, survey_df)).withColumnRenamed("geometry_left", "polygon_geometry").withColumnRenamed("geometry_right", "point_geometry")
 df = (
     df.withColumn("polygon_geometry", F.expr("ST_AsBinary(polygon_geometry)"))
     .withColumn("point_geometry", F.expr("ST_AsBinary(point_geometry)"))
@@ -107,7 +97,7 @@ df = (
             },
             crs=27700,
             geometry="point_geometry",
-        )
+        ),
     )
 )
 
@@ -131,23 +121,15 @@ def get_ndvi(gdf: GeoDataFrame, path_ndvi: str) -> GeoDataFrame:
         raise ValueError("Geometries must be points to lookup NDVI")
     da = rxr.open_rasterio(path_ndvi).squeeze(drop=True)
     if gdf.crs != da.rio.crs.to_epsg():
-        raise ValueError(
-            f"CRS of geometries must manage that of the image. Image is {da.rio.crs.to_epsg()}, "
-            f"geometries are {gdf.crs}"
-        )
-    return gdf.assign(
-        ndvi=gdf.geometry.map(lambda p: da.sel(x=p.x, y=p.y, method="nearest").values.item())
-    )
+        raise ValueError(f"CRS of geometries must manage that of the image. Image is {da.rio.crs.to_epsg()}, geometries are {gdf.crs}")
+    return gdf.assign(ndvi=gdf.geometry.map(lambda p: da.sel(x=p.x, y=p.y, method="nearest").values.item()))
 
 
 df = df.groupby("tile", group_keys=False).apply(
     lambda gdf: get_ndvi(
         gdf,
-        path_ndvi=(
-            f"/dbfs/mnt/lab/unrestricted/elm/elmo/baresoil/"
-            f"ndvi/T{gdf.name}-{month_fm}-survey.tif"
-        ),
-    )
+        path_ndvi=(f"/dbfs/mnt/lab/unrestricted/elm/elmo/baresoil/ndvi/T{gdf.name}-{month_fm}-survey.tif"),
+    ),
 )
 
 # COMMAND ----------
@@ -177,18 +159,10 @@ if any(df["ndvi"].isna()):
     # findig parcel data
     num = 0
     na_parcels = list(set([p for p in df_na["id_parcel"]]))
-    df_poly = (
-        df.loc[df["id_parcel"] == na_parcels[num]]
-        .to_crs(epsg=32630)
-        .set_geometry("polygon_geometry")
-        .to_crs(epsg=32630)
-    )
+    df_poly = df.loc[df["id_parcel"] == na_parcels[num]].to_crs(epsg=32630).set_geometry("polygon_geometry").to_crs(epsg=32630)
     parcel_geom = list(set([p for p in df_poly["polygon_geometry"]]))[0]
     # finding polygon data
-    path_ndvi = (
-        "/dbfs/mnt/lab/unrestricted/elm/elmo/baresoil/"
-        f"ndvi/T{df_poly['tile'].unique()[0]}-{month_fm}-survey.tif"
-    )
+    path_ndvi = "/dbfs/mnt/lab/unrestricted/elm/elmo/baresoil/" f"ndvi/T{df_poly['tile'].unique()[0]}-{month_fm}-survey.tif"
     da = rxr.open_rasterio(path_ndvi).squeeze(drop=True)
     raster_clip_box = da.rio.clip_box(*parcel_geom.bounds)
     # visualisation
@@ -247,9 +221,7 @@ pdf.head()
 # adding flag for field type
 pdf["field_type"] = np.where(pdf.arable, "Arable", np.where(pdf.grassland, "Grassland", "Arable"))
 parcel_dict = {id: field for id, field in zip(pdf.index, pdf["field_type"])}
-df_parcel = pd.DataFrame.from_dict(
-    parcel_dict, orient="index", columns=["field_type"]
-).reset_index()
+df_parcel = pd.DataFrame.from_dict(parcel_dict, orient="index", columns=["field_type"]).reset_index()
 df_grouped = df_parcel.groupby("field_type").count()
 df_grouped
 

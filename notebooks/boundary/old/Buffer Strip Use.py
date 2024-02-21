@@ -8,7 +8,6 @@ from datetime import datetime
 
 import geopandas as gpd
 import matplotlib.pyplot as plt
-import pandas as pd
 from cdap_geo.sedona import F, st, st_register
 
 st_register()
@@ -87,25 +86,17 @@ gdf = (
 
 
 fig, ((ax0, ax1), (ax2, ax3)) = plt.subplots(2, 2, figsize=(9, 9))
-gdf["geometry_parcel"].plot(
-    ax=ax0, color="darkgoldenrod", alpha=0.6, edgecolor="darkgoldenrod"
-).set(title="BNG: NY9170-NY9271")
+gdf["geometry_parcel"].plot(ax=ax0, color="darkgoldenrod", alpha=0.6, edgecolor="darkgoldenrod").set(title="BNG: NY9170-NY9271")
 gdf["geometry_hedge"].plot(ax=ax0, color="C2", linewidth=1)
 gdf["geometry_water"].plot(ax=ax0, color="C0", linewidth=1)
 
-gdf["geometry_parcel"].boundary.plot(ax=ax1, color="darkgoldenrod", linewidth=0.2).set(
-    title="Available Boundaries"
-)
-gdf["geometry_3"].explode()[lambda g: g.type != "Point"].plot(
-    ax=ax1, color="darkgoldenrod", linewidth=1, label="Parcel"
-)
+gdf["geometry_parcel"].boundary.plot(ax=ax1, color="darkgoldenrod", linewidth=0.2).set(title="Available Boundaries")
+gdf["geometry_3"].explode()[lambda g: g.type != "Point"].plot(ax=ax1, color="darkgoldenrod", linewidth=1, label="Parcel")
 
 gdf["geometry_hedge"].plot(ax=ax2, color="C2", linewidth=1, label="Hedgerow").set(title="Hedgerows")
 gdf["geometry_1"].plot(ax=ax2, color="darkgoldenrod", linewidth=0.2)
 
-gdf["geometry_water"].plot(ax=ax3, color="C0", linewidth=1, label="Waterbody").set(
-    title="Waterbodies"
-)
+gdf["geometry_water"].plot(ax=ax3, color="C0", linewidth=1, label="Waterbody").set(title="Waterbodies")
 gdf["geometry_2"].plot(ax=ax3, color="darkgoldenrod", linewidth=0.2)
 
 ax0.axis("off")
@@ -156,7 +147,7 @@ pprint(
         "Margin not Hedgerow": (f"{n1:,.0f} m", f"{n1/p:.0%}"),
         "Margin not Waterbody": (f"{n2:,.0f} m", f"{n2/p:.0%}"),
         "Margin not Either": (f"{n3:,.0f} m", f"{n3/p:.0%}"),
-    }
+    },
 )
 
 # COMMAND ----------

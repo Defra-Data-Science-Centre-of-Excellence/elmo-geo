@@ -45,15 +45,19 @@ AvailableLayers = [
 
 
 class OSTileProvider(TileProvider):
-    """
-    Main class for using OS MapsAPI
+    """Main class for using OS MapsAPI
     (https://osdatahub.os.uk/docs/wmts/)
+
     Args:
+    ----
         key (str): A valid OS MapsAPI key.
         layer (str): A valid Layer Name in the format <Style>_<projection>, Default "Light_3857", Options `osdatahub.MapsAPI.AvailableLayers`.
+
     Returns:
+    -------
         OSTileProvider (TileProvider)
-    Examples
+
+    Examples:
     --------
     AvailableLayers
     >>> from osdatahub.MapsAPI import AvailableLayers
@@ -65,12 +69,11 @@ class OSTileProvider(TileProvider):
     >>> ctx.add_basemap(ax=ax, provider=provider)
     Folium
     >>> m = folium.Map(tile=provider)
+
     """
 
     def __init__(self, key: str, layer: str = "Light_3857", **kwargs):
-        assert (
-            layer in AvailableLayers
-        ), f'{layer} not in AvailableLayers: {", ".join(AvailableLayers)}'
+        assert layer in AvailableLayers, f'{layer} not in AvailableLayers: {", ".join(AvailableLayers)}'
         if layer.endswith("_27700"):
             warn(f"{layer}, CRS=EPSG:27700 is not recognised by contextily or folium.")
         super().__init__(
@@ -95,9 +98,7 @@ crs = "EPSG:27700"
 f = f"/dbfs/mnt/lab/unrestricted/elm_data/os/{product}.parquet"
 
 extent = osdatahub.Extent.from_bbox([0, 0, 0.7e6, 1.3e6], crs)
-df = gpd.GeoDataFrame.from_features(
-    osdatahub.FeaturesAPI(key, product, extent).query(100_000)
-).set_crs(crs)
+df = gpd.GeoDataFrame.from_features(osdatahub.FeaturesAPI(key, product, extent).query(100_000)).set_crs(crs)
 df.to_parquet(f)
 
 df
@@ -115,7 +116,6 @@ df.assign(geometry=df.geometry.simplify(10)).explore()
 
 from cdap_geo.sedona import st_join, st_load, st_register
 from pyspark.sql import functions as F
-from pyspark.sql import types as T
 
 st_register()
 
@@ -174,12 +174,8 @@ df = spark.read.parquet(sf_geom_out).select(
     "id_parcel",
     F.expr("ST_Area(geometry_parcel) AS sqm_parcel"),
     F.expr("ST_Area(ST_Intersection(geometry_parcel, geometry_urban)) AS sqm_urban"),
-    F.expr(
-        "ST_Area(ST_Intersection(geometry_parcel, geometry_urban_regional)) AS sqm_urban_regional"
-    ),
-    F.expr(
-        "ST_Area(ST_Intersection(geometry_parcel, geometry_urban_national)) AS sqm_urban_national"
-    ),
+    F.expr("ST_Area(ST_Intersection(geometry_parcel, geometry_urban_regional)) AS sqm_urban_regional"),
+    F.expr("ST_Area(ST_Intersection(geometry_parcel, geometry_urban_national)) AS sqm_urban_national"),
 )
 
 df.write.parquet(sf_out)
@@ -187,7 +183,6 @@ display(df)
 
 # COMMAND ----------
 
-import numpy as np
 import seaborn as sns
 
 # COMMAND ----------

@@ -7,7 +7,6 @@
 
 # COMMAND ----------
 
-from pyspark.sql import functions as F
 
 from elmo_geo.st.st import join
 

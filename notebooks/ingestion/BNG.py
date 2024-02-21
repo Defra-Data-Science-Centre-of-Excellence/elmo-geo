@@ -1,7 +1,6 @@
 # Databricks notebook source
 from pyspark.sql import Window
 from pyspark.sql import functions as F
-from pyspark.sql import types as T
 
 import elmo_geo
 
@@ -44,9 +43,7 @@ sdf = (
     spark.read.parquet(sf)
     .withColumn(
         "sindex",
-        F.expr(
-            'ST_GeoHash(ST_FlipCoordinates(ST_Transform(geometry, "EPSG:27700", "EPSG:4326")), 4)'
-        ),
+        F.expr('ST_GeoHash(ST_FlipCoordinates(ST_Transform(geometry, "EPSG:27700", "EPSG:4326")), 4)'),
     )
     .withColumn(
         "sindex_batch",
