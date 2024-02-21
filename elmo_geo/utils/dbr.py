@@ -2,8 +2,7 @@ try:
     from databricks.sdk.runtime import dbutils, spark  # noqa:F401
 except Exception:
     ImportWarning("noop dbr")
-    from databricks.sdk.core import Config
-    from databricks.sdk.credentials_provider import credentials_provider
+    from databricks.sdk.core import Config, credentials_provider
     from databricks.sdk.dbutils import RemoteDbUtils
     from pyspark.sql import SparkSession
 
