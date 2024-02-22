@@ -358,7 +358,7 @@ rich==12.6.0
     #   dbx
     #   elmo_geo (pyproject.toml)
     #   typer
-rioxarray==0.15.1
+rioxarray==0.13.4
     # via elmo_geo (pyproject.toml)
 rsa==4.9
     # via google-auth
