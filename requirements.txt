@@ -150,7 +150,7 @@ iniconfig==2.0.0
     # via pytest
 ipykernel==6.29.2
     # via elmo_geo (pyproject.toml)
-ipython==8.21.0
+ipython==8.1.1
     # via
     #   elmo_geo (pyproject.toml)
     #   ipykernel
