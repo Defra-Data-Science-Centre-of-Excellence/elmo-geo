@@ -19,7 +19,7 @@ jobs:
       - uses: vemonet/setup-spark@v1
         with:
           spark-version: "3.3.2"
-      - name: Setup
+      - name: Makefile Install
         run: make install
-      - name: Verify
+      - name: Makefile Verify
         run: make verify
