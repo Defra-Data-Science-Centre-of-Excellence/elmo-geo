@@ -22,7 +22,7 @@ freeze:
 verify:
 	ruff check .
 	ruff format . --check
-	pytest . -m "not dbr"
+	pytest .
 
 verify_dbr:
 	ruff check .
