@@ -26,4 +26,3 @@ jobs:
 
       - name: Run verify
         run: make verify
-        continue-on-error: true
