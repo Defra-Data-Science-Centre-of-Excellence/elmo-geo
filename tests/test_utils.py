@@ -1,31 +1,38 @@
 import contextily as ctx
 import matplotlib.pyplot as plt
 import pytest
+import requests
 
 from elmo_geo.utils.ssl import no_ssl_verification
 
 
-@pytest.mark.without_cluster()
-def test_no_ssl_verification_ctx_basemap():
-    try:
-        _, ax = plt.subplots()
-        lims = (446450, 349550, 446650, 349850)
-        ax.set(xlim=[lims[0], lims[2]], ylim=[lims[1], lims[3]])
-        with no_ssl_verification:
-            ctx.add_basemap(
-                ax=ax,
-                source=ctx.providers.Thunderforest.Landscape(
-                    apikey="25a2eb26caa6466ebc5c2ddd50c5dde8", attribution=None
-                ),
-                crs="EPSG:27700",
-            )
-        assert True
-    except Exception:
-        assert False
-
-
-@pytest.mark.without_cluster()
 def test_register():
     from elmo_geo.utils.register import register
 
     assert register()
+
+
+@pytest.mark.without_cluster()
+def test_good_ssl():
+    """This test should pass even if no_ssl_verification fails"""
+    url = "https://sha256.badssl.com/"
+    with no_ssl_verification():
+        requests.get(url)
+
+
+@pytest.mark.without_cluster()
+def test_bad_ssl():
+    """This test should pass only if no_ssl_verification works"""
+    url = "https://expired.badssl.com/"
+    with no_ssl_verification():
+        requests.get(url)
+
+
+@pytest.mark.without_cluster()
+def test_ctx_ssl():
+    """This is a more realistic test, ensuring contextily is also available"""
+    _, ax = plt.subplots()
+    lims = (0, 0, 7e5, 13e5)  # OS BNG extent
+    ax.set(xlim=[lims[0], lims[2]], ylim=[lims[1], lims[3]])
+    with no_ssl_verification():
+        ctx.add_basemap(ax=ax, crs="EPSG:27700")
