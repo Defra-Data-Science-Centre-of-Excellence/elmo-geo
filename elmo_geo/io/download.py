@@ -2,9 +2,7 @@ import os
 import shutil
 import zipfile
 
-from databricks.sdk.runtime import displayHTML
-
-from elmo_geo.utils.dbr import spark
+from elmo_geo.utils.dbr import displayHTML, spark
 
 
 def zip_folder(path_in, path_out):
