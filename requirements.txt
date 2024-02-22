@@ -177,7 +177,7 @@ jupyterlab-widgets==3.0.10
     # via ipywidgets
 kiwisolver==1.4.5
     # via matplotlib
-mapclassify==2.6.1
+mapclassify==2.6.0
     # via elmo_geo (pyproject.toml)
 markupsafe==2.1.5
     # via jinja2
