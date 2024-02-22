@@ -9,6 +9,7 @@ dependencies = [
     "contextily",
     "databricks-cli",
     "databricks-sdk",
+    "python-dotenv",
     "esridump",
     "geopandas",
     "mapclassify",
@@ -54,7 +55,7 @@ build-backend = "setuptools.build_meta"
 
 [tool.pytest.ini_options]
 python_files = "tests/*.py"
-markers = ["without_cluster: test that can be run without being attached to databricks cluster"]
+markers = ["dbr: Requires databricks runtime"]
 
 
 [tool.ruff]
