@@ -3,16 +3,15 @@ import matplotlib.pyplot as plt
 import pytest
 import requests
 
+from elmo_geo.utils.register import register
 from elmo_geo.utils.ssl import no_ssl_verification
 
 
+@pytest.mark.dbr
 def test_register():
-    from elmo_geo.utils.register import register
-
     assert register()
 
 
-@pytest.mark.without_cluster()
 def test_good_ssl():
     """This test should pass even if no_ssl_verification fails"""
     url = "https://sha256.badssl.com/"
@@ -20,7 +19,6 @@ def test_good_ssl():
         requests.get(url)
 
 
-@pytest.mark.without_cluster()
 def test_bad_ssl():
     """This test should pass only if no_ssl_verification works"""
     url = "https://expired.badssl.com/"
@@ -28,7 +26,6 @@ def test_bad_ssl():
         requests.get(url)
 
 
-@pytest.mark.without_cluster()
 def test_ctx_ssl():
     """This is a more realistic test, ensuring contextily is also available"""
     _, ax = plt.subplots()

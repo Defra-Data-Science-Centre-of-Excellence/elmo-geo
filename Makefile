@@ -8,6 +8,10 @@ clean:
 		2> /dev/null || true
 	clear
 
+install:
+	python -m pip install --upgrade pip setuptools wheel
+	pip install -r requirements.txt
+
 fmt:
 	ruff check . --fix
 	ruff format .
@@ -15,14 +19,10 @@ fmt:
 freeze:
 	pip-compile -qU --all-extras
 
-install:
-	python -m pip install --upgrade pip setuptools wheel
-	pip install -r requirements.txt
-
 verify:
 	ruff check .
 	ruff format . --check
-	pytest . -m without_cluster
+	pytest . -m "not dbr"
 
 verify_db:
 	ruff check .
