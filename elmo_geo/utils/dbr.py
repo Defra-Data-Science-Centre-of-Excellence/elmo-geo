@@ -1,21 +1,9 @@
 try:
-    from databricks.sdk.runtime import dbutils, spark
+    from databricks.sdk.runtime import dbutils, display, displayHTML, spark  # noqa:F401
 except Exception:
     ImportWarning("noop dbr")
-    from databricks.sdk.core import Config, credentials_provider
     from databricks.sdk.dbutils import RemoteDbUtils
-    from pyspark.sql import SparkSession
+    from pyspark.sql.session import SparkSession
 
-    spark = SparkSession.builder.getOrCreate()
-
-    @credentials_provider("noop", [])
-    def noop_credentials(_: any):
-        return lambda: {}
-
-    dbutils = RemoteDbUtils(
-        Config(
-            host="http://localhost",
-            cluster_id="x",
-            credentials_provider=noop_credentials,
-        ),
-    )
+    spark, dbutils = SparkSession, RemoteDbUtils
+    display, displayHTML = callable, callable
