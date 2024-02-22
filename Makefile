@@ -24,7 +24,7 @@ verify:
 	ruff format . --check
 	pytest . -m "not dbr"
 
-verify_db:
+verify_dbr:
 	ruff check .
 	ruff format . --check
 	pip-compile -q --all-extras
