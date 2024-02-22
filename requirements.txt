@@ -80,7 +80,7 @@ commonmark==0.9.1
     # via rich
 contextily==1.5.0
     # via elmo_geo (pyproject.toml)
-contourpy==1.2.0
+contourpy==1.1.1
     # via matplotlib
 cookiecutter==2.5.0
     # via dbx
