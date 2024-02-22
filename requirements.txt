@@ -453,7 +453,7 @@ wheel==0.42.0
     # via pip-tools
 widgetsnbextension==4.0.10
     # via ipywidgets
-xarray==2024.2.0
+xarray==2023.1.0
     # via
     #   elmo_geo (pyproject.toml)
     #   rioxarray
