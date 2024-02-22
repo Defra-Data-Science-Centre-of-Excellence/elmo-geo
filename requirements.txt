@@ -181,7 +181,7 @@ mapclassify==2.6.0
     # via elmo_geo (pyproject.toml)
 markupsafe==2.1.5
     # via jinja2
-matplotlib==3.8.3
+matplotlib==3.7.5
     # via
     #   contextily
     #   seaborn
