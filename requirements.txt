@@ -126,7 +126,7 @@ geojson==3.0.1
     #   sentinelsat
 geomet==1.1.0
     # via sentinelsat
-geopandas==0.14.3
+geopandas==0.13.2
     # via
     #   elmo_geo (pyproject.toml)
     #   osmnx
