@@ -203,7 +203,7 @@ networkx==3.1
     # via
     #   mapclassify
     #   osmnx
-numpy==1.26.4
+numpy==1.24.4
     # via
     #   contourpy
     #   elmo_geo (pyproject.toml)
