@@ -82,7 +82,7 @@ contextily==1.5.0
     # via elmo_geo (pyproject.toml)
 contourpy==1.2.0
     # via matplotlib
-cookiecutter==2.6.0
+cookiecutter==2.5.0
     # via dbx
 cryptography==41.0.7
     # via dbx
@@ -136,7 +136,7 @@ gitdb==4.0.11
     # via gitpython
 gitpython==3.1.42
     # via mlflow-skinny
-google-auth==2.28.1
+google-auth==2.28.0
     # via databricks-sdk
 html2text==2020.1.16
     # via sentinelsat
@@ -150,7 +150,7 @@ iniconfig==2.0.0
     # via pytest
 ipykernel==6.29.2
     # via elmo_geo (pyproject.toml)
-ipython==8.22.1
+ipython==8.21.0
     # via
     #   elmo_geo (pyproject.toml)
     #   ipykernel
