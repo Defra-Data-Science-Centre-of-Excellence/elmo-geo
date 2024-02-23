@@ -34,8 +34,8 @@ gdf
 
 # COMMAND ----------
 
-# path = '/tmp/wfm-25m-2024_01_26'
-path = '/dbfs/mnt/lab/unrestricted/elm/wfm/wfm-25m-2024_01_26'
+path = '/tmp/wfm-25m-2024_01_26'
+# path = '/dbfs/mnt/lab/unrestricted/elm/wfm/wfm-25m-2024_01_26'
 resolution = 25
 bounds = 0, 0, 700_000, 700_000  # gdf.total_bounds
 
@@ -69,12 +69,12 @@ for idx, col in enumerate(gdf.columns[:-1], start=1):
     with rio.open(f, 'w', **save_kwargs) as dst:
         dst.write(band, 1)
     print(f'{col}, {df.shape[0]}, {os.path.getsize(f)/2**20:,.1f}MB, {f}')
-    break
+    # break
 
 
 rs = rio.open(f).read(1)
 plt.imshow(rs)
-np.nanmain(rs), np.nanmax(rs)
+np.nanmin(rs), np.nanmax(rs)
 
 # COMMAND ----------
 
