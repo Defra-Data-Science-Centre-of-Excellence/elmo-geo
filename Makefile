@@ -28,4 +28,4 @@ verify_dbr:
 	ruff check .
 	ruff format . --check
 	pip-compile -q --all-extras
-	PYTHONDONTWRITEBYTECODE=1 pytest . -p no:cacheprovider
+	PYTHONDONTWRITEBYTECODE=1 pytest .
