@@ -1,13 +1,22 @@
 import shutil
+import tempfile
 from typing import Dict, Set, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
+import rasterio
 import seaborn as sns
 import xarray as xr
 from xarray.core.dataarray import DataArray
 
 from elmo_geo import LOG
+
+
+def write_raster(data, filename, meta):
+    with tempfile.NamedTemporaryFile(suffix='.tif') as tmp:
+        with rasterio.open(tmp.name, mode='w', **meta) as dst:
+            dst.write(data)
+        shutil.copy(tmp.name, filename)
 
 
 def to_raster(da: DataArray, path: str):
