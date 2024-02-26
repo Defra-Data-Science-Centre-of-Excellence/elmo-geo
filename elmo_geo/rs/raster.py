@@ -13,8 +13,8 @@ from elmo_geo import LOG
 
 
 def write_raster(data, filename, meta):
-    with tempfile.NamedTemporaryFile(suffix='.tif') as tmp:
-        with rasterio.open(tmp.name, mode='w', **meta) as dst:
+    with tempfile.NamedTemporaryFile(suffix=".tif") as tmp:
+        with rasterio.open(tmp.name, mode="w", **meta) as dst:
             dst.write(data)
         shutil.copy(tmp.name, filename)
 
