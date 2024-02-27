@@ -1,7 +1,9 @@
 import geopandas as gpd
+import pytest
 from shapely.geometry import Point
 
 
+@pytest.mark.dbr
 def test_to_sf_geoseries():
     from elmo_geo.io.convert import to_sdf
     from elmo_geo.utils.register import register
@@ -14,6 +16,7 @@ def test_to_sf_geoseries():
     )
 
 
+@pytest.mark.dbr
 def test_to_sf_basegeometry():
     from elmo_geo.io.convert import to_sdf
     from elmo_geo.utils.register import register
