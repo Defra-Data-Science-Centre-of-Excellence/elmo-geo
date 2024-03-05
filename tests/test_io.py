@@ -33,7 +33,7 @@ def test_to_gdf_from_sdf():
         sdf = to_sdf(gdf_in, column=c)
 
         gdf_out = to_gdf(
-            gdf_in,
+            sdf,
             column=c,
             crs=27700,
         )
