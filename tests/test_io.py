@@ -16,7 +16,7 @@ def test_to_sf_geoseries():
     )
 
 @pytest.mark.dbr
-def test_to_gdf_from_sdf_1():
+def test_to_gdf_from_sdf():
     """Tests that the output gdf contains a geometry column.
     Also check that all input columns appear in the output.
 
