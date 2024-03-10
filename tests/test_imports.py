@@ -11,3 +11,6 @@ def test_imports():
     for file in files:
         module = file[:-3].replace("/__init__", "").replace("/", ".")
         importlib.import_module(module)
+
+def test_chipped_index_import():
+    from elmo_geo.st.index import chipped_index
