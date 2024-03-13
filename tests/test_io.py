@@ -15,6 +15,7 @@ def test_to_sf_geoseries():
         crs=27700,
     )
 
+
 @pytest.mark.dbr
 def test_to_gdf_from_sdf():
     """Tests that the output gdf contains a geometry column.
@@ -29,7 +30,7 @@ def test_to_gdf_from_sdf():
     register()
 
     for c in ["geometry", "geometry_test"]:
-        gdf_in = gpd.GeoDataFrame({c:[Point(0,0).wkb], "id":[0]})
+        gdf_in = gpd.GeoDataFrame({c: [Point(0, 0).wkb], "id": [0]})
         sdf = to_sdf(gdf_in, column=c)
 
         gdf_out = to_gdf(
@@ -43,6 +44,7 @@ def test_to_gdf_from_sdf():
 
         # Check input columns contained in output
         assert set(gdf_in.columns) == set(gdf_in.columns).intersection(set(gdf_out.columns))
+
 
 @pytest.mark.dbr
 def test_to_sf_basegeometry():
