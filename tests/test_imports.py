@@ -12,5 +12,9 @@ def test_imports():
         module = file[:-3].replace("/__init__", "").replace("/", ".")
         importlib.import_module(module)
 
+
 def test_chipped_index_import():
     from elmo_geo.st.index import chipped_index
+
+    # make use of chipped_index import to avoid formatting error
+    assert isinstance(chipped_index.__name__, str)
