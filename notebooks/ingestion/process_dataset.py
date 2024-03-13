@@ -12,17 +12,13 @@
 # COMMAND ----------
 
 import geopandas as gpd
-from pyspark.sql.functions import concat, expr
+from pyspark.sql import functions as F
 
 from elmo_geo import LOG, register
 from elmo_geo.datasets.datasets import datasets
-from elmo_geo.io.io import download_link
-from elmo_geo.io.preprocessing import (
-    geometry_to_wkb,
-    make_geometry_valid,
-    transform_crs,
-)
-from elmo_geo.st.joins import spatial_join
+from elmo_geo.io import download_link
+from elmo_geo.io.preprocessing import geometry_to_wkb, make_geometry_valid, transform_crs
+from elmo_geo.st import sjoin
 
 register()
 
@@ -75,40 +71,56 @@ df.display()
 # and subdivide large geometries
 df_parcels = (
     spark.read.parquet(path_parcels)
-    .withColumn("id_parcel", concat("SHEET_ID", "PARCEL_ID"))
-    .withColumn("geometry", expr("ST_GeomFromWKB(wkb_geometry)"))
-    .withColumn("geometry", expr("ST_MakeValid(geometry)"))
-    .withColumn("geometry", expr(f"ST_SimplifyPreserveTopology(geometry, {simplify_tolerence})"))
-    .withColumn("geometry", expr("ST_Force_2D(geometry)"))
-    .withColumn("geometry", expr("ST_MakeValid(geometry)"))
+    .withColumn("id_parcel", F.concat("SHEET_ID", "PARCEL_ID"))
+    .withColumn("geometry", F.expr("ST_GeomFromWKB(wkb_geometry)"))
+    .withColumn("geometry", F.expr("ST_MakeValid(geometry)"))
+    .withColumn("geometry", F.expr(f"ST_SimplifyPreserveTopology(geometry, {simplify_tolerence})"))
+    .withColumn("geometry", F.expr("ST_Force_2D(geometry)"))
+    .withColumn("geometry", F.expr("ST_MakeValid(geometry)"))
     .select("id_parcel", "geometry")
 )
 df_parcels.display()
+
 # COMMAND ----------
 
 # process the feature dataset to ensure validity, simplify the vertices to a tolerence,
 # and subdivide large geometries
 df_feature = (
     spark.read.parquet(dataset.path_polygons.format(version=version))
-    .withColumn("geometry", expr("ST_GeomFromWKB(hex(geometry))"))
-    .withColumn("geometry", expr("ST_MakeValid(geometry)"))
-    .withColumn("geometry", expr(f"ST_SimplifyPreserveTopology(geometry, {simplify_tolerence})"))
-    .withColumn("geometry", expr("ST_Force_2D(geometry)"))
-    .withColumn("geometry", expr("ST_MakeValid(geometry)"))
-    .withColumn("geometry", expr(f"ST_SubdivideExplode(geometry, {max_vertices})"))
+    .withColumn("geometry", F.expr("ST_GeomFromWKB(hex(geometry))"))
+    .withColumn("geometry", F.expr("ST_MakeValid(geometry)"))
+    .withColumn("geometry", F.expr(f"ST_SimplifyPreserveTopology(geometry, {simplify_tolerence})"))
+    .withColumn("geometry", F.expr("ST_Force_2D(geometry)"))
+    .withColumn("geometry", F.expr("ST_MakeValid(geometry)"))
+    .withColumn("geometry", F.expr(f"ST_SubdivideExplode(geometry, {max_vertices})"))
+    
 )
 df_feature.display()
 
 # COMMAND ----------
 
+# join the two datasets and calculate the proportion of the parcel that intersects
+df = (
+    sjoin(df_parcels, df_feature)
+    .withColumn("geometry_intersection", F.expr("ST_Intersection(geometry_left, geometry_right)"))
+    .withColumn("area_left", F.expr("ST_Area(geometry_left)"))
+    .withColumn("area_intersection", F.expr("ST_Area(geometry_intersection)"))
+    .withColumn("proportion", F.col("area_intersection") / F.col("area_left"))
+    .drop("area_left", "area_intersection", "geometry_left", "geometry_right", "geometry_intersection")
+)
+# group up the result and sum the proportions in case multiple polygons with
+# the same attributes intersect with the parcel
+df = (
+    df.groupBy(*[col for col in df.columns if col != "proportion"])
+    .sum("proportion")
+    .withColumn("proportion", F.round("sum(proportion)", 6))
+    .where("proportion > 0")
+    .drop("sum(proportion)")
+)
+
 # intersect the two datasets
-(
-    spatial_join(
-        df_left=df_parcels,
-        df_right=df_feature,
-        spark=spark,
-        num_partitions=10000,
-    )
+(   
+    df
     .write.format("parquet")
     .save(dataset.path_output.format(version=version), mode="overwrite")
 )
@@ -127,6 +139,10 @@ result.display()
 
 # COMMAND ----------
 
+result.toPandas().proportion.describe()
+
+# COMMAND ----------
+
 # download
 pandas_df = result.toPandas()
 path_parquet = "/dbfs" + dataset.path_output.format(version=version).replace("output", dataset.name)
@@ -141,13 +157,25 @@ for col, newtype in dataset.output_coltypes.items():
 pandas_df.to_parquet(path_parquet)
 pandas_df.to_feather(path_feather)
 pandas_df.to_csv(path_csv, index=False)
-displayHTML(download_link(spark, path_parquet))
-displayHTML(download_link(spark, path_feather))
-displayHTML(download_link(spark, path_csv))
+displayHTML(download_link(path_parquet))
+displayHTML(download_link(path_feather))
+displayHTML(download_link(path_csv))
 
 # COMMAND ----------
 
-# check for any issues causing prtoportion > 1
+# check for any issues causing proportion > 1
 pandas_df.sort_values("proportion", ascending=False).head(8)
 
 # COMMAND ----------
+
+import pandas as pd
+df = pd.read_parquet("/dbfs/"+dataset.path_output.format(version=version))
+df
+
+# COMMAND ----------
+
+df.id_parcel.nunique()
+
+# COMMAND ----------
+
+

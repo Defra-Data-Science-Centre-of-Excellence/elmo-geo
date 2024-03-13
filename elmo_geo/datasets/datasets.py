@@ -74,6 +74,22 @@ class Dataset:
         if self.read_kwargs is None:
             self.read_kwargs = {}
 
+alc = Dataset(
+    name="alc",
+    source="defra",
+    versions=[
+        Version(
+            name="unknown",
+            path_read=(
+                "/dbfs/mnt/lab/unrestricted/elm_data/defra/alc/"
+                "ALC_BMV_UNION_Merge_3b.shp"
+            ),
+        ),
+    ],
+    keep_cols=["geometry", "ALC_GRADE"],
+    rename_cols={"ALC_GRADE": "alc"},
+    output_coltypes={"alc": "category"},
+)
 
 national_park = Dataset(
     name="national_park",
@@ -444,6 +460,7 @@ tiles = Dataset(
 
 
 datasets = [
+    alc,
     national_park,
     ramsar,
     peaty_soils,
