@@ -34,49 +34,26 @@ import matplotlib.pyplot as plt
 import contextily as ctx
 import pandas as pd
 import geopandas as gpd
+from glob import glob
 from pyspark.sql import functions as F
 
 import elmo_geo
-from elmo_geo.io import load_sdf, to_gpq, download_link
+from elmo_geo.io import to_gpq, download_link
 from elmo_geo.st import sjoin
+from elmo_geo.utils.settings import FOLDER_STG, FOLDER_ODS
+from elmo_geo.utils.misc import dbfs
 
 elmo_geo.register()
 
-# COMMAND ----------
 
-import requests
-import contextlib
-import warnings
-from urllib3.exceptions import InsecureRequestWarning
-
-
-@contextlib.contextmanager
-def no_ssl_verification():
-    opened_adapters = set()
-    original_merge_environment_settings = requests.Session.merge_environment_settings
-
-    def merge_environment_settings(self, url, proxies, stream, verify, cert):
-        opened_adapters.add(self.get_adapter(url))
-
-        settings = original_merge_environment_settings(self, url, proxies, stream, verify, cert)
-        settings['verify'] = False
-
-        return settings
-
-    requests.Session.merge_environment_settings = merge_environment_settings
-
-    try:
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore', InsecureRequestWarning)
-            yield
-    finally:
-        requests.Session.merge_environment_settings = original_merge_environment_settings
-        for adapter in opened_adapters:
-            try:
-                adapter.close()
-            except:
-                pass
-
+def load_sdf(name):
+    name = 'elmo_geo-protected_landscapes'
+    f = [
+        *glob(f'{FOLDER_STG}/{name}*'),
+        *glob(f'{FOLDER_ODS}/{name}*'),
+    ][-1]
+    elmo_geo.LOG.info(f'Reading: {f}')
+    return spark.read.format('geoparquet').load(dbfs(f, True))
 
 # COMMAND ----------
 
@@ -85,22 +62,25 @@ gdf_np = gpd.read_parquet('/dbfs/mnt/lab/restricted/ELM-Project/stg/ne-national_
 gdf_np['PL Type'] = 'National Park'
 gdf_np['PL Name'] = gdf_np['NAME']
 gdf_np = gdf_np[['PL Type', 'PL Name', 'geometry']]
+gdf_np.geometry = gdf_np.make_valid()
 
 gdf_nl = gpd.read_parquet('/dbfs/mnt/lab/restricted/ELM-Project/stg/ne-aonb-2020_08_25.parquet').to_crs(epsg=27700)
 gdf_nl['PL Type'] = 'National Landscape'
 gdf_nl['PL Name'] = gdf_nl['NAME']
 gdf_nl = gdf_nl[['PL Type', 'PL Name', 'geometry']]
+gdf_nl.geometry = gdf_nl.make_valid()
 
-
-gdf_pl = pd.concat([gdf_np, gdf_nl])
-gdf_pl = pd.concat([gdf_pl, gpd.GeoDataFrame({
-    'PL Name': ['All Protected Landscapes'],
-    'geometry': [g],
-}, crs=gdf_pl.crs)])
+gdf_pl = pd.concat([gdf_np, gdf_nl, gpd.GeoDataFrame({
+    'PL Name': ['All Protected Landscapes', 'Overlapping NP and NL'],
+    'geometry': [
+        gpd.GeoSeries([gdf_np.unary_union]).union(gdf_nl.unary_union).unary_union,
+        gpd.GeoSeries([gdf_np.unary_union]).intersection(gdf_nl.unary_union).unary_union,
+    ],
+}, crs='EPSG:27700')]).reset_index()
 gdf_pl.geometry = gdf_pl.simplify(0.001)
 
-
-gdf_pl.to_parquet('/dbfs/mnt/lab/restricted/ELM-Project/ods/elmo_geo-protected_landscapes-2023_12_15.parquet')
+gdf_pl.to_parquet('/dbfs/mnt/lab/restricted/ELM-Project/ods/elmo_geo-protected_landscapes-2024_03_14.parquet')
+gdf_pl
 
 # COMMAND ----------
 
@@ -194,22 +174,36 @@ display(sdf)
 
 # COMMAND ----------
 
-f = '/dbfs/mnt/lab/restricted/ELM-Project/ods/elmo_geo-protected_landscapes-2023_12_15.parquet'
-gdf_pl = gpd.read_parquet(f)
+gdf_pl = gpd.read_parquet('/dbfs/mnt/lab/restricted/ELM-Project/ods/elmo_geo-protected_landscapes-2024_03_14.parquet')
+gdf_hedge = gpd.read_parquet('/dbfs/mnt/lab/restricted/ELM-Project/ods/rpa-hedge-2023_12_13.parquet/sindex=TG42').set_crs('EPSG:27700')
+
+gdf_pl
+
+# COMMAND ----------
+
 fig, ax = plt.subplots(figsize=[16,9])
 ax = gdf_pl.plot(ax=ax, column='PL Type', legend=True, edgecolor='k', linewidth=.5, alpha=.5, cmap='summer_r')
-with no_ssl_verification():
-    ctx.add_basemap(ax=ax, crs='epsg:27700')
+ctx.add_basemap(ax=ax, crs='epsg:27700')
 ax.axis('off');
 
 # COMMAND ----------
 
-f = '/dbfs/mnt/lab/restricted/ELM-Project/ods/rpa-hedge-2023_12_13.parquet/sindex=NY76'
-gdf_hedge = gpd.read_parquet(f)
 fig, ax = plt.subplots(figsize=[16,9])
-xmin, ymin, xmax, ymax = gdf2.total_bounds
-ax = gdf_pl.clip(gdf2.total_bounds).plot(ax=ax, column='PL Type', legend=True, edgecolor='k', linewidth=.5, alpha=.5, cmap='summer_r')
-ax = gdf_hedge.plot(ax=ax, alpha=.5, color='g', label='hedge')
-with no_ssl_verification():
-    ctx.add_basemap(ax=ax, crs='epsg:27700')
+ax = gdf_pl.iloc[-1:].plot(ax=ax, column='PL Name', legend=True, edgecolor='C0', linewidth=2)
+ctx.add_basemap(ax=ax, crs='epsg:27700')
 ax.axis('off');
+
+# COMMAND ----------
+
+
+gdf_pl_sample = gdf_pl.clip(gdf_hedge.total_bounds).dissolve('PL Type').reset_index()
+gdf_hedge_duplicate = gdf_hedge[gdf_hedge.intersects(gdf_pl_sample.iloc[0:1].reset_index().intersection(gdf_pl_sample.iloc[1:2].reset_index()).unary_union)]
+
+fig, ax = plt.subplots(figsize=[16,9])
+ax = gdf_pl_sample.plot(ax=ax, column='PL Type', legend=True, edgecolor='k', linewidth=.5, alpha=.5, cmap='summer_r')
+ax = gdf_hedge.plot(ax=ax, alpha=.5, color='g', label='hedge')
+ax = gdf_hedge_duplicate.plot(ax=ax, alpha=1, color='r', label='hedge')
+ctx.add_basemap(ax=ax, crs='epsg:27700')
+ax.axis('off')
+
+f'{gdf_hedge_duplicate.length.sum():,.0f}m hedgerow in overlap'
