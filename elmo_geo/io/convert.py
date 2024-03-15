@@ -32,7 +32,7 @@ def to_gdf(
             x,
             geometry=GeoSeries.from_wkb(x[column], crs=crs),
             crs=crs,
-        ).drop(columns=[column])
+        )
     elif isinstance(x, GeoSeries):
         gdf = GeoDataFrame(geometry=x, crs=crs)
     elif isinstance(x, BaseGeometry):
