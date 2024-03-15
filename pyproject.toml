@@ -61,6 +61,7 @@ markers = ["dbr: Requires databricks runtime"]
 [tool.ruff]
 line-length = 160
 unsafe-fixes = false
+extend-exclude = ["notebooks/*"]  # Issue: #78
 
 [tool.ruff.lint]
 select = ["F", "E", "I"]
@@ -68,4 +69,4 @@ ignore = ["D203", "D212", "COM812", "ISC001"]  # Conflict
 
 [tool.ruff.lint.per-file-ignores]
 "**/__init__.py" = ["F401"]
-"notebooks/*" = ["F821", "E402", "ALL"]
+"notebooks/*" = ["F821", "E402", "ALL"]  # Issue: #78
