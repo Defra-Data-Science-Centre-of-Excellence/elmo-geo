@@ -2,7 +2,7 @@ from pyspark.sql import functions as F
 from sedona.core.spatialOperator import JoinQuery
 from sedona.utils.adapter import Adapter
 
-from elmo_geo.io.geometry import load_missing
+from elmo_geo.st.geometry import load_missing
 
 # from elmo_geo import LOG
 from elmo_geo.utils.dbr import spark
