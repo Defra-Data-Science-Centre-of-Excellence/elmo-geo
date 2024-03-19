@@ -8,18 +8,6 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v4
-        with:
-          python-version: "3.10"
-      - uses: actions/setup-java@v4
-        with:
-          java-version: "17"
-          distribution: "temurin"
-      - uses: vemonet/setup-spark@v1
-        with:
-          spark-version: "3.3.2"
-      - name: Makefile Install
-        run: make install
-      - name: Makefile Verify
-        run: make verify
+      - uses: https://github.com/databrickslabs/mosaic/blob/main/.github/workflows/build_main.yml
+      - run: make install
+      - run: make verify
