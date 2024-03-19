@@ -8,6 +8,6 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: https://github.com/databrickslabs/mosaic/blob/main/.github/workflows/build_main.yml
+      - uses: databrickslabs/mosaic@build_main
       - run: make install
       - run: make verify
