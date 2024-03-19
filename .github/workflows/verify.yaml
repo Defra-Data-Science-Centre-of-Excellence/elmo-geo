@@ -8,7 +8,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: databrickslabs/mosaic-actions/scala_build
-      - uses: databrickslabs/mosaic-actions/python_build
+      - uses: https://raw.githubusercontent.com/databrickslabs/mosaic/main/.github/actions/scala_build/action.yml
+      - uses: https://raw.githubusercontent.com/databrickslabs/mosaic/main/.github/actions/python_build/action.yml
       - run: make install
       - run: make verify
