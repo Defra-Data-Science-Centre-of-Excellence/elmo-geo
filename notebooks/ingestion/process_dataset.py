@@ -11,16 +11,65 @@
 
 # COMMAND ----------
 
+import os
 import geopandas as gpd
+from functools import partial
 from pyspark.sql import functions as F
 
 from elmo_geo import LOG, register
-from elmo_geo.datasets.datasets import datasets
+from elmo_geo.datasets.datasets import datasets, parcels
 from elmo_geo.io import download_link
 from elmo_geo.io.preprocessing import geometry_to_wkb, make_geometry_valid, transform_crs
-from elmo_geo.st import sjoin
+#from elmo_geo.st import sjoin # commenting out bc I am testing a pervious sjoin function
 
 register()
+
+# COMMAND ----------
+
+# sjoin function
+from elmo_geo.utils.types import SparkDataFrame, SparkSession
+
+def sjoin(
+    spark,
+    sdf_left: SparkDataFrame,
+    sdf_right: SparkDataFrame,
+    lsuffix: str = "_left",
+    rsuffix: str = "_right",
+    distance: float = 0,
+) -> SparkDataFrame:
+    # Rename
+    for col in sdf_left.columns:
+        if col in sdf_right.columns:
+            sdf_left = sdf_left.withColumnRenamed(col, col + lsuffix)
+            sdf_right = sdf_right.withColumnRenamed(col, col + rsuffix)
+    geometry_left = f"left.geometry{lsuffix}"
+    geometry_right = f"right.geometry{rsuffix}"
+    # Add to SQL
+    sdf_left.createOrReplaceTempView("left")
+    sdf_right.createOrReplaceTempView("right")
+    # Join
+    if distance == 0:
+        sdf = spark.sql(
+            f"""
+      SELECT left.*, right.*
+      FROM left, right
+      WHERE ST_Intersects({geometry_left}, {geometry_right})
+    """
+        )
+    elif distance > 0:
+        sdf = spark.sql(
+            f"""
+      SELECT left.*, right.*
+      FROM left, right
+      WHERE ST_Distance({geometry_left}, {geometry_right}) < {distance}
+    """
+        )
+    else:
+        raise TypeError(f"distance should be positive real: {distance}")
+    # Remove from SQL
+    spark.sql("DROP TABLE left")
+    spark.sql("DROP TABLE right")
+    return sdf
 
 # COMMAND ----------
 
@@ -29,23 +78,36 @@ dbutils.widgets.dropdown("dataset", names[-1], names)
 _, name, version = dbutils.widgets.get("dataset").split("/")
 dataset = next(d for d in datasets if d.name == name)
 [print(k, v, sep=":\t") for k, v in dataset.__dict__.items()]
-path_parcels = "dbfs:/mnt/lab/unrestricted/elm_data/rpa/reference_parcels/2023_02_07.parquet"
+
+parcels_names = sorted([f"{parcels.source}/{parcels.name}/{v.name}" for v in parcels.versions])
+dbutils.widgets.dropdown("parcels", parcels_names[-1], parcels_names)
+_, pname, pversion = dbutils.widgets.get("parcels").split("/")
+[print("\n\nname", parcels.name, sep=":\t"), 
+ print("version", next(v for v in parcels.versions if v.name == pversion), sep = ":\t"),
+ ]
+
 target_epsg = 27700
 n_partitions = 200
 simplify_tolerence: float = 0.5  # metres
 max_vertices: int = 256  # per polygon (row)
 path_read = next(v.path_read for v in dataset.versions if v.name == version)
+path_parcels = next(v.path_read for v in parcels.versions if v.name == pversion)
 
 # COMMAND ----------
 
 # take a look at the raw data
-gpd.read_file(path_read, engine="pyogrio", rows=8)
+if os.path.splitext(path_read)[1] == ".parquet":
+    gpd_read = gpd.read_parquet
+    gpd_read(path_read).head(8)
+else:
+    gpd_read = partial(gpd.read_file, engine = "pyogrio")
+    gpd_read(path_read, rows=8)
 
 # COMMAND ----------
 
 # process the dataset
 df = (
-    gpd.read_file(path_read, engine="pyogrio")
+    gpd_read(path_read)
     .explode(index_parts=False)
     .pipe(transform_crs, target_epsg=27700)
     .filter(dataset.keep_cols, axis="columns")
@@ -70,9 +132,9 @@ df.display()
 # process the parcels dataset to ensure validity, simplify the vertices to a tolerence,
 # and subdivide large geometries
 df_parcels = (
-    spark.read.parquet(path_parcels)
-    .withColumn("id_parcel", F.concat("SHEET_ID", "PARCEL_ID"))
-    .withColumn("geometry", F.expr("ST_GeomFromWKB(wkb_geometry)"))
+    spark.read.format("geoparquet").load(path_parcels)
+    #.withColumn("id_parcel", F.concat("SHEET_ID", "PARCEL_ID"))
+    #.withColumn("geometry", F.expr("ST_GeomFromWKB(geometry)"))
     .withColumn("geometry", F.expr("ST_MakeValid(geometry)"))
     .withColumn("geometry", F.expr(f"ST_SimplifyPreserveTopology(geometry, {simplify_tolerence})"))
     .withColumn("geometry", F.expr("ST_Force_2D(geometry)"))
@@ -101,7 +163,7 @@ df_feature.display()
 
 # join the two datasets and calculate the proportion of the parcel that intersects
 df = (
-    sjoin(df_parcels, df_feature)
+    sjoin(spark, df_parcels, df_feature)
     .withColumn("geometry_intersection", F.expr("ST_Intersection(geometry_left, geometry_right)"))
     .withColumn("area_left", F.expr("ST_Area(geometry_left)"))
     .withColumn("area_intersection", F.expr("ST_Area(geometry_intersection)"))
@@ -175,7 +237,3 @@ df
 # COMMAND ----------
 
 df.id_parcel.nunique()
-
-# COMMAND ----------
-
-
