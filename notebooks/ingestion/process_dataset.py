@@ -20,56 +20,9 @@ from elmo_geo import LOG, register
 from elmo_geo.datasets.datasets import datasets, parcels
 from elmo_geo.io import download_link
 from elmo_geo.io.preprocessing import geometry_to_wkb, make_geometry_valid, transform_crs
-#from elmo_geo.st import sjoin # commenting out bc I am testing a pervious sjoin function
+from elmo_geo.st import sjoin 
 
 register()
-
-# COMMAND ----------
-
-# sjoin function
-from elmo_geo.utils.types import SparkDataFrame, SparkSession
-
-def sjoin(
-    spark,
-    sdf_left: SparkDataFrame,
-    sdf_right: SparkDataFrame,
-    lsuffix: str = "_left",
-    rsuffix: str = "_right",
-    distance: float = 0,
-) -> SparkDataFrame:
-    # Rename
-    for col in sdf_left.columns:
-        if col in sdf_right.columns:
-            sdf_left = sdf_left.withColumnRenamed(col, col + lsuffix)
-            sdf_right = sdf_right.withColumnRenamed(col, col + rsuffix)
-    geometry_left = f"left.geometry{lsuffix}"
-    geometry_right = f"right.geometry{rsuffix}"
-    # Add to SQL
-    sdf_left.createOrReplaceTempView("left")
-    sdf_right.createOrReplaceTempView("right")
-    # Join
-    if distance == 0:
-        sdf = spark.sql(
-            f"""
-      SELECT left.*, right.*
-      FROM left, right
-      WHERE ST_Intersects({geometry_left}, {geometry_right})
-    """
-        )
-    elif distance > 0:
-        sdf = spark.sql(
-            f"""
-      SELECT left.*, right.*
-      FROM left, right
-      WHERE ST_Distance({geometry_left}, {geometry_right}) < {distance}
-    """
-        )
-    else:
-        raise TypeError(f"distance should be positive real: {distance}")
-    # Remove from SQL
-    spark.sql("DROP TABLE left")
-    spark.sql("DROP TABLE right")
-    return sdf
 
 # COMMAND ----------
 
@@ -163,7 +116,7 @@ df_feature.display()
 
 # join the two datasets and calculate the proportion of the parcel that intersects
 df = (
-    sjoin(spark, df_parcels, df_feature)
+    sjoin(df_parcels, df_feature, distance=12)
     .withColumn("geometry_intersection", F.expr("ST_Intersection(geometry_left, geometry_right)"))
     .withColumn("area_left", F.expr("ST_Area(geometry_left)"))
     .withColumn("area_intersection", F.expr("ST_Area(geometry_intersection)"))
