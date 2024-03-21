@@ -1,151 +1,4 @@
 # Databricks notebook source
-# MAGIC %md
-# MAGIC # Boundary
-# MAGIC
-# MAGIC ### Input Data
-# MAGIC - wfm-field
-# MAGIC - rpa-parcel
-# MAGIC - rpa-hedge_managed-2021
-# MAGIC - rpa-hedge_control-2023
-# MAGIC - os-ngd
-# MAGIC - osm-uk
-# MAGIC
-# MAGIC
-# MAGIC ### Output Data
-# MAGIC - elmo_geo-boundary: id_parcel, geometry
-# MAGIC   - methodology: parcel boundary + land cover boundaries within the parcel
-# MAGIC - elmo_geo-merged_hedge: id_parcel, source, class, geometry, width, height
-# MAGIC   - classes: hedge
-# MAGIC   - methodology: os-field_boundary/ngd + rpa-hedge_managed/control + osm-hedge + elmo_geo-sylvan
-# MAGIC - elmo_geo-merged_water: id_parcel, source, class, geometry
-# MAGIC   - classes: watercourse, waterbody, trees_in_water, other
-# MAGIC   - methodology: os-ngd + osm-water
-# MAGIC - elmo_geo-merged_wall: id_parcel, source, class, geometry
-# MAGIC   - classes: wall, ruin, other
-# MAGIC   - methodology: osm-wall + he-shine
-
-# COMMAND ----------
-
-# MAGIC %md # notes
-# MAGIC update buffer method - https://defra.sharepoint.com/:w:/r/teams/Team1645/_layouts/15/Doc.aspx?sourcedoc=%7B078DC8EE-5888-496C-924A-3E84BE78FF55%7D&file=Buffering%20Payment%20Strategy%20Analysis.docx&action=default&mobileredirect=true
-# MAGIC
-# MAGIC # GIS projects
-# MAGIC [ ] update hedge doc
-# MAGIC [ ] waterbodies
-# MAGIC [ ] other boundaries (walls)
-# MAGIC [ ] woodland - hedgerow is not woodland, commercial is not woodland
-# MAGIC [ ] grassland
-# MAGIC [ ] moorland
-# MAGIC [ ] commons
-# MAGIC [ ] tenants
-# MAGIC [ ] priority habitat distance
-# MAGIC
-# MAGIC
-# MAGIC 	boundary features
-# MAGIC 	  sylvan
-# MAGIC 	    hedge  (rpa-cl_hedge)
-# MAGIC 	    wood  (?)
-# MAGIC 	    relict  (fr-tow)
-# MAGIC 	  water  (os-ngd-wtr*)
-# MAGIC 	  wall (osm-wall, os-ngd-?, ne-shine, he-hefer)
-# MAGIC 	proportional features  (geoportals for all these)
-# MAGIC 	  moor
-# MAGIC 	  lfa
-# MAGIC 	  sssi
-# MAGIC 	  np
-# MAGIC 	  nl (aonb)
-# MAGIC 	  ...
-# MAGIC
-# MAGIC
-# MAGIC
-# MAGIC 	Project: Run
-# MAGIC 	Data Sources
-# MAGIC 		None
-# MAGIC 	Methodology
-# MAGIC 		$run_notebook
-# MAGIC 	Output
-# MAGIC 		elmo_geo-run_success
-# MAGIC
-# MAGIC
-# MAGIC 	Project: Parcels
-# MAGIC 	Data Sources
-# MAGIC 		rpa-ref_parcel
-# MAGIC 		wfm-farms
-# MAGIC 		wfm-fields
-# MAGIC 	Methodology
-# MAGIC 		join
-# MAGIC 	Output
-# MAGIC 		elmo_geo-parcels: id_parcel, 
-# MAGIC
-# MAGIC
-# MAGIC 	Project: Features
-# MAGIC 	Data Sources
-# MAGIC 		elmo_geo-parcels
-# MAGIC 		ons-country
-# MAGIC 		ons-itl1_region
-# MAGIC 		ons-ita3_cua
-# MAGIC 		ons-parish
-# MAGIC 		ons/ne-national_park
-# MAGIC 		ne-sssi_units
-# MAGIC 		ne-aonb
-# MAGIC 		ne-commons
-# MAGIC 		ne-priority_habitat
-# MAGIC 		ne-moorline
-# MAGIC 		ne-...
-# MAGIC 	Methodology
-# MAGIC 		sjoin
-# MAGIC 		sorted hstack
-# MAGIC 	Output
-# MAGIC 		elmo_geo-features: id_parcel, id_business, id_sub_business, farm_type, arable_or_grassland, aes, region, p_region, ...
-# MAGIC
-# MAGIC
-# MAGIC 	Project: Sylvan
-# MAGIC 	Data Sources
-# MAGIC 		obi
-# MAGIC 	Methodology
-# MAGIC 		obi
-# MAGIC 	Output
-# MAGIC 		elmo_geo-sylvan: key, id_parcel, sylvan_type, geometry
-# MAGIC
-# MAGIC
-# MAGIC 	Project: Water
-# MAGIC 	Data Sources
-# MAGIC 		os-wtr
-# MAGIC 		osm-water
-# MAGIC 	Methodology
-# MAGIC 		wrangle
-# MAGIC 		concat
-# MAGIC 		sjoin 12m buf
-# MAGIC 	Output
-# MAGIC 		elmo_geo-water: id_parcel, data_source, water_type, geometry
-# MAGIC
-# MAGIC
-# MAGIC 	Project: Wall
-# MAGIC 	Data Sources
-# MAGIC 		os-lnd *tag=wall
-# MAGIC 		osm-wall
-# MAGIC 		rpa-agreements (wall)
-# MAGIC 	Methodology
-# MAGIC 		wrangle
-# MAGIC 		concat
-# MAGIC 		sjoin 12m buf
-# MAGIC 	Output
-# MAGIC
-# MAGIC
-# MAGIC 	Project: Boundaries
-# MAGIC 	Data Sources
-# MAGIC 		rpa-ref_parcels
-# MAGIC 		elmo_geo-sylvan
-# MAGIC 		elmo_geo-water
-# MAGIC 		elmo_geo-wall
-# MAGIC 	Methodology
-# MAGIC 		splitting method
-# MAGIC 	Output
-# MAGIC 		elmo_geo-boundaries: id_boundary, id_parcel, id_business, b_hedge, b_woodland, b_rhedge, b_water, b_ditch, b_wall,
-# MAGIC
-
-# COMMAND ----------
-
 import numpy as np
 import pandas as pd
 import geopandas as gpd
@@ -192,13 +45,6 @@ sdf_wfm_field = pd.read_feather(
     columns = set(['id_business', 'id_parcel', *ha_arable, *ha_grassland, *ha_lowland, *ha_upland])
 ).pipe(spark.createDataFrame)
 
-# sdf_wfm_region = (
-#     pd.read_feather('/dbfs/mnt/lab/unrestricted/elm/elmo/region/region.feather')
-#     .sort_values('proportion')
-#     .groupby('id_parcel').first().reset_index()
-#     .pipe(spark.createDataFrame)
-# )
-
 
 sdf_wfm = (sdf_wfm_field
     .selectExpr(
@@ -214,13 +60,10 @@ sdf_wfm = (sdf_wfm_field
         F.expr('CASE WHEN sum(ha_lowland) < sum(ha_upland) THEN "upland" ELSE "lowland" END AS lowland_upland'),
     )
     .join(sdf_wfm_farm, on='id_business', how='outer')
-    # .withColumn('id_parcel', F.explode('id_parcel'))
-    # .join(sdf_wfm_region, on='id_parcel', how='outer')
     .selectExpr(
         'id_business', 'id_parcel',
         'LOWER(farm_type) AS farm_type',
         'arable_grassland', 'lowland_upland',
-        # 'region', 'proportion AS p_region',
     )
 )
 
@@ -230,7 +73,6 @@ sdf_wfm.display()
 sdf_wfm.coalesce(1).write.parquet('dbfs:/mnt/lab/restricted/ELM-Project/out/elmo_geo-business_info-2024_01_30.parquet')
 
 # COMMAND ----------
-
 
 # Boundary
 sdf_rpa_parcel = load_sdf('rpa-parcel-adas').select('id_parcel', 'geometry')
@@ -270,7 +112,7 @@ sdf_boundary = (load_sdf('elmo_geo-land_cover')
             ST_Intersection(ST_Boundary(geometry), geometry_parcel)
         ), 2) AS geometry''',  # bounaries around and inside, drop points
     )
-    .transform(to_gpq, 'dbfs:/mnt/lab/restricted/ELM-Project/ods/elmo_geo-boundary-2024_02_01.parquet')
+    .transform(to_gpq, 'dbfs:/mnt/lab/restricted/ELM-Project/ods/elmo_geo-segmented_boundary-2024_02_01.parquet')
 )
 
 
@@ -505,13 +347,3 @@ sdf_wall = (sdf_os_ngd_wall
 
 
 display(sdf_wall)
-
-# COMMAND ----------
-
-#boundary splitting method...
-sdf_info = spark.read.parquet('dbfs:/mnt/lab/restricted/ELM-Project/out/elmo_geo-business_info-2024_01_30.parquet')
-sdf_boundary = load_sdf('elmo_geo-boundary')
-
-sdf_hedge = load_sdf('elmo_geo-hedge')
-sdf_water = load_sdf('elmo_geo-water')
-sdf_wall = load_sdf('elmo_geo-wall')
