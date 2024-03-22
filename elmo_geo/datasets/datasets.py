@@ -75,6 +75,34 @@ class Dataset:
             self.read_kwargs = {}
 
 
+parcels = Dataset(
+    name="parcels",
+    source="rpa",
+    versions=[
+        Version(
+            name="2021_03_16",
+            path_read=("dbfs:/mnt/lab/unrestricted/elm_data/rpa/reference_parcels/2021_03_16.parquet"),
+        ),
+        Version(
+            name="2021_11_16_adas",
+            path_read=("dbfs:/mnt/lab/restricted/ELM-Project/ods/rpa-parcel-adas.parquet"),
+        ),
+        Version(
+            name="2023_02_07",
+            path_read=("dbfs:/mnt/lab/unrestricted/elm_data/rpa/reference_parcels/2023_02_07.parquet"),
+        ),
+        Version(
+            name="2023_06_03",
+            path_read=("dbfs:/mnt/lab/unrestricted/elm_data/rpa/reference_parcels/2023_06_03.geoparquet"),
+        ),
+        Version(
+            name="2023_12_13",
+            path_read=("dbfs:/mnt/lab/restricted/ELM-Project/ods/rpa-parcel-2023_12_13.parquet"),
+        ),
+    ],
+)
+
+
 alc = Dataset(
     name="alc",
     source="defra",
@@ -456,6 +484,22 @@ tiles = Dataset(
     rename_cols={"Name": "tile"},
 )
 
+shine = Dataset(
+    name="shine",
+    source="historic_england",
+    versions=[
+        Version(
+            name="2022_12_30",
+            path_read=("/dbfs/mnt/lab/restricted/ELM-Project/stg/he-shine-2022_12_30.parquet"),
+        ),
+    ],
+    keep_cols=[
+        "geom",
+        "shine_form",
+    ],
+    rename_cols={"geom": "geometry"},
+)
+
 
 datasets = [
     alc,
@@ -477,5 +521,6 @@ datasets = [
     keeping_rivers_cool_riparian_buffers,
     nfc_ammonia_emmissions,
     tiles,
+    shine,
 ]
 """A list of all defined datasets"""
