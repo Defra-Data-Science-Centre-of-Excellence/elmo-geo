@@ -86,8 +86,6 @@ df.display()
 # and subdivide large geometries
 df_parcels = (
     spark.read.format("geoparquet").load(path_parcels)
-    #.withColumn("id_parcel", F.concat("SHEET_ID", "PARCEL_ID"))
-    #.withColumn("geometry", F.expr("ST_GeomFromWKB(geometry)"))
     .withColumn("geometry", F.expr("ST_MakeValid(geometry)"))
     .withColumn("geometry", F.expr(f"ST_SimplifyPreserveTopology(geometry, {simplify_tolerence})"))
     .withColumn("geometry", F.expr("ST_Force_2D(geometry)"))
@@ -116,7 +114,7 @@ df_feature.display()
 
 # join the two datasets and calculate the proportion of the parcel that intersects
 df = (
-    sjoin(df_parcels, df_feature, distance=12)
+    sjoin(df_parcels, df_feature)
     .withColumn("geometry_intersection", F.expr("ST_Intersection(geometry_left, geometry_right)"))
     .withColumn("area_left", F.expr("ST_Area(geometry_left)"))
     .withColumn("area_intersection", F.expr("ST_Area(geometry_intersection)"))
@@ -189,4 +187,4 @@ df
 
 # COMMAND ----------
 
-df.id_parcel.nunique()
+df["id_parcel"].nunique()
