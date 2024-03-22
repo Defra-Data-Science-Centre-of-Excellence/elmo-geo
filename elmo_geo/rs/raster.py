@@ -13,6 +13,17 @@ from elmo_geo import LOG
 
 
 def write_raster(data, filename, meta):
+    """Save an array of data to a .tif format raster file.
+
+    Parameters:
+        data: (array-like) – This may be a numpy.ma.MaskedArray.
+        filename: (str) Path to save the file to.
+        meta: (dict) Metadata passed to the rasterio.open() function 
+        when creating a raster file writer.
+    
+    Returns:
+        None
+    """
     with tempfile.NamedTemporaryFile(suffix=".tif") as tmp:
         with rasterio.open(tmp.name, mode="w", **meta) as dst:
             dst.write(data)
