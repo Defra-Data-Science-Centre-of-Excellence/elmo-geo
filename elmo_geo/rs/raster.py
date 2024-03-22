@@ -18,9 +18,9 @@ def write_array_to_raster(arr, filename, meta):
     Parameters:
         arr: (array-like) – This may be a numpy.ma.MaskedArray.
         filename: (str) Path to save the file to.
-        meta: (dict) Metadata passed to the rasterio.open() function 
+        meta: (dict) Metadata passed to the rasterio.open() function
         when creating a raster file writer.
-    
+
     Returns:
         None
     """
