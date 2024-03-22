@@ -4,4 +4,7 @@ display(Markdown(open('./readme.md').read()))
 
 # COMMAND ----------
 
-# MAGIC %run
+# %run ./01_datalists
+# %run ./02_fetch
+# %run ./03_sjoin
+# %run ./04_proportion

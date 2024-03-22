@@ -4,11 +4,15 @@
 
 # COMMAND ----------
 
+from dataclasses import asdict
 from datetime import datetime
 from glob import iglob
 import json
+import os
 import re
 import requests
+
+from elmo_geo.datasets.datasets import datasets
 
 
 def snake_case(string: str) -> str:
@@ -21,7 +25,7 @@ def snake_case(string: str) -> str:
     return re.sub("[^\w\d_]", "", re.sub("\s", "_", string.lower()))
 
 def string_to_dict(string: str, pattern: str) -> dict:
-    """Revert f-string
+    """Reverse f-string
     https://stackoverflow.com/a/36838374/10450752
     """
     regex = re.sub(r'{(.+?)}', r'(?P<_\1>.+)', pattern)
@@ -38,90 +42,114 @@ def save_json(data: object, filepath: str) -> object:
     return data
 
 
+os.chdir(os.getcwd().replace('/notebooks/ingestion', ''))
+os.getcwd()
+
+# COMMAND ----------
+
+# Datasets
+save_json(
+    [asdict(dataset) for dataset in datasets],
+    'data/catalogue.json',
+)
+
+# COMMAND ----------
+
+import pandas as pd
+
+df = pd.read_json('data/catalogue.json')
+
+df
 
 # COMMAND ----------
 
 # DASH
-def gen_dash_datalist() -> tuple:
+def gen_dash_datalist() -> object:
     """Generate a list of datasets in DASH.
     """
-    # base snapshot
-    pattern = '/dbfs/mnt/base/unrestricted/source_{source}/dataset_{dataset}/format_{format}/SNAPSHOT_{version}'
-    for uri in iglob('/dbfs/mnt/base/unrestricted/source_*/dataset_*/format_*/SNAPSHOT_*'):
-        d = string_to_dict(filepath, pattern)
-        source, dataset, version, format = d.values()
-        version = version.replace(f"_{dataset}", "")
-        format = format.replace(f"_{dataset}", "")
-        yield {
-            "name": f"{source}-{dataset}-{version}",
-            "url": uri,
-            "fn": "dash",
-            "format": format,
-        }
-    
-    # base latest
-    pattern = '/dbfs/mnt/base/unrestricted/source_{source}/dataset_{dataset}/format_{format}/SNAPSHOT_{version}'
-    for uri in iglob('/dbfs/mnt/base/unrestricted/source_*/dataset_*/format_*/LATEST_*'):
-        d = string_to_dict(uri, pattern)
-        source, dataset, version, format = d.values()
-        version = f"latest_{datetime.today().strftime('%Y_%m_%d')}"
-        format = format.replace(f"_{dataset}", "")
-        yield {
-            "name": f"{d['source']}-{d['dataset']}-{d['version'].replace(f"_{d['dataset']}", "")}",
-            "url": uri,
-            "fn": "dash",
-            "format": d["format"].replace(f"_{d['dataset']}", ""),
-        }
-    
-    # lab elm
-    pattern = '*/{source}/{dataset}/{version}.parquet'
-    for uri in iglob('/dbfs/mnt/lab/unrestricted/elm*/**/*[!.snappy].parquet', recursive=True):
-        d = string_to_dict(filepath, pattern)
-        yield {
-            "name": f"{d['source']}-{d['dataset']}-{d['version']}",
-            "url": uri,
-            "fn": "dash",
-        }
+    if True:  # base snapshot
+        pattern = '/dbfs/mnt/base/{license}/source_{source}/dataset_{dataset}/format_{format}/SNAPSHOT_{version}'
+        for uri in iglob('/dbfs/mnt/base/*/source_*/dataset_*/format_*/SNAPSHOT_*'):
+            _, source, dataset, format, version = string_to_dict(uri, pattern).values()
+            version = version.replace(f"_{dataset}", "")
+            format = format.replace(f"_{dataset}", "")
+            yield {
+                "name": f"{source}-{dataset}-{version}",
+                "url": uri,
+                "fn": "dash",
+                "format": format,
+            }
+    if True:  # base latest
+        pattern = '/dbfs/mnt/base/{license}/source_{source}/dataset_{dataset}/format_{format}/LATEST_{version}'
+        for uri in iglob('/dbfs/mnt/base/*/source_*/dataset_*/format_*/LATEST_*'):
+            _, source, dataset, format, version = string_to_dict(uri, pattern).values()
+            version = f"latest_{datetime.today().strftime('%Y_%m_%d')}"
+            format = format.replace(f"_{dataset}", "")
+            yield {
+                "name": f"{source}-{dataset}-{version}",
+                "url": uri,
+                "fn": "dash",
+                "format": format,
+            }
+    if False:  # lab elm
+        pattern = 'elm*/{path}.parquet'
+        for uri in iglob('/dbfs/mnt/lab/unrestricted/elm*/**/*[!.snappy].parquet', recursive=True):
+            path, = string_to_dict(uri, pattern).values()
+            yield {
+                "name": path.replace('/', '-'),
+                "url": uri,
+                "fn": "dash",
+            }
 
-type(gen_dash_datalist())
-# save_json(list(gen_dash_datalist()), 'dash.json')
+
+save_json(list(gen_dash_datalist()), 'data/dash.json')
 
 # COMMAND ----------
 
 # ESRI
-def get_esri_date(meta):
-    ts = meta['editingInfo']['lastEditDate']
-    dt = datetime.fromtimestamp(ts/1000) if ts else datetime.today()
-    return dt.strftime("%Y_%m_%d")
-
-def gen_esri_datalist():
-    """Generate a list of ESRI datasets from 2 sources.
+def gen_esri_datalist() -> object:
+    """Generate a list of avaiable datasets from 2 ESRI services.
     Defra + Natural England's GeoPortal
     ONS's GeoPortal
     """
+    def get_esri_date(ts: int) -> str:
+        return (datetime.fromtimestamp(ts/1000) if ts else datetime.today()).strftime("%Y_%m_%d")
+
     for source, service in {
         'ons': "https://services1.arcgis.com/ESMARspQHYMw9BZ9/ArcGIS/rest/services",
         'defra': "https://services.arcgis.com/JJzESW51TqeY9uat/ArcGIS/rest/services",
     }.items():
-        for dataset in requests.get(f"{service}?f=pjson").json()["services"]:
-            for layer in requests.get(f"{dataset['url']}?f=pjson").json()["layers"]:
-                url = f"{dataset['url']}/{layer['id']}"
-                meta = requests.get(f"{url}?f=pjson").json()
-                yield {
-                    "name": f"{source}-{snake_case(meta['name'])}-{get_esri_date(meta)}",
-                    "url": url,
-                    "fn": "esri",
-                    "description": meta["description"],
-                    "attribution": meta["copyrightText"],
-                    # "meta": meta,
-                }
+        try:
+            for dataset in requests.get(f"{service}?f=pjson").json()["services"]:
+                try:
+                    for layer in requests.get(f"{dataset['url']}?f=pjson").json()["layers"]:
+                        try:
+                            url = f"{dataset['url']}/{layer['id']}"
+                            meta = requests.get(f"{url}?f=pjson").json()
+                            yield {
+                                "name": f"{source}-{snake_case(meta['name'])}-{get_esri_date(meta['editingInfo']['lastEditDate'])}",
+                                "url": url,
+                                "fn": "esri",
+                                "description": meta["description"],
+                                "attribution": meta["copyrightText"],
+                                # "meta": meta,
+                            }
+                        except Exception:
+                            yield {'Error':True, 'service':service, 'dataset':dataset, 'layer':layer}
+                except Exception:
+                    yield {'Error':True, 'service':service, 'dataset':dataset}
+        except Exception:
+            yield {'Error':True, 'service':service}
 
 
-save_json(list(gen_esri_datalist()), 'esri.json')
+save_json(list(gen_esri_datalist()), 'data/esri.json')
 
 # COMMAND ----------
 
 # OS
+from osdatahub import NGD
+
+
 
 
 # COMMAND ----------
@@ -136,6 +164,8 @@ save_json(list(gen_esri_datalist()), 'esri.json')
 # COMMAND ----------
 
 # Manual
+
+
 """
 # Base
 rpa-parcel
