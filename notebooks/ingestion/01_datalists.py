@@ -1,6 +1,16 @@
 # Databricks notebook source
 # MAGIC %md
 # MAGIC # Data Listed from Data Sources
+# MAGIC
+# MAGIC ## Data Source
+# MAGIC - elmo_geo.datasets: `data/datasets.json`
+# MAGIC - DASH: `data/dash.json`
+# MAGIC - ESRI: `data/esri.json`
+# MAGIC - OS: `data/os.json`
+# MAGIC - OSM
+# MAGIC - SharePoint
+# MAGIC - Manual
+# MAGIC
 
 # COMMAND ----------
 
@@ -9,7 +19,7 @@ from datetime import datetime
 from glob import iglob
 import json
 import os
-from osdatahub import NGD, OpenDataDownload, DataPackageDownload
+import osdatahub
 import re
 import requests
 
@@ -140,9 +150,6 @@ save_json(list(gen_esri_datalist()), 'data/esri.json')
 # COMMAND ----------
 
 # OS
-os.environ['OS_KEY'] = 'WxgUdETn6cy58WZkfwZ7wdMVLlt5eDsX'
-
-
 def get_os_datalist():
     os_ngd_datalist = [
         {
@@ -202,42 +209,6 @@ save_json(get_os_datalist(), 'data/os.json')
 
 # COMMAND ----------
 
-df = pd.concat([
-    pd.read_json('data/dash.json'),
-    pd.read_json('data/esri.json'),
-    pd.read_json('data/os.json'),
-])
-
-df[['source', 'dataset', 'version']] = df['name'].str.split('-', n=2, expand=True)
-
-
-display(df)
-
-# COMMAND ----------
-
-df = pd.read_json('data/os.json')
-df
-
-# COMMAND ----------
-
-display(df)
-
-# COMMAND ----------
-
-DataPackageDownload(key, "4143").product_list("26940")
-
-# COMMAND ----------
-
-DataPackageDownload(key, "4143").download("26940", "/tmp/", None)
-
-# COMMAND ----------
-
-# MAGIC %sh
-# MAGIC rm /tmp/*
-# MAGIC ls /tmp
-
-# COMMAND ----------
-
 # OSM
 
 # COMMAND ----------
@@ -287,3 +258,16 @@ he-shine
 
 # Sylvan
 """
+
+# COMMAND ----------
+
+df = pd.concat([
+    pd.read_json('data/dash.json'),
+    pd.read_json('data/esri.json'),
+    pd.read_json('data/os.json'),
+])
+
+df[['source', 'dataset', 'version']] = df['name'].str.split('-', n=2, expand=True)
+
+
+display(df)
