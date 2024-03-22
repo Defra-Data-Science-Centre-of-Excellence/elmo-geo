@@ -9,6 +9,7 @@ from datetime import datetime
 from glob import iglob
 import json
 import os
+from osdatahub import NGD, OpenDataDownload, DataPackageDownload
 import re
 import requests
 
@@ -22,7 +23,7 @@ def snake_case(string: str) -> str:
     3, remove special characters
     \w=words, \d=digits, \s=spaces, [^ ]=not
     """
-    return re.sub("[^\w\d_]", "", re.sub("\s", "_", string.lower()))
+    return re.sub("[^\w\d_]", "", re.sub("[\s-]", "_", string.lower()))
 
 def string_to_dict(string: str, pattern: str) -> dict:
     """Reverse f-string
@@ -50,16 +51,8 @@ os.getcwd()
 # Datasets
 save_json(
     [asdict(dataset) for dataset in datasets],
-    'data/catalogue.json',
+    'data/datasets.json',
 )
-
-# COMMAND ----------
-
-import pandas as pd
-
-df = pd.read_json('data/catalogue.json')
-
-df
 
 # COMMAND ----------
 
@@ -147,10 +140,101 @@ save_json(list(gen_esri_datalist()), 'data/esri.json')
 # COMMAND ----------
 
 # OS
-from osdatahub import NGD
+os.environ['OS_KEY'] = 'WxgUdETn6cy58WZkfwZ7wdMVLlt5eDsX'
 
 
+def get_os_datalist():
+    os_ngd_datalist = [
+        {
+            "name": "os-{dataset}-{version}".format(
+                dataset = dataset["id"].replace('-', '_'),
+                version = max(
+                    datetime.strptime(dt, "%Y-%m-%dT%H:%M:%SZ")
+                    for dts in dataset["extent"]["temporal"]["interval"]
+                    for dt in dts
+                    if dt
+                ).strftime("%Y_%m_%d")
+            ),
+            "uri": dataset["links"][0]["href"],
+            "method": "os",
+            "description": dataset["description"],
+            "collection": dataset["id"],
+        }
+        for dataset in osdatahub.NGD.get_collections()['collections']
+    ]
 
+    os_open_datalist = [
+        {
+            "name": "os-{dataset}-{version}".format(
+                dataset = snake_case(dataset["id"]),
+                version = snake_case(dataset["version"]),
+            ),
+            "uri": dataset["url"],
+            "method": "os",
+            "description": dataset["description"],
+        }
+        for dataset in osdatahub.OpenDataDownload.all_products()
+    ]
+
+    os_premium_datalist = [
+        {
+            "name": "os-{dataset}-{version}".format(
+                dataset = snake_case(dataset["name"]),
+                version = snake_case(version["createdOn"]),
+            ),
+            "uri": version["url"],
+            "method": "os",
+            "format": version["format"],
+            "supplyType": version["supplyType"],
+            "collection": "{}-{}".format(
+                dataset["id"],
+                version["id"],
+            )
+        }
+        for dataset in osdatahub.DataPackageDownload.all_products(os.environ['OS_KEY'])
+        for version in dataset['versions']
+    ]
+
+    return [*os_ngd_datalist, *os_open_datalist, *os_premium_datalist]
+
+
+save_json(get_os_datalist(), 'data/os.json')
+
+# COMMAND ----------
+
+df = pd.concat([
+    pd.read_json('data/dash.json'),
+    pd.read_json('data/esri.json'),
+    pd.read_json('data/os.json'),
+])
+
+df[['source', 'dataset', 'version']] = df['name'].str.split('-', n=2, expand=True)
+
+
+display(df)
+
+# COMMAND ----------
+
+df = pd.read_json('data/os.json')
+df
+
+# COMMAND ----------
+
+display(df)
+
+# COMMAND ----------
+
+DataPackageDownload(key, "4143").product_list("26940")
+
+# COMMAND ----------
+
+DataPackageDownload(key, "4143").download("26940", "/tmp/", None)
+
+# COMMAND ----------
+
+# MAGIC %sh
+# MAGIC rm /tmp/*
+# MAGIC ls /tmp
 
 # COMMAND ----------
 

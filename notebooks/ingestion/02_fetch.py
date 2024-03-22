@@ -6,89 +6,32 @@
 
 import json
 import os
+import osdatahub
 import pandas as pd
-
-def load_catalogue():
-    catalogue
+from elmo_geo.io import ingest_dash, ingest_esri, ingest_os, ingest_osm, ingest_spol
 
 
-# COMMAND ----------
-
-requirements = [
-    'national_parks',
-    'ramsar',
-    'peaty_soils',
-    'national_character_areas',
-    'sssi', 
-    'aonb',
-    'moorline',
-    'commons',
-    'flood_risk_areas',
-]
-
-# COMMAND ----------
-
-df = pd.concat([
-    pd.read_json('dash.json'),
-    pd.read_json('esri.json'),
-])
-
-df[['source', 'dataset', 'version']] = df['name'].str.split('-', n=2, expand=True)
+os.environ['OS_KEY'] = 'WxgUdETn6cy58WZkfwZ7wdMVLlt5eDsX'
+os.environ['SPOL_USER'] = None
+os.environ['SPOL_PASS'] = None
 
 
-display(df)
+method = {
+    "dash": ingest_dash,
+    "esri": ingest_esri,
+    "os": ingest_os,
+    "osm": ingest_osm,
+    "sharepoint": ingest_spol,
+}
+
+
+def search_available(df, string):
+    display(df[df['name'].str.contains(string)==True])
+
+
+os.chdir(os.getcwd().replace('/notebooks/ingestion', ''))
 
 # COMMAND ----------
-
-from elmo_geo.datasets.datasets import datasets
-from dataclasses import dataclass, asdict
-
-# {k: str(v) for k, v in asdict(datasets[0]).items()}
-# # for dataset in datasets:
-# #     dict
-
-# datasets[0]
-
-
-
-
-# COMMAND ----------
-
-display(df[df['name'].str.contains('national_park')==True])
-
-# COMMAND ----------
-
-display(df[df['name'].str.contains('school')==True])
-
-# COMMAND ----------
-
-display(df[df['Error']==True][['service', 'dataset']])
-
-# COMMAND ----------
-
-import json
-
-catalogue = json.load('catalogue.json')
-
-
-data
-
-catalogue.update(**dataset)
-
-
-# COMMAND ----------
-
-# DASH
-requirements = [
-
-dash_datalist = json.load('dash.json')
-for data in dash_datalist:
-    for req in requirements:
-        if req in data["name"]:
-            break
-    requirements.remove(req)
-    print(data)
-
 
 
 
@@ -100,6 +43,10 @@ for data in dash_datalist:
 
 # OS
 os_key = os.environ['OS_KEY']
+
+osdatahub.DataPackageDownload(os_key, 4143).versions[0]
+
+#download(26940, "/tmp/", None)
 
 # COMMAND ----------
 
