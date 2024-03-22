@@ -1,6 +1,6 @@
 from pyspark.sql import functions as F
 
-from elmo_geo.io.geometry import load_geometry
+from elmo_geo.st.geometry import load_geometry
 from elmo_geo.utils.dbr import spark
 from elmo_geo.utils.types import (
     BaseGeometry,
@@ -32,7 +32,7 @@ def to_gdf(
             x,
             geometry=GeoSeries.from_wkb(x[column], crs=crs),
             crs=crs,
-        ).drop(columns=[column])
+        )
     elif isinstance(x, GeoSeries):
         gdf = GeoDataFrame(geometry=x, crs=crs)
     elif isinstance(x, BaseGeometry):

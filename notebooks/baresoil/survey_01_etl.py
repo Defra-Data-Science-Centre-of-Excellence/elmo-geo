@@ -1,3 +1,4 @@
+# Databricks notebook source
 # MAGIC %md # Bare Soil Survey Data Cleaning
 # MAGIC We have received survey data so we can evaluate
 # MAGIC model analysis. We would like to see whether
