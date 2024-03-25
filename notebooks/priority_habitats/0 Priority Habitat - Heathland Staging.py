@@ -47,5 +47,7 @@ staging_output
 
 (sdfPH
  .filter(F.expr("Main_Habit like '%heath%'"))
+ .select("Main_Habit", "geometry")
+ .repartition(200)
  .write.mode("overwrite").parquet(staging_output)
 )
