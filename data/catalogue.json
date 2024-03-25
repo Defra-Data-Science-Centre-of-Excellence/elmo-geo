@@ -1,5 +1,55 @@
 [
     {
+        "name": "ons-country-2023_12",
+        "uri": "https://services1.arcgis.com/ESMARspQHYMw9BZ9/ArcGIS/rest/services/Countries_December_2023_Boundaries_UK_BFE/FeatureServer/0",
+        "fn": "esri",
+        "columns": {
+            "CTRY23NM": "country",
+            "geometry": "geometry"
+        },
+        "lookup_parcel": true
+    },
+    {
+        "name": "ons-region-2023_12",
+        "uri": "https://services1.arcgis.com/ESMARspQHYMw9BZ9/ArcGIS/rest/services/Regions_December_2023_Boundaries_EN_BFC/FeatureServer/0",
+        "fn": "esri",
+        "columns": {
+            "RGN23NM": "region",
+            "geometry": "geometry"
+        },
+        "lookup_parcel": true
+    },
+    {
+        "name": "ons-county-2023_12",
+        "uri": "https://services1.arcgis.com/ESMARspQHYMw9BZ9/ArcGIS/rest/services/Counties_and_Unitary_Authorities_December_2023_Boundaries_UK_BFC/FeatureServer/0",
+        "fn": "esri",
+        "columns": {
+            "CTYUA23NM": "county",
+            "geometry": "geometry"
+        },
+        "lookup_parcel": true
+    },
+    {
+        "name": "ons-district-2023_12",
+        "uri": "https://services1.arcgis.com/ESMARspQHYMw9BZ9/ArcGIS/rest/services/Local_Authority_Districts_December_2023_Boundaries_UK_BFC/FeatureServer/0",
+        "fn": "esri",
+        "columns": {
+            "LAD23NM": "district",
+            "geometry": "geometry"
+        },
+        "lookup_parcel": true
+    },
+    {
+        "name": "ons-ward-2023_12",
+        "uri": "https://services1.arcgis.com/ESMARspQHYMw9BZ9/ArcGIS/rest/services/Wards_December_2023_Boundaries_UK_BFC/FeatureServer/0",
+        "fn": "esri",
+        "columns": {
+            "WD23NM": "ward",
+            "geometry": "geometry"
+        },
+        "lookup_parcel": true
+    },
+    {
         "name": "defra-alc-2021_03_16",
         "uri": "/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_provisional_agricultural_land_classification_alc/format_GEOJSON_provisional_agricultural_land_classification_alc/SNAPSHOT_2021_03_16_provisional_agricultural_land_classification_alc",
         "fn": "dash",
@@ -11,7 +61,7 @@
         "lookup_parcel": true
     },
     {
-        "name": "defra_data_services_platform-national_parks-2024_01_30",
+        "name": "defra-national_parks-2024_01_30",
         "uri": "/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_national_parks/format_SHP_national_parks/SNAPSHOT_2024_01_30_national_parks",
         "fn": "dash",
         "format": "SHP",
@@ -84,46 +134,6 @@
         "format": "GPKG",
         "columns": {
             "name": "moorline_name",
-            "geometry": "geometry"
-        },
-        "lookup_parcel": true
-    },
-    {
-        "name": "ons-country-2024_02_27",
-        "uri": "https://services1.arcgis.com/ESMARspQHYMw9BZ9/ArcGIS/rest/services/Countries_December_2022_UK_BFC/FeatureServer/0",
-        "fn": "esri",
-        "columns": {
-            "CTRY22NM": "country",
-            "geometry": "geometry"
-        },
-        "lookup_parcel": true
-    },
-    {
-        "name": "ons-regions-2024_02_27",
-        "uri": "https://services1.arcgis.com/ESMARspQHYMw9BZ9/ArcGIS/rest/services/Regions_December_2023_Boundaries_EN_BFC/FeatureServer/0",
-        "fn": "esri",
-        "columns": {
-            "RGN21NM": "region",
-            "geometry": "geometry"
-        },
-        "lookup_parcel": true
-    },
-    {
-        "name": "ons-county-2024_02_27",
-        "uri": "https://services1.arcgis.com/ESMARspQHYMw9BZ9/ArcGIS/rest/services/Counties_and_Unitary_Authorities_December_2023_Boundaries_UK_BFC/FeatureServer/0",
-        "fn": "esri",
-        "columns": {
-            "CTYUA23NM": "county",
-            "geometry": "geometry"
-        },
-        "lookup_parcel": true
-    },
-    {
-        "name": "ons-district-2024_02_27",
-        "uri": "https://services1.arcgis.com/ESMARspQHYMw9BZ9/ArcGIS/rest/services/Local_Authority_Districts_December_2023_Boundaries_UK_BFC/FeatureServer/0",
-        "fn": "esri",
-        "columns": {
-            "LAD23NM": "district",
             "geometry": "geometry"
         },
         "lookup_parcel": true
