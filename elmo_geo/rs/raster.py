@@ -1,13 +1,34 @@
 import shutil
+import tempfile
 from typing import Dict, Set, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
+import rasterio
 import seaborn as sns
 import xarray as xr
 from xarray.core.dataarray import DataArray
 
 from elmo_geo import LOG
+
+
+def write_array_to_raster(arr, filename, **meta):
+    """Save an array of data to a .tif format raster file.
+    Alternative to to_raster commonly used by ESD Team avoiding xarray.
+
+    Parameters:
+        arr: (array-like) – This may be a numpy.ma.MaskedArray.
+        filename: (str) Path to save the file to.
+        meta: Metadata passed to the rasterio.open() function
+        when creating a raster file writer.
+
+    Returns:
+        None
+    """
+    with tempfile.NamedTemporaryFile(suffix=".tif") as tmp:
+        with rasterio.open(tmp.name, mode="w", **meta) as dst:
+            dst.write(arr)
+        shutil.copy(tmp.name, filename)
 
 
 def to_raster(da: DataArray, path: str):
