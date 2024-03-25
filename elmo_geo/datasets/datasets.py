@@ -399,6 +399,21 @@ priority_habitat_network = Dataset(
     },
 )
 
+priority_habitat_inventory_heathland = Dataset(
+    name="priority_habitat_inventory_heathland",
+    source="defra",
+    versions=[
+        Version(
+            name="2021_03_26",
+            path_read=("dbfs:/mnt/lab/restricted/ELM-Project/stg/defra-priority-habitat-inventory-heathland-2021_03_26.parquet"),
+        ),
+    ],
+    keep_cols=["Main_Habit", "geometry"],
+    output_coltypes={
+        "distance": "int8",
+    },
+)
+
 nfc_social = Dataset(
     name="nfc_social",
     source="ewco",
@@ -522,5 +537,6 @@ datasets = [
     nfc_ammonia_emmissions,
     tiles,
     shine,
+    priority_habitat_inventory_heathland,
 ]
 """A list of all defined datasets"""
