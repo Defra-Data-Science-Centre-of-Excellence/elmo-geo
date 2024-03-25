@@ -7,6 +7,7 @@
             "CTRY23NM": "country",
             "geometry": "geometry"
         },
+        "fetch": true,
         "lookup_parcel": true
     },
     {
@@ -17,6 +18,7 @@
             "RGN23NM": "region",
             "geometry": "geometry"
         },
+        "fetch": true,
         "lookup_parcel": true
     },
     {
@@ -27,6 +29,7 @@
             "CTYUA23NM": "county",
             "geometry": "geometry"
         },
+        "fetch": true,
         "lookup_parcel": true
     },
     {
@@ -37,6 +40,7 @@
             "LAD23NM": "district",
             "geometry": "geometry"
         },
+        "fetch": true,
         "lookup_parcel": true
     },
     {
@@ -47,6 +51,7 @@
             "WD23NM": "ward",
             "geometry": "geometry"
         },
+        "fetch": true,
         "lookup_parcel": true
     },
     {
@@ -58,6 +63,7 @@
             "ALC_GRADE": "alc",
             "geometry": "geometry"
         },
+        "fetch": true,
         "lookup_parcel": true
     },
     {
@@ -69,6 +75,7 @@
             "name": "np_name",
             "geometry": "geometry"
         },
+        "fetch": true,
         "lookup_parcel": true
     },
     {
@@ -80,6 +87,7 @@
             "NAME": "ramsar_name",
             "geometry": "geometry"
         },
+        "fetch": true,
         "lookup_parcel": true
     },
     {
@@ -91,6 +99,7 @@
             "pclassdesc": "class",
             "geometry": "geometry"
         },
+        "fetch": true,
         "lookup_parcel": true
     },
     {
@@ -102,6 +111,7 @@
             "NCA_Name": "nca_name",
             "geometry": "geometry"
         },
+        "fetch": true,
         "lookup_parcel": true
     },
     {
@@ -114,6 +124,7 @@
             "status": "sssi_status",
             "geometry": "geometry"
         },
+        "fetch": true,
         "lookup_parcel": true
     },
     {
@@ -125,6 +136,7 @@
             "name": "aonb_name",
             "geometry": "geometry"
         },
+        "fetch": true,
         "lookup_parcel": true
     },
     {
@@ -136,6 +148,7 @@
             "name": "moorline_name",
             "geometry": "geometry"
         },
+        "fetch": true,
         "lookup_parcel": true
     },
     {
@@ -148,6 +161,7 @@
             "name": "common_name",
             "geometry": "geometry"
         },
+        "fetch": true,
         "lookup_parcel": true
     },
     {
@@ -160,6 +174,7 @@
             "name": "common_name",
             "geometry": "geometry"
         },
+        "fetch": true,
         "lookup_parcel": true
     },
     {
@@ -173,6 +188,7 @@
             "fra_id": "fra_id",
             "geometry": "geometry"
         },
+        "fetch": true,
         "lookup_parcel": null
     },
     {
@@ -186,6 +202,7 @@
             "cat": "cat",
             "geometry": "geometry"
         },
+        "fetch": null,
         "lookup_parcel": null
     },
     {
@@ -196,6 +213,7 @@
             "status": "status",
             "geometry": "geometry"
         },
+        "fetch": null,
         "lookup_parcel": null
     },
     {
@@ -206,6 +224,7 @@
             "cat": "cat",
             "geometry": "geometry"
         },
+        "fetch": null,
         "lookup_parcel": null
     },
     {
@@ -216,6 +235,7 @@
             "LANDSCAPE": "landscape",
             "geometry": "geometry"
         },
+        "fetch": null,
         "lookup_parcel": null
     },
     {
@@ -226,6 +246,7 @@
             "OBJECTID": "OBJECTID",
             "geometry": "geometry"
         },
+        "fetch": null,
         "lookup_parcel": null
     },
     {
@@ -237,6 +258,7 @@
             "pnts": "pnts",
             "geometry": "geometry"
         },
+        "fetch": null,
         "lookup_parcel": null
     },
     {
@@ -251,6 +273,7 @@
             "cat": "cat",
             "geometry": "geometry"
         },
+        "fetch": null,
         "lookup_parcel": null
     },
     {
@@ -262,6 +285,7 @@
             "geometry": "geometry"
         },
         "note": "create a pipeline to import from EODS, are DASH doing this?",
+        "fetch": null,
         "lookup_parcel": false
     }
 ]

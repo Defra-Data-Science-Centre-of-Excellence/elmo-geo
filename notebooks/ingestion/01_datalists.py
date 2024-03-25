@@ -228,11 +228,6 @@ rpa-parcel
 wfm-farm
 wfm-field
 
-# Features
-country
-county
-
-
 # Boundary
 rpa-hedge
 os-ngd
