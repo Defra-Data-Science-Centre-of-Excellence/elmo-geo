@@ -1,7 +1,7 @@
 # Hidden
 .*
 !.gitkeep
-/data/
+/data/*
 
 # Manual
 !/.github/workflows/verify.yaml

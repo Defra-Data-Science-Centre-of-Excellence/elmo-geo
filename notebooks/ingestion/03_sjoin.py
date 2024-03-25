@@ -23,13 +23,13 @@ def string_to_dict(string: str, pattern: str) -> dict:
         list(re.search(regex, string).groups()),
     ))
 
-def get_f_lookup_parcel(filepath):
+def create_lookup_parcel_path(filepath):
     pattern = "{path}/{source}-{dataset}-{version}.{format}"
     path, source, dataset, version, format = string_to_dict(filepath, pattern).values()
     return f"{path}/elmo_geo-lookup_{dataset}-{version}.{format}"
 
 def to_pq(sdf, f):
-    sdf.write.format("parquet").save(dbfs(f, True))
+    sdf.write.format("parquet").save(dbfs(f, True), partitionBy="sindex")
     return sdf
 
 def load_sdf():
@@ -40,30 +40,30 @@ def load_sdf():
 
 os.chdir(os.getcwd().replace('/notebooks/ingestion', ''))
 
+catalogue = json.loads(open('data/catalogue.json').read())
+
+
 # COMMAND ----------
 
-datasets = json.load('data/catalogue.json')
-sdf_parcel = load_sdf('rpa-parcel-adas')
+datasets = json.load("data/catalogue.json")
+sdf_parcel = load_sdf("rpa-parcel-adas")
 
 for dataset in datasets:
-    if dataset['parcel_lookup'] == "todo":
-        dataset["f_parcel_lookup"] = dataset["f_parcel_lookup"] or get_f_lookup_parcel(dataset["filepath"])
+    if dataset["lookup_parcel"] == True:
+        LOG.info("Task lookup_parcel: {}".format(dataset["name"]))
+        dataset["lookup_parcel"] = create_lookup_parcel_path(dataset["name"])
         sdf = (
-            load_sdf(dataset["filepath"])
-            .transform(sjoin, sdf_parcel, lsuffix='_left', rsuffix='', distance=12)
+            load_sdf(dataset["name"])
+            .transform(sjoin, sdf_parcel, lsuffix="_left", rsuffix="", distance=12)
             .selectExpr(
-                'id_left AS id',
-                'id_parcel',
-                'sindex',
+                "id_left AS id",
+                "id_parcel",
+                "sindex",
             )
-            .transform(to_pq, dataset["f_parcel_lookup"])
+            .transform(to_pq, dataset["lookup_parcel"])
         )
-        dataset['parcel_lookup'] = "done"
-
 
 datasets
-
-
 
 # COMMAND ----------
 

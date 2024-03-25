@@ -1,6 +1,7 @@
 # Databricks notebook source
 # MAGIC %md
 # MAGIC # Data Listed from Data Sources
+# MAGIC List data available on data sources identified in this list.
 # MAGIC
 # MAGIC ## Data Source
 # MAGIC - elmo_geo.datasets: `data/datasets.json`
@@ -228,25 +229,9 @@ wfm-farm
 wfm-field
 
 # Features
-alc
-national_park
-ramsar
-peaty_soils
-national_character_areas
-sssi
-aonb
-lfa
-region
-commons
-flood_risk_areas
-ewco-red_squirrel
-ewco-priority_habitat_network
-nfc_social
-ewco-water_quality
-ewco-flood_risk_management
-keeping_rivers_cool_riparian_buffers
-nfc_ammonia_emmissions
-tiles
+country
+county
+
 
 # Boundary
 rpa-hedge
@@ -254,9 +239,8 @@ os-ngd
 osm-uk
 he-shine
 
-# Bare Soil
-
 # Sylvan
+
 """
 
 # COMMAND ----------
@@ -271,3 +255,13 @@ df[['source', 'dataset', 'version']] = df['name'].str.split('-', n=2, expand=Tru
 
 
 display(df)
+
+# COMMAND ----------
+
+import pandas as pd
+
+
+df = pd.read_json('data/dash.json')
+
+display(pd.DataFrame({'name':df['name'].str[:-11].unique()}))
+df
