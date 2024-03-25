@@ -12,13 +12,13 @@ from xarray.core.dataarray import DataArray
 from elmo_geo import LOG
 
 
-def write_array_to_raster(arr, filename, meta):
+def write_array_to_raster(arr, filename, **meta):
     """Save an array of data to a .tif format raster file.
 
     Parameters:
         arr: (array-like) – This may be a numpy.ma.MaskedArray.
         filename: (str) Path to save the file to.
-        meta: (dict) Metadata passed to the rasterio.open() function
+        meta: Metadata passed to the rasterio.open() function
         when creating a raster file writer.
 
     Returns:
