@@ -14,6 +14,7 @@ from elmo_geo import LOG
 
 def write_array_to_raster(arr, filename, **meta):
     """Save an array of data to a .tif format raster file.
+    Alternative to to_raster commonly used by ESD Team avoiding xarray.
 
     Parameters:
         arr: (array-like) – This may be a numpy.ma.MaskedArray.
