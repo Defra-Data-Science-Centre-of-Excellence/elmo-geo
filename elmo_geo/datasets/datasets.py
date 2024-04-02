@@ -410,7 +410,7 @@ priority_habitat_inventory_heathland = Dataset(
     ],
     keep_cols=["Main_Habit", "geometry"],
     output_coltypes={
-        "distance": "int8",
+        "distance": "int32",
     },
 )
 
