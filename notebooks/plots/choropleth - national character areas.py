@@ -37,8 +37,8 @@ dbutils.widgets.dropdown("plot variable", columns[-1], columns)
 value_column = dbutils.widgets.get("plot variable")
 print(f"\nDataset variable to plot:\t{value_column}")
 
-dbutils.widgets.text("variable name", "SHINE proportion")
-dbutils.widgets.text("variable source", "Historic England SHINE dataset")
+dbutils.widgets.text("variable name", "Variable Name")
+dbutils.widgets.text("variable source", "Variable Source")
 
 variable_name = dbutils.widgets.get("variable name")
 variable_source = dbutils.widgets.get("variable source")
