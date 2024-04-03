@@ -1,4 +1,12 @@
 # Databricks notebook source
+# MAGIC %md
+# MAGIC
+# MAGIC # Choropleth Plot - National Charater Areas
+# MAGIC
+# MAGIC This notebook produces a choropleth plot
+
+# COMMAND ----------
+
 # MAGIC %load_ext autoreload
 # MAGIC %autoreload 2
 # MAGIC %pip install -Uq seaborn mapclassify matplotlib
@@ -16,6 +24,7 @@ import os
 import geopandas as gpd
 from functools import partial
 from pyspark.sql import functions as F
+from pyspark.sql.types import DecimalType, DoubleType, FloatType, IntegerType, LongType
 
 from elmo_geo import LOG, register
 from elmo_geo.datasets.datasets import datasets, parcels
@@ -32,8 +41,9 @@ dataset = next(d for d in datasets if d.name == name)
 [print(k, v, sep=":\t") for k, v in dataset.__dict__.items()]
 
 # present fields of the dataset to select which to plot
-columns = spark.read.parquet(dataset.path_output.format(version=version)).columns
-dbutils.widgets.dropdown("plot variable", columns[-1], columns)
+fields = spark.read.parquet(dataset.path_output.format(version=version)).schema.fields
+numeric_variables = [field.name for field in fields if isinstance(field.dataType, (DecimalType, DoubleType, FloatType, IntegerType, LongType))]
+dbutils.widgets.dropdown("plot variable", numeric_variables[0], numeric_variables)
 value_column = dbutils.widgets.get("plot variable")
 print(f"\nDataset variable to plot:\t{value_column}")
 
@@ -48,22 +58,21 @@ print(f"Variable source:\t{variable_source}")
 # COMMAND ----------
 
 # Use national character areas as geometry to aggregate data to
-path_nca = "dbfs:/mnt/lab/unrestricted/elm/elmo/national_character_areas/output.parquet"
-path_nca_poly = "/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_national_character_areas/format_SHP_national_character_areas/LATEST_national_character_areas/National_Character_Areas___Natural_England.shp"
+path_nca = "dbfs:/mnt/lab/unrestricted/elm/defra/national_character_areas/2021_03_29/output.parquet"
+path_nca_poly = "dbfs:/mnt/lab/unrestricted/elm/defra/national_character_areas/2021_03_29/polygons.parquet"
 
+# COMMAND ----------
+
+spark.read.parquet(dataset.path_output.format(version=version)).display()
 
 # COMMAND ----------
 
 df = (spark.read.parquet(dataset.path_output.format(version=version))
-      #.groupBy("id_parcel").agg(F.sum(F.col(value_column)).alias(value_column))
+      .groupBy("id_parcel").agg(F.sum(F.col(value_column)).alias(value_column))
       ).toPandas()
 
 mean = df[value_column].mean()
 df.head()
-
-# COMMAND ----------
-
-df.describe()
 
 # COMMAND ----------
 
@@ -92,15 +101,21 @@ df
 
 # COMMAND ----------
 
-gdf = gpd.read_file(path_nca_poly)
-gdf.head()
+polygons = (spark.read.parquet(path_nca_poly)
+            .withColumn("geometry", F.expr("ST_GeomFromWKB(geometry)"))
+            .groupby("nca_name")
+            .agg(F.expr("ST_Union_Aggr(geometry) as geometry"))
+            ).toPandas()
+polygons = gpd.GeoDataFrame(polygons, crs = "epsg:27700").loc[:, ["nca_name", "geometry"]].set_index("nca_name")
+polygons = polygons.join(df).reset_index().sort_values(by=value_column, ascending=False).dropna()
+polygons
 
 # COMMAND ----------
 
 # join in the geometries
-polygons = gpd.read_file(path_nca_poly).loc[:, ["nca_name", "geometry"]].to_crs(27700).set_index("nca_name")
-polygons = polygons.join(df).reset_index().sort_values(by=value_column, ascending=False).dropna()
-polygons
+# polygons = gpd.read_file(path_nca_poly).loc[:, ["nca_name", "geometry"]].to_crs(27700).set_index("nca_name")
+# polygons = polygons.join(df).reset_index().sort_values(by=value_column, ascending=False).dropna()
+# polygons
 
 # COMMAND ----------
 
