@@ -3,7 +3,23 @@
 # MAGIC
 # MAGIC # Choropleth Plot - National Charater Areas
 # MAGIC
-# MAGIC This notebook produces a choropleth plot
+# MAGIC **Author:** Obi Thompson Sargoni
+# MAGIC
+# MAGIC **Date:** 03/04/2024
+# MAGIC
+# MAGIC This notebook produces a choropleth plot from a processed dataset - a dataset which has values linked to parcel IDs. The chosen numeric variable of the processed dataset is aggregated to National Charater Area polygons, which are used to plot the variable at national scale. 
+# MAGIC
+# MAGIC Parcel IDs are used to link the chosen datasets with the NCA polygons. Therefore, the input dataset must contain an 'id_parcel' field.
+# MAGIC
+# MAGIC How to use this notebook:
+# MAGIC
+# MAGIC 1. Using the widgets, choose the processed dataset to plot, the plot variable.
+# MAGIC 2. Enter the variable name and surce into the free text widgets. These are used in the plot.
+# MAGIC 3. Run the notebook
+# MAGIC
+# MAGIC Key processing steps:
+# MAGIC 1. The plot variable is aggregated to give a single value per parcel. It is aggregated by summing values for each parcel id.
+# MAGIC 2. Then the plot variable is aggregated to National Character Areas (NCAs) by calculating the mean across all parcels within each NCA
 
 # COMMAND ----------
 
@@ -35,7 +51,8 @@ register()
 # COMMAND ----------
 
 names = sorted([f"{d.source}/{d.name}/{v.name}" for d in datasets for v in d.versions])
-dbutils.widgets.dropdown("dataset", names[-1], names)
+default_name = [n for n in names if "shine" in n][0]
+dbutils.widgets.dropdown("dataset", default_name, names)
 _, name, version = dbutils.widgets.get("dataset").split("/")
 dataset = next(d for d in datasets if d.name == name)
 [print(k, v, sep=":\t") for k, v in dataset.__dict__.items()]
@@ -47,8 +64,8 @@ dbutils.widgets.dropdown("plot variable", numeric_variables[0], numeric_variable
 value_column = dbutils.widgets.get("plot variable")
 print(f"\nDataset variable to plot:\t{value_column}")
 
-dbutils.widgets.text("variable name", "Variable Name")
-dbutils.widgets.text("variable source", "Variable Source")
+dbutils.widgets.text("variable name", "SHINE proportion")
+dbutils.widgets.text("variable source", "Historic England SHINE dataset")
 
 variable_name = dbutils.widgets.get("variable name")
 variable_source = dbutils.widgets.get("variable source")
@@ -109,13 +126,6 @@ polygons = (spark.read.parquet(path_nca_poly)
 polygons = gpd.GeoDataFrame(polygons, crs = "epsg:27700").loc[:, ["nca_name", "geometry"]].set_index("nca_name")
 polygons = polygons.join(df).reset_index().sort_values(by=value_column, ascending=False).dropna()
 polygons
-
-# COMMAND ----------
-
-# join in the geometries
-# polygons = gpd.read_file(path_nca_poly).loc[:, ["nca_name", "geometry"]].to_crs(27700).set_index("nca_name")
-# polygons = polygons.join(df).reset_index().sort_values(by=value_column, ascending=False).dropna()
-# polygons
 
 # COMMAND ----------
 
