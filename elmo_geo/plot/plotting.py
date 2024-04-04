@@ -1,14 +1,14 @@
 from typing import List, Tuple
 
-import numpy as np
 import geopandas as gpd
+import mapclassify
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 import seaborn as sns
 import xarray as xr
 from matplotlib.colors import ListedColormap
 from matplotlib.ticker import FuncFormatter, PercentFormatter
-import mapclassify
 
 from elmo_geo import LOG
 
@@ -167,11 +167,17 @@ def plot_parcel_bare_soil(parcel_id: str, geometry: gpd.GeoSeries, ds: xr.Datase
     return fig, axes
 
 
-def plot_choropleth_with_head_and_tail_bars(gdf: gpd.GeoDataFrame, variable_column: str, variable_name: str, variable_source: str, plot_title: str) -> Tuple[plt.Figure, List[plt.Axes]]:
+def plot_choropleth_with_head_and_tail_bars(
+    gdf: gpd.GeoDataFrame,
+    variable_column: str,
+    variable_name: str,
+    variable_source: str,
+    plot_title: str,
+) -> Tuple[plt.Figure, List[plt.Axes]]:
     """Creates a plot with three components: a choropleth and two horizontal bar charts.
 
-    The choropleth maps the geometries in the input GeoDataFrame, coloured by the variable given by the 'variable_column' parameter. The two horizontal bar charts show the top 20 and bottom 20 rows 
-    of the GeoDataFrame. The bars are labeled by the index of the GeoDataFrame.
+    The choropleth maps the geometries in the input GeoDataFrame, coloured by the variable given by the 'variable_column' parameter. The two horizontal bar
+    charts show the top 20 and bottom 20 rows of the GeoDataFrame. The bars are labeled by the index of the GeoDataFrame.
 
     Parameters
     ----------
@@ -183,11 +189,11 @@ def plot_choropleth_with_head_and_tail_bars(gdf: gpd.GeoDataFrame, variable_colu
     Returns:
         A tuple of the matplotlib figure and axes objects
     """
-    
+
     sns.set_style("white")
     sns.set_context("paper")
 
-    fig, axes = plt.subplots(figsize=(12,8), nrows=2, ncols=2, constrained_layout=True, width_ratios=[2,1])
+    fig, axes = plt.subplots(figsize=(12, 8), nrows=2, ncols=2, constrained_layout=True, width_ratios=[2, 1])
     gs = axes[0, 0].get_gridspec()
     for ax in axes[0:, 0]:
         ax.remove()
@@ -202,11 +208,11 @@ def plot_choropleth_with_head_and_tail_bars(gdf: gpd.GeoDataFrame, variable_colu
         legend=True,
         edgecolor="black",
         linewidth=0.5,
-        legend_kwds={"fmt": "{:.1%}", "title":f"Mean {variable_name}"},  # Remove decimals in legend
+        legend_kwds={"fmt": "{:.1%}", "title": f"Mean {variable_name}"},  # Remove decimals in legend
         ax=axbig,
     )
     axbig.set_axis_off()
-    axbig.annotate(f"All of England mean: {mean:.2%}", xy=(0.01, 0.99), fontweight="bold", xycoords='axes fraction')
+    axbig.annotate(f"All of England mean: {mean:.2%}", xy=(0.01, 0.99), fontweight="bold", xycoords="axes fraction")
 
     colors = [[plt.get_cmap("Reds", lut=5)(x) for x in np.linspace(0, 1, 5)][x] for x in mapclassify.Quantiles(gdf[variable_column], k=5).yb]
 
