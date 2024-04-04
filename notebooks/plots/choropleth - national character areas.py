@@ -20,6 +20,8 @@
 # MAGIC Key processing steps:
 # MAGIC 1. The plot variable is aggregated to give a single value per parcel. It is aggregated by summing values for each parcel id.
 # MAGIC 2. Then the plot variable is aggregated to National Character Areas (NCAs) by calculating the mean across all parcels within each NCA
+# MAGIC
+# MAGIC The defaults for this notebook produce a choropleth plot of the proportion of parcels intersected by SHINE geometries (non-designated historic features).
 
 # COMMAND ----------
 
