@@ -1,7 +1,9 @@
 from typing import List, Tuple
 
 import geopandas as gpd
+import mapclassify
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 import seaborn as sns
 import xarray as xr
@@ -27,10 +29,12 @@ dark_style = {
 
 def plot_bare_soil_dist(data: pd.Series, title: str, dark: bool = False) -> Tuple[plt.Figure, plt.Axes]:
     """Plot the distribution of bare soil
+
     Parameters:
         data: A pandas series of bare soil proportions between 0-1 or na for each parcel
         title: Title for the plot
         dark: Whether to style the plot with a dark background
+
     Returns: A tuple of the matplotlib figure and axes objects
     """
     # summarise the data
@@ -99,14 +103,13 @@ def plot_parcel_bare_soil(parcel_id: str, geometry: gpd.GeoSeries, ds: xr.Datase
     """Produce a figure of subplots for a parcel showing its calculated NVDI, bare soil
         classification, true colour image, and cloud probability.
 
-    Parameters
-    ----------
+    Parameters:
         parcel_id: The id of the parcel for the plot's title
         geometry: The geometry of the parcel
         ds: The dataset of arrays including `ndvi`, `tci` and `cloud_prob`
+
     Returns:
         A tuple of the matplotlib figure and axes objects
-
     """
     ds_parcel = xr.Dataset(
         data_vars={
@@ -163,3 +166,94 @@ def plot_parcel_bare_soil(parcel_id: str, geometry: gpd.GeoSeries, ds: xr.Datase
         fontsize="x-large",
     )
     return fig, axes
+
+
+def plot_choropleth_with_head_and_tail_bars(
+    gdf: gpd.GeoDataFrame,
+    variable_column: str,
+    variable_name: str,
+    variable_source: str,
+    plot_title: str,
+) -> plt.Figure:
+    """Creates a plot with three components: a choropleth and two horizontal bar charts.
+
+    The choropleth maps the geometries in the input GeoDataFrame, coloured by the variable given by the 'variable_column' parameter. The two horizontal bar
+    charts show the top 20 and bottom 20 rows of the GeoDataFrame. The bars are labeled by the index of the GeoDataFrame.
+
+    Parameters:
+        gdf: GeoDataFrame containing geometries and vaues to be plotted.
+        variable_column: The name of GeoDataFrame coloumn to plot the values of.
+        variable_name: The name of the variable to use in plot titles and legends.
+        variable_source: The data source of the variable being plotted.
+        plot_title: The title plot.
+
+    Returns:
+        A tuple of the matplotlib figure and axes objects
+    """
+
+    sns.set_style("white")
+    sns.set_context("paper")
+
+    fig, axes = plt.subplots(figsize=(12, 8), nrows=2, ncols=2, constrained_layout=True, width_ratios=[2, 1])
+    gs = axes[0, 0].get_gridspec()
+    for ax in axes[0:, 0]:
+        ax.remove()
+    axbig = fig.add_subplot(gs[0:, 0])
+
+    mean = gdf[variable_column].mean()
+
+    gdf.plot(
+        column=variable_column,
+        scheme="quantiles",
+        cmap="Reds",
+        legend=True,
+        edgecolor="black",
+        linewidth=0.5,
+        legend_kwds={"fmt": "{:.1%}", "title": f"Mean {variable_name}"},  # Remove decimals in legend
+        ax=axbig,
+    )
+    axbig.set_axis_off()
+    axbig.annotate(f"All of England mean: {mean:.2%}", xy=(0.01, 0.99), fontweight="bold", xycoords="axes fraction")
+
+    colors = [[plt.get_cmap("Reds", lut=5)(x) for x in np.linspace(0, 1, 5)][x] for x in mapclassify.Quantiles(gdf[variable_column], k=5).yb]
+
+    n = 20
+    axes[0, 1].sharex(axes[1, 1])
+    head = gdf.head(n)
+    barcont = axes[0, 1].barh(y=head.nca_name, width=head[variable_column], color=colors[:n], ec="black", lw=0.5)
+    axes[0, 1].set_title(f"Highest {n} areas by {variable_name}", loc="left")
+    axes[0, 1].invert_yaxis()
+    axes[0, 1].bar_label(
+        barcont,
+        head[variable_column].map(lambda x: f"{x:.1%}"),
+        padding=4,
+    )
+    axes[0, 1].get_xaxis().set_visible(False)
+
+    tail = gdf.tail(n)
+    barcont = axes[1, 1].barh(y=tail.nca_name, width=tail[variable_column], color=colors[-n:], ec="black", lw=0.5)
+    axes[1, 1].set_title(f"Lowest {n} areas by {variable_name}", loc="left")
+    axes[1, 1].xaxis.set_major_formatter(PercentFormatter(xmax=1))
+    axes[1, 1].invert_yaxis()
+    axes[1, 1].bar_label(
+        barcont,
+        tail[variable_column].map(lambda x: f"{x:.1%}"),
+        padding=4,
+    )
+    axes[1, 1].get_xaxis().set_visible(False)
+    sns.despine(left=True, top=True, right=True, bottom=True)
+    fig.suptitle(
+        plot_title,
+        x=0,
+        ha="left",
+        fontsize="x-large",
+    )
+    fig.supxlabel(
+        f"Source: {variable_source}",
+        x=0,
+        ha="left",
+        fontsize="small",
+        wrap=True,
+    )
+
+    return fig
