@@ -29,10 +29,12 @@ dark_style = {
 
 def plot_bare_soil_dist(data: pd.Series, title: str, dark: bool = False) -> Tuple[plt.Figure, plt.Axes]:
     """Plot the distribution of bare soil
+    
     Parameters:
         data: A pandas series of bare soil proportions between 0-1 or na for each parcel
         title: Title for the plot
         dark: Whether to style the plot with a dark background
+    
     Returns: A tuple of the matplotlib figure and axes objects
     """
     # summarise the data
@@ -101,11 +103,11 @@ def plot_parcel_bare_soil(parcel_id: str, geometry: gpd.GeoSeries, ds: xr.Datase
     """Produce a figure of subplots for a parcel showing its calculated NVDI, bare soil
         classification, true colour image, and cloud probability.
 
-    Parameters
-    ----------
+    Parameters:
         parcel_id: The id of the parcel for the plot's title
         geometry: The geometry of the parcel
         ds: The dataset of arrays including `ndvi`, `tci` and `cloud_prob`
+    
     Returns:
         A tuple of the matplotlib figure and axes objects
 
@@ -179,13 +181,13 @@ def plot_choropleth_with_head_and_tail_bars(
     The choropleth maps the geometries in the input GeoDataFrame, coloured by the variable given by the 'variable_column' parameter. The two horizontal bar
     charts show the top 20 and bottom 20 rows of the GeoDataFrame. The bars are labeled by the index of the GeoDataFrame.
 
-    Parameters
-    ----------
+    Parameters:
         gdf: GeoDataFrame containing geometries and vaues to be plotted.
         variable_column: The name of GeoDataFrame coloumn to plot the values of.
         variable_name: The name of the variable to use in plot titles and legends.
         variable_source: The data source of the variable being plotted.
         plot_title: The title plot.
+    
     Returns:
         A tuple of the matplotlib figure and axes objects
     """
