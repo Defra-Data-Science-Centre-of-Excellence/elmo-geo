@@ -113,10 +113,6 @@ df
 
 # COMMAND ----------
 
-df.dropna()
-
-# COMMAND ----------
-
 df_nca = spark.read.parquet(path_nca).repartition(200).toPandas()
 df_nca = df_nca.sort_values("proportion", ascending=False).drop_duplicates(subset=["id_parcel"]).drop(columns=[
 #  "partition",
@@ -143,7 +139,8 @@ df_all = df[[value_column]].fillna(0).join(df_nca.set_index("id_parcel"), how="i
 
 # with only parcels that do appear in the input dataset
 df_feature = df.dropna(subset=[value_column]).join(df_nca.set_index("id_parcel"), how="inner").groupby("nca_name").mean()
-df
+
+df_feature.head(), df_all.head()
 
 # COMMAND ----------
 
