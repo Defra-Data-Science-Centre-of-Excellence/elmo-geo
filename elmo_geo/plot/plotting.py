@@ -34,7 +34,7 @@ def plot_bare_soil_dist(data: pd.Series, title: str, dark: bool = False) -> Tupl
         data: A pandas series of bare soil proportions between 0-1 or na for each parcel
         title: Title for the plot
         dark: Whether to style the plot with a dark background
-    
+        
     Returns: A tuple of the matplotlib figure and axes objects
     """
     # summarise the data
@@ -110,7 +110,6 @@ def plot_parcel_bare_soil(parcel_id: str, geometry: gpd.GeoSeries, ds: xr.Datase
     
     Returns:
         A tuple of the matplotlib figure and axes objects
-
     """
     ds_parcel = xr.Dataset(
         data_vars={
