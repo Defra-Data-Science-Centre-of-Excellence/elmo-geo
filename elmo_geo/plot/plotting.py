@@ -29,12 +29,12 @@ dark_style = {
 
 def plot_bare_soil_dist(data: pd.Series, title: str, dark: bool = False) -> Tuple[plt.Figure, plt.Axes]:
     """Plot the distribution of bare soil
-    
+
     Parameters:
         data: A pandas series of bare soil proportions between 0-1 or na for each parcel
         title: Title for the plot
         dark: Whether to style the plot with a dark background
-        
+
     Returns: A tuple of the matplotlib figure and axes objects
     """
     # summarise the data
@@ -107,7 +107,7 @@ def plot_parcel_bare_soil(parcel_id: str, geometry: gpd.GeoSeries, ds: xr.Datase
         parcel_id: The id of the parcel for the plot's title
         geometry: The geometry of the parcel
         ds: The dataset of arrays including `ndvi`, `tci` and `cloud_prob`
-    
+
     Returns:
         A tuple of the matplotlib figure and axes objects
     """
@@ -174,7 +174,7 @@ def plot_choropleth_with_head_and_tail_bars(
     variable_name: str,
     variable_source: str,
     plot_title: str,
-) -> Tuple[plt.Figure, List[plt.Axes]]:
+) -> plt.Figure:
     """Creates a plot with three components: a choropleth and two horizontal bar charts.
 
     The choropleth maps the geometries in the input GeoDataFrame, coloured by the variable given by the 'variable_column' parameter. The two horizontal bar
@@ -186,7 +186,7 @@ def plot_choropleth_with_head_and_tail_bars(
         variable_name: The name of the variable to use in plot titles and legends.
         variable_source: The data source of the variable being plotted.
         plot_title: The title plot.
-    
+
     Returns:
         A tuple of the matplotlib figure and axes objects
     """
@@ -256,4 +256,4 @@ def plot_choropleth_with_head_and_tail_bars(
         wrap=True,
     )
 
-    return fig, axes
+    return fig

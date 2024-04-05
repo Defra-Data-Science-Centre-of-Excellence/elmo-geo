@@ -157,11 +157,11 @@ polygons_all
 # COMMAND ----------
 
 plot_title = f"{variable_name} for land parcels in England by National Character Area - All parcels"
-f, axes = plot_choropleth_with_head_and_tail_bars(polygons_all, value_column, variable_name, variable_source, plot_title)
+f = plot_choropleth_with_head_and_tail_bars(polygons_all, value_column, variable_name, variable_source, plot_title)
 f.show()
 
 # COMMAND ----------
 
 plot_title = f"{variable_name} for land parcels in England by National Character Area - Feature parcels"
-f, axes = plot_choropleth_with_head_and_tail_bars(polygons_feature, value_column, variable_name, variable_source, plot_title)
+f = plot_choropleth_with_head_and_tail_bars(polygons_feature, value_column, variable_name, variable_source, plot_title)
 f.show()
