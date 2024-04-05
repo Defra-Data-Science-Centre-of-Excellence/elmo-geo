@@ -85,6 +85,7 @@ sf_adj = "dbfs:/mnt/lab/unrestricted/elm/elm_se/adjacenct_parcel_geometries.parq
 sf_neighbour = "dbfs:/mnt/lab/unrestricted/elm/elm_se/neighbouring_land_use_geometries.parquet/"
 sf_boundary = "dbfs:/mnt/lab/unrestricted/elm/elm_se/boundary_use_geometries.parquet/"
 sf_uptake = "dbfs:/mnt/lab/unrestricted/elm/elm_se/boundary_use_uptake.parquet/"
+sf_boundary_lengths = "dbfs:/mnt/lab/unrestricted/elm/elm_se/boundary_use_lengthse.parquet/"
 
 f_hedge_change = "/dbfs/mnt/lab/unrestricted/elm/elm_se/hedgerow_boundary_use_change.parquet"
 
@@ -321,6 +322,33 @@ spark.read.parquet(sf_uptake).select("elg_adj", "elg_water", "elg_ditch", "elg_w
 
 # COMMAND ----------
 
+sdf_lengths = (spark.read.parquet(sf_uptake)
+      .withColumn("boundary_unadj", F.col("m"))
+      .withColumn("boundary", F.expr("m * (1 - .5 * CAST(elg_adj AS DOUBLE))"))
+      .groupBy("id_parcel")
+      .agg(
+          F.sum("boundary_unadj").alias("boundary_unadj"),
+          F.sum("boundary").alias("boundary"),
+          F.sum(F.expr("boundary * CAST(elg_water AS DOUBLE)")).alias("water"),
+          F.sum(F.expr("boundary * CAST(elg_ditch AS DOUBLE)")).alias("ditch"),
+          F.sum(F.expr("boundary * CAST(elg_wall AS DOUBLE)")).alias("wall"),
+          F.sum(F.expr("boundary * CAST(elg_hedge AS DOUBLE)")).alias("hedge"),
+          F.sum(F.expr("boundary * CAST(NOT (elg_water OR elg_ditch OR elg_wall OR elg_hedge) AS DOUBLE)")).alias("available"),
+          F.sum(F.expr("boundary * CAST(elg_hedge AND NOT (elg_water OR elg_ditch OR elg_wall) AS DOUBLE)")).alias("hedge_only"),
+          F.sum(F.expr("boundary * CAST(elg_hedge AND woodland AS DOUBLE)")).alias("hedge_on_ewco"),
+          F.sum(F.expr("boundary * CAST(elg_ditch AND .1<peatland AS DOUBLE)")).alias("ditch_on_peatland"),
+          )
+      )
+sdf_lengths.write.parquet(sf_boundary_lengths, mode="overwrite")
+sdf_lengths.display()
+
+# COMMAND ----------
+
+sdf_lengths = spark.read.parquet(sf_boundary_lengths)
+sdf_lengths.groupby().sum().display()
+
+# COMMAND ----------
+
 spark.read.parquet(sf_uptake).select(
     F.expr("m").alias("ignoring_adjacency"),
     F.expr("m * (1 - .5 * CAST(elg_adj AS DOUBLE))").alias("boundary"),
@@ -394,3 +422,7 @@ df = (
 df.to_parquet(f_hedge_change)
 pd.options.display.float_format = "{:,.3f}".format
 df
+
+# COMMAND ----------
+
+
