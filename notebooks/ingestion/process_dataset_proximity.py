@@ -1,8 +1,19 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC # Processing vector data and calculating intersections with land parcels
-# MAGIC This notebook is used to clean up vector datasets, and to join them with the land parcels
-# MAGIC dataset to get the proportion of the land parcel intersecting with each feature
+# MAGIC # Processing vector data and calculating minimum distance to land parcels
+# MAGIC **Author:** Obi Thompson Sargoni
+# MAGIC
+# MAGIC **Date:** 08/04/2024
+# MAGIC
+# MAGIC This notebook produces a parcel level dataset which gives the minimum distance from each parcel to features in the input features datasets, upto a maximum threshold distance.
+# MAGIC
+# MAGIC How to use this notebook:
+# MAGIC
+# MAGIC 1. Using the widgets choose the features dataset and the parcels dataset (which version parcels to be used)
+# MAGIC 2. Run the notebook
+# MAGIC
+# MAGIC To do:
+# MAGIC * Implement a KNN methodology that calculates the minimum distance of every parcel to a geometry in the features dataset without imposing a distance threshold.
 
 # COMMAND ----------
 
@@ -15,6 +26,7 @@ import os
 import geopandas as gpd
 from functools import partial
 from pyspark.sql import functions as F
+from pyspark.sql.types import DecimalType, DoubleType, FloatType, IntegerType, LongType
 
 from elmo_geo import LOG, register
 from elmo_geo.datasets.datasets import datasets, parcels
@@ -43,46 +55,30 @@ _, pname, pversion = dbutils.widgets.get("parcels").split("/")
  print("version", next(v for v in parcels.versions if v.name == pversion), sep = ":\t"),
  ]
 
+path_read = next(v.path_read for v in dataset.versions if v.name == version)
+path_parcels = next(v.path_read for v in parcels.versions if v.name == pversion)
+
+# present fields of the dataset to select which to plot
+fields = spark.read.parquet(path_read).schema.fields
+non_numeric_variables = [field.name for field in fields if ~isinstance(field.dataType, (DecimalType, DoubleType, FloatType, IntegerType, LongType))]
+dbutils.widgets.dropdown("group-by variable", non_numeric_variables[0], non_numeric_variables)
+groupby_variable = dbutils.widgets.get("group-by variable")
+print(f"\nDataset variable to group distances by:\t{groupby_variable}")
+
+dbutils.widgets.text("group-by alias", "heath_habitat")
+groupby_alias = dbutils.widgets.get("group-by alias")
+
 target_epsg = 27700
 n_partitions = 200
 simplify_tolerence: float = 0.5  # metres
 max_vertices: int = 256  # per polygon (row)
-path_read = next(v.path_read for v in dataset.versions if v.name == version)
-path_parcels = next(v.path_read for v in parcels.versions if v.name == pversion)
 
-# COMMAND ----------
-
-# # take a look at the raw data
-# if os.path.splitext(path_read)[1] == ".parquet":
-#     gpd_read = gpd.read_parquet
-#     gpd_read(path_read).head(8)
-# else:
-#     gpd_read = partial(gpd.read_file, engine = "pyogrio")
-#     gpd_read(path_read, rows=8)
-
-# COMMAND ----------
-
-# # process the dataset
-# df = (
-#     gpd_read(path_read)
-#     .explode(index_parts=False)
-#     .pipe(transform_crs, target_epsg=27700)
-#     .filter(dataset.keep_cols, axis="columns")
-#     .rename(columns=dataset.rename_cols)
-#     .pipe(make_geometry_valid)
-#     .pipe(geometry_to_wkb)
-# )
-
-# LOG.info(f"Dataset has {df.size:,.0f} rows")
-# LOG.info(f"Dataset has the following columns: {df.columns.tolist()}")
-# (spark.createDataFrame(df).repartition(n_partitions).write.format("parquet").save(dataset.path_polygons.format(version=version), mode="overwrite"))
-# LOG.info(f"Saved preprocessed dataset to {dataset.path_polygons.format(version=version)}")
+DISTANCE_THRESHOLD = 5_000
 
 # COMMAND ----------
 
 # take a look at the processed data
-df = spark.read.parquet(path_read)
-df.display()
+spark.read.parquet(path_read).display()
 
 # COMMAND ----------
 
@@ -95,6 +91,7 @@ df_parcels = (
     .withColumn("geometry", F.expr("ST_Force_2D(geometry)"))
     .withColumn("geometry", F.expr("ST_MakeValid(geometry)"))
     .select("id_parcel", "geometry")
+    .repartition(1_000)
 )
 df_parcels.display()
 
@@ -110,6 +107,7 @@ df_feature = (
     .withColumn("geometry", F.expr("ST_Force_2D(geometry)"))
     .withColumn("geometry", F.expr("ST_MakeValid(geometry)"))
     .withColumn("geometry", F.expr(f"ST_SubdivideExplode(geometry, {max_vertices})"))
+    .repartition(n_partitions)
     
 )
 df_feature.display()
@@ -122,34 +120,18 @@ df_parcels.createOrReplaceTempView("left")
 # COMMAND ----------
 
 sdf = spark.sql(
-    """
-    select id_parcel, heath_habitat, distance from (
-    select id_parcel, heath_habitat, distance, ROW_NUMBER() OVER(PARTITION BY id_parcel, heath_habitat ORDER BY distance ASC) AS rank
+    f"""
+    select id_parcel, {groupby_alias}, distance from (
+    select id_parcel, {groupby_alias}, distance, ROW_NUMBER() OVER(PARTITION BY id_parcel, {groupby_alias} ORDER BY distance ASC) AS rank
     from (
-    SELECT left.id_parcel, right.Main_Habit as heath_habitat, ST_Distance(left.geometry, right.geometry) as distance
+    SELECT left.id_parcel, right.{groupby_variable} as {groupby_alias}, ST_Distance(left.geometry, right.geometry) as distance
     FROM left JOIN right
-    on ST_Distance(left.geometry, right.geometry) < 5000
+    on ST_Distance(left.geometry, right.geometry) < {DISTANCE_THRESHOLD}
     ) t ) t2
     where rank=1
 """,
 )
 sdf.display()
-
-# COMMAND ----------
-
-# from sedona.core.spatialOperator import KNNQuery
-# from sedona.core.enums import IndexType
-# from sedona.core.enums import GridType
-# from sedona.core.spatialOperator import JoinQuery
-# from sedona.utils.adapter import Adapter 
-
-# spatialRDD = Adapter.toSpatialRdd(df_parcels, "checkin")
-
-# build_on_spatial_partitioned_rdd = False ## Set to TRUE only if run join query
-# spatial_rdd.buildIndex(IndexType.RTREE, build_on_spatial_partitioned_rdd)
-
-# using_index = True
-# result = KNNQuery.SpatialKnnQuery(spatial_rdd, point, k, using_index)
 
 # COMMAND ----------
 
@@ -169,7 +151,7 @@ LOG.info(f"Rows: {count:,.0f}")
 
 # COMMAND ----------
 
-result.toPandas().groupby("heath_habitat").distance.describe()
+result.toPandas().groupby(groupby_alias).distance.describe()
 
 # COMMAND ----------
 
