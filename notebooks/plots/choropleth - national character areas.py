@@ -53,6 +53,11 @@ register()
 
 # COMMAND ----------
 
+fmt = ".1%"
+f"{{:{fmt}}}"
+
+# COMMAND ----------
+
 names = sorted([f"{d.source}/{d.name}/{v.name}" for d in datasets for v in d.versions])
 default_name = [n for n in names if "shine" in n][0]
 dbutils.widgets.dropdown("dataset", default_name, names)
@@ -76,6 +81,10 @@ numeric_variables = [field.name for field in fields if isinstance(field.dataType
 dbutils.widgets.dropdown("plot variable", numeric_variables[0], numeric_variables)
 value_column = dbutils.widgets.get("plot variable")
 print(f"\nDataset variable to plot:\t{value_column}")
+
+formats = [".1%", ".0f"]
+dbutils.widgets.dropdown("variable format", formats[0], formats)
+fmt = dbutils.widgets.get("variable format")
 
 dbutils.widgets.text("variable name", "SHINE proportion")
 dbutils.widgets.text("variable source", "Historic England SHINE dataset")
@@ -157,11 +166,11 @@ polygons_all
 # COMMAND ----------
 
 plot_title = f"{variable_name} for land parcels in England by National Character Area - All parcels"
-f = plot_choropleth_with_head_and_tail_bars(polygons_all, value_column, variable_name, variable_source, plot_title)
+f = plot_choropleth_with_head_and_tail_bars(polygons_all, value_column, variable_name, variable_source, plot_title, fmt)
 f.show()
 
 # COMMAND ----------
 
 plot_title = f"{variable_name} for land parcels in England by National Character Area - Feature parcels"
-f = plot_choropleth_with_head_and_tail_bars(polygons_feature, value_column, variable_name, variable_source, plot_title)
+f = plot_choropleth_with_head_and_tail_bars(polygons_feature, value_column, variable_name, variable_source, plot_title, fmt)
 f.show()
