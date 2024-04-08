@@ -1,9 +1,9 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC # Merge Boundaries
-# MAGIC Objective:  assign elibigility to parcel boundary.
-# MAGIC   Consider splitting up the boundary for each land use
-# MAGIC   Consider recording if the boundary is adjacent to another (and such land use will be shared)
+# MAGIC # Boudnary Use
+# MAGIC Objective:  determine parcel boundary uses.
+# MAGIC   
+# MAGIC This notebook produces multiple datasets that detail what features intersect parcel boundaries. This information can be used to inform what actions parcels are eligibile for, and the amount of parcel boundaries eligibile for those actions.
 # MAGIC
 # MAGIC ### Data
 # MAGIC - elm_se, Parcels
@@ -23,8 +23,9 @@
 # MAGIC
 # MAGIC ### Outputs
 # MAGIC > Table 1 - Neighbouring Land Use
+# MAGIC > Location - 
 # MAGIC > This table has the nearby geometries for each parcel.  These are geometries joined to parcels with a distance of 12m, they are unioned according to their land use.
-# MAGIC > `dbfs:/mnt/lab/unrestricted/elm/elm_se/neighbouring_land_use_geometries.parquet/`
+# MAGIC > `dbfs:/mnt/lab/restricted/ELM-Project/ods/neighbouring_land_use_geometries.parquet/`
 # MAGIC | id_parcel | geometry_parcel | geometry_boundary | geometry_water | geometry_ditch | geometry_wall | geometry_hedge
 # MAGIC |---|---|---|---|---|---|---|
 # MAGIC |   |   |   |   |   |   |   |
@@ -32,7 +33,7 @@
 # MAGIC
 # MAGIC > Table 2 - Boundary Land Use - WIP
 # MAGIC > This table has the boundary land use.  This table is longer, with multiple id_boundary for each id_parcel.  Each id_boundary has a length and a boolean for each land use.
-# MAGIC > `dbfs:/mnt/lab/unrestricted/elm/elm_se/boundary_land_use.parquet/`
+# MAGIC > `dbfs:/mnt/lab/restricted/ELM-Project/ods/boundary_land_use.parquet/`
 # MAGIC | id_business | id_parcel | id_boundary | ha_parcel | geometry_boundary | b_water | b_ditch | b_wall | b_hedge | b_available |
 # MAGIC |---|---|---|---|---|---|---|---|---|---|
 # MAGIC |   |   |   |   |   |   |   |   |   |   |
@@ -58,12 +59,22 @@
 # MAGIC | EVAST         |   |   | - |   |   |
 # MAGIC | Hedgerow      |   |   |   | - |   |
 # MAGIC | Available     |   |   |   |   | - |
+# MAGIC
+# MAGIC
+# MAGIC ## To do
+# MAGIC
+# MAGIC Consider splitting up the boundary for each land use
+# MAGIC Consider recording if the boundary is adjacent to another (and such land use will be shared)
+# MAGIC
 
 # COMMAND ----------
 
 import pandas as pd
+from datetime import datetime as dt
 
 import elmo_geo
+from elmo_geo.st import sjoin
+from elmo_geo.st.geometry import load_geometry, load_missing
 
 elmo_geo.register()
 from pyspark.sql import functions as F
@@ -71,88 +82,169 @@ from pyspark.sql import functions as F
 # COMMAND ----------
 
 f_wfm_farm = "/dbfs/mnt/lab/unrestricted/elm/wfm/2023_06_09/wfm_farms.feather"
-sf_parcel = "dbfs:/mnt/lab/unrestricted/elm/buffer_strips/parcels.parquet/"
-sf_os_water = "dbfs:/mnt/lab/unrestricted/elm/elm_se/os_waterbody.parquet/"
-sf_wall = "dbfs:/mnt/lab/unrestricted/elm/buffer_strips/wall_geometries.parquet/"
-sf_hedge = "dbfs:/mnt/lab/unrestricted/elm/buffer_strips/hedgerows_geometries.parquet/"
+sf_parcel = "dbfs:/mnt/lab/restricted/ELM-Project/ods/rpa-parcel-adas.parquet"
+
+sf_os_water = "dbfs:/mnt/lab/restricted/ELM-Project/ods/elmo_geo-water-2024_01_26.parquet" # joined to adas parcels
+sf_wall = "dbfs:/mnt/lab/restricted/ELM-Project/ods/elmo_geo-wall-2024_01_26.parquet" # joined to adas parcels
+sf_hedge = "dbfs:/mnt/lab/restricted/ELM-Project/ods/elmo_geo-hedge-2024_01_26.parquet" # joined to adas parcels
 
 f_evast = "/dbfs/mnt/lab/unrestricted/elm_data/evast/woodland_uptake/2023_07_12.csv"
 sf_ph = "dbfs:/mnt/lab/unrestricted/elm/elmo/priority_habitats/output.parquet"
 sf_peat = "dbfs:/mnt/lab/unrestricted/elm/elmo/peatland/output.parquet"
 sf_wet = "dbfs:/mnt/lab/unrestricted/elm/elmo/ramsar/output.parquet"
 
-sf_adj = "dbfs:/mnt/lab/unrestricted/elm/elm_se/adjacenct_parcel_geometries.parquet/"
-sf_neighbour = "dbfs:/mnt/lab/unrestricted/elm/elm_se/neighbouring_land_use_geometries.parquet/"
-sf_boundary = "dbfs:/mnt/lab/unrestricted/elm/elm_se/boundary_use_geometries.parquet/"
-sf_uptake = "dbfs:/mnt/lab/unrestricted/elm/elm_se/boundary_use_uptake.parquet/"
-sf_boundary_lengths = "dbfs:/mnt/lab/unrestricted/elm/elm_se/boundary_use_lengthse.parquet/"
+date = dt.strftime(dt.now(), "%d-%m-%Y")
+sf_adj = f"dbfs:/mnt/lab/restricted/ELM-Project/ods/boundary-use-adjacenct_parcel_geometries-{date}.parquet/"
+sf_neighbour = f"dbfs:/mnt/lab/restricted/ELM-Project/ods/boundary-use-neighbouring_land_use_geometries-{date}.parquet/"
+sf_boundary = f"dbfs:/mnt/lab/restricted/ELM-Project/ods/boundary-use-geometries-{date}.parquet/"
+sf_uptake = f"dbfs:/mnt/lab/restricted/ELM-Project/ods/boundary-use-uptake-{date}.parquet/"
+sf_boundary_lengths = f"dbfs:/mnt/lab/restricted/ELM-Project/out/boundary-use-lengths-{date}.parquet/"
 
 f_hedge_change = "/dbfs/mnt/lab/unrestricted/elm/elm_se/hedgerow_boundary_use_change.parquet"
 
 # COMMAND ----------
 
+sdf_parcel = spark.read.format("geoparquet").load(sf_parcel)
+sdf_parcel.display()
+
+# COMMAND ----------
+
 # DBTITLE 1,Parcel Adjacency
-sdf_parcel = spark.read.parquet(sf_parcel).select(
-    "id_parcel",
-    "geometry",
+simplify = lambda col: F.expr(f"ST_SimplifyPreserveTopology(ST_Force_2D(ST_MakeValid({col})), 1) AS {col}")
+
+sdf_parcel = (spark.read.format("geoparquet").load(sf_parcel)
+              .select(
+                  "id_parcel", 
+                  "geometry",
+              )
+              .withColumn("geometry", F.expr("ST_MakeValid(geometry)"))
+              .withColumn("geometry", F.expr("ST_Force_2D(geometry)"))
+              .withColumn("geometry", F.expr("ST_SimplifyPreserveTopology(geometry, 1.0)"))
+              #.withColumn("geometry", F.expr("ST_PrecisionReduce(geometry, 0.01)"))
+              #.withColumn("geometry", F.expr("ST_AsBinary(geometry)"))
 )
+#sdf_parcel.write.format("parquet").mode("overwrite").save("dbfs:/tmp/parcel.parquet")
 
 buf = 12
 sdf_adj = (
-    elm_se.st.sjoin(
+    sjoin(
         sdf_parcel,
         sdf_parcel,
         distance=12,
         lsuffix="",
-        rsuffix="_right",
+        rsuffix="_adj",
     )
-    .drop("geometry", "geometry_right")
-    .withColumnRenamed("id_parcel_right", "id_parcel_adj")
+    .drop("geometry")
     .filter("id_parcel != id_parcel_adj")
     .repartition(2000)
+    .withColumn("geometry_adj", F.expr("ST_AsBinary(geometry_adj)"))
 )
 
-sdf_adj.write.parquet(sf_adj, mode="overwrite")
+sdf_adj.write.format("parquet").mode("overwrite").save(sf_adj)
 display(sdf_adj)
 sdf_adj.count()
 
 # COMMAND ----------
 
-# DBTITLE 1,Neighbouring Land Use
-st_union = lambda col: F.expr(f"ST_MakeValid(ST_SimplifyPreserveTopology(ST_PrecisionReduce(ST_MakeValid(ST_Union_Aggr({col})), 3), 0)) AS {col}")
-# cross_compliance = lambda col, buf: F.expr(f'ST_MakeValid(CASE WHEN ST_GeometryType({col})!="ST_Polygon" THEN {col} ELSE ST_Buffer({col}, {buf}) END)')
-cross_compliance = lambda col, buf: F.expr(f"ST_MakeValid(ST_Buffer({col}, {buf}))")
+spark.read.parquet("dbfs:/tmp/parcel.parquet").withColumn("geometry", F.expr("ST_GeomFromWKB(geometry)")).display()
+#spark.read.format("geoparquet").load(sf_parcel).display()
 
-sdf_parcel = spark.read.parquet(sf_parcel).select(
-    "id_parcel",
-    F.expr("ST_MakeValid(ST_Boundary(geometry)) AS geometry_boundary"),
+# COMMAND ----------
+
+cross_compliance = lambda col, buf: F.expr(f"ST_MakeValid(ST_Buffer({col}, {buf}))")
+st_union = lambda col: F.expr(f"ST_MakeValid(ST_Union_Aggr(ST_MakeValid(ST_Force_2D(ST_SimplifyPreserveTopology({col}, 1))))) AS {col}")
+boundary = lambda col: F.expr(f"ST_MakeValid(ST_Force_2D(ST_PrecisionReduce(ST_SimplifyPreserveTopology(ST_Boundary({col}), 1), 3))) AS geometry_boundary")
+
+# COMMAND ----------
+
+sdf_adj = (spark.read.parquet(sf_adj)
+           .withColumn("geometry_adj", F.expr("ST_GeomFromWKB(geometry_adj)"))
+           .groupby("id_parcel").agg(st_union("geometry_adj")) # this with line above worked.
+           #.withColumn("geometry_adj", simplify("geometry_adj")) #  this works
+           #.groupBy("id_parcel").agg(F.expr(f"ST_MakeValid(ST_Union_Aggr(geometry_adj)) as geometry_adj")) # has worked with both lines, but doesn't always.
+)
+sdf_adj.write.format("geoparquet").mode("overwrite").save("dbfs:/tmp/adj.parquet")
+
+# COMMAND ----------
+
+# DBTITLE 1,Neighbouring Land Use
+cross_compliance = lambda col, buf: F.expr(f"ST_MakeValid(ST_Buffer({col}, {buf}))")
+st_union = lambda col: F.expr(f"ST_MakeValid(ST_Force_2D(ST_PrecisionReduce(ST_SimplifyPreserveTopology(ST_MakeValid(ST_Union_Aggr({col})), 1), 3))) AS {col}")
+boundary = lambda col: F.expr(f"ST_MakeValid(ST_Force_2D(ST_PrecisionReduce(ST_SimplifyPreserveTopology(ST_Boundary({col}), 1), 3))) AS geometry_boundary")
+
+sdf_parcel = (spark.read.format("geoparquet").load(sf_parcel)
+              .select(
+                      "id_parcel",
+                      boundary("geometry"),
+              )
 )
 
-sdf_adj = spark.read.parquet(sf_adj).groupby("id_parcel").agg(st_union("geometry_adj"))
 
 sdf_water = (
-    spark.read.parquet(sf_os_water)
-    .filter('description != "Drain"')
-    .withColumn("geometry_water", cross_compliance("geometry_water", 2))
+    spark.read.format("geoparquet").load(sf_os_water)
+    .filter('class != "water-ditch"')
+    .withColumn("geometry_water", cross_compliance("geometry", 2))
     .groupby("id_parcel")
     .agg(st_union("geometry_water"))
 )
+sdf_water.write.format("geoparquet").mode("overwrite").save("dbfs:/tmp/water.parquet")
 
 sdf_ditch = (
-    spark.read.parquet(sf_os_water)
-    .filter('description == "Drain"')
-    .withColumn("geometry_ditch", cross_compliance("geometry_water", 2))
+    spark.read.format("geoparquet").load(sf_os_water)
+    .filter('class = "water-ditch"')
+    .withColumn("geometry_ditch", cross_compliance("geometry", 2))
     .groupby("id_parcel")
     .agg(st_union("geometry_ditch"))
 )
+sdf_ditch.write.format("geoparquet").mode("overwrite").save("dbfs:/tmp/ditch.parquet")
 
-sdf_wall = spark.read.parquet(sf_wall).groupby("id_parcel").agg(st_union("geometry_wall"))
-
-sdf_hedge = spark.read.parquet(sf_hedge).select(
-    "id_parcel",
-    "m_adj",
-    "geometry_hedge",
+sdf_wall = (spark.read.format("geoparquet").load(sf_wall)
+            .filter('class != "wall-relict"') # these are SHINE features and should be excluded
+            .withColumn("geometry_wall", cross_compliance("geometry", 2))
+            .groupby("id_parcel")
+            .agg(st_union("geometry_wall"))
 )
+sdf_wall.write.format("geoparquet").mode("overwrite").save("dbfs:/tmp/wall.parquet")
+
+
+sdf_hedge = (spark.read.format("geoparquet").load(sf_hedge)
+             .withColumn("geometry_hedge", cross_compliance("geometry", 2))
+            .groupby("id_parcel")
+            .agg(st_union("geometry_hedge"))
+)
+sdf_hedge.write.format("geoparquet").mode("overwrite").save("dbfs:/tmp/hedge.parquet")
+
+
+# sdf_neighbour = (
+#     sdf_parcel.join(sdf_adj, on="id_parcel", how="left")
+#     .join(sdf_water, on="id_parcel", how="left")
+#     .join(sdf_ditch, on="id_parcel", how="left")
+#     .join(sdf_wall, on="id_parcel", how="left")
+#     .join(sdf_hedge, on="id_parcel", how="left")
+#     .select(
+#         "id_parcel",
+#         *[
+#             load_missing(col).alias(col)
+#             for col in [
+#                 "geometry_boundary",
+#                 "geometry_adj",
+#                 "geometry_water",
+#                 "geometry_ditch",
+#                 "geometry_wall",
+#                 "geometry_hedge",
+#             ]
+#         ],
+#     )
+#     .repartition(2000)
+# )
+
+
+# sdf_neighbour.write.parquet(sf_neighbour, mode="overwrite")
+
+# COMMAND ----------
+
+sdf_adj = spark.read.format("geoparquet").load()
+
 
 
 sdf_neighbour = (
@@ -164,7 +256,7 @@ sdf_neighbour = (
     .select(
         "id_parcel",
         *[
-            elm_se.io.load_missing(col).alias(col)
+            load_missing(col).alias(col)
             for col in [
                 "geometry_boundary",
                 "geometry_adj",
@@ -180,6 +272,10 @@ sdf_neighbour = (
 
 
 sdf_neighbour.write.parquet(sf_neighbour, mode="overwrite")
+
+# COMMAND ----------
+
+sdf_neighbour = spark.read.format("geoparquet").load(sf_neighbour)
 display(sdf_neighbour)
 sdf_neighbour.count()
 
@@ -217,7 +313,7 @@ sdf_boundary = (
 )
 
 
-sdf_boundary.write.parquet(sf_boundary, mode="overwrite")
+sdf_boundary.write.format("geoparquet").mode("overwrite").save(sf_boundary)
 display(sdf_boundary)
 sdf_boundary.count()
 
