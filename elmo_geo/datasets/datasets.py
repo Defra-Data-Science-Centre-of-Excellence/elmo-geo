@@ -50,7 +50,6 @@ class Dataset:
     versions: List[Version]
     path_polygons: Optional[str] = None
     path_output: Optional[str] = None
-    path_proximity_output: Optional[str] = None
     keep_cols: Optional[List[str]] = None
     rename_cols: Optional[Dict[str, str]] = None
     output_coltypes: Optional[Dict[str, str]] = None
@@ -66,8 +65,6 @@ class Dataset:
             self.path_polygons = f"/mnt/lab/unrestricted/elm/{self.source}/{self.name}" + "/{version}/polygons.parquet"
         if self.path_output is None:
             self.path_output = f"/mnt/lab/unrestricted/elm/{self.source}/{self.name}" + "/{version}/output.parquet"
-        if self.path_proximity_output is None:
-            self.path_proximity_output = f"/mnt/lab/unrestricted/elm/{self.source}/{self.name}" + "/{version}/proximity_output.parquet"
         if self.keep_cols is None:
             self.keep_cols = []
         if self.rename_cols is None:

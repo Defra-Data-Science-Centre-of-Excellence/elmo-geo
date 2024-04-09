@@ -139,13 +139,13 @@ sdf.display()
 (   
     sdf
     .write.format("parquet")
-    .save(dataset.path_proximity_output.format(version=version), mode="overwrite")
+    .save(dataset.path_output.format(version=version), mode="overwrite")
 )
 
 # COMMAND ----------
 
 # show results
-result = spark.read.parquet(dataset.path_proximity_output.format(version=version))
+result = spark.read.parquet(dataset.path_output.format(version=version))
 count = result.count()
 LOG.info(f"Rows: {count:,.0f}")
 
@@ -157,9 +157,9 @@ result.toPandas().groupby(groupby_alias).distance.describe()
 
 # download
 pandas_df = result.toPandas()
-path_parquet = "/dbfs" + dataset.path_proximity_output.format(version=version).replace("output", dataset.name)
-path_feather = "/dbfs" + dataset.path_proximity_output.format(version=version).replace("output", dataset.name).replace(".parquet", ".feather")
-path_csv = "/dbfs" + dataset.path_proximity_output.format(version=version).replace("output", dataset.name).replace(".parquet", ".csv")
+path_parquet = "/dbfs" + dataset.path_output.format(version=version).replace("output", dataset.name)
+path_feather = "/dbfs" + dataset.path_output.format(version=version).replace("output", dataset.name).replace(".parquet", ".feather")
+path_csv = "/dbfs" + dataset.path_output.format(version=version).replace("output", dataset.name).replace(".parquet", ".csv")
 
 # convert types
 for col, newtype in dataset.output_coltypes.items():
@@ -176,7 +176,7 @@ displayHTML(download_link(path_csv))
 # COMMAND ----------
 
 import pandas as pd
-df = pd.read_parquet("/dbfs/"+dataset.path_proximity_output.format(version=version))
+df = pd.read_parquet("/dbfs/"+dataset.path_output.format(version=version))
 df
 
 # COMMAND ----------
