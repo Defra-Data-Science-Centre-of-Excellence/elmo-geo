@@ -82,6 +82,7 @@ from pyspark.sql import functions as F
 # COMMAND ----------
 
 f_wfm_farm = "/dbfs/mnt/lab/unrestricted/elm/wfm/2023_06_09/wfm_farms.feather"
+sf_wfm_field = "dbfs:/mnt/lab/restricted/ELM-Project/stg/wfm-field-2024_01_26.parquet"
 sf_parcel = "dbfs:/mnt/lab/restricted/ELM-Project/ods/rpa-parcel-adas.parquet"
 
 sf_os_water = "dbfs:/mnt/lab/restricted/ELM-Project/ods/elmo_geo-water-2024_01_26.parquet" # joined to adas parcels
@@ -119,11 +120,19 @@ sdf_parcel = (spark.read.format("geoparquet").load(sf_parcel)
               )
               .withColumn("geometry", F.expr("ST_MakeValid(geometry)"))
               .withColumn("geometry", F.expr("ST_Force_2D(geometry)"))
+              #.withColumn("geometry", F.expr("ST_PrecisionReduce(geometry, 3)")) # made the next stage fail
               .withColumn("geometry", F.expr("ST_SimplifyPreserveTopology(geometry, 1.0)"))
-              #.withColumn("geometry", F.expr("ST_PrecisionReduce(geometry, 0.01)"))
-              #.withColumn("geometry", F.expr("ST_AsBinary(geometry)"))
 )
 #sdf_parcel.write.format("parquet").mode("overwrite").save("dbfs:/tmp/parcel.parquet")
+
+sdf_wfm_field = (spark.read.format("parquet").load(sf_wfm_field)
+                 .select(
+                     "id_parcel",
+                     "id_business",
+                 )
+                 .dropDuplicates())
+
+sdf_parcel = sdf_parcel.join(sdf_wfm_field, on='id_parcel', how = 'left')
 
 buf = 12
 sdf_adj = (
@@ -146,39 +155,36 @@ sdf_adj.count()
 
 # COMMAND ----------
 
-spark.read.parquet("dbfs:/tmp/parcel.parquet").withColumn("geometry", F.expr("ST_GeomFromWKB(geometry)")).display()
-#spark.read.format("geoparquet").load(sf_parcel).display()
+#st_union = lambda col: F.expr(f"ST_MakeValid(ST_Union_Aggr(ST_MakeValid(ST_Force_2D(ST_SimplifyPreserveTopology({col}, 1))))) AS {col}")
+st_union = lambda col: F.expr(f"ST_MakeValid(ST_Union_Aggr(ST_SimplifyPreserveTopology(ST_PrecisionReduce(ST_Force_2D(ST_MakeValid({col})), 3), 1))) AS {col}")
 
-# COMMAND ----------
-
-cross_compliance = lambda col, buf: F.expr(f"ST_MakeValid(ST_Buffer({col}, {buf}))")
-st_union = lambda col: F.expr(f"ST_MakeValid(ST_Union_Aggr(ST_MakeValid(ST_Force_2D(ST_SimplifyPreserveTopology({col}, 1))))) AS {col}")
-boundary = lambda col: F.expr(f"ST_MakeValid(ST_Force_2D(ST_PrecisionReduce(ST_SimplifyPreserveTopology(ST_Boundary({col}), 1), 3))) AS geometry_boundary")
-
-# COMMAND ----------
-
-sdf_adj = (spark.read.parquet(sf_adj)
-           .withColumn("geometry_adj", F.expr("ST_GeomFromWKB(geometry_adj)"))
-           .groupby("id_parcel").agg(st_union("geometry_adj")) # this with line above worked.
+sdf_adj_same = (spark.read.parquet(sf_adj)
+           .withColumn("geometry_adj_same_bus", F.expr("ST_GeomFromWKB(geometry_adj)"))
+           .filter("id_business == id_business")
+           .groupby("id_parcel").agg(st_union("geometry_adj_same_bus")) # this with line above worked.
+           .withColumn("geometry_adj_same_bus", F.expr("ST_AsBinary(geometry_adj_same_bus)"))
            #.withColumn("geometry_adj", simplify("geometry_adj")) #  this works
            #.groupBy("id_parcel").agg(F.expr(f"ST_MakeValid(ST_Union_Aggr(geometry_adj)) as geometry_adj")) # has worked with both lines, but doesn't always.
 )
-sdf_adj.write.format("geoparquet").mode("overwrite").save("dbfs:/tmp/adj.parquet")
+
+sdf_adj_diff = (spark.read.parquet(sf_adj)
+           .withColumn("geometry_adj_diff_bus", F.expr("ST_GeomFromWKB(geometry_adj)"))
+           .filter("id_business != id_business")
+           .groupby("id_parcel").agg(st_union("geometry_adj_diff_bus")) # this with line above worked.
+           .withColumn("geometry_adj_diff_bus", F.expr("ST_AsBinary(geometry_adj_diff_bus)"))
+           #.withColumn("geometry_adj", simplify("geometry_adj")) #  this works
+           #.groupBy("id_parcel").agg(F.expr(f"ST_MakeValid(ST_Union_Aggr(geometry_adj)) as geometry_adj")) # has worked with both lines, but doesn't always.
+)
+
+sdf_adj_comb = sdf_adj_same.join(sdf_adj_diff, on = "id_parcel", how = "outer")
+
+sdf_adj_comb.write.format("parquet").mode("overwrite").save("dbfs:/tmp/adj.parquet")
 
 # COMMAND ----------
 
 # DBTITLE 1,Neighbouring Land Use
 cross_compliance = lambda col, buf: F.expr(f"ST_MakeValid(ST_Buffer({col}, {buf}))")
 st_union = lambda col: F.expr(f"ST_MakeValid(ST_Force_2D(ST_PrecisionReduce(ST_SimplifyPreserveTopology(ST_MakeValid(ST_Union_Aggr({col})), 1), 3))) AS {col}")
-boundary = lambda col: F.expr(f"ST_MakeValid(ST_Force_2D(ST_PrecisionReduce(ST_SimplifyPreserveTopology(ST_Boundary({col}), 1), 3))) AS geometry_boundary")
-
-sdf_parcel = (spark.read.format("geoparquet").load(sf_parcel)
-              .select(
-                      "id_parcel",
-                      boundary("geometry"),
-              )
-)
-
 
 sdf_water = (
     spark.read.format("geoparquet").load(sf_os_water)
@@ -214,41 +220,30 @@ sdf_hedge = (spark.read.format("geoparquet").load(sf_hedge)
 )
 sdf_hedge.write.format("geoparquet").mode("overwrite").save("dbfs:/tmp/hedge.parquet")
 
-
-# sdf_neighbour = (
-#     sdf_parcel.join(sdf_adj, on="id_parcel", how="left")
-#     .join(sdf_water, on="id_parcel", how="left")
-#     .join(sdf_ditch, on="id_parcel", how="left")
-#     .join(sdf_wall, on="id_parcel", how="left")
-#     .join(sdf_hedge, on="id_parcel", how="left")
-#     .select(
-#         "id_parcel",
-#         *[
-#             load_missing(col).alias(col)
-#             for col in [
-#                 "geometry_boundary",
-#                 "geometry_adj",
-#                 "geometry_water",
-#                 "geometry_ditch",
-#                 "geometry_wall",
-#                 "geometry_hedge",
-#             ]
-#         ],
-#     )
-#     .repartition(2000)
-# )
-
-
-# sdf_neighbour.write.parquet(sf_neighbour, mode="overwrite")
-
 # COMMAND ----------
 
-sdf_adj = spark.read.format("geoparquet").load()
+boundary = lambda col: F.expr(f"ST_MakeValid(ST_Force_2D(ST_PrecisionReduce(ST_SimplifyPreserveTopology(ST_Boundary({col}), 1), 3))) AS geometry_boundary")
 
+sdf_parcel = (spark.read.format("geoparquet").load(sf_parcel)
+              .select(
+                      "id_parcel",
+                      boundary("geometry"),
+              )
+)
 
+sdf_adj = (spark.read.format("parquet").load("dbfs:/tmp/adj.parquet")
+           .withColumn("geometry_adj_diff_bus", F.expr("ST_GeomFromWKB(geometry_adj_diff_bus)"))
+           .withColumn("geometry_adj_same_bus", F.expr("ST_GeomFromWKB(geometry_adj_same_bus)"))
+)
+
+sdf_water = spark.read.format("geoparquet").load("dbfs:/tmp/water.parquet")
+sdf_wall = spark.read.format("geoparquet").load("dbfs:/tmp/wall.parquet")
+sdf_ditch = spark.read.format("geoparquet").load("dbfs:/tmp/ditch.parquet")
+sdf_hedge = spark.read.format("geoparquet").load("dbfs:/tmp/hedge.parquet")
 
 sdf_neighbour = (
-    sdf_parcel.join(sdf_adj, on="id_parcel", how="left")
+    sdf_parcel
+    .join(sdf_adj, on="id_parcel", how="left")
     .join(sdf_water, on="id_parcel", how="left")
     .join(sdf_ditch, on="id_parcel", how="left")
     .join(sdf_wall, on="id_parcel", how="left")
@@ -259,7 +254,23 @@ sdf_neighbour = (
             load_missing(col).alias(col)
             for col in [
                 "geometry_boundary",
-                "geometry_adj",
+                "geometry_adj_diff_bus",
+                "geometry_adj_same_bus",
+                "geometry_water",
+                "geometry_ditch",
+                "geometry_wall",
+                "geometry_hedge",
+            ]
+        ],
+    )
+    .select(
+        "id_parcel",
+        *[
+            F.expr(f"ST_AsBinary({col})").alias(col)
+            for col in [
+                "geometry_boundary",
+                "geometry_adj_diff_bus",
+                "geometry_adj_same_bus",
                 "geometry_water",
                 "geometry_ditch",
                 "geometry_wall",
@@ -271,11 +282,11 @@ sdf_neighbour = (
 )
 
 
-sdf_neighbour.write.parquet(sf_neighbour, mode="overwrite")
+sdf_neighbour.write.format("parquet").mode("overwrite").save(sf_neighbour)
 
 # COMMAND ----------
 
-sdf_neighbour = spark.read.format("geoparquet").load(sf_neighbour)
+sdf_neighbour = spark.read.format("parquet").load(sf_neighbour)
 display(sdf_neighbour)
 sdf_neighbour.count()
 
@@ -304,16 +315,33 @@ boundary_use = lambda sdf, use, buf: (
 
 sdf_boundary = (
     spark.read.parquet(sf_neighbour)
-    .transform(boundary_use, use="adj", buf=2)
+    .select(
+        "id_parcel",
+        *[
+            F.expr(f"ST_GeomFromWKB({col})").alias(col)
+            for col in [
+                "geometry_boundary",
+                "geometry_adj_diff_bus",
+                "geometry_adj_same_bus",
+                "geometry_water",
+                "geometry_ditch",
+                "geometry_wall",
+                "geometry_hedge",
+            ]
+        ],
+    )
+    .transform(boundary_use, use="adj_diff_bus", buf=2)
+    .transform(boundary_use, use="adj_same_bus", buf=2)
     .transform(boundary_use, use="water", buf=2)  # minus cross compliance
     .transform(boundary_use, use="ditch", buf=2)  # minus cross compliance
     .transform(boundary_use, use="wall", buf=2)
     .transform(boundary_use, use="hedge", buf=2)
     .repartition(2000)
+    .withColumn("geometry_boundary", F.expr("ST_AsBinary(geometry_boundary)"))
 )
 
 
-sdf_boundary.write.format("geoparquet").mode("overwrite").save(sf_boundary)
+sdf_boundary.write.format("parquet").mode("overwrite").save(sf_boundary)
 display(sdf_boundary)
 sdf_boundary.count()
 
