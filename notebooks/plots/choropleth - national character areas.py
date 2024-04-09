@@ -13,8 +13,8 @@
 # MAGIC
 # MAGIC How to use this notebook:
 # MAGIC
-# MAGIC 1. Using the widgets, choose the processed dataset to plot, the plot variable.
-# MAGIC 2. Enter the variable name and surce into the free text widgets. These are used in the plot.
+# MAGIC 1. Using the widgets, choose the processed dataset to plot and the plot variable.
+# MAGIC 2. Enter the variable name and source into the free text widgets. These are used in the plot.
 # MAGIC 3. Run the notebook
 # MAGIC
 # MAGIC Key processing steps:
@@ -27,7 +27,7 @@
 
 # MAGIC %load_ext autoreload
 # MAGIC %autoreload 2
-# MAGIC %pip install -Uq seaborn mapclassify matplotlib
+# MAGIC %pip install -Uq mapclassify
 
 # COMMAND ----------
 
@@ -50,11 +50,6 @@ from elmo_geo.st import sjoin
 from elmo_geo.plot.plotting import plot_choropleth_with_head_and_tail_bars
 
 register()
-
-# COMMAND ----------
-
-fmt = ".1%"
-f"{{:{fmt}}}"
 
 # COMMAND ----------
 
