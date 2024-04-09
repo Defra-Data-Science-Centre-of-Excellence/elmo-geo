@@ -32,4 +32,4 @@ def test_ctx_ssl():
     lims = (0, 0, 7e5, 13e5)  # OS BNG extent
     ax.set(xlim=[lims[0], lims[2]], ylim=[lims[1], lims[3]])
     with no_ssl_verification():
-        ctx.add_basemap(ax=ax, crs="EPSG:27700")
+        ctx.add_basemap(ax=ax, crs="EPSG:27700", source=ctx.providers.CartoDB.Positron)
