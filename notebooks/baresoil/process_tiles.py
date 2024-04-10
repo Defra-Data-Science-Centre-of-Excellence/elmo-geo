@@ -40,3 +40,6 @@ df
 df.to_parquet(path_destination)
 
 # COMMAND ----------
+
+# plot the tiles
+gpd.read_parquet(path_destination).explore(column="Name", cmap="viridis", tiles="CartoDB positron")
