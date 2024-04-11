@@ -21,30 +21,13 @@ from glob import iglob
 import json
 import os
 import osdatahub
+import pandas as pd
 import re
 import requests
 
 from elmo_geo.datasets.datasets import datasets
-
-
-def snake_case(string: str) -> str:
-    """Convert string to snake_case
-    1, lowercase
-    2, replace spaces with underscores
-    3, remove special characters
-    \w=words, \d=digits, \s=spaces, [^ ]=not
-    """
-    return re.sub("[^\w\d_]", "", re.sub("[\s-]", "_", string.lower()))
-
-def string_to_dict(string: str, pattern: str) -> dict:
-    """Reverse f-string
-    https://stackoverflow.com/a/36838374/10450752
-    """
-    regex = re.sub(r'{(.+?)}', r'(?P<_\1>.+)', pattern)
-    return dict(zip(
-        re.findall(r'{(.+?)}', pattern),
-        list(re.search(regex, string).groups()),
-    ))
+from elmo_geo import register
+from elmo_geo.utils.misc import snake_case, string_to_dict
 
 def save_json(data: object, filepath: str) -> object:
     """Save a json file
@@ -53,17 +36,22 @@ def save_json(data: object, filepath: str) -> object:
         json.dump(data, f, ensure_ascii=False, indent=4)
     return data
 
+def search_available(string, df=None):
+    if df == None:
+        df = pd.concat([
+            pd.read_json('data/dash.json'),
+            pd.read_json('data/esri.json'),
+            pd.read_json('data/os.json'),
+        ])
+    display(df[df['name'].str.contains(string)==True])
 
-os.chdir(os.getcwd().replace('/notebooks/ingestion', ''))
-os.getcwd()
+
+register()
 
 # COMMAND ----------
 
 # Datasets
-save_json(
-    [asdict(dataset) for dataset in datasets],
-    'data/datasets.json',
-)
+save_json([asdict(dataset) for dataset in datasets], 'data/datasets.json')
 
 # COMMAND ----------
 
@@ -120,8 +108,9 @@ def gen_esri_datalist() -> object:
         return (datetime.fromtimestamp(ts/1000) if ts else datetime.today()).strftime("%Y_%m_%d")
 
     for source, service in {
-        'ons': "https://services1.arcgis.com/ESMARspQHYMw9BZ9/ArcGIS/rest/services",
-        'defra': "https://services.arcgis.com/JJzESW51TqeY9uat/ArcGIS/rest/services",
+        "ons": "https://services1.arcgis.com/ESMARspQHYMw9BZ9/ArcGIS/rest/services",
+        "defra": "https://services.arcgis.com/JJzESW51TqeY9uat/ArcGIS/rest/services",
+        "he": "https://services-eu1.arcgis.com/ZOdPfBS3aqqDYPUQ/ArcGIS/rest/services",
     }.items():
         try:
             for dataset in requests.get(f"{service}?f=pjson").json()["services"]:
@@ -216,12 +205,9 @@ save_json(get_os_datalist(), 'data/os.json')
 
 # SharePoint
 
-
 # COMMAND ----------
 
 # Manual
-
-
 """
 # Base
 rpa-parcel
@@ -240,23 +226,14 @@ he-shine
 
 # COMMAND ----------
 
+import pandas as pd
+
 df = pd.concat([
     pd.read_json('data/dash.json'),
     pd.read_json('data/esri.json'),
     pd.read_json('data/os.json'),
 ])
-
 df[['source', 'dataset', 'version']] = df['name'].str.split('-', n=2, expand=True)
 
-
-display(df)
-
-# COMMAND ----------
-
-import pandas as pd
-
-
-df = pd.read_json('data/dash.json')
-
-display(pd.DataFrame({'name':df['name'].str[:-11].unique()}))
-df
+display(df[['source']].drop_duplicates())
+display(df[['source', 'dataset']].drop_duplicates())

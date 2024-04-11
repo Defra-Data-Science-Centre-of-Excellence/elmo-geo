@@ -9,6 +9,7 @@ import json
 import os
 import re
 
+from elmo_geo import register, LOG
 from elmo_geo.st import sjoin
 from elmo_geo.utils.misc import dbfs
 
@@ -38,10 +39,13 @@ def load_sdf():
     return sdf
 
 
-os.chdir(os.getcwd().replace('/notebooks/ingestion', ''))
-
 catalogue = json.loads(open('data/catalogue.json').read())
 
+register()
+
+# COMMAND ----------
+
+catalogue
 
 # COMMAND ----------
 
@@ -50,7 +54,6 @@ sdf_parcel = load_sdf("rpa-parcel-adas")
 
 for dataset in datasets:
     if dataset["lookup_parcel"] == True:
-        LOG.info("Task lookup_parcel: {}".format(dataset["name"]))
         dataset["lookup_parcel"] = create_lookup_parcel_path(dataset["name"])
         sdf = (
             load_sdf(dataset["name"])
@@ -62,6 +65,7 @@ for dataset in datasets:
             )
             .transform(to_pq, dataset["lookup_parcel"])
         )
+        LOG.info("Task lookup_parcel: {}".format(dataset["name"]))
 
 datasets
 

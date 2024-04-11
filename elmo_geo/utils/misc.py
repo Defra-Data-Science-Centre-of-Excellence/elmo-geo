@@ -21,6 +21,24 @@ def dbfs(f: str, spark_api: bool):
     else:
         raise Exception(f'file must start with "dbfs:/" or "/dbfs/": {f}')
 
+def snake_case(string: str) -> str:
+    """Convert string to snake_case
+    1, lowercase
+    2, replace spaces with underscores
+    3, remove special characters
+    \w=words, \d=digits, \s=spaces, [^ ]=not
+    """
+    return re.sub("[^\w\d_]", "", re.sub("[\s-]", "_", string.lower()))
+
+def string_to_dict(string: str, pattern: str) -> dict:
+    """Reverse f-string
+    https://stackoverflow.com/a/36838374/10450752
+    """
+    regex = re.sub(r'{(.+?)}', r'(?P<_\1>.+)', pattern)
+    return dict(zip(
+        re.findall(r'{(.+?)}', pattern),
+        list(re.search(regex, string).groups()),
+    ))
 
 def sh_run(exc: str, **kwargs):
     _kwargs = dict(shell=True, capture_output=True, text=True)

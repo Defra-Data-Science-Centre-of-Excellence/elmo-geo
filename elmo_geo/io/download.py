@@ -13,7 +13,6 @@ def zip_folder(path_in, path_out):
                 arcname = os.path.relpath(filepath, path_in)
                 zipf.write(filepath, arcname)
 
-
 def download_link(filepath: str, name: str = None, return_over_display: bool = False) -> str:
     """Create a link to download a file or folder from dbfs
     Copies a file to dbfs/FileStore
@@ -21,6 +20,7 @@ def download_link(filepath: str, name: str = None, return_over_display: bool = F
 
     example: `download_link(f)`
     """
+    filepath = dbfs(filepath, False)
     if name is None:
         name = filepath.split("/")[-1]
     if os.path.isdir(filepath):
@@ -28,9 +28,10 @@ def download_link(filepath: str, name: str = None, return_over_display: bool = F
         zip_folder(filepath, f"/dbfs/FileStore/{name}")
     else:
         shutil.copy(filepath, f"/dbfs/FileStore/{name}")
-    workspace = spark.conf.get("spark.databricks.workspaceUrl")
-    org = spark.conf.get("spark.databricks.clusterUsageTags.orgId")
-    url = f"https://{workspace}/files/{name}?o={org}"
+    url = "https://{workspace}/files/{name}?o={org}".format(
+        workspace = spark.conf.get("spark.databricks.workspaceUrl")
+        org = spark.conf.get("spark.databricks.clusterUsageTags.orgId")
+    )
     if not return_over_display:
         displayHTML(f"Download: <a href={url} target='_blank'>{name}</a>")
     else:

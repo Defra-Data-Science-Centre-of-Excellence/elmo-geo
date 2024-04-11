@@ -1,121 +1,161 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC # Fetch from Data Sources
-# MAGIC Create a list of requirements, fetch and ingest the datasets.
+# MAGIC # Fetch
+# MAGIC Complete the tasks for downloading and ingesting for catalogue datsets.  
 # MAGIC
-# MAGIC  with; name, method, source.
-# MAGIC
+# MAGIC | Task | Last Completed | Notes |
+# MAGIC |---|---|---|
+# MAGIC | eods | | todo
+# MAGIC | esri | 
+# MAGIC | os |
+# MAGIC | osm_pbf |
+# MAGIC | spol | | todo
+# MAGIC | ingest | | todo
 
 # COMMAND ----------
 
-from glob import glob
+f1 = '/Workspace/Repos/andrew.west@defra.gov.uk/init-scripts/DASH.sh'
+f2 = '/Volumes/prd_dash_lab/elm_project_restricted/ods/init_script.sh'
+dbutils.fs.ls('dbfs:/Workspace/Repos/andrew.west@defra.gov.uk/init-scripts/')
+# dbutils.fs.cp(f1, f2)
+
+# COMMAND ----------
+
+from datetime import datetime
+import esridump  # noqa
+import fiona
+from glob import iglob
 import json
+import mosaic as mos
 import os
 import osdatahub
-import pandas as pd
-# from elmo_geo.io import ingest_dash, ingest_esri, ingest_os, ingest_osm, ingest_spol
-from elmo_geo.io.file import convert_file
+from pyspark.sql import functions as F
+
+from elmo_geo import register, LOG
+from elmo_geo.utils.misc import dbfs, sh_run, snake_case
 
 
-def snake_case(string: str) -> str:
-    """Convert string to snake_case
-    1, lowercase
-    2, replace spaces with underscores
-    3, remove special characters
-    \w=words, \d=digits, \s=spaces, [^ ]=not
-    """
-    return re.sub("[^\w\d_]", "", re.sub("[\s-]", "_", string.lower()))
-
-def string_to_dict(string: str, pattern: str) -> dict:
-    """Reverse f-string
-    https://stackoverflow.com/a/36838374/10450752
-    """
-    regex = re.sub(r'{(.+?)}', r'(?P<_\1>.+)', pattern)
-    return dict(zip(
-        re.findall(r'{(.+?)}', pattern),
-        list(re.search(regex, string).groups()),
-    ))
+os.environ['OS_KEY'] =  'WxgUdETn6cy58WZkfwZ7wdMVLlt5eDsX'
+DATE = datetime.today().strftime('%Y_%m_%d')
+# RAW = '/Volumes/prd_dash_lab/elm_project_restricted/raw'
+# BRONZE = '/Volumes/prd_dash_lab/elm_project_restricted/bronze'
+# SILVER = '/Volumes/prd_dash_lab/elm_project_restricted/silver'
+# GOLD = '/Volumes/prd_dash_lab/elm_project_restricted/gold'
+RAW = '/tmp'
+BRONZE = '/dbfs/mnt/lab/restricted/ELM-Project/bronze'
+SILVER = '/dbfs/mnt/lab/restricted/ELM-Project/silver'
+GOLD = '/dbfs/mnt/lab/restricted/ELM-Project/gold'
 
 
-# ingest_methods = {
-#     "dash": ingest_dash,
-#     "esri": ingest_esri,
-#     "os": ingest_os,
-#     "osm": ingest_osm,
-#     "sharepoint": ingest_spol,
-# }
+def dl_eods(dataset):  # TODO
+    '''Defra Earth Observation Data Service
+    https://earthobs.defra.gov.uk/
+    '''
+    uri, name = dataset['uri'], dataset['name']
+    f_raw = f'{RAW}/{name}.tif'
+    raise NotImplementedError
+    LOG.info(f'Task EODS complete: {name}, {uri}, {f_raw}')
+    return f_raw
 
+def dl_esri(dataset):
+    '''ESRI
+    Uses esridump to serially download batches.
+    '''
+    uri, name = dataset['uri'], dataset['name']
+    f_raw = f'{RAW}/{name}.geojson'
+    sh_run(f"esri2geojson '{uri}' '{f_raw}'")
+    LOG.info(f'Task ESRI complete: {name}, {uri}, {f_raw}')
+    return f_raw
 
-def search_available(df, string):
-    display(df[df['name'].str.contains(string)==True])
+def dl_os(dataset):
+    '''Ordnance Survey Data Hub
+    '''
+    uri, name = dataset['uri'], dataset['name']
+    f_raw = f'{RAW}/os_ngd/'
+    os.mkdirs(f_raw, exist_ok=True)
+    osdatahub.DataPackageDownload(os.environ['OS_KEY'], dataset['product_id']).download(dataset['version_id'], output_dir=f_raw)
+    LOG.info(f'Task OSM complete: {name}, {uri}, {f_raw}')
+    return f_raw
 
+def dl_osm_pbf(dataset):
+    '''OpenStreetMap
+    '''
+    uri, name = dataset['uri'], dataset['name']
+    f_raw = f'{RAW}/{name}.osm.pbf'
+    sh_run(f'wget {uri} -O {f_raw}')
+    LOG.info(f'Task OMS PBF complete: {name}, {uri}, {f_raw}')
+    return f_raw
 
-os.environ["OS_KEY"] = "WxgUdETn6cy58WZkfwZ7wdMVLlt5eDsX"
+def dl_spol(dataset):  # TODO
+    '''SharePoint OnLine
+    '''
+    uri, name = dataset['uri'], dataset['name']
+    f_raw = f'{RAW}/{name}'
+    raise NotImplementedError
+    LOG.info(f'Task SharePoint complete: {name}, {uri}, {f_raw}')
+    return f_raw
 
+def to_gpq(sdf, f): # TODO: metadata
+    metadata = {}
+    sdf.write.option(metadata).parquet(dbfs(f, True), partitionBy=sdf['geometry.index_id'])
 
+def ingest(dataset, f_raw:str=None):  # TODO: update catalogue
+    name = dataset['name']
+    srid = dataset['srid'] or 27700
+    f_raw = f_raw or dataset['uri']
+    f_tmp = f'{RAW}/{name}.parquet'
+    f_out = f'{BRONZE}/{name}.parquet'
 
-os.chdir(os.getcwd().replace('/notebooks/ingestion', ''))
+    # Convert
+    LOG.info(f'Convert: {f_raw}, {f_tmp}')
+    for file in iglob(f'{f_raw}/*') if os.path.isdir(f_raw) else [f_raw]:
+        for layer in fiona.listlayers(file):
+            name = f"{snake_case(file.split('/')[-1].split('.')[0])}-{snake_case(layer)}"
+            sh_run(['''
+                PATH=$PATH:/databricks/miniconda/bin
+                TMPDIR=/tmp
+                PROJ_LIB=/databricks/miniconda/share/proj
+                OGR_GEOMETRY_ACCEPT_UNCLOSED_RING=NO
 
-catalogue = json.loads(open('data/catalogue.json').read())
+                ogr2ogr -f Parquet $2 $1 $3
+            ''', f_raw, f'{f_out}/layer={name}.parquet', layer], shell=False)
 
-
-# for dataset in catalogue:
-#     ingest = ingest_methods[dataset['method']]
-#     ingest(dataset)
-
-
-# COMMAND ----------
-
-catalogue = json.loads(open('data/catalogue.json').read())
-catalogue
-
-# COMMAND ----------
-
-# DASH
-
-
-# COMMAND ----------
-
-# ESRI
-
-# COMMAND ----------
-
-help(osdatahub.DataPackageDownload)
-
-# COMMAND ----------
-
-# OS
-os_key = os.environ['OS_KEY']
-product_id = 4143
-
-package = osdatahub.DataPackageDownload(os_key, product_id)
-version = package.versions[0]
-package.download(version["id"], output_dir="/tmp")
-
-for f_in in glob("/tmp/*.zip"):
-    f_stg = "{dir}/os-ngd-{date}.parquet/layer={layer}".format(
-        dir = FOLDER_STG,
-        date = snake_case(version["createdOn"]),
-        layer = string_to_dict(f_in, "/tmp/{dataset}.zip").values()[0],
+    # Partition
+    LOG.info(f'Partition: {f_tmp}, {f_out}')
+    sdf = (spark.read.parquet(f_tmp)
+        .withColumn('fid', F.monotonically_increasing_id())
+        .withColumnsRenamed(dataset['columns'])
+        .withColumn('json', mos.grid_tessellateexplode(mos.st_simplify(mos.st_setsrid(mos.st_geomfromwkb('geometry'), F.lit(srid)), F.lit(0.001)), F.lit(3)))
+        .drop('geometry')
+        .withColumn('is_core', F.col('json.is_core'))
+        .withColumn('sindex', F.col('json.index_id'))
+        .withColumn('geometry', F.col('json.wkb'))
+        .drop('json')
+        .transform(to_gpq, f_out)
     )
-    convert_file(f_in, f_stg)
+
+    # Update Catalogue
+    pass
+
+    return sdf
+
+
+register()
+catalogue = json.loads(open("data/catalogue.json").read())
+
 
 # COMMAND ----------
 
-version = package.versions[0]
-for version_tmp in package.versions[1:]:
-    if version_tmp["supplyType"] == "FULL":
-        if version_tmp["createdOn"] > version["createdOn"]:
-            version = version_tmp
-version
+dl_tasks = {
+  'eods': dl_eods,
+  'esri': dl_esri,
+  'os': dl_os,
+  'osm_pbf': dl_osm_pbf,
+  'spol': dl_spol,
+}
 
-# COMMAND ----------
+for dataset in catalogue:
+    for task, dl in dl_tasks.items():
+      if dataset['tasks'][task] == 'todo':
+        sdf, dataset = ingest(dataset, dl(dataset))
 
-# OSM
-
-# COMMAND ----------
-
-# SPOL
-'''
-rpa-parcel-adas
-'''

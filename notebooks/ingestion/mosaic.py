@@ -1,202 +1,128 @@
 # Databricks notebook source
-# MAGIC %%mosaic_kepler
+# MAGIC %pip install 'git+https://github.com/aw-west-defra/elmo-deps.git' --disable-pip-version-check
 
 # COMMAND ----------
 
-import os
-import pathlib
 import requests
-import warnings
-from pyspark.sql import functions as F, types as T
-import mosaic as mos
+import geopandas as gpd
 
-mos.enable_mosaic(spark, dbutils)
-mos.enable_gdal(spark)
+from sedona.spark import SedonaContext
+SedonaContext.create(spark)
 
-spark.conf.set("spark.sql.adaptive.coalescePartitions.enabled", False)
-spark.conf.set("spark.sql.shuffle.partitions", 1_024)
+# def test_good_ssl():
+#     """This test should pass even if no_ssl_verification fails"""
+#     url = "https://sha256.badssl.com/"
+#     requests.get(url).ok
+# # test_good_ssl()
 
-warnings.simplefilter("ignore")
+
+# dbutils.fs.ls('/Volumes/prd_dash_lab/fcp_unrestricted/config/')
 
 # COMMAND ----------
 
-user_name = dbutils.notebook.entry_point.getDbutils().notebook().getContext().userName().get()
-
-data_dir = f"/tmp/mosaic/{user_name}"
-print(f"Initial data stored in '{data_dir}'")
+import mosaic as mos
+from pyspark.sql import functions as F, types as T
 
 
-zone_dir = f"{data_dir}/taxi_zones"
-zone_dir_fuse = f"/dbfs{zone_dir}"
-dbutils.fs.mkdirs(zone_dir)
+def st_ingest(col:str='geometry', srid:int=27700, precision:float=0.001, resolution:int=3):
+    '''Ingest geometries using mosaic with chipping
+    '''
+    g = mos.st_geomfromwkb(col)
+    g = mos.st_setsrid(g, F.lit(srid))
+    g = mos.st_simplify(g, F.lit(precision))
+    g = mos.grid_tessellateexplode(g, F.lit(resolution))
+    return g.alias('geometry')
 
-os.environ['ZONE_DIR_FUSE'] = zone_dir_fuse
-print(f"ZONE_DIR_FUSE? '{zone_dir_fuse}'")
+def to_gpq(sdf, f): #TODO:metadata
+    metadata = {}
+    sdf.write.option(metadata).parquet(dbfs(f, True), partitionBy=sdf['geometry.index_id'])
 
+def ingest(dataset):
+    uri = dataset['uri']
+    name = dataset['name']
+    fn = dataset['fn']
+    srid = dataset['srid'] or 27700
+    f_tmp = f'{FOLDER_RAW}/{name}.parquet'
+    f_out = f'{FOLDER_STG}/{name}.parquet'
 
+    # Convert
+    LOG.info(f'Convert: {f_raw}, {f_tmp}')
+    if os.path.isfile(f_raw):
+        sh_run(['./elmo_geo/io/ogr2gpq.sh', f_raw, f_tmp], shell=False)
+    else:
+        for glob in iglob(f'{f_raw}/*')
 
-zone_url = 'https://data.cityofnewyork.us/api/geospatial/d3c5-ddgc?method=export&format=GeoJSON'
+    # Partition
+    LOG.info(f'Partition: {f_tmp}, {f_out}')
+    sdf = spark.read.parquet(f_tmp)
+    sdf = (spark.read
+        .parquet('dbfs:/mnt/lab/restricted/ELM-Project/stg/rpa-parcel-adas.parquet')
+        .withColumn('fid', F.monotonically_increasing_id())
+        .withColumnsRenamed(dataset['columns'])
+        .withColumn('json', st_ingest(srid=srid))
+        .select(
+            'fid',
+            *[col for col in columns.values() if col!='geometry'],
+            F.col('json.is_core').alias('is_core'),
+            F.col('json.index_id').alias('sindex'),
+            F.col('json.wkb').alias('geometry'),
+        )
+        .transform(to_gpq, f_out)
+    )
+    dataset['filepath'] = f_out
+    dataset['fetch'] = DATE
+    return sdf, dataset
 
-zone_fuse_path = pathlib.Path(zone_dir_fuse) / 'nyc_taxi_zones.geojson'
-if not zone_fuse_path.exists():
-  req = requests.get(zone_url)
-  with open(zone_fuse_path, 'wb') as f:
-    f.write(req.content)
-else:
-  print(f"...skipping '{zone_fuse_path}', already exits.")
+def suffix(l, r, lsuffix, rsuffix):
+    """Add a suffix for columns with the same name in both SparkDataFrames
+    """
+    for col in l.columns:
+        if col in r.columns:
+            l.withColumnRenamed(col, col+lsuffix)
+            r.withColumnRenamed(col, col+rsuffix)
+    return l, r
 
-display(dbutils.fs.ls(zone_dir))#
-
-
-
-neighbourhoods = (
-  spark.read
-    .option("multiline", "true")
-    .format("json")
-    .load(zone_dir)
-    .select("type", explode(col("features")).alias("feature"))
-    .select("type", col("feature.properties").alias("properties"), to_json(col("feature.geometry")).alias("json_geometry"))
-    .withColumn("geometry", mos.st_aswkt(mos.st_geomfromgeojson("json_geometry")))
-)
-
-print(f"count? {neighbourhoods.count():,}")
-neighbourhoods.limit(3).show() # <- limiting + show for ipynb only
-
-
-
-display(
-  neighbourhoods
-    .withColumn("calculatedArea", mos.st_area(col("geometry")))
-    .withColumn("calculatedLength", mos.st_length(col("geometry")))
-    # Note: The unit of measure of the area and length depends on the CRS used.
-    # For GPS locations it will be square radians and radians
-    .select("geometry", "calculatedArea", "calculatedLength")
-    .limit(3)
-    .show() # <- limiting + show for ipynb only
-)
-
-
-
-
-trips = (
-  spark.table("delta.`/databricks-datasets/nyctaxi/tables/nyctaxi_yellow`")
-  # - .1% sample
-  .sample(.001)
-    .drop("vendorId", "rateCodeId", "store_and_fwd_flag", "payment_type")
-    .withColumn("pickup_geom", mos.st_astext(mos.st_point(col("pickup_longitude"), col("pickup_latitude"))))
-    .withColumn("dropoff_geom", mos.st_astext(mos.st_point(col("dropoff_longitude"), col("dropoff_latitude"))))
-  # - adding a row id
-  .selectExpr(
-    "xxhash64(pickup_datetime, dropoff_datetime, pickup_geom, dropoff_geom) as row_id", "*"
-  )
-)
-print(f"count? {trips.count():,}")
-trips.limit(10).display() # <- limiting for ipynb only
-     
-
-
-     
-from mosaic import MosaicFrame
-
-neighbourhoods_mosaic_frame = MosaicFrame(neighbourhoods, "geometry")
-optimal_resolution = neighbourhoods_mosaic_frame.get_optimal_resolution(sample_fraction=0.75)
-
-print(f"Optimal resolution is {optimal_resolution}")
-
-
-
-display(
-  neighbourhoods_mosaic_frame.get_resolution_metrics(sample_rows=150)
-)
-
-
-
-
-tripsWithIndex = (
-  trips
-    .withColumn("pickup_h3", mos.grid_pointascellid(col("pickup_geom"), lit(optimal_resolution)))
-    .withColumn("dropoff_h3", mos.grid_pointascellid(col("dropoff_geom"), lit(optimal_resolution)))
-  # - beneficial to have index in first 32 table cols
-  .selectExpr(
-    "row_id", "pickup_h3", "dropoff_h3", "* except(row_id, pickup_h3, dropoff_h3)"
-  )
-)
-display(tripsWithIndex.limit(10))
-
-
-
-
-
-neighbourhoodsWithIndex = (
-  neighbourhoods
-    # We break down the original geometry in multiple smaller mosaic chips, each with its
-    # own index
-    .withColumn(
-      "mosaic_index", 
-      mos.grid_tessellateexplode(col("geometry"), lit(optimal_resolution))
+def st_join(l, r):
+    """Spatially join using mosaic's index_id, 
+    """
+    l, r = suffix(l, r, '_left', '_right')
+    return (l.join(r,
+            on = l["geometry_left.index_id"] == r["geometry_right.index_id"]
+        ).where(
+            F.col('geometry_left.is_core') | F.col('geometry_right.is_core')
+            | mos.st_contains('geometry_left.wkb', 'geometry_right.wkb')
+        )
     )
 
-    # We don't need the original geometry any more, since we have broken it down into
-    # Smaller mosaic chips.
-    .drop("json_geometry", "geometry")
+
+spark.conf.set("spark.databricks.labs.mosaic.index.system", "BNG")
+mos.enable_mosaic(spark, dbutils)
+
+# COMMAND ----------
+
+
+columns = {
+    'RLR_RW_REFERENCE_PARCELS_DEC_21_LPIS_REF': 'id_parcel',
+    'Shape': 'geometry',
+}
+
+sdf = (spark.read
+    .parquet('dbfs:/mnt/lab/restricted/ELM-Project/stg/rpa-parcel-adas.parquet')
+    .withColumn('fid', F.monotonically_increasing_id())
+    .withColumnsRenamed(columns)
+    .withColumn('json', st_ingest())
+    .select(
+        'fid',
+        *[col for col in columns.values() if col!='geometry'],
+        F.col('json.is_core').alias('is_core'),
+        F.col('json.index_id').alias('sindex'),
+        F.col('json.wkb').alias('geometry'),
+    )
 )
 
-print(f"count? {neighbourhoodsWithIndex.count():,}") # <- notice the explode results in more rows
-neighbourhoodsWithIndex.limit(5).show()              # <- limiting + show for ipynb only
 
+sdf.display()
 
+# COMMAND ----------
 
-
-
-
-
-pickupNeighbourhoods = neighbourhoodsWithIndex.select(col("properties.zone").alias("pickup_zone"), col("mosaic_index"))
-
-withPickupZone = (
-  tripsWithIndex.join(
-    pickupNeighbourhoods,
-    tripsWithIndex["pickup_h3"] == pickupNeighbourhoods["mosaic_index.index_id"]
-  ).where(
-    # If the borough is a core chip (the chip is fully contained within the geometry), then we do not need
-    # to perform any intersection, because any point matching the same index will certainly be contained in
-    # the borough. Otherwise we need to perform an st_contains operation on the chip geometry.
-    col("mosaic_index.is_core") | mos.st_contains(col("mosaic_index.wkb"), col("pickup_geom"))
-  ).select(
-    "trip_distance", "pickup_geom", "pickup_zone", "dropoff_geom", "pickup_h3", "dropoff_h3"
-  )
-)
-
-display(withPickupZone.limit(10)) # <- limiting for ipynb only
-
-
-
-
-
-
-dropoffNeighbourhoods = neighbourhoodsWithIndex.select(col("properties.zone").alias("dropoff_zone"), col("mosaic_index"))
-
-withDropoffZone = (
-  withPickupZone.join(
-    dropoffNeighbourhoods,
-    withPickupZone["dropoff_h3"] == dropoffNeighbourhoods["mosaic_index.index_id"]
-  ).where(
-    col("mosaic_index.is_core") | mos.st_contains(col("mosaic_index.wkb"), col("dropoff_geom"))
-  ).select(
-    "trip_distance", "pickup_geom", "pickup_zone", "dropoff_geom", "dropoff_zone", "pickup_h3", "dropoff_h3"
-  )
-  .withColumn("trip_line", mos.st_astext(mos.st_makeline(array(mos.st_geomfromwkt(col("pickup_geom")), mos.st_geomfromwkt(col("dropoff_geom"))))))
-)
-
-display(withDropoffZone.limit(10)) # <- limiting for ipynb only
-
-
-displayHTML("""""")
-
-
-displayHTML("""""")
-
-
-
-
-# %%mosaic_kepler
-# withDropoffZone "pickup_h3" "h3" 5000
+sdf.write.parquet('dbfs:/FileStore/tmp.parquet', partitionBy=F.col('geometry.index_id'))

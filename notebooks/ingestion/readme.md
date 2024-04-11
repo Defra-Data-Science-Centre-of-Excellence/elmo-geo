@@ -30,6 +30,7 @@
 - Defra Data Services Platform: https://environment.data.gov.uk/
 - Defra GeoPortal: https://naturalengland-defra.opendata.arcgis.com/
 - ONS GeoPortal: https://geoportal.statistics.gov.uk/
+- Historic England GeoPortal: https://opendata-historicengland.hub.arcgis.com/
 - OpenStreetMap: https://osm.org, http://tagfinder.osm.ch/
 - Ordnance Survey: https://osdatahub.os.uk, https://osdatahub.os.uk/downloads/packages/2010
 - Manual:
