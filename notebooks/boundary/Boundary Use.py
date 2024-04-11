@@ -94,7 +94,7 @@ sf_ph = "dbfs:/mnt/lab/unrestricted/elm/elmo/priority_habitats/output.parquet"
 sf_peat = "dbfs:/mnt/lab/unrestricted/elm/elmo/peatland/output.parquet"
 sf_wet = "dbfs:/mnt/lab/unrestricted/elm/elmo/ramsar/output.parquet"
 
-date = dt.strftime(dt.now(), "%d-%m-%Y")
+date = "09-04-2024"
 sf_adj = f"dbfs:/mnt/lab/restricted/ELM-Project/ods/boundary-use-adjacenct_parcel_geometries-{date}.parquet/"
 sf_neighbour = f"dbfs:/mnt/lab/restricted/ELM-Project/ods/boundary-use-neighbouring_land_use_geometries-{date}.parquet/"
 sf_boundary = f"dbfs:/mnt/lab/restricted/ELM-Project/ods/boundary-use-geometries-{date}.parquet/"
@@ -155,12 +155,39 @@ sdf_adj.count()
 
 # COMMAND ----------
 
-#st_union = lambda col: F.expr(f"ST_MakeValid(ST_Union_Aggr(ST_MakeValid(ST_Force_2D(ST_SimplifyPreserveTopology({col}, 1))))) AS {col}")
+# Report number of parcel intersections with same, different, or unknow business.
+# Indicates which situation is most common.
+count_null_bid = (spark.read.parquet(sf_adj)
+ .filter("(id_business is null) or (id_business_adj is null)")
+).count()
+
+count_diff_bid = (spark.read.parquet(sf_adj)
+ .filter("id_business != id_business_adj")
+).count()
+
+count_same_bid = (spark.read.parquet(sf_adj)
+ .filter("id_business = id_business_adj")
+).count()
+
+print(f"Number of intersections with same business: {count_same_bid:,.0f}")
+print(f"Number of intersections with different business: {count_diff_bid:,.0f}")
+print(f"Number of intersections with unknown business: {count_null_bid:,.0f}")
+
+# COMMAND ----------
+
+c = (spark.read.parquet(sf_adj)
+           .filter("(id_business == id_business_adj) or (id_business is null) or (id_business_adj is null)")
+).count()
+
+c == (5_669_886 + 3_886_781)
+
+# COMMAND ----------
+
 st_union = lambda col: F.expr(f"ST_MakeValid(ST_Union_Aggr(ST_SimplifyPreserveTopology(ST_PrecisionReduce(ST_Force_2D(ST_MakeValid({col})), 3), 1))) AS {col}")
 
 sdf_adj_same = (spark.read.parquet(sf_adj)
            .withColumn("geometry_adj_same_bus", F.expr("ST_GeomFromWKB(geometry_adj)"))
-           .filter("id_business == id_business")
+           .filter("(id_business == id_business_adj) or (id_business is null) or (id_business_adj is null)")
            .groupby("id_parcel").agg(st_union("geometry_adj_same_bus")) # this with line above worked.
            .withColumn("geometry_adj_same_bus", F.expr("ST_AsBinary(geometry_adj_same_bus)"))
            #.withColumn("geometry_adj", simplify("geometry_adj")) #  this works
@@ -169,7 +196,7 @@ sdf_adj_same = (spark.read.parquet(sf_adj)
 
 sdf_adj_diff = (spark.read.parquet(sf_adj)
            .withColumn("geometry_adj_diff_bus", F.expr("ST_GeomFromWKB(geometry_adj)"))
-           .filter("id_business != id_business")
+           .filter("id_business != id_business_adj")
            .groupby("id_parcel").agg(st_union("geometry_adj_diff_bus")) # this with line above worked.
            .withColumn("geometry_adj_diff_bus", F.expr("ST_AsBinary(geometry_adj_diff_bus)"))
            #.withColumn("geometry_adj", simplify("geometry_adj")) #  this works
@@ -184,7 +211,7 @@ sdf_adj_comb.write.format("parquet").mode("overwrite").save("dbfs:/tmp/adj.parqu
 
 # DBTITLE 1,Neighbouring Land Use
 cross_compliance = lambda col, buf: F.expr(f"ST_MakeValid(ST_Buffer({col}, {buf}))")
-st_union = lambda col: F.expr(f"ST_MakeValid(ST_Force_2D(ST_PrecisionReduce(ST_SimplifyPreserveTopology(ST_MakeValid(ST_Union_Aggr({col})), 1), 3))) AS {col}")
+st_union = lambda col: F.expr(f"ST_MakeValid(ST_Union_Aggr(ST_SimplifyPreserveTopology(ST_PrecisionReduce(ST_Force_2D(ST_MakeValid({col})), 3), 1))) AS {col}")
 
 sdf_water = (
     spark.read.format("geoparquet").load(sf_os_water)
@@ -366,18 +393,28 @@ sdf_type = (
     .pipe(spark.createDataFrame)
 )
 
+# parcel to business lookup
+sdf_wfm_field = (spark.read.format("parquet").load(sf_wfm_field)
+                 .select(
+                     "id_parcel",
+                     "id_business",
+                 )
+                 .dropDuplicates())
+
+
 sdf_ha = (
-    spark.read.parquet(sf_parcel)
+    spark.read.format("geoparquet").load(sf_parcel)
     .withColumn("ha", F.expr("ST_Area(geometry)"))
     .select(
-        "id_business",
         "id_parcel",
         "ha",
     )
 )
 
-sdf_m = spark.read.parquet(sf_boundary).withColumn("m", F.expr("ST_Length(geometry_boundary)")).drop("geometry_boundary")
-
+sdf_m = (spark.read.parquet(sf_boundary)
+         .withColumn("geometry_boundary", F.expr("ST_GeomFromWKB(geometry_boundary)"))
+         .withColumn("m", F.expr("ST_Length(geometry_boundary)")).drop("geometry_boundary")
+)
 
 sdf_ph = spark.read.parquet(sf_ph).select(
     "id_parcel",
@@ -403,7 +440,8 @@ sdf_wet = spark.read.parquet(sf_wet).select(
 
 
 sdf_uptake = (
-    sdf_type.join(sdf_ha, on="id_business", how="full")
+    sdf_type.join(sdf_wfm_field, on="id_business", how="full")
+    .join(sdf_ha, on="id_parcel", how="full")
     .join(sdf_m, on="id_parcel", how="full")
     .join(sdf_ph, on="id_parcel", how="full")
     .join(sdf_evast, on="id_parcel", how="full")
@@ -417,7 +455,8 @@ sdf_uptake = (
         "id_parcel",
         "farm_type",
         "priority_habitat",
-        "elg_adj",
+        "elg_adj_diff_bus",
+        "elg_adj_same_bus",
         "elg_water",
         "elg_ditch",
         "elg_wall",
@@ -442,13 +481,13 @@ sdf_ph.count(), sdf_peat.count(), sdf_wet.count(), sdf_evast.count()
 
 # COMMAND ----------
 
-spark.read.parquet(sf_uptake).select("elg_adj", "elg_water", "elg_ditch", "elg_wall", "elg_hedge", "m").display()
+spark.read.parquet(sf_uptake).select("elg_adj_same_bus", "elg_adj_diff_bus", "elg_water", "elg_ditch", "elg_wall", "elg_hedge", "m").display()
 
 # COMMAND ----------
 
 sdf_lengths = (spark.read.parquet(sf_uptake)
       .withColumn("boundary_unadj", F.col("m"))
-      .withColumn("boundary", F.expr("m * (1 - .5 * CAST(elg_adj AS DOUBLE))"))
+      .withColumn("boundary", F.expr("m * (1 - .5 * CAST( (elg_adj_same_bus OR elg_adj_diff_bus) AS DOUBLE))"))
       .groupBy("id_parcel")
       .agg(
           F.sum("boundary_unadj").alias("boundary_unadj"),
@@ -458,6 +497,7 @@ sdf_lengths = (spark.read.parquet(sf_uptake)
           F.sum(F.expr("boundary * CAST(elg_wall AS DOUBLE)")).alias("wall"),
           F.sum(F.expr("boundary * CAST(elg_hedge AS DOUBLE)")).alias("hedge"),
           F.sum(F.expr("boundary * CAST(NOT (elg_water OR elg_ditch OR elg_wall OR elg_hedge) AS DOUBLE)")).alias("available"),
+          F.sum(F.expr("boundary * CAST(NOT (elg_water OR elg_ditch OR elg_wall OR elg_hedge OR elg_adj_diff_bus) AS DOUBLE)")).alias("available_same_business"),
           F.sum(F.expr("boundary * CAST(elg_hedge AND NOT (elg_water OR elg_ditch OR elg_wall) AS DOUBLE)")).alias("hedge_only"),
           F.sum(F.expr("boundary * CAST(elg_hedge AND woodland AS DOUBLE)")).alias("hedge_on_ewco"),
           F.sum(F.expr("boundary * CAST(elg_ditch AND .1<peatland AS DOUBLE)")).alias("ditch_on_peatland"),
@@ -470,21 +510,6 @@ sdf_lengths.display()
 
 sdf_lengths = spark.read.parquet(sf_boundary_lengths)
 sdf_lengths.groupby().sum().display()
-
-# COMMAND ----------
-
-spark.read.parquet(sf_uptake).select(
-    F.expr("m").alias("ignoring_adjacency"),
-    F.expr("m * (1 - .5 * CAST(elg_adj AS DOUBLE))").alias("boundary"),
-    F.expr("boundary * CAST(elg_water AS DOUBLE)").alias("water"),
-    F.expr("boundary * CAST(elg_ditch AS DOUBLE)").alias("ditch"),
-    F.expr("boundary * CAST(elg_wall AS DOUBLE)").alias("wall"),
-    F.expr("boundary * CAST(elg_hedge AS DOUBLE)").alias("hedge"),
-    F.expr("boundary * CAST(NOT (elg_water OR elg_ditch OR elg_wall OR elg_hedge) AS DOUBLE)").alias("available"),
-    F.expr("boundary * CAST(elg_hedge AND NOT (elg_water OR elg_ditch OR elg_wall) AS DOUBLE)").alias("hedge_only"),
-    F.expr("boundary * CAST(elg_hedge AND woodland AS DOUBLE)").alias("hedge_on_ewco"),
-    F.expr("boundary * CAST(elg_ditch AND .1<peatland AS DOUBLE)").alias("ditch_on_peatland"),
-).groupby().sum().display()
 
 # COMMAND ----------
 
@@ -546,7 +571,3 @@ df = (
 df.to_parquet(f_hedge_change)
 pd.options.display.float_format = "{:,.3f}".format
 df
-
-# COMMAND ----------
-
-
