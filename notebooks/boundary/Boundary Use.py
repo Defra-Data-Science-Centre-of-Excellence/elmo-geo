@@ -75,6 +75,7 @@ from datetime import datetime as dt
 import elmo_geo
 from elmo_geo.st import sjoin
 from elmo_geo.st.geometry import load_geometry, load_missing
+from elmo_geo.io import download_link
 
 elmo_geo.register()
 from pyspark.sql import functions as F
@@ -99,7 +100,7 @@ sf_adj = f"dbfs:/mnt/lab/restricted/ELM-Project/ods/boundary-use-adjacenct_parce
 sf_neighbour = f"dbfs:/mnt/lab/restricted/ELM-Project/ods/boundary-use-neighbouring_land_use_geometries-{date}.parquet/"
 sf_boundary = f"dbfs:/mnt/lab/restricted/ELM-Project/ods/boundary-use-geometries-{date}.parquet/"
 sf_uptake = f"dbfs:/mnt/lab/restricted/ELM-Project/ods/boundary-use-uptake-{date}.parquet/"
-sf_boundary_lengths = f"dbfs:/mnt/lab/restricted/ELM-Project/out/boundary-use-lengths-{date}.parquet/"
+sf_boundary_lengths = f"dbfs:/mnt/lab/restricted/ELM-Project/out/boundary-use-lengths-{date}.parquet"
 
 f_hedge_change = "/dbfs/mnt/lab/unrestricted/elm/elm_se/hedgerow_boundary_use_change.parquet"
 
@@ -510,6 +511,22 @@ sdf_lengths.display()
 
 sdf_lengths = spark.read.parquet(sf_boundary_lengths)
 sdf_lengths.groupby().sum().display()
+
+# COMMAND ----------
+
+# download lengths data
+pandas_df = spark.read.parquet(sf_boundary_lengths).toPandas()
+path_parquet = sf_boundary_lengths.replace("dbfs:", "/dbfs").replace("boundary-use-lengths", "boundary-use-lengths-output")
+path_feather = sf_boundary_lengths.replace("dbfs:", "/dbfs").replace("boundary-use-lengths", "boundary-use-lengths-output").replace(".parquet", ".feather")
+path_csv = sf_boundary_lengths.replace("dbfs:", "/dbfs").replace("boundary-use-lengths", "boundary-use-lengths-output").replace(".parquet", ".csv")
+
+# output
+pandas_df.to_parquet(path_parquet)
+pandas_df.to_feather(path_feather)
+pandas_df.to_csv(path_csv, index=False)
+download_link(path_parquet)
+download_link(path_feather)
+download_link(path_csv)
 
 # COMMAND ----------
 
