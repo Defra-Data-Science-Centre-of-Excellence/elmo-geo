@@ -399,6 +399,40 @@ priority_habitat_network = Dataset(
     },
 )
 
+
+priority_habitat_inventory = Dataset(
+    name="priority_habitat_inventory",
+    source="defra",
+    versions=[
+        Version(
+            name="2021_03_26",
+            path_read=("/dbfs/mnt/lab/unrestricted/elm_data/defra/priority_habitat_inventory/unified_2021_03_26.parquet"),
+        ),
+    ],
+    keep_cols=['Main_Habit', 'Confidence', 'Source1', 'Source2', 'S2Habclass', 'S2HabType', 'Source3', 'S3Habclass', 'S3HabType', 'geometry'],
+    output_coltypes={
+        "proportion": "float",
+    },
+)
+
+habitat_map = Dataset(
+    name="habitat_map",
+    source="living_england",
+    versions=[
+        Version(
+            name="2022_09_16",
+            path_read=("dbfs:/mnt/lab/unrestricted/elm_data/natural_england/living_england/2022_09_16.parquet"),
+        ),
+    ],
+    keep_cols=['A_pred', 'A_prob', 'B_pred', 'B_prob', 'geometry'],
+    output_coltypes={
+        "proportion": "float",
+        "A_pred": "category",
+        "A_prob": "float",
+        "B_pred": "category",
+    },
+)
+
 nfc_social = Dataset(
     name="nfc_social",
     source="ewco",
@@ -515,6 +549,8 @@ datasets = [
     flood_risk_areas,
     red_squirrel,
     priority_habitat_network,
+    priority_habitat_inventory,
+    habitat_map,
     nfc_social,
     water_quality,
     flood_risk_management,
