@@ -48,37 +48,57 @@ path_parcels = next(v.path_read for v in parcels.versions if v.name == pversion)
 
 # COMMAND ----------
 
-# take a look at the raw data
-if os.path.splitext(path_read)[1] == ".parquet":
-    gpd_read = gpd.read_parquet
-    gpd_read(path_read).head(8)
-else:
-    gpd_read = partial(gpd.read_file, engine = "pyogrio")
-    gpd_read(path_read, rows=8)
+# inspect raw data
+if path_read[:5] == "dbfs:":
+    spark.read.parquet(path_read).display()
+
+elif path_read[:5] == "/dbfs":
+    if os.path.splitext(path_read)[1] == ".parquet":
+        gpd_read = gpd.read_parquet
+        print(gpd_read(path_read).head(8))
+    else:
+        gpd_read = partial(gpd.read_file, engine = "pyogrio")
+        print(gpd_read(path_read, rows=8))
 
 # COMMAND ----------
 
-# process the dataset
-df = (
-    gpd_read(path_read)
-    .explode(index_parts=False)
-    .pipe(transform_crs, target_epsg=27700)
-    .filter(dataset.keep_cols, axis="columns")
-    .rename(columns=dataset.rename_cols)
-    .pipe(make_geometry_valid)
-    .pipe(geometry_to_wkb)
-)
+# pre-process data
+if path_read[:5] == "dbfs:":
 
-LOG.info(f"Dataset has {df.size:,.0f} rows")
-LOG.info(f"Dataset has the following columns: {df.columns.tolist()}")
-(spark.createDataFrame(df).repartition(n_partitions).write.format("parquet").save(dataset.path_polygons.format(version=version), mode="overwrite"))
+    # load file with spark, filter and rename columns
+    mapping = dataset.rename_cols | {c:c for c in dataset.keep_cols if c not in dataset.rename_cols.keys()}
+    sdf = (spark.read.parquet(path_read)
+          .select(
+              [F.col(c).alias(mapping.get(c, c)) for c in dataset.keep_cols]
+              )
+    )
+
+elif path_read[:5] == "/dbfs":
+
+    # load data with approporiate geopandas function
+    if os.path.splitext(path_read)[1] == ".parquet":
+        gpd_read = gpd.read_parquet
+    else:
+        gpd_read = partial(gpd.read_file, engine = "pyogrio")
+    
+    df = (
+        gpd_read(path_read)
+        .explode(index_parts=False)
+        .set_crs("epsg:27700")
+        #.pipe(transform_crs, target_epsg=27700)
+        .filter(dataset.keep_cols, axis="columns")
+        .rename(columns=dataset.rename_cols)
+        .pipe(make_geometry_valid)
+        .pipe(geometry_to_wkb)
+    )
+    sdf = spark.createDataFrame(df)
+    df = None
+
+LOG.info(f"Dataset has {sdf.count():,.0f} rows")
+LOG.info(f"Dataset has the following columns: {list(sdf.columns)}")
+(sdf.repartition(n_partitions).write.format("parquet").save(dataset.path_polygons.format(version=version), mode="overwrite"))
 LOG.info(f"Saved preprocessed dataset to {dataset.path_polygons.format(version=version)}")
-
-# COMMAND ----------
-
-# take a look at the processed data
-df = spark.read.parquet(dataset.path_polygons.format(version=version))
-df.display()
+sdf.display()
 
 # COMMAND ----------
 
