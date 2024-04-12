@@ -1,7 +1,17 @@
+# Hidden
 .*
 !.gitkeep
-data/
+/data/
 
 # Manual
-!.github/workflows/verify.yaml
-!data/catalogue.json
+!/.github/workflows/verify.yaml
+!/.vscode/settings.json
+!/data/catalogue.json
+!/data/*.csv
+
+# Python
+__pycache__/
+# *.py[cod]
+# *$py.class
+/build/
+/*.egg-info/
