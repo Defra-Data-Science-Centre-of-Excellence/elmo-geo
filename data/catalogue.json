@@ -8,7 +8,7 @@
         },
         "tasks": {
             "esri": "todo",
-            "ingest": "todo",
+            "convert": "todo",
             "lookup_parcel": "todo"
         }
     },
@@ -21,7 +21,7 @@
         },
         "tasks": {
             "esri": "todo",
-            "ingest": "todo",
+            "convert": "todo",
             "lookup_parcel": "todo"
         }
     },
@@ -34,7 +34,7 @@
         },
         "tasks": {
             "esri": "todo",
-            "ingest": "todo",
+            "convert": "todo",
             "lookup_parcel": "todo"
         }
     },
@@ -47,7 +47,7 @@
         },
         "tasks": {
             "esri": "todo",
-            "ingest": "todo",
+            "convert": "todo",
             "lookup_parcel": "todo"
         }
     },
@@ -60,7 +60,7 @@
         },
         "tasks": {
             "esri": "todo",
-            "ingest": "todo",
+            "convert": "todo",
             "lookup_parcel": "todo"
         }
     },
@@ -72,7 +72,7 @@
             "geometry": "geometry"
         },
         "tasks": {
-            "ingest": "todo",
+            "convert": "done",
             "lookup_parcel": "todo"
         }
     },
@@ -84,7 +84,7 @@
             "geometry": "geometry"
         },
         "tasks": {
-            "ingest": "todo",
+            "convert": "done",
             "lookup_parcel": "todo"
         }
     },
@@ -96,7 +96,7 @@
             "geometry": "geometry"
         },
         "tasks": {
-            "ingest": "todo",
+            "convert": "done",
             "lookup_parcel": "todo"
         }
     },
@@ -108,7 +108,7 @@
             "geometry": "geometry"
         },
         "tasks": {
-            "ingest": "todo",
+            "convert": "done",
             "lookup_parcel": "todo"
         }
     },
@@ -120,7 +120,7 @@
             "geometry": "geometry"
         },
         "tasks": {
-            "ingest": "todo",
+            "convert": "done",
             "lookup_parcel": "todo"
         }
     },
@@ -133,7 +133,7 @@
             "geometry": "geometry"
         },
         "tasks": {
-            "ingest": "todo",
+            "convert": "done",
             "lookup_parcel": "todo"
         }
     },
@@ -145,7 +145,7 @@
             "geometry": "geometry"
         },
         "tasks": {
-            "ingest": "todo",
+            "convert": "done",
             "lookup_parcel": "todo"
         }
     },
@@ -157,7 +157,7 @@
             "geometry": "geometry"
         },
         "tasks": {
-            "ingest": "todo",
+            "convert": "done",
             "lookup_parcel": "todo"
         }
     },
@@ -170,7 +170,7 @@
             "geometry": "geometry"
         },
         "tasks": {
-            "ingest": "todo",
+            "convert": "done",
             "lookup_parcel": "todo"
         }
     },
@@ -183,7 +183,7 @@
             "geometry": "geometry"
         },
         "tasks": {
-            "ingest": "todo",
+            "convert": "done",
             "lookup_parcel": "todo"
         }
     },
@@ -197,7 +197,7 @@
             "geometry": "geometry"
         },
         "tasks": {
-            "ingest": "todo"
+            "convert": "done"
         }
     },
     {
@@ -211,7 +211,7 @@
             "geometry": "geometry"
         },
         "tasks": {
-            "ingest": "todo"
+            "convert": "todo"
         }
     },
     {
@@ -222,7 +222,7 @@
             "geometry": "geometry"
         },
         "tasks": {
-            "ingest": "todo"
+            "convert": "todo"
         }
     },
     {
@@ -233,7 +233,7 @@
             "geometry": "geometry"
         },
         "tasks": {
-            "ingest": "todo"
+            "convert": "todo"
         }
     },
     {
@@ -244,7 +244,7 @@
             "geometry": "geometry"
         },
         "tasks": {
-            "ingest": "todo"
+            "convert": "todo"
         }
     },
     {
@@ -255,7 +255,7 @@
             "geometry": "geometry"
         },
         "tasks": {
-            "ingest": "todo"
+            "convert": "todo"
         }
     },
     {
@@ -267,7 +267,7 @@
             "geometry": "geometry"
         },
         "tasks": {
-            "ingest": "todo"
+            "convert": "todo"
         }
     },
     {
@@ -282,7 +282,7 @@
             "geometry": "geometry"
         },
         "tasks": {
-            "ingest": "todo"
+            "convert": "todo"
         }
     },
     {
@@ -293,7 +293,7 @@
         "columns": {},
         "tasks": {
             "os": "todo",
-            "ingest": "todo"
+            "convert": "todo"
         }
     },
     {
@@ -301,7 +301,7 @@
         "uri": "https://download.geofabrik.de/europe/united-kingdom-latest.osm.pbf",
         "tasks": {
             "osm_pbf": "todo",
-            "ingest": "todo"
+            "convert": "todo"
         }
     },
     {
@@ -313,7 +313,7 @@
         },
         "tasks": {
             "eods": "todo",
-            "ingest": "todo"
+            "convert": "todo"
         }
     }
 ]
