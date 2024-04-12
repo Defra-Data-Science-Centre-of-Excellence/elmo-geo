@@ -211,7 +211,7 @@
             "geometry": "geometry"
         },
         "tasks": {
-            "convert": "todo"
+            "convert": "done"
         }
     },
     {
@@ -222,7 +222,7 @@
             "geometry": "geometry"
         },
         "tasks": {
-            "convert": "todo"
+            "convert": "done"
         }
     },
     {
@@ -233,7 +233,7 @@
             "geometry": "geometry"
         },
         "tasks": {
-            "convert": "todo"
+            "convert": "done"
         }
     },
     {
@@ -244,7 +244,7 @@
             "geometry": "geometry"
         },
         "tasks": {
-            "convert": "todo"
+            "convert": "done"
         }
     },
     {
@@ -255,7 +255,7 @@
             "geometry": "geometry"
         },
         "tasks": {
-            "convert": "todo"
+            "convert": "done"
         }
     },
     {
@@ -267,7 +267,7 @@
             "geometry": "geometry"
         },
         "tasks": {
-            "convert": "todo"
+            "convert": "done"
         }
     },
     {
@@ -282,7 +282,7 @@
             "geometry": "geometry"
         },
         "tasks": {
-            "convert": "todo"
+            "convert": "done"
         }
     },
     {
@@ -313,7 +313,7 @@
         },
         "tasks": {
             "eods": "todo",
-            "convert": "todo"
+            "convert": "done"
         }
     }
 ]
