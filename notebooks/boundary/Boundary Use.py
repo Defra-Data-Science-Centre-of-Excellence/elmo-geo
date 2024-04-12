@@ -437,15 +437,16 @@ sdf_wet = spark.read.parquet(sf_wet).select(
 
 
 sdf_uptake = (
-    sdf_type.join(sdf_wfm_field, on="id_business", how="full")
-    .join(sdf_ha, on="id_parcel", how="full")
-    .join(sdf_m, on="id_parcel", how="full")
-    .join(sdf_ph, on="id_parcel", how="full")
-    .join(sdf_evast, on="id_parcel", how="full")
+    sdf_ha
+    .join(sdf_wfm_field, on="id_parcel", how="left")
+    .join(sdf_type, on = "id_business", how="left")
+    .join(sdf_m, on="id_parcel", how="left")
+    .join(sdf_ph, on="id_parcel", how="left")
+    .join(sdf_evast, on="id_parcel", how="left")
     .withColumn("woodland", F.expr("COALESCE(woodland, False)"))
-    .join(sdf_peat, on="id_parcel", how="full")
+    .join(sdf_peat, on="id_parcel", how="left")
     .withColumn("peatland", F.expr("COALESCE(peatland, 0)"))
-    .join(sdf_wet, on="id_parcel", how="full")
+    .join(sdf_wet, on="id_parcel", how="left")
     .withColumn("wetland", F.expr("COALESCE(wetland, 0)"))
     .select(
         "id_business",
@@ -474,11 +475,15 @@ sdf_uptake.count()
 
 # COMMAND ----------
 
-sdf_ph.count(), sdf_peat.count(), sdf_wet.count(), sdf_evast.count()
+# check no nulls in id_parcel or elg columns
+sdf_uptake = spark.read.parquet(sf_uptake)
 
-# COMMAND ----------
+n_null_parcel_ids = (sdf_uptake.filter("(id_parcel is null)")).count()
+n_null_boundary_categories = (sdf_uptake.filter("(id_parcel is not null) and ((elg_adj_diff_bus is null) or (elg_adj_same_bus is null) or (elg_water is null) or (elg_ditch is null) or (elg_wall is null) or (elg_hedge is null))")).count()
 
-spark.read.parquet(sf_uptake).select("elg_adj_same_bus", "elg_adj_diff_bus", "elg_water", "elg_ditch", "elg_wall", "elg_hedge", "m").display()
+if (n_null_parcel_ids == n_null_boundary_categories == 0)==False:
+    msg = "Unexpected nulls in uptake dataset"
+    raise ValueError(msg)
 
 # COMMAND ----------
 
