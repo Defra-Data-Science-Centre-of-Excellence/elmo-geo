@@ -1,3 +1,5 @@
+BATCHSIZE: int = 10_000
+
 LINK_BNG: str = "https://britishnationalgrid.uk/"
 LINK_GeoHash: str = "https://geohash.softeng.co/gc"
 LINK_H3: str = "https://h3geo.org/"

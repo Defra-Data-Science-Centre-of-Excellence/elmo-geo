@@ -14,13 +14,6 @@
 
 # COMMAND ----------
 
-f1 = '/Workspace/Repos/andrew.west@defra.gov.uk/init-scripts/DASH.sh'
-f2 = '/Volumes/prd_dash_lab/elm_project_restricted/ods/init_script.sh'
-dbutils.fs.ls('dbfs:/Workspace/Repos/andrew.west@defra.gov.uk/init-scripts/')
-# dbutils.fs.cp(f1, f2)
-
-# COMMAND ----------
-
 from datetime import datetime
 import esridump  # noqa
 import fiona
@@ -140,22 +133,99 @@ def ingest(dataset, f_raw:str=None):  # TODO: update catalogue
     return sdf
 
 
-register()
-catalogue = json.loads(open("data/catalogue.json").read())
-
 
 # COMMAND ----------
 
-dl_tasks = {
-  'eods': dl_eods,
-  'esri': dl_esri,
-  'os': dl_os,
-  'osm_pbf': dl_osm_pbf,
-  'spol': dl_spol,
-}
+import json
+import os
+import subprocess
 
-for dataset in catalogue:
-    for task, dl in dl_tasks.items():
-      if dataset['tasks'][task] == 'todo':
-        sdf, dataset = ingest(dataset, dl(dataset))
+from elmo_geo import LOG, register
+
+
+def json_load(f):
+    with open(f, "r") as fp:
+        obj = json.loads(fp.read())
+    return obj
+
+def json_dump(obj, f):
+    with open(f, "w", encoding="utf-8") as fp:
+        json.dump(obj, fp, ensure_ascii=False, indent=4)
+
+def convert_file(f_in: str, f_out: str):
+    out = subprocess.run(["./elmo_geo/io/ogr2gpq.sh", f_in, f_out], shell=False, capture_output=True, text=True)
+    LOG.info(out.__repr__())
+    return out
+
+
+register()
+catalogue = json_load("./data/catalogue.json")
+
+# COMMAND ----------
+
+for i, dataset in enumerate(catalogue):
+    f_in = dataset['uri']
+    f_out = f'/dbfs/mnt/lab/restricted/ELM-Project/stg/{dataset["name"]}'
+    if (
+        dataset['tasks']['convert'] == 'todo'
+        and f_in.startswith('/dbfs/mnt/')
+        and not os.path.exists(f_out)
+    ):
+        convert_file(f_in, f_out)
+        dataset['tasks']['convert'] = 'done'
+        catalogue[i] = dataset
+
+json_dump(catalogue, "./data/catalogue.json")
+
+# COMMAND ----------
+
+# MAGIC %sh
+# MAGIC /dbfs/mnt/lab/restricted/ELM-Project/stg/
+
+# COMMAND ----------
+
+import fiona
+import os
+import re
+
+
+def gen_files(folder):
+    for root, dirs, files in os.walk(folder):
+        for file in files:
+            yield os.path.join(root, file)
+
+
+def string_to_dict(string: str, pattern: str) -> dict:
+    """Reverse f-string
+    https://stackoverflow.com/a/36838374/10450752
+    """
+    regex = re.sub(r'{(.+?)}', r'(?P<_\1>.+)', pattern)
+    return dict(zip(
+        re.findall(r'{(.+?)}', pattern),
+        list(re.search(regex, string).groups()),
+    ))
+
+
+pattern = '/dbfs/mnt/base/unrestricted/source_{source}/dataset_{dataset}/format_{format}/SNAPSHOT_{version}/{file}\.{ext}'
+exts, skipped_exts = ['csv', 'gpkg', 'shp', 'gml', 'gdb', 'geojson', 'tif', 'parquet'], []
+
+for f in gen_files('/dbfs/mnt/base/unrestricted/source_forestry_commission_open_data/'):
+    if '/SNAPSHOT_' in f:
+        print(f)
+        source, dataset, format, version, file, ext = string_to_dict(f, pattern).values()
+        format = format.replace(f"_{dataset}", "")
+        version = version.replace(f"_{dataset}", "")
+        if ext in exts:
+            break
+        else:
+            skipped_exts.append(ext)
+
+skipped_exts
+
+# COMMAND ----------
+
+# MAGIC %ls /dbfs/mnt/base/unrestricted/source_uk_ceh_environmental_info_data_centre/dataset_inventory_of_uk_reservoirs/format_parquet_inventory_of_uk_reservoirs/LATEST_inventory_of_uk_reservoirs
+
+# COMMAND ----------
+
 

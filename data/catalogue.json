@@ -211,7 +211,8 @@
             "geometry": "geometry"
         },
         "tasks": {
-            "convert": "done"
+            "convert": "done",
+            "knn_parcel": "todo"
         }
     },
     {
