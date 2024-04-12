@@ -124,7 +124,6 @@ sdf_parcel = (spark.read.format("geoparquet").load(sf_parcel)
               #.withColumn("geometry", F.expr("ST_PrecisionReduce(geometry, 3)")) # made the next stage fail
               .withColumn("geometry", F.expr("ST_SimplifyPreserveTopology(geometry, 1.0)"))
 )
-#sdf_parcel.write.format("parquet").mode("overwrite").save("dbfs:/tmp/parcel.parquet")
 
 sdf_wfm_field = (spark.read.format("parquet").load(sf_wfm_field)
                  .select(
@@ -176,43 +175,54 @@ print(f"Number of intersections with unknown business: {count_null_bid:,.0f}")
 
 # COMMAND ----------
 
-c = (spark.read.parquet(sf_adj)
-           .filter("(id_business == id_business_adj) or (id_business is null) or (id_business_adj is null)")
-).count()
+# st_union = lambda col: F.expr(f"ST_MakeValid(ST_Union_Aggr(ST_SimplifyPreserveTopology(ST_PrecisionReduce(ST_Force_2D(ST_MakeValid({col})), 3), 1))) AS {col}")
 
-c == (5_669_886 + 3_886_781)
+# sdf_adj_same = (spark.read.parquet(sf_adj)
+#            .withColumn("geometry_adj_same_bus", F.expr("ST_GeomFromWKB(geometry_adj)"))
+#            .filter("(id_business == id_business_adj) or (id_business is null) or (id_business_adj is null)")
+#            .groupby("id_parcel").agg(st_union("geometry_adj_same_bus")) # this with line above worked.
+#            .withColumn("geometry_adj_same_bus", F.expr("ST_AsBinary(geometry_adj_same_bus)"))
+#            #.withColumn("geometry_adj", simplify("geometry_adj")) #  this works
+#            #.groupBy("id_parcel").agg(F.expr(f"ST_MakeValid(ST_Union_Aggr(geometry_adj)) as geometry_adj")) # has worked with both lines, but doesn't always.
+# )
 
-# COMMAND ----------
+# sdf_adj_diff = (spark.read.parquet(sf_adj)
+#            .withColumn("geometry_adj_diff_bus", F.expr("ST_GeomFromWKB(geometry_adj)"))
+#            .filter("id_business != id_business_adj")
+#            .groupby("id_parcel").agg(st_union("geometry_adj_diff_bus")) # this with line above worked.
+#            .withColumn("geometry_adj_diff_bus", F.expr("ST_AsBinary(geometry_adj_diff_bus)"))
+#            #.withColumn("geometry_adj", simplify("geometry_adj")) #  this works
+#            #.groupBy("id_parcel").agg(F.expr(f"ST_MakeValid(ST_Union_Aggr(geometry_adj)) as geometry_adj")) # has worked with both lines, but doesn't always.
+# )
 
-st_union = lambda col: F.expr(f"ST_MakeValid(ST_Union_Aggr(ST_SimplifyPreserveTopology(ST_PrecisionReduce(ST_Force_2D(ST_MakeValid({col})), 3), 1))) AS {col}")
+# sdf_adj_comb = sdf_adj_same.join(sdf_adj_diff, on = "id_parcel", how = "outer")
 
-sdf_adj_same = (spark.read.parquet(sf_adj)
-           .withColumn("geometry_adj_same_bus", F.expr("ST_GeomFromWKB(geometry_adj)"))
-           .filter("(id_business == id_business_adj) or (id_business is null) or (id_business_adj is null)")
-           .groupby("id_parcel").agg(st_union("geometry_adj_same_bus")) # this with line above worked.
-           .withColumn("geometry_adj_same_bus", F.expr("ST_AsBinary(geometry_adj_same_bus)"))
-           #.withColumn("geometry_adj", simplify("geometry_adj")) #  this works
-           #.groupBy("id_parcel").agg(F.expr(f"ST_MakeValid(ST_Union_Aggr(geometry_adj)) as geometry_adj")) # has worked with both lines, but doesn't always.
-)
-
-sdf_adj_diff = (spark.read.parquet(sf_adj)
-           .withColumn("geometry_adj_diff_bus", F.expr("ST_GeomFromWKB(geometry_adj)"))
-           .filter("id_business != id_business_adj")
-           .groupby("id_parcel").agg(st_union("geometry_adj_diff_bus")) # this with line above worked.
-           .withColumn("geometry_adj_diff_bus", F.expr("ST_AsBinary(geometry_adj_diff_bus)"))
-           #.withColumn("geometry_adj", simplify("geometry_adj")) #  this works
-           #.groupBy("id_parcel").agg(F.expr(f"ST_MakeValid(ST_Union_Aggr(geometry_adj)) as geometry_adj")) # has worked with both lines, but doesn't always.
-)
-
-sdf_adj_comb = sdf_adj_same.join(sdf_adj_diff, on = "id_parcel", how = "outer")
-
-sdf_adj_comb.write.format("parquet").mode("overwrite").save("dbfs:/tmp/adj.parquet")
+# sdf_adj_comb.write.format("parquet").mode("overwrite").save("dbfs:/tmp/adj.parquet")
 
 # COMMAND ----------
 
 # DBTITLE 1,Neighbouring Land Use
 cross_compliance = lambda col, buf: F.expr(f"ST_MakeValid(ST_Buffer({col}, {buf}))")
 st_union = lambda col: F.expr(f"ST_MakeValid(ST_Union_Aggr(ST_SimplifyPreserveTopology(ST_PrecisionReduce(ST_Force_2D(ST_MakeValid({col})), 3), 1))) AS {col}")
+boundary = lambda col: F.expr(f"ST_MakeValid(ST_Force_2D(ST_PrecisionReduce(ST_SimplifyPreserveTopology(ST_Boundary({col}), 1), 3))) AS geometry_boundary")
+
+
+sdf_adj_same = (spark.read.parquet(sf_adj)
+           .withColumn("geometry_adj_same_bus", F.expr("ST_GeomFromWKB(geometry_adj)"))
+           .filter("(id_business == id_business_adj) or (id_business is null) or (id_business_adj is null)")
+           .groupby("id_parcel")
+           .agg(st_union("geometry_adj_same_bus"))
+)
+
+sdf_adj_diff = (spark.read.parquet(sf_adj)
+           .withColumn("geometry_adj_diff_bus", F.expr("ST_GeomFromWKB(geometry_adj)"))
+           .filter("id_business != id_business_adj")
+           .groupby("id_parcel")
+           .agg(st_union("geometry_adj_diff_bus")) # this with line above worked.
+)
+
+sdf_adj_comb = sdf_adj_same.join(sdf_adj_diff, on = "id_parcel", how = "outer")
+
 
 sdf_water = (
     spark.read.format("geoparquet").load(sf_os_water)
@@ -221,7 +231,7 @@ sdf_water = (
     .groupby("id_parcel")
     .agg(st_union("geometry_water"))
 )
-sdf_water.write.format("geoparquet").mode("overwrite").save("dbfs:/tmp/water.parquet")
+#sdf_water.write.format("geoparquet").mode("overwrite").save("dbfs:/tmp/water.parquet")
 
 sdf_ditch = (
     spark.read.format("geoparquet").load(sf_os_water)
@@ -230,7 +240,7 @@ sdf_ditch = (
     .groupby("id_parcel")
     .agg(st_union("geometry_ditch"))
 )
-sdf_ditch.write.format("geoparquet").mode("overwrite").save("dbfs:/tmp/ditch.parquet")
+#sdf_ditch.write.format("geoparquet").mode("overwrite").save("dbfs:/tmp/ditch.parquet")
 
 sdf_wall = (spark.read.format("geoparquet").load(sf_wall)
             .filter('class != "wall-relict"') # these are SHINE features and should be excluded
@@ -238,7 +248,7 @@ sdf_wall = (spark.read.format("geoparquet").load(sf_wall)
             .groupby("id_parcel")
             .agg(st_union("geometry_wall"))
 )
-sdf_wall.write.format("geoparquet").mode("overwrite").save("dbfs:/tmp/wall.parquet")
+#sdf_wall.write.format("geoparquet").mode("overwrite").save("dbfs:/tmp/wall.parquet")
 
 
 sdf_hedge = (spark.read.format("geoparquet").load(sf_hedge)
@@ -246,11 +256,8 @@ sdf_hedge = (spark.read.format("geoparquet").load(sf_hedge)
             .groupby("id_parcel")
             .agg(st_union("geometry_hedge"))
 )
-sdf_hedge.write.format("geoparquet").mode("overwrite").save("dbfs:/tmp/hedge.parquet")
+#sdf_hedge.write.format("geoparquet").mode("overwrite").save("dbfs:/tmp/hedge.parquet")
 
-# COMMAND ----------
-
-boundary = lambda col: F.expr(f"ST_MakeValid(ST_Force_2D(ST_PrecisionReduce(ST_SimplifyPreserveTopology(ST_Boundary({col}), 1), 3))) AS geometry_boundary")
 
 sdf_parcel = (spark.read.format("geoparquet").load(sf_parcel)
               .select(
@@ -259,19 +266,9 @@ sdf_parcel = (spark.read.format("geoparquet").load(sf_parcel)
               )
 )
 
-sdf_adj = (spark.read.format("parquet").load("dbfs:/tmp/adj.parquet")
-           .withColumn("geometry_adj_diff_bus", F.expr("ST_GeomFromWKB(geometry_adj_diff_bus)"))
-           .withColumn("geometry_adj_same_bus", F.expr("ST_GeomFromWKB(geometry_adj_same_bus)"))
-)
-
-sdf_water = spark.read.format("geoparquet").load("dbfs:/tmp/water.parquet")
-sdf_wall = spark.read.format("geoparquet").load("dbfs:/tmp/wall.parquet")
-sdf_ditch = spark.read.format("geoparquet").load("dbfs:/tmp/ditch.parquet")
-sdf_hedge = spark.read.format("geoparquet").load("dbfs:/tmp/hedge.parquet")
-
 sdf_neighbour = (
     sdf_parcel
-    .join(sdf_adj, on="id_parcel", how="left")
+    .join(sdf_adj_comb, on="id_parcel", how="left")
     .join(sdf_water, on="id_parcel", how="left")
     .join(sdf_ditch, on="id_parcel", how="left")
     .join(sdf_wall, on="id_parcel", how="left")
@@ -308,7 +305,6 @@ sdf_neighbour = (
     )
     .repartition(2000)
 )
-
 
 sdf_neighbour.write.format("parquet").mode("overwrite").save(sf_neighbour)
 
@@ -491,17 +487,17 @@ sdf_lengths = (spark.read.parquet(sf_uptake)
       .withColumn("boundary", F.expr("m * (1 - .5 * CAST( (elg_adj_same_bus OR elg_adj_diff_bus) AS DOUBLE))"))
       .groupBy("id_parcel")
       .agg(
-          F.sum("boundary_unadj").alias("boundary_unadj"),
-          F.sum("boundary").alias("boundary"),
-          F.sum(F.expr("boundary * CAST(elg_water AS DOUBLE)")).alias("water"),
-          F.sum(F.expr("boundary * CAST(elg_ditch AS DOUBLE)")).alias("ditch"),
-          F.sum(F.expr("boundary * CAST(elg_wall AS DOUBLE)")).alias("wall"),
-          F.sum(F.expr("boundary * CAST(elg_hedge AS DOUBLE)")).alias("hedge"),
-          F.sum(F.expr("boundary * CAST(NOT (elg_water OR elg_ditch OR elg_wall OR elg_hedge) AS DOUBLE)")).alias("available"),
-          F.sum(F.expr("boundary * CAST(NOT (elg_water OR elg_ditch OR elg_wall OR elg_hedge OR elg_adj_diff_bus) AS DOUBLE)")).alias("available_same_business"),
-          F.sum(F.expr("boundary * CAST(elg_hedge AND NOT (elg_water OR elg_ditch OR elg_wall) AS DOUBLE)")).alias("hedge_only"),
-          F.sum(F.expr("boundary * CAST(elg_hedge AND woodland AS DOUBLE)")).alias("hedge_on_ewco"),
-          F.sum(F.expr("boundary * CAST(elg_ditch AND .1<peatland AS DOUBLE)")).alias("ditch_on_peatland"),
+          F.sum("boundary_unadj").alias("m_boundary_unadj"),
+          F.sum("boundary").alias("m_boundary"),
+          F.sum(F.expr("boundary * CAST(elg_water AS DOUBLE)")).alias("m_water"),
+          F.sum(F.expr("boundary * CAST(elg_ditch AS DOUBLE)")).alias("m_ditch"),
+          F.sum(F.expr("boundary * CAST(elg_wall AS DOUBLE)")).alias("m_wall"),
+          F.sum(F.expr("boundary * CAST(elg_hedge AS DOUBLE)")).alias("m_hedge"),
+          F.sum(F.expr("boundary * CAST(NOT (elg_water OR elg_ditch OR elg_wall OR elg_hedge) AS DOUBLE)")).alias("m_available"),
+          F.sum(F.expr("boundary * CAST(NOT (elg_water OR elg_ditch OR elg_wall OR elg_hedge OR elg_adj_diff_bus) AS DOUBLE)")).alias("m_available_same_business"),
+          F.sum(F.expr("boundary * CAST(elg_hedge AND NOT (elg_water OR elg_ditch OR elg_wall) AS DOUBLE)")).alias("m_hedge_only"),
+          F.sum(F.expr("boundary * CAST(elg_hedge AND woodland AS DOUBLE)")).alias("m_hedge_on_ewco"),
+          F.sum(F.expr("boundary * CAST(elg_ditch AND .1<peatland AS DOUBLE)")).alias("m_ditch_on_peatland"),
           )
       )
 sdf_lengths.write.parquet(sf_boundary_lengths, mode="overwrite")
