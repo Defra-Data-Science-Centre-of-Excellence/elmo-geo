@@ -34,7 +34,7 @@ def run_task_on_catalogue(task: str, fn: callable):
     """
     catalogue = load_catalogue()
     for i, dataset in enumerate(catalogue):
-        if dataset["tasks"][task] == "todo":
+        if getattr(dataset["tasks"], task, False) == "todo":
             catalogue[i] = fn(dataset)
     save_catalogue(catalogue)
 
