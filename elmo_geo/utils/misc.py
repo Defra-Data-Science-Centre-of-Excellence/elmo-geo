@@ -30,9 +30,19 @@ def sh_run(exc: str, **kwargs):
     return out
 
 
-def gtypes(sdf: SparkDataFrame, col: str = "geometry"):
-    sdf = sdf.select(F.expr(f"ST_GeometryType({col}) AS gtype")).groupby("gtype").count()
-    LOG.info(f"gtypes:  {sdf.rdd.collectAsMap()}")
+def info_sdf(sdf: SparkDataFrame, col: str = "geometry") -> SparkDataFrame:
+    """Get Info about SedonaDataFrame
+    Logs the number of partitions, geometry types, number of features, and average number of coordinates.
+    """
+    n = sdf.rdd.getNumParitions()
+    sdf = sdf.selectExpr(
+        f'ST_GeometryType({col) AS gtype',
+        f'ST_NPoints({col) AS n',
+    ).groupby("gtype").agg(
+        F.count('gtype').alias('count'),
+        F.mean('n').alias('mean_coords'),
+    )
+    LOG.info(f"parts: {n}\ngtypes:  {sdf.rdd.collectAsMap()}")
     return sdf
 
 
