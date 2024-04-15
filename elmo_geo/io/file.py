@@ -53,6 +53,25 @@ def to_gpq_partitioned(sdf: SparkDataFrame, sf: str, **kwargs):
     )
     return sdf
 
+def to_pq_partitioned(sdf: SparkDataFrame, sf: str, **kwargs):
+    """SparkDataFrame to Parquet, partitioned by BNG index"""
+    sdf = (sdf
+           .withColumn("geometry", st_simplify())
+           .transform(sindex).transform(repartitonBy, "sindex")
+           .withColumn("geometry", F.expr("ST_AsBinary(geometry)"))
+    )
+    sdf.write.format("parquet").save(sf, partitionBy="sindex", **kwargs)
+    LOG.info(
+        f"""
+        Wrote Parquet: {sf}
+        Count: {sdf.count()}
+        sindexes: {sdf.select("sindex").distinct().count()}
+        Partitions: {sdf.rdd.getNumPartitions()}
+        Files: {count_files(dbfs(sf, False))}
+    """,
+    )
+    return sdf
+
 
 def to_gpq_sorted(sdf: SparkDataFrame, sf: str, **kwargs):
     """SparkDataFrame to GeoParquet, sorted by BNG index"""
