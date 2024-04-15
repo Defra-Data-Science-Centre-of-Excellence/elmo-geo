@@ -2,7 +2,9 @@
 # MAGIC %md
 # MAGIC # Boudnary Use
 # MAGIC **Objective**:  determine parcel boundary uses.
+# MAGIC
 # MAGIC **Author:** Andrew West
+# MAGIC
 # MAGIC **Updated April 2024:** Obi Thompson Sargoni
 # MAGIC   
 # MAGIC This notebook produces multiple datasets that detail what features intersect parcel boundaries. This information can be used to inform what actions parcels are eligibile for, and the amount of parcel boundaries eligibile for those actions.
@@ -546,7 +548,6 @@ df = (
         usage=lambda df: df["tmp"].str.split("_").str[1:].str.join("_"),
     )
     .drop(columns=["tmp"])
-    # .drop(columns=[('mpha', 'count'), ('mpha', 'sum')])
     .pivot_table(
         values="value",
         index=["farm_type", "usage"],
