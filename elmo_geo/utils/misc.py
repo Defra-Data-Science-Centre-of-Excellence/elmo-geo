@@ -58,13 +58,18 @@ def info_sdf(sdf: SparkDataFrame, col: str = "geometry") -> SparkDataFrame:
     ```
     """
     n = sdf.rdd.getNumPartitions()
-    df = sdf.selectExpr(
-        f'ST_GeometryType({col}) AS gtype',
-        f'ST_NPoints({col}) AS n',
-    ).groupby("gtype").agg(
-        F.count('gtype').alias('count'),
-        F.round(F.mean('n'), 1).alias('mean_coords'),
-    ).toPandas()
+    df = (
+        sdf.selectExpr(
+            f"ST_GeometryType({col}) AS gtype",
+            f"ST_NPoints({col}) AS n",
+        )
+        .groupby("gtype")
+        .agg(
+            F.count("gtype").alias("count"),
+            F.round(F.mean("n"), 1).alias("mean_coords"),
+        )
+        .toPandas()
+    )
     LOG.info(f"partitions:  {n}\n{df}")
     return df
 
