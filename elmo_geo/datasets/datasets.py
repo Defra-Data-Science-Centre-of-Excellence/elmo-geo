@@ -405,7 +405,7 @@ priority_habitat_inventory_heathland = Dataset(
     versions=[
         Version(
             name="2021_03_26",
-            path_read=("dbfs:/mnt/lab/restricted/ELM-Project/stg/defra-priority-habitat-inventory-heathland-2021_03_26.parquet"),
+            path_read=("dbfs:/mnt/lab/restricted/ELM-Project/stg/defra-priority_habitat_inventory_heathland-2021_03_26.parquet"),
         ),
     ],
     keep_cols=["Main_Habit", "geometry"],
