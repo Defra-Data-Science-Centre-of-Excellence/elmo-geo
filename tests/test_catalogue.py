@@ -1,8 +1,5 @@
-from elmo_geo import register
 from elmo_geo.datasets.catalogue import load_catalogue
 from elmo_geo.datasets.datasets import datasets
-
-register()
 
 
 catalogue = load_catalogue()
