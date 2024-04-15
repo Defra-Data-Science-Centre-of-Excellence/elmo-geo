@@ -31,8 +31,9 @@ from pyspark.sql.types import DecimalType, DoubleType, FloatType, IntegerType, L
 from elmo_geo import LOG, register
 from elmo_geo.datasets.datasets import datasets, parcels
 from elmo_geo.io import download_link
-from elmo_geo.io.preprocessing import geometry_to_wkb, make_geometry_valid, transform_crs
-from elmo_geo.st import sjoin 
+from elmo_geo.st import sjoin
+from elmo_geo.st.join import knn
+from elmo_geo.st.geometry import load_geometry
 
 register()
 
@@ -65,9 +66,6 @@ dbutils.widgets.dropdown("group-by variable", non_numeric_variables[0], non_nume
 groupby_variable = dbutils.widgets.get("group-by variable")
 print(f"\nDataset variable to group distances by:\t{groupby_variable}")
 
-dbutils.widgets.text("group-by alias", "heath_habitat")
-groupby_alias = dbutils.widgets.get("group-by alias")
-
 target_epsg = 27700
 n_partitions = 200
 simplify_tolerence: float = 0.5  # metres
@@ -86,10 +84,7 @@ spark.read.parquet(path_read).display()
 # and subdivide large geometries
 df_parcels = (
     spark.read.format("geoparquet").load(path_parcels)
-    .withColumn("geometry", F.expr("ST_MakeValid(geometry)"))
-    .withColumn("geometry", F.expr(f"ST_SimplifyPreserveTopology(geometry, {simplify_tolerence})"))
-    .withColumn("geometry", F.expr("ST_Force_2D(geometry)"))
-    .withColumn("geometry", F.expr("ST_MakeValid(geometry)"))
+    .withColumn("geometry", load_geometry("geometry", encoding_fn = "")) # already geometry type so encoding function set to blank
     .select("id_parcel", "geometry")
     .repartition(1_000)
 )
@@ -101,46 +96,21 @@ df_parcels.display()
 # and subdivide large geometries
 df_feature = (
     spark.read.parquet(path_read)
-    .withColumn("geometry", F.expr("ST_GeomFromWKB(hex(geometry))"))
-    .withColumn("geometry", F.expr("ST_MakeValid(geometry)"))
-    .withColumn("geometry", F.expr(f"ST_SimplifyPreserveTopology(geometry, {simplify_tolerence})"))
-    .withColumn("geometry", F.expr("ST_Force_2D(geometry)"))
-    .withColumn("geometry", F.expr("ST_MakeValid(geometry)"))
+    .withColumn("geometry", load_geometry("geometry"))
     .withColumn("geometry", F.expr(f"ST_SubdivideExplode(geometry, {max_vertices})"))
     .repartition(n_partitions)
-    
 )
 df_feature.display()
 
 # COMMAND ----------
 
-df_feature.createOrReplaceTempView("right")
-df_parcels.createOrReplaceTempView("left")
+sdf = knn(df_parcels, df_feature, id_left = "id_parcel", id_right=groupby_variable, k=1, distance_threshold=DISTANCE_THRESHOLD)
+sdf.write.format("parquet").save(dataset.path_output.format(version=version), mode="overwrite")
 
 # COMMAND ----------
 
-sdf = spark.sql(
-    f"""
-    select id_parcel, {groupby_alias}, distance from (
-    select id_parcel, {groupby_alias}, distance, ROW_NUMBER() OVER(PARTITION BY id_parcel, {groupby_alias} ORDER BY distance ASC) AS rank
-    from (
-    SELECT left.id_parcel, right.{groupby_variable} as {groupby_alias}, ST_Distance(left.geometry, right.geometry) as distance
-    FROM left JOIN right
-    on ST_Distance(left.geometry, right.geometry) < {DISTANCE_THRESHOLD}
-    ) t ) t2
-    where rank=1
-""",
-)
-sdf.display()
-
-# COMMAND ----------
-
-# save the data
-(   
-    sdf
-    .write.format("parquet")
-    .save(dataset.path_output.format(version=version), mode="overwrite")
-)
+# view the data
+spark.read.format("parquet").load(dataset.path_output.format(version=version), mode="overwrite").display()
 
 # COMMAND ----------
 
@@ -151,7 +121,7 @@ LOG.info(f"Rows: {count:,.0f}")
 
 # COMMAND ----------
 
-result.toPandas().groupby(groupby_alias).distance.describe()
+result.toPandas().groupby(groupby_variable).distance.describe()
 
 # COMMAND ----------
 

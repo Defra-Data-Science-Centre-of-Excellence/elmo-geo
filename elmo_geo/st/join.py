@@ -177,3 +177,33 @@ def overlap(
         .withColumn("proportion", F.expr(f"ST_Area(geometry) / ST_Area({geometry_left})"))
         .drop(geometry_left, geometry_right)
     )
+
+
+def knn(
+    sdf_left: SparkDataFrame,
+    sdf_right: SparkDataFrame,
+    id_left: str,
+    id_right: str,
+    k: int = 1,
+    distance_threshold: int = 5_000,
+) -> SparkDataFrame:
+    """K-nearest neighbours within distance threshold.
+
+    Parameters:
+        sdf_left: Spark data frame with geometry field.
+        sdf_right: Spark data frame with geometry field.
+        id_left: Field in left dataframe to group entries by when finding nearest neighbour.
+        id_left: Field in right dataframe to group entries by when finding nearest neighbour.
+        k: Number of neighbours to return.
+        distance_threshol: Maximum distance in meters of neighbours.
+
+    Returns:
+        SparkDataFrame
+    """
+    return (
+        sjoin(sdf_left, sdf_right, distance=distance_threshold)
+        .withColumn("distance", F.expr("ST_Distance(geometry_left, geometry_right)"))
+        .withColumn("rank", F.expr(f"ROW_NUMBER() OVER(PARTITION BY id_parcel, {id_right} ORDER BY distance ASC)"))
+        .filter(f"rank<={k}")
+        .select(id_left, id_right, "distance")
+    )
