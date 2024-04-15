@@ -1,64 +1,65 @@
 # Databricks notebook source
 # MAGIC %md
 # MAGIC # Boudnary Use
-# MAGIC Objective:  determine parcel boundary uses.
+# MAGIC **Objective**:  determine parcel boundary uses.
+# MAGIC **Author:** Andrew West
+# MAGIC **Updated April 2024:** Obi Thompson Sargoni
 # MAGIC   
 # MAGIC This notebook produces multiple datasets that detail what features intersect parcel boundaries. This information can be used to inform what actions parcels are eligibile for, and the amount of parcel boundaries eligibile for those actions.
 # MAGIC
 # MAGIC ### Data
-# MAGIC - elm_se, Parcels
-# MAGIC - elm_se, Adjacenct Parcels
-# MAGIC - elm_se, OS Waterbody
-# MAGIC - elm_se, Heritage Wall
-# MAGIC - elm_se, Hedgerow
-# MAGIC - elmo, WFM Farm Type
-# MAGIC - EVAST, Woodland Uptake
-# MAGIC - elmo_geo, Priority Habitats
-# MAGIC - elmo_geo, Peatland
-# MAGIC - elmo_geo, Wetland
+# MAGIC - Parcels - November 2021 (ADAS) - Elm-Project
+# MAGIC - Waterbodys, poduced by 'Waterbody' elmo-geo notebook
+# MAGIC - Walls, produced by Heritage Wall elmo-geo notebook
+# MAGIC - Hedgerow, produced by Hedgerow elmo-geo notebook
+# MAGIC - WFM Farm Type, from WFM Farms dataset
+# MAGIC - Woodland Uptake, EVAST
+# MAGIC - Priority Habitats, linked to parcels by 'process_dataset' notebook
+# MAGIC - Peatland, linked to parcels by 'process_dataset' notebook
+# MAGIC - Wetland, linked to parcels by 'process_dataset' notebook
 # MAGIC
-# MAGIC ### Assumptions
-# MAGIC **Cross Compliance** is 2m, source: [Aim 2, Intro](https://townsendcharteredsurveyors.co.uk/sustainable-farming-incentive-pilot-starting-2021-water-body-buffering-standard/)
+# MAGIC ### Methodology
+# MAGIC This notebook implments a 'splitting' methoid to calssify sections of parcel boundaries based on the features they intersect. This method is implemented in Cell 10.
 # MAGIC
+# MAGIC The splitting method repeatedly intersects parcel boundaries with different features. The intersection between the boundary and the feature is returned as one set of geometries that are tagged as overlapping with this feature type. The non-intersecting sections of the boundary are tagged as not intersecting the features. By repeating this process the inition boundary geometry is plit into different components that intersect different combinations of natural features (e.g. a section that intersects a wall and a hedge, a section that intersects just a waterbody). 
 # MAGIC
-# MAGIC ### Outputs
-# MAGIC > Table 1 - Neighbouring Land Use
-# MAGIC > Location - 
+# MAGIC The intersections are based on a 2m ([Source](https://townsendcharteredsurveyors.co.uk/sustainable-farming-incentive-pilot-starting-2021-water-body-buffering-standard/)) buffer of the feature geometries which is why some boundary sections can intersect multiple features (we typically expect section of a boundary to be either intersected by a wall or hedge or waterbody).
+# MAGIC
+# MAGIC The notebook cells leading up to cell 10 preprocess featrues datasets to ensure geometries are cleaned, grouped into a single geometry per percel ID, and joined together into a single spark dataframe.
+# MAGIC
+# MAGIC ### Intermediate Outputs
+# MAGIC > Table 1 - Parcel Adjacency. Outpath - 'sf_adj'
+# MAGIC > This table is produced by performing a distance base spatial join between the parcels dataset and itself, with a 12m distance threshold. This provides a lookup from each parcel to its nearby parcels.
+# MAGIC |id_parcel |	id_business |	id_parcel_adj|	id_business_adj|
+# MAGIC |---|---|---|---|
+# MAGIC |   |   |   |   |
+# MAGIC
+# MAGIC > Table 2 - Neighbouring Land Use. Outpath - 'sf_neighbour'
 # MAGIC > This table has the nearby geometries for each parcel.  These are geometries joined to parcels with a distance of 12m, they are unioned according to their land use.
-# MAGIC > `dbfs:/mnt/lab/restricted/ELM-Project/ods/neighbouring_land_use_geometries.parquet/`
-# MAGIC | id_parcel | geometry_parcel | geometry_boundary | geometry_water | geometry_ditch | geometry_wall | geometry_hedge
-# MAGIC |---|---|---|---|---|---|---|
-# MAGIC |   |   |   |   |   |   |   |
+# MAGIC |id_parcel |	geometry_boundary |	geometry_adj_diff_bus|	geometry_adj_same_bus|	geometry_water|	geometry_ditch|	geometry_wall|	geometry_hedge|
+# MAGIC |---|---|---|---|---|---|---|--|
+# MAGIC |   |   |   |   |   |   |   |  |
 # MAGIC
 # MAGIC
-# MAGIC > Table 2 - Boundary Land Use - WIP
-# MAGIC > This table has the boundary land use.  This table is longer, with multiple id_boundary for each id_parcel.  Each id_boundary has a length and a boolean for each land use.
-# MAGIC > `dbfs:/mnt/lab/restricted/ELM-Project/ods/boundary_land_use.parquet/`
-# MAGIC | id_business | id_parcel | id_boundary | ha_parcel | geometry_boundary | b_water | b_ditch | b_wall | b_hedge | b_available |
-# MAGIC |---|---|---|---|---|---|---|---|---|---|
-# MAGIC |   |   |   |   |   |   |   |   |   |   |
+# MAGIC > Table 3 - Boundary Section Use. Outpath - 'sf_boundary'
+# MAGIC > This table is the output from the boundary splitting methods. Each row is a section of the parcel boundary with boolean tags indicating which features this section intersects. elg_adj_diff_bus and elg_adj_same_bus differentiate between sections that boarder parcels belonging to the same business or not.
+# MAGIC |id_parcel|	geometry_boundary|	elg_adj_diff_bus	|elg_adj_same_bus	|elg_water|	elg_ditch|	elg_wall|	elg_hedge|
+# MAGIC |---|---|---|---|---|---|---|---|
+# MAGIC |   |   |   |   |   |   |   |   |
 # MAGIC
+# MAGIC > Table 4 - Uptake. Outpath - 'sf_update'
+# MAGIC > This table is the Table 3 with additional parcel level classifications joined in. These classifications indicate whether a parcel has joined a woodland scheme (from EVAST data) or is in a wetland or peat area. It also calculates the total area and boundary length of the parcel.
+# MAGIC |id_business|	id_parcel|	farm_type|	priority_habitat|	elg_adj_diff_bus|	elg_adj_same_bus|	elg_water|	elg_ditch	|elg_wall|	elg_hedge	|woodland	|peatland|	wetland|	ha|	m|
+# MAGIC |---|---|---|---|---|---|---|---|--|--|--|--|--|--|--|
+# MAGIC |   |   |   |   |   |   |   |   |  |  |  |  |  |  |  |
 # MAGIC
-# MAGIC > Table 3 - Hedgerow Land Use - not started
-# MAGIC | farm_type | m/ha_parcel<br>{sum,count,median,mean} | m/ha_water | m/ha_wall | m/ha_hedge | m/ha_available |
-# MAGIC | :--------------- |---|---|---|---|---|
-# MAGIC | Cereal           |   |   |   |   |   |
-# MAGIC | General Cropping |   |   |   |   |   |
-# MAGIC | Dairy            |   |   |   |   |   |
-# MAGIC | LFA Grazing      |   |   |   |   |   |
-# MAGIC | Lowland Grazing  |   |   |   |   |   |
-# MAGIC | Mixed            |   |   |   |   |   |
-# MAGIC | None             |   |   |   |   |   |
+# MAGIC ### Final Outputs
 # MAGIC
-# MAGIC
-# MAGIC > Table 3 - Land Use Change Matrix - not started
-# MAGIC |               | Waterbody | Heritage Wall | EVAST | Hedge | Available |
-# MAGIC | :------------ |---|---|---|---|---|
-# MAGIC | Waterbody     | - |   |   |   |   |
-# MAGIC | Heritage Wall |   | - |   |   |   |
-# MAGIC | EVAST         |   |   | - |   |   |
-# MAGIC | Hedgerow      |   |   |   | - |   |
-# MAGIC | Available     |   |   |   |   | - |
+# MAGIC > Table 5 - Boundary Lengths. Outpath - 'sf_boundary_lengths'
+# MAGIC > This table sums the length of sections of parcel boundaries to produce total lengths of boundary sections per parcel. These length are used to inform parcel eligibility for ELMS actions.
+# MAGIC |id_parcel|	m_boundary_unadj	|m_boundary	|m_water|	m_ditch|	m_wall|	m_hedge|	m_available|	m_available_same_business|	m_hedge_only|	m_hedge_on_ewco|	m_ditch_on_peatland|
+# MAGIC |---|---|---|---|---|---|---|---|--|--|--|--|
+# MAGIC |   |   |   |   |   |   |   |   |  |  |  |  |
 # MAGIC
 # MAGIC
 # MAGIC ## To do
@@ -175,32 +176,6 @@ print(f"Number of intersections with unknown business: {count_null_bid:,.0f}")
 
 # COMMAND ----------
 
-# st_union = lambda col: F.expr(f"ST_MakeValid(ST_Union_Aggr(ST_SimplifyPreserveTopology(ST_PrecisionReduce(ST_Force_2D(ST_MakeValid({col})), 3), 1))) AS {col}")
-
-# sdf_adj_same = (spark.read.parquet(sf_adj)
-#            .withColumn("geometry_adj_same_bus", F.expr("ST_GeomFromWKB(geometry_adj)"))
-#            .filter("(id_business == id_business_adj) or (id_business is null) or (id_business_adj is null)")
-#            .groupby("id_parcel").agg(st_union("geometry_adj_same_bus")) # this with line above worked.
-#            .withColumn("geometry_adj_same_bus", F.expr("ST_AsBinary(geometry_adj_same_bus)"))
-#            #.withColumn("geometry_adj", simplify("geometry_adj")) #  this works
-#            #.groupBy("id_parcel").agg(F.expr(f"ST_MakeValid(ST_Union_Aggr(geometry_adj)) as geometry_adj")) # has worked with both lines, but doesn't always.
-# )
-
-# sdf_adj_diff = (spark.read.parquet(sf_adj)
-#            .withColumn("geometry_adj_diff_bus", F.expr("ST_GeomFromWKB(geometry_adj)"))
-#            .filter("id_business != id_business_adj")
-#            .groupby("id_parcel").agg(st_union("geometry_adj_diff_bus")) # this with line above worked.
-#            .withColumn("geometry_adj_diff_bus", F.expr("ST_AsBinary(geometry_adj_diff_bus)"))
-#            #.withColumn("geometry_adj", simplify("geometry_adj")) #  this works
-#            #.groupBy("id_parcel").agg(F.expr(f"ST_MakeValid(ST_Union_Aggr(geometry_adj)) as geometry_adj")) # has worked with both lines, but doesn't always.
-# )
-
-# sdf_adj_comb = sdf_adj_same.join(sdf_adj_diff, on = "id_parcel", how = "outer")
-
-# sdf_adj_comb.write.format("parquet").mode("overwrite").save("dbfs:/tmp/adj.parquet")
-
-# COMMAND ----------
-
 # DBTITLE 1,Neighbouring Land Use
 cross_compliance = lambda col, buf: F.expr(f"ST_MakeValid(ST_Buffer({col}, {buf}))")
 st_union = lambda col: F.expr(f"ST_MakeValid(ST_Union_Aggr(ST_SimplifyPreserveTopology(ST_PrecisionReduce(ST_Force_2D(ST_MakeValid({col})), 3), 1))) AS {col}")
@@ -231,7 +206,6 @@ sdf_water = (
     .groupby("id_parcel")
     .agg(st_union("geometry_water"))
 )
-#sdf_water.write.format("geoparquet").mode("overwrite").save("dbfs:/tmp/water.parquet")
 
 sdf_ditch = (
     spark.read.format("geoparquet").load(sf_os_water)
@@ -240,7 +214,6 @@ sdf_ditch = (
     .groupby("id_parcel")
     .agg(st_union("geometry_ditch"))
 )
-#sdf_ditch.write.format("geoparquet").mode("overwrite").save("dbfs:/tmp/ditch.parquet")
 
 sdf_wall = (spark.read.format("geoparquet").load(sf_wall)
             .filter('class != "wall-relict"') # these are SHINE features and should be excluded
@@ -248,7 +221,6 @@ sdf_wall = (spark.read.format("geoparquet").load(sf_wall)
             .groupby("id_parcel")
             .agg(st_union("geometry_wall"))
 )
-#sdf_wall.write.format("geoparquet").mode("overwrite").save("dbfs:/tmp/wall.parquet")
 
 
 sdf_hedge = (spark.read.format("geoparquet").load(sf_hedge)
@@ -256,7 +228,6 @@ sdf_hedge = (spark.read.format("geoparquet").load(sf_hedge)
             .groupby("id_parcel")
             .agg(st_union("geometry_hedge"))
 )
-#sdf_hedge.write.format("geoparquet").mode("overwrite").save("dbfs:/tmp/hedge.parquet")
 
 
 sdf_parcel = (spark.read.format("geoparquet").load(sf_parcel)
