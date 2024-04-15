@@ -34,6 +34,15 @@ def info_sdf(sdf: SparkDataFrame, col: str = "geometry") -> SparkDataFrame:
     """Get Info about SedonaDataFrame
     Logs the number of partitions, geometry types, number of features, and average number of coordinates.
 
+    Tips:
+    *gtypes,*
+    In general you want 1 geometry dimension: Point+MultiPoint, LineString+LinearRing+MultiLineString, or Polygon+MultiPolygon.
+    groupby `ST_GeometryType` and save as layers to handle separately.
+    `F.expr('ST_Dump(geometry)')` for exploding those multis
+    *coords,*
+    It's best if your geometries fit into a single buffer, that's 256 coords.
+    `ST_SubDivideExplode` exists for this purpose
+
     Example
     ```py
     info_sdf(sdf_water)
