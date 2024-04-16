@@ -110,7 +110,7 @@ sdf.write.format("parquet").save(dataset.path_output.format(version=version), mo
 # COMMAND ----------
 
 # view the data
-spark.read.format("parquet").load(dataset.path_output.format(version=version), mode="overwrite").display()
+spark.read.format("parquet").load(dataset.path_output.format(version=version)).display()
 
 # COMMAND ----------
 
