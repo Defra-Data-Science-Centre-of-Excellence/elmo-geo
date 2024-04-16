@@ -180,13 +180,13 @@ def overlap(
 
 
 def knn(
-    sdf_left: SparkDataFrame,
-    sdf_right: SparkDataFrame,
+    sdf_left,
+    sdf_right,
     id_left: str,
     id_right: str,
     k: int = 1,
     distance_threshold: int = 5_000,
-) -> SparkDataFrame:
+):
     """K-nearest neighbours within distance threshold.
 
     Parameters:
@@ -200,10 +200,21 @@ def knn(
     Returns:
         SparkDataFrame
     """
-    return (
-        sjoin(sdf_left, sdf_right, distance=distance_threshold)
-        .withColumn("distance", F.expr("ST_Distance(geometry_left, geometry_right)"))
-        .withColumn("rank", F.expr(f"ROW_NUMBER() OVER(PARTITION BY id_parcel, {id_right} ORDER BY distance ASC)"))
-        .filter(f"rank<={k}")
-        .select(id_left, id_right, "distance")
-    )
+    sdf_left.createOrReplaceTempView("left")
+    sdf_right.createOrReplaceTempView("right")
+
+    sdf = spark.sql(
+        f"""
+        select {id_left}, {id_right}, distance from (
+        select {id_left}, {id_right}, distance, ROW_NUMBER() OVER(PARTITION BY {id_left}, {id_right} ORDER BY distance ASC) AS rank
+        from (
+        SELECT left.{id_left}, right.{id_right}, ST_Distance(left.geometry, right.geometry) as distance
+        FROM left JOIN right
+        on ST_Distance(left.geometry, right.geometry) < {distance_threshold}
+        ) )
+        where rank<={k}
+        """
+        )
+    spark.sql("DROP TABLE left")
+    spark.sql("DROP TABLE right")
+    return sdf
