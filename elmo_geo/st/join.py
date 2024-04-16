@@ -214,7 +214,7 @@ def knn(
         ) )
         where rank<={k}
         """
-        )
+    )
     spark.sql("DROP TABLE left")
     spark.sql("DROP TABLE right")
     return sdf
