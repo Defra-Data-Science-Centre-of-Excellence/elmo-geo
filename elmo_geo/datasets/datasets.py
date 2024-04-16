@@ -522,6 +522,5 @@ datasets = [
     nfc_ammonia_emmissions,
     tiles,
     shine,
-    priority_habitat_inventory_heathland,
 ]
 """A list of all defined datasets"""
