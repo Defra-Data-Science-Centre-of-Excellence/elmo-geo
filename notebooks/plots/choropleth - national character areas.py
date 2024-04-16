@@ -96,11 +96,15 @@ path_nca_poly = "dbfs:/mnt/lab/unrestricted/elm/defra/national_character_areas/2
 
 # COMMAND ----------
 
-spark.read.parquet(dataset.path_output.format(version=version)).display()
+path_read = dataset.path_output.format(version=version)
 
 # COMMAND ----------
 
-df = (spark.read.parquet(dataset.path_output.format(version=version))
+spark.read.parquet(path_read).display()
+
+# COMMAND ----------
+
+df = (spark.read.parquet(path_read)
       .groupBy("id_parcel").agg(F.sum(F.col(value_column)).alias(value_column))
       ).toPandas()
 df.head()
