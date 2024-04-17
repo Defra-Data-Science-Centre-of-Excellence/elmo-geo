@@ -25,7 +25,7 @@ def test_st_union():
     """
     test = "(ST_AsText(geometry) = 'MULTILINESTRING ((0 0, 1 1), (1 1, 2 2))') OR (ST_AsText(geometry) = 'MULTILINESTRING ((1 1, 2 2), (0 0, 1 1))')"
     s = ["LineString(0 0, 1 1)", "LineString(1 1, 2 2)"]
-    gdf = gpd.GeoDataFrame(geometry=gpd.GeoSeries.from_wkt(s))
+    gdf = gpd.GeoDataFrame({"key": [1, 1]}, geometry=gpd.GeoSeries.from_wkt(s))
     sdf = to_sdf(gdf)
     all_true = sdf.transform(st_union, ["key"]).selectExpr(f"{test} AS test").toPandas()["test"].all()
     assert all_true == 1
