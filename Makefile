@@ -6,6 +6,7 @@ clean:
 		build/ \
 		*.egg-info \
 		2> /dev/null || true
+	git branch --merged | grep -v \* | xargs git branch -D
 	clear
 
 install:
@@ -19,12 +20,12 @@ fmt:
 freeze:
 	pip-compile -qU --all-extras
 
-verify:
+verify_gh:
 	ruff check .
 	ruff format . --check
 	pytest .
 
-verify_dbr:
+verify:
 	ruff check .
 	ruff format . --check
 	pip-compile -q --all-extras
