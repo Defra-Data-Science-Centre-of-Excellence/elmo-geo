@@ -1,6 +1,5 @@
 from pyspark.sql import functions as F
 
-from elmo_geo.st.geometry import load_geometry
 from elmo_geo.utils.dbr import spark
 from elmo_geo.utils.types import (
     BaseGeometry,
@@ -54,7 +53,7 @@ def to_sdf(
     elif isinstance(x, Geometry):
         sdf = to_sdf(to_gdf(x, column, crs).to_wkb(), column, crs)
     elif isinstance(x, PandasDataFrame):
-        sdf = spark.createDataFrame(x).withColumn(column, F.expr(f'ST_GeomFromWKB({column})'))
+        sdf = spark.createDataFrame(x).withColumn(column, F.expr(f"ST_GeomFromWKB({column})"))
     else:
         raise TypeError(f"Unknown type: {type(x)}")
     return sdf
