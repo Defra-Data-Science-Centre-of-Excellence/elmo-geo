@@ -205,14 +205,18 @@ def knn(
 
     sdf = spark.sql(
         f"""
-        select {id_left}, {id_right}, distance from (
-        select {id_left}, {id_right}, distance, ROW_NUMBER() OVER(PARTITION BY {id_left}, {id_right} ORDER BY distance ASC) AS rank
-        from (
-        SELECT left.{id_left}, right.{id_right}, ST_Distance(left.geometry, right.geometry) as distance
-        FROM left JOIN right
-        on ST_Distance(left.geometry, right.geometry) < {distance_threshold}
-        ) )
-        where rank<={k}
+        SELECT {id_left}, {id_right}, distance, rank
+        FROM (
+            SELECT {id_left}, {id_right}, distance,
+                ROW_NUMBER() OVER(PARTITION BY {id_left}, {id_right} ORDER BY distance ASC) AS rank
+            FROM (
+                SELECT left.{id_left}, right.{id_right},
+                    ST_Distance(left.geometry, right.geometry) AS distance
+                FROM left JOIN right
+                ON ST_Distance(left.geometry, right.geometry) < {distance_threshold}
+            )
+        )
+        WHERE rank <= {k}
         """
     )
     spark.sql("DROP TABLE left")
