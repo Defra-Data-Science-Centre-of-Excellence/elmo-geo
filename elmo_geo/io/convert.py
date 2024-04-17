@@ -51,6 +51,7 @@ def to_sdf(
     if isinstance(x, SparkDataFrame):
         sdf = x
     elif isinstance(x, Geometry):
+        # GeoDataFrames and base geometries
         sdf = to_sdf(to_gdf(x, column, crs).to_wkb(), column, crs)
     elif isinstance(x, PandasDataFrame):
         sdf = spark.createDataFrame(x).withColumn(column, F.expr(f"ST_GeomFromWKB({column})"))
