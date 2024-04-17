@@ -49,7 +49,7 @@ def st_union(sdf: SparkDataFrame, keys: list[str] | str = ["id_parcel"], col: st
         'dbfs:/mnt/base/unrestricted/source_rpa_spatial_data_mart/dataset_rpa_reference_parcels/'
         'format_GEOPARQUET_rpa_reference_parcels/LATEST_rpa_reference_parcels/reference_parcels.parquet'
     )
-    sdf = spark.read.parquet(sf)
+    sdf = (spark.read.parquet(sf)
         .limit(1000)
         .selectExpr(
             'CONCAT(SHEET_ID, PARCEL_ID) AS id_parcel',
