@@ -48,24 +48,24 @@ df_nca
 # COMMAND ----------
 
 # check parcel counts in each NCA
-df.join(df_nca, on = "id_parcel", how="inner").drop(columns="tile").groupby("nca_name").count()["bare_soil_percent"].plot.hist(figsize=(20,6), bins=100)
+df.set_index("id_parcel").join(df_nca.set_index("id_parcel"), how="inner").drop(columns="tile").groupby("nca_name").count()["bare_soil_percent"].plot.hist(figsize=(20,6), bins=100)
 
 # COMMAND ----------
 
 # smallest NCAs by parcel count
-df.join(df_nca, on = "id_parcel", how="inner").drop(columns="tile").groupby("nca_name").count().sort_values(by="bare_soil_percent", ascending=True).head(20)
+df.set_index("id_parcel").join(df_nca.set_index("id_parcel"), how="inner").drop(columns="tile").groupby("nca_name").count().sort_values(by="bare_soil_percent", ascending=True).head(20)
 
 # COMMAND ----------
 
 # mean parcel bare soil % by NCA
-df = df.join(df_nca, on = "id_parcel", how="inner").drop(columns="tile").groupby("nca_name").mean()
+df = df.set_index("id_parcel").join(df_nca.set_index("id_parcel"), how="inner").drop(columns="tile").groupby("nca_name").mean()
 df
 
 # COMMAND ----------
 
 # join in the geometries
 polygons = gpd.read_file(path_nca_poly).loc[:, ["nca_name", "geometry"]].rename({"NCA_Name": "nca_name"}, axis=1).to_crs(27700).set_index("nca_name")
-polygons = polygons.join(df).reset_index().sort_values(by="bare_soil_percent", ascending=False).dropna()
+polygons = polygons.join(df).sort_values(by="bare_soil_percent", ascending=False).dropna().reset_index()
 polygons
 
 # COMMAND ----------
