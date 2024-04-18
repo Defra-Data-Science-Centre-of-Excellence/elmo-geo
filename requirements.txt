@@ -92,6 +92,8 @@ databricks-cli==0.17.8
     # via
     #   dbx
     #   elmo_geo (pyproject.toml)
+databricks-mosaic==0.3.14
+    # via elmo_geo (pyproject.toml)
 databricks-sdk==0.20.0
     # via elmo_geo (pyproject.toml)
 dbx==0.8.18

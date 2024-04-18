@@ -8,6 +8,7 @@ dependencies = [
     "beautifulsoup4",
     "contextily",
     "databricks-cli",
+    "databricks-mosaic",
     "databricks-sdk",
     "python-dotenv",
     "esridump",
