@@ -1,0 +1,13 @@
+- [x] 00_readme should be the title page, merging the readmes
+- [x] 01_ingest is copied from aw-notebooks
+- [ ] 02_splitting_method snapping to a segmented boundary
+- [ ] 03_metrics should contain the output table
+- [ ] move Business Info to another place
+- [ ] load_sdf
+- [ ] delete copied bits from aw-notebooks once merged
+- QA
+  - [x] check the overlaps of rpa-parcel-adas
+  - [ ] ensure buffer totals are less than parcel total area
+  - [ ] ensure meter total is reasonable
+  - [ ] boundary segmentation method
+  - [ ] review my OSM and OS-NGD filters
