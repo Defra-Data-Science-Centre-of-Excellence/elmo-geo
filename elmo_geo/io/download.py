@@ -3,6 +3,7 @@ import shutil
 import zipfile
 
 from elmo_geo.utils.dbr import displayHTML, spark
+from elmo_geo.utils.misc import dbfs
 
 
 def zip_folder(path_in, path_out):
@@ -21,6 +22,7 @@ def download_link(filepath: str, name: str = None, return_over_display: bool = F
 
     example: `download_link(f)`
     """
+    filepath = dbfs(filepath, False)
     if name is None:
         name = filepath.split("/")[-1]
     if os.path.isdir(filepath):

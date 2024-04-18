@@ -1,3 +1,4 @@
+import re
 import subprocess
 
 from pyspark.sql import functions as F
@@ -72,6 +73,37 @@ def info_sdf(sdf: SparkDataFrame, col: str = "geometry") -> SparkDataFrame:
     )
     LOG.info(f"partitions:  {n}\n{df}")
     return df
+
+
+def snake_case(string: str) -> str:
+    """Convert string to snake_case
+    1, lowercase
+    2, replace spaces with underscores
+    3, remove special characters
+    \w=words, \d=digits, \s=spaces, [^ ]=not
+
+    ```py
+    snake_case('Kebab-case') == 'kebab_case'
+    snake_case('Terrible01 dataset_name%') == 'terrible01_dataset_name'
+    ```
+    """
+    return re.sub("[^\w\d_]", "", re.sub("[\s-]", "_", string.lower()))
+
+
+def string_to_dict(string: str, pattern: str) -> dict:
+    """Reverse f-string
+    https://stackoverflow.com/a/36838374/10450752
+    ```py
+    string_to_dict('path/to/source_os/dataset_ngd', '{path}/source_{source}/dataset_{dataset}') == {'path':'path/to', 'source': 'os', 'dataset':'ngd'}
+    ```
+    """
+    regex = re.sub(r"{(.+?)}", r"(?P<_\1>.+)", pattern)
+    return dict(
+        zip(
+            re.findall(r"{(.+?)}", pattern),
+            list(re.search(regex, string).groups()),
+        )
+    )
 
 
 def total_bounds(sdf: SparkDataFrame, col: str = "geometry"):
