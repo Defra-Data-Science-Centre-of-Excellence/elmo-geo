@@ -88,43 +88,13 @@ Schema: `id_business:int, id_parcel:str, m_[class], ha_[class]_buf[2,4,8,12]`
 > |available|   |   |   |
 
 
-## Previous Outputs
 
-### Data
-> |      | Total Length (m) | Explanation
-> | :--- | ---------------: | :---
-> | 1984 |      572,670,000 | Managed hedgerow in 1984, [EIP 2023](https://assets.publishing.service.gov.uk/government/uploads/system/uploads/attachment_data/file/1133967/environmental-improvement-plan-2023.pdf)
-> | 2007 |      477,000,000 | Managed hedgerows in 2007, [CS 2007](https://www.ceh.ac.uk/sites/default/files/Countryside%20Survey%202007%20UK%20Headline%20Messages_Part2.pdf) *in Great Britain*
-> | EFA  |      640,341,286 | EFA hedgerows
-> | Adj  |  **419,882,012** | EFA hedgerows adjusted for adjacent hedges
-> | Elg  |      220,459,274 | EFA hedgerows adjusted for both adjacency and EFA eligibility
-> | OSM  |      102,408,028 | OSM hedgerows
-> | OSMp |       73,510,661 | OSM hedgerows within parcels
-> | 110% |      630,000,000 | A target of 110% of managed hedgerow in 1984 by 2050
-> |  +75 |      494,000,000 | A target of +75e6m of hedgerow, defined using Adj, by 2050
-> |  +45 |      464,000,000 | A intermediate target of +45e6m of hedgerow by 2037
->
-> Table of Hedgerow datasets and their total lengths.  (for England except "2007")
-
-### Targets
-> |      | Target      | Year | Increase | Annual Increase |
-> | ---: | ----------: | ---: | -------: | --------------: |
-> |  Adj | 419,882,012 | 2022 |          |                 |
-> | 110% | 630,000,000 | 2050 |    50.0% |            1.8% |
-> |  +75 | 494,000,000 | 2050 |    17.9% |            0.6% |
-> |  +45 | 464,000,000 | 2037 |    10.7% |            0.7% |
->
-> Table of Targets for Hedgerow increases
-
-### Relict Hedgerow
-> ![Relict Hedgerow](https://www.teagasc.ie/media/website/news/daily/environment-photos/Relict-Hedgerows---too-valuable-for-rejuvenation.jpg)
->
-> [Teagasc on hedgerows](https://www.teagasc.ie/news--events/daily/environment/hedges-for-rejuvenation.php)
-
-
-[references]: https://example.com
+[references]: .
 [townsend_water_buffer]: https://townsendcharteredsurveyors.co.uk/sustainable-farming-incentive-pilot-starting-2021-water-body-buffering-standard/
-
+[hedgelink]: https://hedgelink.org.uk/
+[Countryside Survey pt1]: https://www.ceh.ac.uk/sites/default/files/Countryside%20Survey%202007%20UK%20Headline%20Messages_Part1.pdf
+[Countryside Survey pt2]: https://www.ceh.ac.uk/sites/default/files/Countryside%20Survey%202007%20UK%20Headline%20Messages_Part2.pdf
+[Environmental Improvement Plan pg44-4]: https://assets.publishing.service.gov.uk/government/uploads/system/uploads/attachment_data/file/1133967/environmental-improvement-plan-2023.pdf
 
 <!--
 # TODO
