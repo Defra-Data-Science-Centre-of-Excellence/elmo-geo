@@ -1,8 +1,9 @@
 try:
-    from databricks.sdk.runtime import dbutils, spark
+    from databricks.sdk.runtime import dbutils, display, displayHTML, spark  # noqa:F401
 except Exception:
-    from pyspark.dbutils import DBUtils
-    from pyspark.sql import SparkSession
+    ImportWarning("noop dbr")
+    from databricks.sdk.dbutils import RemoteDbUtils
+    from pyspark.sql.session import SparkSession
 
-    spark = SparkSession.getActiveSession()
-    dbutils = DBUtils(spark)
+    spark, dbutils = SparkSession, RemoteDbUtils
+    display, displayHTML = callable, callable

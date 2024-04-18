@@ -22,9 +22,7 @@ dark_style = {
 }
 
 
-def plot_bare_soil_dist(
-    data: pd.Series, title: str, dark: bool = False
-) -> Tuple[plt.Figure, plt.Axes]:
+def plot_bare_soil_dist(data: pd.Series, title: str, dark: bool = False) -> Tuple[plt.Figure, plt.Axes]:
     """Plot the distribution of bare soil
     Parameters:
         data: A pandas series of bare soil proportions between 0-1 or na for each parcel
@@ -84,9 +82,7 @@ def plot_bare_soil_dist(
         fontsize="large",
     )
     fig.supxlabel(
-        f"Source: Sentinel-2 L2A imagery. "
-        f"No data for {na_count:,.0f} of {count:,.0f} parcels "
-        f"({na_count/count:.3%}) due to cloud cover",
+        f"Source: Sentinel-2 L2A imagery. No data for {na_count:,.0f} of {count:,.0f} parcels ({na_count/count:.3%}) due to cloud cover",
         x=0.09,
         y=-0.04,
         ha="left",

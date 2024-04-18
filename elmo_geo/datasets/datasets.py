@@ -1,5 +1,6 @@
 """Module for managing dataset information for processing vector geometries and intersecting them
-with the land parcels dataset"""
+with the land parcels dataset
+"""
 
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
@@ -61,14 +62,9 @@ class Dataset:
         if not self.source:
             raise ValueError("`source` must be defined")
         if self.path_polygons is None:
-            self.path_polygons = (
-                f"/mnt/lab/unrestricted/elm/{self.source}/{self.name}"
-                + "/{version}/polygons.parquet"
-            )
+            self.path_polygons = f"/mnt/lab/unrestricted/elm/{self.source}/{self.name}" + "/{version}/polygons.parquet"
         if self.path_output is None:
-            self.path_output = (
-                f"/mnt/lab/unrestricted/elm/{self.source}/{self.name}" + "/{version}/output.parquet"
-            )
+            self.path_output = f"/mnt/lab/unrestricted/elm/{self.source}/{self.name}" + "/{version}/output.parquet"
         if self.keep_cols is None:
             self.keep_cols = []
         if self.rename_cols is None:
@@ -78,6 +74,48 @@ class Dataset:
         if self.read_kwargs is None:
             self.read_kwargs = {}
 
+
+parcels = Dataset(
+    name="parcels",
+    source="rpa",
+    versions=[
+        Version(
+            name="2021_03_16",
+            path_read=("dbfs:/mnt/lab/unrestricted/elm_data/rpa/reference_parcels/2021_03_16.parquet"),
+        ),
+        Version(
+            name="2021_11_16_adas",
+            path_read=("dbfs:/mnt/lab/restricted/ELM-Project/ods/rpa-parcel-adas.parquet"),
+        ),
+        Version(
+            name="2023_02_07",
+            path_read=("dbfs:/mnt/lab/unrestricted/elm_data/rpa/reference_parcels/2023_02_07.parquet"),
+        ),
+        Version(
+            name="2023_06_03",
+            path_read=("dbfs:/mnt/lab/unrestricted/elm_data/rpa/reference_parcels/2023_06_03.geoparquet"),
+        ),
+        Version(
+            name="2023_12_13",
+            path_read=("dbfs:/mnt/lab/restricted/ELM-Project/ods/rpa-parcel-2023_12_13.parquet"),
+        ),
+    ],
+)
+
+
+alc = Dataset(
+    name="alc",
+    source="defra",
+    versions=[
+        Version(
+            name="unknown",
+            path_read=("/dbfs/mnt/lab/unrestricted/elm_data/defra/alc/" "ALC_BMV_UNION_Merge_3b.shp"),
+        ),
+    ],
+    keep_cols=["geometry", "ALC_GRADE"],
+    rename_cols={"ALC_GRADE": "alc"},
+    output_coltypes={"alc": "category"},
+)
 
 national_park = Dataset(
     name="national_park",
@@ -261,10 +299,7 @@ region = Dataset(
     versions=[
         Version(
             name="2021_12_01",
-            path_read=(
-                "/dbfs/mnt/migrated-landing/Office of National Statistics"
-                "/Regions__December_2021__EN_BFC.geojson"
-            ),
+            path_read=("/dbfs/mnt/migrated-landing/Office of National Statistics/Regions__December_2021__EN_BFC.geojson"),
         ),
     ],
     keep_cols=["geometry", "RGN21NM"],
@@ -353,10 +388,7 @@ priority_habitat_network = Dataset(
     versions=[
         Version(
             name="2022_10_06",
-            path_read=(
-                "/dbfs/mnt/lab/unrestricted/elm_data/ewco/priority_habitat_network/"
-                "2022_10_06/EWCO_Biodiversity___Priority_Habitat_Network.shp"
-            ),
+            path_read=("/dbfs/mnt/lab/unrestricted/elm_data/ewco/priority_habitat_network/2022_10_06/EWCO_Biodiversity___Priority_Habitat_Network.shp"),
         ),
     ],
     keep_cols=["geometry", "csht_pnts", "cswcm_pnts", "ewco_val", "cat"],
@@ -373,10 +405,7 @@ nfc_social = Dataset(
     versions=[
         Version(
             name="2022_03_14",
-            path_read=(
-                "/dbfs/mnt/lab/unrestricted/elm_data/ewco/nfc_social"
-                "/2022_03_14/EWCO___NfC_Social.shp"
-            ),
+            path_read=("/dbfs/mnt/lab/unrestricted/elm_data/ewco/nfc_social/2022_03_14/EWCO___NfC_Social.shp"),
         ),
     ],
     keep_cols=["geometry", "status"],
@@ -389,10 +418,7 @@ water_quality = Dataset(
     versions=[
         Version(
             name="2023_02_27",
-            path_read=(
-                "/dbfs/mnt/lab/unrestricted/elm_data/ewco/water_quality/"
-                "2023_02_27/EWCO__E2_80_93_Water_Quality.shp"
-            ),
+            path_read=("/dbfs/mnt/lab/unrestricted/elm_data/ewco/water_quality/2023_02_27/EWCO__E2_80_93_Water_Quality.shp"),
         ),
     ],
     keep_cols=["geometry", "cat"],
@@ -405,10 +431,7 @@ flood_risk_management = Dataset(
     versions=[
         Version(
             name="2023_02_24",
-            path_read=(
-                "/dbfs/mnt/lab/unrestricted/elm_data/ewco/flood_risk_management/"
-                "2023_02_24/EWCO___Flood_Risk_Management.shp"
-            ),
+            path_read=("/dbfs/mnt/lab/unrestricted/elm_data/ewco/flood_risk_management/2023_02_24/EWCO___Flood_Risk_Management.shp"),
         ),
     ],
     keep_cols=["geometry", "LANDSCAPE"],
@@ -423,8 +446,7 @@ keeping_rivers_cool_riparian_buffers = Dataset(
         Version(
             name="2023_03_03",
             path_read=(
-                "/dbfs/mnt/lab/unrestricted/elm_data/ewco/keeping_rivers_cool_riparian_buffers/"
-                "2023_03_03/EWCO___Keeping_Rivers_Cool_Riparian_Buffers.shp"
+                "/dbfs/mnt/lab/unrestricted/elm_data/ewco/keeping_rivers_cool_riparian_buffers/2023_03_03/EWCO___Keeping_Rivers_Cool_Riparian_Buffers.shp"
             ),
         ),
     ],
@@ -438,8 +460,7 @@ nfc_ammonia_emmissions = Dataset(
         Version(
             name="2022_03_14",
             path_read=(
-                "/dbfs/mnt/lab/unrestricted/elm_data/ewco/nfc_ammonia_emmissions/"
-                "2022_03_14/EWCO___NfC_Ammonia_Emissions_Capture_for_SSSI_Protection.shp"
+                "/dbfs/mnt/lab/unrestricted/elm_data/ewco/nfc_ammonia_emmissions/2022_03_14/EWCO___NfC_Ammonia_Emissions_Capture_for_SSSI_Protection.shp"
             ),
         ),
     ],
@@ -463,8 +484,25 @@ tiles = Dataset(
     rename_cols={"Name": "tile"},
 )
 
+shine = Dataset(
+    name="shine",
+    source="historic_england",
+    versions=[
+        Version(
+            name="2022_12_30",
+            path_read=("/dbfs/mnt/lab/restricted/ELM-Project/stg/he-shine-2022_12_30.parquet"),
+        ),
+    ],
+    keep_cols=[
+        "geom",
+        "shine_form",
+    ],
+    rename_cols={"geom": "geometry"},
+)
+
 
 datasets = [
+    alc,
     national_park,
     ramsar,
     peaty_soils,
@@ -483,5 +521,6 @@ datasets = [
     keeping_rivers_cool_riparian_buffers,
     nfc_ammonia_emmissions,
     tiles,
+    shine,
 ]
 """A list of all defined datasets"""

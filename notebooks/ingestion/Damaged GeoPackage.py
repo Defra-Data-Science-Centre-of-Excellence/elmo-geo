@@ -44,9 +44,7 @@ def test_gpkg_is_damaged(filepath):
             pass
 
 
-files = glob(
-    "/dbfs/mnt/base/unrestricted/source_*/dataset_*/format_GPKG_*/**/*.gpkg", recursive=True
-)
+files = glob("/dbfs/mnt/base/unrestricted/source_*/dataset_*/format_GPKG_*/**/*.gpkg", recursive=True)
 files.extend(glob("/dbfs/tmp/**/*.gpkg", recursive=True))  # Should always pass
 
 
@@ -104,11 +102,7 @@ success = """
 /dbfs/mnt/base/unrestricted/source_rpa_spatial_data_mart/dataset_historic_common_land/format_GPKG_historic_common_land/LATEST_historic_common_land/common_land_historic.gpkg
 /dbfs/mnt/base/unrestricted/source_rpa_spatial_data_mart/dataset_england_boundary/format_GPKG_england_boundary/LATEST_england_boundary/refdata_owner.england_boundary_line.zip/refdata_owner.england_boundary_line/refdata_owner.england_boundary_line.gpkg
 /dbfs/tmp/awest/rpa-efa_hedge-2023_06_27.gpkg
-""".split(
-    "\n"
-)[
-    1:-1
-]
+""".split("\n")[1:-1]
 
 
 success
@@ -131,22 +125,23 @@ df = pd.concat(
             {
                 "filepath": list(set(success)),
                 "is_damaged": False,
-            }
+            },
         ),
         pd.DataFrame(
             {
                 "filepath": list(set(todo)),
                 "is_damaged": True,
-            }
+            },
         ),
-    ]
+    ],
 )
 
-df.to_csv(f"/dbfs/tmp/damaged_gpkg_@3s.csv")
+df.to_csv("/dbfs/tmp/damaged_gpkg_@3s.csv")
 display(df)
 
 # COMMAND ----------
 
-df.query("is_damaged==True")["filepath"].str.split("/").str[5].unique().tolist(), df.query(
-    "is_damaged==True"
-)["filepath"].str.split("/").str[6].unique().tolist()
+(
+    df.query("is_damaged==True")["filepath"].str.split("/").str[5].unique().tolist(),
+    df.query("is_damaged==True")["filepath"].str.split("/").str[6].unique().tolist(),
+)
