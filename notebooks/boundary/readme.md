@@ -11,7 +11,7 @@ This project produces multiple datasets that detail what features intersect parc
 ## Methodology
 1. [Segment](../segment.py): first the boundaries of parcels are split into segments, these will be determined to be totally a combination of features.
 2. [Sylvan](../sylvan/readme.md): next types of woody features are created, be that hedgerow, woodland, or relict hedges.  This uses the prioritisation method.  If it's hedgerow the boundary segment is not woodland or relict hedge (hedge>wood>relict).
-3. [Boundary Use](boundary_use.py): All boundary segments are assigned to each feature; sylvan, [water](water.py), [wall](wall.py), and [hefer](hefer.py).
+3. [Boundary Use](boundary_use.py): All boundary segments are assigned to each feature; [adjacency](adjacency.py), sylvan, [water](water.py), [wall](wall.py), and [hefer](hefer.py).
     1. Linear geometries are buffered 12m to attach to near by segments.  Linear features are considered 2m wide for cross compliance.
     2. If the proportion of the segment inside the (buffered) feature type is above a threshold, then it is considered as used by that feature type, "assigned".
     3. A segment can be used by multiple feature types, otherwise it's considered "available".  This means it's suitable for options like hedgerow creation.
@@ -98,6 +98,7 @@ Schema: `id_business:int, id_parcel:str, m_[class], ha_[class]_buf[2,4,8,12]`
 
 <!--
 # TODO
+- Add adjacency
 - Consider splitting up the boundary for each land use
 - Consider recording if the boundary is adjacent to another (and such land use will be shared)
 - Woodland Uptake, EVAST
