@@ -30,10 +30,48 @@ def sh_run(exc: str, **kwargs):
     return out
 
 
-def gtypes(sdf: SparkDataFrame, col: str = "geometry"):
-    sdf = sdf.select(F.expr(f"ST_GeometryType({col}) AS gtype")).groupby("gtype").count()
-    LOG.info(f"gtypes:  {sdf.rdd.collectAsMap()}")
-    return sdf
+def info_sdf(sdf: SparkDataFrame, col: str = "geometry") -> SparkDataFrame:
+    """Get Info about SedonaDataFrame
+    Logs the number of partitions, geometry types, number of features, and average number of coordinates.
+
+    Tips:
+    *gtypes,*
+    In general you want 1 geometry dimension: Point+MultiPoint, LineString+LinearRing+MultiLineString, or Polygon+MultiPolygon.
+    groupby `ST_GeometryType` and save as layers to handle separately.
+    `F.expr('ST_Dump(geometry)')` for exploding those multis
+    *coords,*
+    It's best if your geometries fit into a single buffer, that's 256 coords.
+    `ST_SubDivideExplode` exists for this purpose
+
+    Example
+    ```py
+    info_sdf(sdf_water)
+    >>> INFO:elmo_geo.utils.log:partitions:  169
+    >>>                    gtype    count  mean_coords
+    >>> 0        ST_MultiPolygon    73914         94.9
+    >>> 1          ST_LineString  1049103         14.3
+    >>> 2  ST_GeometryCollection  1779376         94.2
+    >>> 3          ST_MultiPoint    21342          2.1
+    >>> 4     ST_MultiLineString  1593084         57.0
+    >>> 5               ST_Point   189777          1.0
+    >>> 6             ST_Polygon   737962         44.8
+    ```
+    """
+    n = sdf.rdd.getNumPartitions()
+    df = (
+        sdf.selectExpr(
+            f"ST_GeometryType({col}) AS gtype",
+            f"ST_NPoints({col}) AS n",
+        )
+        .groupby("gtype")
+        .agg(
+            F.count("gtype").alias("count"),
+            F.round(F.mean("n"), 1).alias("mean_coords"),
+        )
+        .toPandas()
+    )
+    LOG.info(f"partitions:  {n}\n{df}")
+    return df
 
 
 def total_bounds(sdf: SparkDataFrame, col: str = "geometry"):

@@ -26,8 +26,8 @@ import elmo_geo
 elmo_geo.register(spark)
 from math import ceil
 
-from elmo_geo.io.io2 import load_missing
-from elmo_geo.st.st import join
+from elmo_geo.st.geometry import load_missing
+from elmo_geo.st import sjoin
 
 
 def re_part(sdf):
@@ -40,7 +40,7 @@ def re_part(sdf):
 # COMMAND ----------
 
 sf_parcel = "dbfs:/mnt/lab/unrestricted/elm/buffer_strips/parcels.parquet"
-sf_water_part = "dbfs:/mnt/lab/unrestricted/elm_data/os/mmtopo/{}.parquet"
+sf_water_part = "dbfs:/mnt/lab/unrestricted/elm_data/os/ngd/{}.parquet"
 datasets = [
     "wtr_fts_water",
     "wtr_fts_waterpoint",
@@ -110,9 +110,9 @@ print(
 
 # Spatially Joined
 sdf_geom = (
-    join(
+    sjoin(
         sdf_parcel,
-        sdf_water,
+        sdf_os_water,
         lsuffix="_parcel_buffer",
         rsuffix="_water",
         how="left",
@@ -140,6 +140,10 @@ print(
     sdf_geom.filter("NOT ST_IsValid(geometry_parcel) or NOT ST_IsValid(geometry_water)").count(),
 )
 
+
+# COMMAND ----------
+
+display(spark.read.parquet(sf_geom))
 
 # COMMAND ----------
 

@@ -169,11 +169,7 @@ def plot_parcel_bare_soil(parcel_id: str, geometry: gpd.GeoSeries, ds: xr.Datase
 
 
 def plot_choropleth_with_head_and_tail_bars(
-    gdf: gpd.GeoDataFrame,
-    variable_column: str,
-    variable_name: str,
-    variable_source: str,
-    plot_title: str,
+    gdf: gpd.GeoDataFrame, variable_column: str, variable_name: str, variable_source: str, plot_title: str, fmt: str = ".1%"
 ) -> plt.Figure:
     """Creates a plot with three components: a choropleth and two horizontal bar charts.
 
@@ -209,7 +205,7 @@ def plot_choropleth_with_head_and_tail_bars(
         legend=True,
         edgecolor="black",
         linewidth=0.5,
-        legend_kwds={"fmt": "{:.1%}", "title": f"Mean {variable_name}"},  # Remove decimals in legend
+        legend_kwds={"fmt": f"{{:{fmt}}}", "title": f"Mean {variable_name}"},  # Remove decimals in legend
         ax=axbig,
     )
     axbig.set_axis_off()
@@ -225,7 +221,7 @@ def plot_choropleth_with_head_and_tail_bars(
     axes[0, 1].invert_yaxis()
     axes[0, 1].bar_label(
         barcont,
-        head[variable_column].map(lambda x: f"{x:.1%}"),
+        head[variable_column].map(lambda x: f"{x:{fmt}}"),
         padding=4,
     )
     axes[0, 1].get_xaxis().set_visible(False)
@@ -237,7 +233,7 @@ def plot_choropleth_with_head_and_tail_bars(
     axes[1, 1].invert_yaxis()
     axes[1, 1].bar_label(
         barcont,
-        tail[variable_column].map(lambda x: f"{x:.1%}"),
+        tail[variable_column].map(lambda x: f"{x:{fmt}}"),
         padding=4,
     )
     axes[1, 1].get_xaxis().set_visible(False)

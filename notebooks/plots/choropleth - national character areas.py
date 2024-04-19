@@ -13,8 +13,8 @@
 # MAGIC
 # MAGIC How to use this notebook:
 # MAGIC
-# MAGIC 1. Using the widgets, choose the processed dataset to plot, the plot variable.
-# MAGIC 2. Enter the variable name and surce into the free text widgets. These are used in the plot.
+# MAGIC 1. Using the widgets, choose the processed dataset to plot and the plot variable.
+# MAGIC 2. Enter the variable name and source into the free text widgets. These are used in the plot.
 # MAGIC 3. Run the notebook
 # MAGIC
 # MAGIC Key processing steps:
@@ -27,7 +27,6 @@
 
 # MAGIC %load_ext autoreload
 # MAGIC %autoreload 2
-# MAGIC %pip install -Uq seaborn mapclassify matplotlib
 
 # COMMAND ----------
 
@@ -77,6 +76,10 @@ dbutils.widgets.dropdown("plot variable", numeric_variables[0], numeric_variable
 value_column = dbutils.widgets.get("plot variable")
 print(f"\nDataset variable to plot:\t{value_column}")
 
+formats = [".1%", ".0f"]
+dbutils.widgets.dropdown("variable format", formats[0], formats)
+fmt = dbutils.widgets.get("variable format")
+
 dbutils.widgets.text("variable name", "SHINE proportion")
 dbutils.widgets.text("variable source", "Historic England SHINE dataset")
 
@@ -93,11 +96,15 @@ path_nca_poly = "dbfs:/mnt/lab/unrestricted/elm/defra/national_character_areas/2
 
 # COMMAND ----------
 
-spark.read.parquet(dataset.path_output.format(version=version)).display()
+path_read = dataset.path_output.format(version=version)
 
 # COMMAND ----------
 
-df = (spark.read.parquet(dataset.path_output.format(version=version))
+spark.read.parquet(path_read).display()
+
+# COMMAND ----------
+
+df = (spark.read.parquet(path_read)
       .groupBy("id_parcel").agg(F.sum(F.col(value_column)).alias(value_column))
       ).toPandas()
 df.head()
@@ -157,11 +164,11 @@ polygons_all
 # COMMAND ----------
 
 plot_title = f"{variable_name} for land parcels in England by National Character Area - All parcels"
-f = plot_choropleth_with_head_and_tail_bars(polygons_all, value_column, variable_name, variable_source, plot_title)
+f = plot_choropleth_with_head_and_tail_bars(polygons_all, value_column, variable_name, variable_source, plot_title, fmt)
 f.show()
 
 # COMMAND ----------
 
 plot_title = f"{variable_name} for land parcels in England by National Character Area - Feature parcels"
-f = plot_choropleth_with_head_and_tail_bars(polygons_feature, value_column, variable_name, variable_source, plot_title)
+f = plot_choropleth_with_head_and_tail_bars(polygons_feature, value_column, variable_name, variable_source, plot_title, fmt)
 f.show()

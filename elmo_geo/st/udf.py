@@ -41,6 +41,25 @@ def st_explode(sdf: SparkDataFrame) -> SparkDataFrame:
 
 
 def st_union(sdf: SparkDataFrame, keys: list[str] | str = ["id_parcel"], col: str = "geometry") -> SparkDataFrame:
+    """Group geometries of different types, using geopandas
+
+    Example
+    ```py
+    sf = (
+        'dbfs:/mnt/base/unrestricted/source_rpa_spatial_data_mart/dataset_rpa_reference_parcels/'
+        'format_GEOPARQUET_rpa_reference_parcels/LATEST_rpa_reference_parcels/reference_parcels.parquet'
+    )
+    sdf = (spark.read.parquet(sf)
+        .limit(1000)
+        .selectExpr(
+            'CONCAT(SHEET_ID, PARCEL_ID) AS id_parcel',
+            'ST_GeomFromWKB(GEOM) AS geometry',
+        )
+        .transform(st_union, ['id_parcel'], 'geometry')
+    )
+    sdf.display()
+    ```
+    """
     if isinstance(keys, str):
         keys = [keys]
 

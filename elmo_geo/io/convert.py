@@ -1,9 +1,9 @@
 from pyspark.sql import functions as F
 
-from elmo_geo.st.geometry import load_geometry
 from elmo_geo.utils.dbr import spark
 from elmo_geo.utils.types import (
     BaseGeometry,
+    DataFrame,
     GeoDataFrame,
     Geometry,
     GeoSeries,
@@ -15,7 +15,7 @@ from elmo_geo.utils.types import (
 
 
 def to_gdf(
-    x: Union[SparkDataFrame, Geometry],
+    x: Union[DataFrame, Geometry],
     column: str = "geometry",
     crs: Union[int, str] = 27700,
 ) -> GeoDataFrame:
@@ -23,9 +23,9 @@ def to_gdf(
     if isinstance(x, GeoDataFrame):
         gdf = x
     elif isinstance(x, SparkDataFrame):
-        for c in x.columns:
-            if isinstance(x.schema[c].dataType, SedonaType):
-                x = x.withColumn(c, F.expr(f"ST_AsBinary({c})"))
+        for c in x.schema:
+            if isinstance(c.dataType, SedonaType):
+                x = x.withColumn(c.name, F.expr(f"ST_AsBinary({c.name})"))
         gdf = to_gdf(x.toPandas(), column, crs)
     elif isinstance(x, PandasDataFrame):
         gdf = GeoDataFrame(
@@ -43,15 +43,18 @@ def to_gdf(
 
 
 def to_sdf(
-    x: Union[SparkDataFrame, Geometry],
+    x: Union[DataFrame, Geometry],
     column: str = "geometry",
     crs: Union[int, str] = 27700,
 ) -> SparkDataFrame:
     """Convert anything-ish to SparkDataFrame"""
     if isinstance(x, SparkDataFrame):
         sdf = x
-    elif isinstance(x, PandasDataFrame):
-        sdf = spark.createDataFrame(x).withColumn(column, load_geometry(column))
-    else:  # likely a GeoSeries or Geometry, or to_gdf will fail
+    elif isinstance(x, Geometry):
+        # GeoDataFrames and base geometries
         sdf = to_sdf(to_gdf(x, column, crs).to_wkb(), column, crs)
+    elif isinstance(x, PandasDataFrame):
+        sdf = spark.createDataFrame(x).withColumn(column, F.expr(f"ST_GeomFromWKB({column})"))
+    else:
+        raise TypeError(f"Unknown type: {type(x)}")
     return sdf

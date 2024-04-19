@@ -177,3 +177,48 @@ def overlap(
         .withColumn("proportion", F.expr(f"ST_Area(geometry) / ST_Area({geometry_left})"))
         .drop(geometry_left, geometry_right)
     )
+
+
+def knn(
+    sdf_left,
+    sdf_right,
+    id_left: str,
+    id_right: str,
+    k: int = 1,
+    distance_threshold: int = 5_000,
+):
+    """K-nearest neighbours within distance threshold.
+
+    Parameters:
+        sdf_left: Spark data frame with geometry field.
+        sdf_right: Spark data frame with geometry field.
+        id_left: Field in left dataframe to group entries by when finding nearest neighbour.
+        id_left: Field in right dataframe to group entries by when finding nearest neighbour.
+        k: Number of neighbours to return.
+        distance_threshol: Maximum distance in meters of neighbours.
+
+    Returns:
+        SparkDataFrame
+    """
+    sdf_left.createOrReplaceTempView("left")
+    sdf_right.createOrReplaceTempView("right")
+
+    sdf = spark.sql(
+        f"""
+        SELECT {id_left}, {id_right}, distance, rank
+        FROM (
+            SELECT {id_left}, {id_right}, distance,
+                ROW_NUMBER() OVER(PARTITION BY {id_left}, {id_right} ORDER BY distance ASC) AS rank
+            FROM (
+                SELECT left.{id_left}, right.{id_right},
+                    ST_Distance(left.geometry, right.geometry) AS distance
+                FROM left JOIN right
+                ON ST_Distance(left.geometry, right.geometry) < {distance_threshold}
+            )
+        )
+        WHERE rank <= {k}
+        """
+    )
+    spark.sql("DROP TABLE left")
+    spark.sql("DROP TABLE right")
+    return sdf
