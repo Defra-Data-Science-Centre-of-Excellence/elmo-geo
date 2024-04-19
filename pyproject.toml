@@ -43,7 +43,6 @@ dev = [
     "dbx",
     "ipykernel",
     "ipython",
-    "ipywidgets",
 ]
 
 [project.urls]
