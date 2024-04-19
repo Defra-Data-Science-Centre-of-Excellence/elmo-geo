@@ -157,8 +157,6 @@ ipython==8.1.1
     #   elmo_geo (pyproject.toml)
     #   ipykernel
     #   ipywidgets
-ipywidgets==8.1.2
-    # via elmo_geo (pyproject.toml)
 jedi==0.19.1
     # via ipython
 jinja2==3.1.3
