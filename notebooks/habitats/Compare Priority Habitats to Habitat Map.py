@@ -23,6 +23,11 @@ from pyspark.sql import functions as F
 
 # COMMAND ----------
 
+import sedona
+sedona.version
+
+# COMMAND ----------
+
 ph_name = "priority_habitat_inventory"
 ph_version = "2021_03_26"
 ph_dataset = next(d for d in datasets if d.name == ph_name)
@@ -175,7 +180,7 @@ df
 
 # COMMAND ----------
 
-# maps from priority habitat types to habitat map types
+# maps from priority habitat types (Main_Habit) to habitat map types (A_pred)
 habitat_type_lookup = {
     'Deciduous woodland':'Broadleaved, Mixed and Yew Woodland',
     'Fragmented heath':'Dwarf Shrub Heath',
@@ -238,6 +243,15 @@ print(f"""
     {n_null_hm:,.0f} ({n_null_hm/n_parcels:.0%}) do hot have a Habitat Map habitat
     """
 )
+
+# COMMAND ----------
+
+# Compare counts of parcels and proportions by category
+sdf_comp = (sdf_comp
+            .withColumn("A_pred_from_Main_Habit"),
+            sdf_comp.select("Main_Habit").replace(habitat_type_lookup)
+            )
+sdf_comp.display()
 
 # COMMAND ----------
 
