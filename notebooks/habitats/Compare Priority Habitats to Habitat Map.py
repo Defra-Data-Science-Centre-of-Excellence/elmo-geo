@@ -10,6 +10,7 @@
 
 # COMMAND ----------
 
+import numpy as np
 import pandas as pd
 from dataclasses import dataclass
 import matplotlib.pyplot as plt
@@ -190,7 +191,9 @@ Habitat Map habitat types not matched to Priority Habitat types:
 # comparing classifications, how often do they match up
 ph_frequency["A_pred_from_Main_Habit"] = ph_frequency["Main_Habit"].map(lambda x: habitat_type_lookup.get(x))
 
-frequency_comp = pd.merge(ph_frequency, hm_frequency, left_on = "A_pred_from_Main_Habit", right_on = "A_pred", how = "outer")
+frequency_comp = pd.merge(ph_frequency, hm_frequency, left_on = "A_pred_from_Main_Habit", right_on = "A_pred", how = "outer", suffixes = ("_ph", "_hm")).sort_values("parcel_count_hm", na_position='first')
+frequency_comp["A_pred_plus_missing_Main_Habit"] = np.where(frequency_comp["A_pred"].isna(), frequency_comp["Main_Habit"], frequency_comp["A_pred"])
+frequency_comp.index = np.arange(frequency_comp.shape[0])
 
 # count number of time datasets agree on habitat types
 df_comp["habitats_match"] = df_comp["A_pred"] == df_comp["A_pred_from_Main_Habit"]
@@ -204,11 +207,15 @@ count_match
 # COMMAND ----------
 
 # create plots
-fig = plt.figure(tight_layout=True, figsize = (30,40))
-gs = gridspec.GridSpec(3, 2)
+fig = plt.figure(tight_layout=False, figsize = (30,30))
+gs = gridspec.GridSpec(3, 2, height_ratios = [1,3,3])
 
 defra_green = "#00A33B"
+defra_green_dark = "#006123"
 grey = "#8a836e"
+
+title_size = 30
+title_y = 1.03
 
 # COMMAND ----------
 
@@ -233,7 +240,7 @@ b2 = ax0.barh(dataset, without_habitat, left=with_habitat, color=grey)
 
 ax0.legend([b1, b2], ["Overlapping habitat", "No habitat"], loc="upper right")
 
-ax0.set_title("Percentage of parcels overlapping a habitat geometry")
+ax0.set_title("Parcels overlapping a habitat geometry", y=title_y)
 
 plt.show()
 
@@ -245,16 +252,16 @@ sns.set(
     context="talk",
     style="white",
     palette="husl",
-    font_scale=1.1,
+    font_scale=1.2,
 )
 
 ax1 = fig.add_subplot(gs[1, 0])
 ax1.barh(ph_frequency["Main_Habit"], ph_frequency["parcel_count"], color = defra_green)
-ax1.set_title("Priority Habitats Parcel Count")
+ax1.set_title("Priority Habitats parcel count", fontsize = title_size, y = title_y)
 
 ax2 = fig.add_subplot(gs[1, 1])
 ax2.barh(hm_frequency["A_pred"], hm_frequency["parcel_count"], color = defra_green)
-ax2.set_title("Habitat Map Parcel Count")
+ax2.set_title("Habitat Map parcel count", fontsize = title_size, y = title_y)
 
 
 # COMMAND ----------
@@ -264,18 +271,31 @@ sns.set(
     context="talk",
     style="white",
     palette="husl",
-    font_scale=1.1,
+    font_scale=1.2,
 )
 
 ax3 = fig.add_subplot(gs[2, 0])
 b1 = ax3.barh(count_match.index, count_match["true_pct"], color = defra_green)
 b2 = ax3.barh(count_match.index, count_match["false_pct"], left=count_match["true_pct"], color=grey)
 ax3.legend([b1, b2], ["Matching", "Not matching"], loc="upper right")
-ax3.set_title("Percetage of parcels with matching habitat type")
+ax3.set_title("Percetage of matching habitat", fontsize = title_size, y = title_y)
 
-# ax2 = fig.add_subplot(gs[2, 1])
-# ax2.barh(hm_frequency["A_pred"], hm_frequency["parcel_count"], color = defra_green)
-# ax2.set_title("Habitat Map Parcel Count")
+# spine chart comparing number of parcels matching certain classifications under each dataset
+ax4 = fig.add_subplot(gs[2, 1])
+b2 = ax4.barh(frequency_comp["A_pred_plus_missing_Main_Habit"], frequency_comp["parcel_count_hm"].fillna(0) * -1, color = defra_green)
+b1 = ax4.barh(frequency_comp["A_pred_plus_missing_Main_Habit"], frequency_comp["parcel_count_ph"].fillna(0), color = defra_green_dark)
+ax4.legend([b1, b2], ["Priority Habitats", "Habitat Map"], loc="lower left")
+ax4.set_title("Comparison parcel count", fontsize = title_size, y = title_y)
+
+# addtext indicating where there is no matching habitat
+y_labels = ax4.get_yticklabels()
+for ix, r in frequency_comp.iterrows():
+    name = r["A_pred_plus_missing_Main_Habit"]
+    label = [i for i in y_labels if i.get_text() == name][0]
+    if np.isnan(r["parcel_count_hm"]):
+        ax4.text(0-50_000, label.get_position()[1]-0.2, "NA", ha = "right", transform=ax4.transData, fontsize = 20)
+    elif np.isnan(r["parcel_count_ph"]):
+        ax4.text(0+50_000, label.get_position()[1]-0.2, "NA", ha = "left", transform=ax4.transData, fontsize = 20)
 
 # COMMAND ----------
 
