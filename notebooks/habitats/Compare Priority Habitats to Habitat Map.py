@@ -12,19 +12,17 @@
 
 import pandas as pd
 from dataclasses import dataclass
+import matplotlib.pyplot as plt
+import matplotlib.gridspec as gridspec
+import seaborn as sns
 
 import elmo_geo
 from elmo_geo.datasets.datasets import datasets
 from elmo_geo.st import sjoin
 from elmo_geo.st.geometry import load_geometry, load_missing
 
-elmo_geo.register()
+#elmo_geo.register()
 from pyspark.sql import functions as F
-
-# COMMAND ----------
-
-import sedona
-sedona.version
 
 # COMMAND ----------
 
@@ -58,128 +56,6 @@ sdf_ph.display()
 
 # COMMAND ----------
 
-# get priority habitat classes
-ph_habitats = sdf_ph.select("Main_Habit").dropDuplicates().toPandas()
-ph_habitats
-
-# COMMAND ----------
-
-ph_habitats['Main_Habit'].to_list()
-
-# COMMAND ----------
-
-# habitat map categories
-@dataclass
-class Habitat():
-    name: str
-    name_id: int
-    exp_risk: int
-    colour: tuple[int, int, int]
-
-    def rgb_to_hex(self, r, g, b):
-        return '#{:02x}{:02x}{:02x}'.format(r, g, b)
-    
-    @property
-    def colour_hex(self):
-        return self.rgb_to_hex(*self.colour)
-
-habitats = [
-    Habitat(name = 'Broadleaved, Mixed and Yew Woodland',
-            name_id = 0, 
-            exp_risk = 2, 
-            colour = (51, 160, 44),
-            ),
-    Habitat(name = 'Coniferous Woodland',
-            name_id = 1, 
-            exp_risk = 4, 
-            colour = (0, 80, 0),
-            ),
-    Habitat(name = 'Arable and Horticultural',
-            name_id = 2, 
-            exp_risk = 3, 
-            colour = (240, 228, 66),
-            ),
-    Habitat(name = 'Improved Grassland',
-            name_id = 3, 
-            exp_risk = 3, 
-            colour = (1, 255, 124),
-            ),
-    Habitat(name =  'Acid, Calcareous, Neutral Grassland',
-            name_id = 4, 
-            exp_risk = 3, 
-            colour = (220, 153, 9),
-            ),
-    Habitat(name =  'Fen, Marsh and Swamp',
-            name_id = 5, 
-            exp_risk = 0, 
-            colour = (253, 123, 238),
-            ),
-    Habitat(name =  'Dwarf Shrub Heath',
-            name_id = 6, 
-            exp_risk = 5, 
-            colour = (128, 26, 128),
-            ),
-    Habitat(name =  'Scrub',
-            name_id = 7, 
-            exp_risk = 5, 
-            colour = (230, 140, 166),
-            ),
-    Habitat(name = 'Bracken',
-            name_id = 8, 
-            exp_risk = 5, 
-            colour =  (255, 192, 55),
-            ),
-    Habitat(name = 'Bog',
-            name_id = 9, 
-            exp_risk = 1, 
-            colour =  (205, 59, 181),
-            ),
-    Habitat(name = 'Bare Ground',
-            name_id = 10, 
-            exp_risk = 2, 
-            colour = (210, 210, 255),
-            ),
-    Habitat(name = 'Water',
-            name_id = 11, 
-            exp_risk = 1, 
-            colour = (0, 0, 255),
-            ),
-    Habitat(name = 'Coastal Sand Dunes',
-            name_id = 12, 
-            exp_risk = 1, 
-            colour = (204, 179, 0),
-            ),
-    Habitat(name = 'Coastal Saltmarsh',
-            name_id = 13, 
-            exp_risk = 1, 
-            colour =  (0, 0, 92),
-            ),
-    Habitat(name = 'Bare Sand',
-            name_id = 14, 
-            exp_risk = 2, 
-            colour = (255, 255, 128),
-            ),
-    Habitat(name = 'Built-up Areas and Gardens',
-            name_id = 15, 
-            exp_risk = 3, 
-            colour = (0, 0, 0),
-            ),
-    Habitat(name = 'Unclassified',
-            name_id = 16, 
-            exp_risk = 2, 
-            colour =  (128, 128, 12),
-            ),
-]
-
-habitats
-
-# COMMAND ----------
-
-df = pd.DataFrame({"habitats":[h.name for h in habitats]})
-df
-
-# COMMAND ----------
-
 # maps from priority habitat types (Main_Habit) to habitat map types (A_pred)
 habitat_type_lookup = {
     'Deciduous woodland':'Broadleaved, Mixed and Yew Woodland',
@@ -200,8 +76,8 @@ habitat_type_lookup = {
     'Lowland raised bog':'Bog',
     'Upland heathland':'Dwarf Shrub Heath',
     'Reedbeds':'Fen, Marsh and Swamp',
-    'No main habitat but additional habitats present':'',
-    'Maritime cliff and slope':'',
+    #'No main habitat but additional habitats present':'',
+    #'Maritime cliff and slope':'',
     'Lowland heathland':'Dwarf Shrub Heath',
     'Upland calcareous grassland':'Acid, Calcareous, Neutral Grassland',
     'Calaminarian grassland':'Acid, Calcareous, Neutral Grassland',
@@ -215,44 +91,192 @@ habitat_type_lookup = {
 
 # COMMAND ----------
 
-sdf_comp = (sdf_parcels.select("id_parcel")
-            .join(
-                sdf_ph.select("id_parcel", "Main_Habit"),
-                on = "id_parcel",
-                how="outer",
+df_ph = (sdf_ph
+         .select("id_parcel", "Main_Habit", "proportion")
+         .groupby("id_parcel", "Main_Habit")
+         .agg(F.sum("proportion").alias("proportion_main_habit"))
+         .toPandas()
+         )
 
-            )
-            .join(
-                sdf_hm.select("id_parcel", "A_pred", "B_pred"), 
-                on="id_parcel",
-                how = "outer",
-                )
-            )
-sdf_comp.display()
+df_hm = (sdf_hm
+         .select("id_parcel", "A_pred", "proportion")
+         .groupby("id_parcel", "A_pred")
+         .agg(F.sum("proportion").alias("proportion_a_pred"))
+         .toPandas()
+         )
+
+
+df_comp = (sdf_parcels.select("id_parcel").dropDuplicates().toPandas()
+           .merge(df_ph, on="id_parcel", how = "outer")
+           .merge(df_hm, on = "id_parcel", how = "outer")
+)
+
+df_comp.head(10)
 
 # COMMAND ----------
 
-# compar covereage of each dataset by counting nulls
-n_null_ph = sdf_comp.filter("Main_Habit is null").select("id_parcel").dropDuplicates().count()
-n_null_hm = sdf_comp.filter("A_pred is null").select("id_parcel").dropDuplicates().count()
-n_parcels = sdf_comp.select("id_parcel").dropDuplicates().count()
-print(f"""
-    Out of a total {n_parcels:,.0f}m parcels
+# map from one habitat type to another
+df_comp["A_pred_from_Main_Habit"] = df_comp["Main_Habit"].map(lambda x: habitat_type_lookup.get(x))
+df_comp["Main_Habit_from_A_pred"] = df_comp["A_pred"].map(lambda x: {v:k for k,v in habitat_type_lookup.items()}.get(x))
 
-    {n_null_ph:,.0f} ({n_null_ph/n_parcels:.0%}) do hot have a Priority Habitat habitat
-    {n_null_hm:,.0f} ({n_null_hm/n_parcels:.0%}) do hot have a Habitat Map habitat
+# COMMAND ----------
+
+df_ph.drop_duplicates(subset="id_parcel").shape
+
+# COMMAND ----------
+
+df_comp.drop_duplicates(subset="id_parcel")["Main_Habit"].isna().value_counts()
+
+# COMMAND ----------
+
+n_null_ph = df_comp.drop_duplicates(subset="id_parcel")["Main_Habit"].isna().value_counts()
+n_null_ph.name = "Priority Habitat"
+n_null_hm = df_comp.drop_duplicates(subset="id_parcel")["A_pred"].isna().value_counts()
+n_null_hm.name = "Habitat Map"
+
+print(f"""
+    Out of a total {df_comp.drop_duplicates(subset="id_parcel").shape[0]:,.0f}m parcels
+
+    {n_null_ph[True]:,.0f} ({n_null_ph[True]/n_null_ph.sum():.0%}) do hot have a Priority Habitat habitat
+    {n_null_hm[True]:,.0f} ({n_null_hm[True]/n_null_hm.sum():.0%}) do hot have a Habitat Map habitat
     """
 )
 
 # COMMAND ----------
 
-# Compare counts of parcels and proportions by category
-sdf_comp = (sdf_comp
-            .withColumn("A_pred_from_Main_Habit"),
-            sdf_comp.select("Main_Habit").replace(habitat_type_lookup)
-            )
-sdf_comp.display()
+df_ph.head()
+
+# COMMAND ----------
+
+# for each dataset separaetely rank the frequency of each habitat type
+ph_frequency = (df_ph
+                .groupby("Main_Habit")
+                .aggregate(
+                    parcel_count = pd.NamedAgg("id_parcel", lambda s: s.count()),
+                    proportion_main_habit_sum = pd.NamedAgg("proportion_main_habit", lambda s: s.sum()),
+                )
+                .reset_index()
+                .sort_values(by="parcel_count")
+                )
+
+hm_frequency = (df_hm
+                .groupby("A_pred")
+                .aggregate(
+                    parcel_count = pd.NamedAgg("id_parcel", lambda s: s.count()),
+                    proportion_a_pred_sum = pd.NamedAgg("proportion_a_pred", lambda s: s.sum()),
+                )
+                .reset_index()
+                .sort_values(by="parcel_count")
+                )
+
+# COMMAND ----------
+
+ph_main_habits_not_mapped = df_comp.loc[ (df_comp["A_pred_from_Main_Habit"].isnull() & df_comp["Main_Habit"].notna())].groupby("Main_Habit")["id_parcel"].apply(lambda s: s.drop_duplicates().count()).sort_values().to_dict()
+
+hm_a_pred_not_mapped = df_comp.loc[ (df_comp["Main_Habit_from_A_pred"].isnull() & df_comp["A_pred"].notna())].groupby("A_pred")["id_parcel"].apply(lambda s: s.drop_duplicates().count()).sort_values().to_dict()
+
+nl = "\n - "
+print(f"""
+      
+Priority Habitat habitat types not matched to Habitat Map types:
+\n - {nl.join("{} ({:,})".format(k,v) for k,v in ph_main_habits_not_mapped.items())}
+
+Habitat Map habitat types not matched to Priority Habitat types:
+\n - {nl.join("{} ({:,})".format(k,v) for k,v in hm_a_pred_not_mapped.items())}
+""")
+
+# COMMAND ----------
+
+# comparing classifications, how often do they match up
+ph_frequency["A_pred_from_Main_Habit"] = ph_frequency["Main_Habit"].map(lambda x: habitat_type_lookup.get(x))
+
+frequency_comp = pd.merge(ph_frequency, hm_frequency, left_on = "A_pred_from_Main_Habit", right_on = "A_pred", how = "outer")
+
+# count number of time datasets agree on habitat types
+df_comp["habitats_match"] = df_comp["A_pred"] == df_comp["A_pred_from_Main_Habit"]
+
+count_match = df_comp.groupby("A_pred")["habitats_match"].value_counts().unstack()
+count_match["true_pct"] = count_match[True]/count_match.sum(axis=1) * 100
+count_match["false_pct"] = count_match[False]/count_match.sum(axis=1) * 100
+count_match = count_match.sort_values(by="true_pct")
+count_match
+
+# COMMAND ----------
+
+# create plots
+fig = plt.figure(tight_layout=True, figsize = (30,40))
+gs = gridspec.GridSpec(3, 2)
+
+defra_green = "#00A33B"
+grey = "#8a836e"
+
+# COMMAND ----------
+
+sns.set(
+    context="talk",
+    style="white",
+    palette="husl",
+    font_scale=2,
+)
+
+# horizontal bar chart showing how many parcels have habitats
+ax0 = fig.add_subplot(gs[0, :])
+
+df = pd.DataFrame([n_null_hm, n_null_ph])
+
+dataset = df.index
+without_habitat = df[True]/df.sum(axis=1) * 100
+with_habitat = df[False]/df.sum(axis=1) * 100
+
+b1 = ax0.barh(dataset, with_habitat, color=defra_green)
+b2 = ax0.barh(dataset, without_habitat, left=with_habitat, color=grey)
+
+ax0.legend([b1, b2], ["Overlapping habitat", "No habitat"], loc="upper right")
+
+ax0.set_title("Percentage of parcels overlapping a habitat geometry")
+
+plt.show()
 
 # COMMAND ----------
 
 
+# plots showing which habitats most commonly overlap with parcels acording to each dataset
+sns.set(
+    context="talk",
+    style="white",
+    palette="husl",
+    font_scale=1.1,
+)
+
+ax1 = fig.add_subplot(gs[1, 0])
+ax1.barh(ph_frequency["Main_Habit"], ph_frequency["parcel_count"], color = defra_green)
+ax1.set_title("Priority Habitats Parcel Count")
+
+ax2 = fig.add_subplot(gs[1, 1])
+ax2.barh(hm_frequency["A_pred"], hm_frequency["parcel_count"], color = defra_green)
+ax2.set_title("Habitat Map Parcel Count")
+
+
+# COMMAND ----------
+
+# plots comparing habitat classifications between datasets
+sns.set(
+    context="talk",
+    style="white",
+    palette="husl",
+    font_scale=1.1,
+)
+
+ax3 = fig.add_subplot(gs[2, 0])
+b1 = ax3.barh(count_match.index, count_match["true_pct"], color = defra_green)
+b2 = ax3.barh(count_match.index, count_match["false_pct"], left=count_match["true_pct"], color=grey)
+ax3.legend([b1, b2], ["Matching", "Not matching"], loc="upper right")
+ax3.set_title("Percetage of parcels with matching habitat type")
+
+# ax2 = fig.add_subplot(gs[2, 1])
+# ax2.barh(hm_frequency["A_pred"], hm_frequency["parcel_count"], color = defra_green)
+# ax2.set_title("Habitat Map Parcel Count")
+
+# COMMAND ----------
+
+fig
