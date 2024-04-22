@@ -322,31 +322,28 @@ fig.text(0, -0.52,
 """
 1. Parcels overlapping a habitat geometry
 
-The Living England Hanitat Map is exhaustive and mutually exclusive; it covers the whole contry with non-overlapping polygons with habitat classifications. Therefore, this dataset overlaps with 
-100% of RPA parcel geometries. Conversey the Priority Habitats dataset is non-exhaustive. It does not attempt to map every habitat and covers just over a third of parcels.
-
+The Living England Habitat Map is exhaustive and mutually exclusive; it covers the whole country with non-overlapping polygons with habitat classifications. Therefore, this dataset overlaps with 
+100% of RPA parcel geometries. Conversely, the Priority Habitats dataset is non-exhaustive. It does not attempt to map every habitat and covers just over a third of parcels.
 
 2. Priority Habitats parcel count
 
-The Priority Habitats dataset has a larger number of more specific habitat types. Due to it's non-exhaustic nature. All habitat types apart from deciduous woodland are found in less tha 100,000 
+The Priority Habitats dataset has a larger number of more specific habitat types. Due to its non-exhaustive nature. All habitat types apart from deciduous woodland are found in less than 100,000 
 parcels.
-
 
 3. Habitat Map parcel count
 
 Living England's Habitat Map uses a smaller number of boarder categories. The number of parcels in each category is high, with many parcels overlapping multiple habitat types (for reference there 
 are 2.6m parcels).
 
-
 4. Comparison parcel count
 
-By assiging one f the broader Habitat Map classifications to each of the Priority Habitat classifications we can compare the number of parcels linked to these habitats acording to each dataset. This 
-chart shows that the Living England Habitat Map contans a differet distribution of habitats, as well as greater overall coverage. For example, 'Broadleave, Mixed and Yew Woodland' is the most frequent 
+By assigning one of the broader Habitat Map classifications to each of the Priority Habitat classifications we can compare the number of parcels linked to these habitats according to each dataset. This 
+chart shows that the Living England Habitat Map contains a different distribution of habitats, as well as greater overall coverage. For example, 'Broadleaved, Mixed and Yew Woodland' is the most frequent 
 category according to the Priority Habitats data but this is third most frequent according to the Habitat Map.
 
 NA annotations indicate habitat categories which do not have an equivalent in the comparison dataset. The following Priority Habitat types have no Habitat Map equivalent:
  - No main habitat but additional habitats present (94,138 parcels)
- - Maratime cliffs and slopes (5,087 parcels)
+ - Maritime cliffs and slopes (5,087 parcels)
 
 The following Habitat Map types have no equivalent in Priority Habitats:
 - Built-up Araes and Gardens (303,195 parcels)
@@ -356,14 +353,13 @@ The following Habitat Map types have no equivalent in Priority Habitats:
 
 5. Percentage matching habitat type
 
-This chart compares the classifications themselves rather than the volume of classifications. Only parcels with boht a Priority Habitat and Habitat Map classification. Furthermore for 
+This chart compares the classifications themselves rather than the volume of classifications. Only parcels with both a Priority Habitat and Habitat Map classification. Furthermore for 
 each category the number of matching classifications is defined as the number of parcels where at least one of its habitats match between the datasets. This is a more permissive definition that 
 aims to control for the Priority Habitat data potentially having overlapping classifications.
 
 The results show good agreement in the classification of woodland and saltmarsh but generally poor agreement otherwise.
 
-The level of disagreement is sensitive to the mapping between the to sets of habitat classes. Broader groupings (e.g. into grassland, woodland, scrub, bog, other) might be more suitable.
-
+The level of disagreement is sensitive to the mapping between the two sets of habitat classes. Broader groupings (e.g. into grassland, woodland, scrub, bog, other) might be more suitable.
 
 Sources: Defra Priority Habitats, Living England Habitat Map, RPA Parcels November 2021.
 """
