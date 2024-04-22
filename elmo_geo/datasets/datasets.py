@@ -424,12 +424,11 @@ habitat_map = Dataset(
             path_read=("dbfs:/mnt/lab/unrestricted/elm_data/natural_england/living_england/2022_09_16.parquet"),
         ),
     ],
-    keep_cols=['A_pred', 'A_prob', 'B_pred', 'B_prob', 'geometry'],
+    keep_cols=['A_pred', 'A_prob', 'geometry'],
     output_coltypes={
         "proportion": "float",
         "A_pred": "category",
         "A_prob": "float",
-        "B_pred": "category",
     },
 )
 
