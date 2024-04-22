@@ -64,13 +64,13 @@ habitat_type_lookup = {
     'Fragmented heath':'Dwarf Shrub Heath',
     'Coastal sand dunes':'Coastal Sand Dunes',
     'Saline lagoons':'Water',
-    'Purple moor grass and rush pastures':'Arable and Horticultural',
+    'Purple moor grass and rush pastures':'Acid, Calcareous, Neutral Grassland',
     'Coastal vegetated shingle':'Bare Sand',
     'Lowland dry acid grassland':'Acid, Calcareous, Neutral Grassland',
     'Lowland meadows':'Acid, Calcareous, Neutral Grassland',
     'Lowland fens':'Fen, Marsh and Swamp',
     'Coastal saltmarsh':'Coastal Saltmarsh',
-    'Grass moorland':'Arable and Horticultural',
+    'Grass moorland':'Acid, Calcareous, Neutral Grassland',
     'Limestone pavement':'Bare Ground',
     'Lowland calcareous grassland':'Acid, Calcareous, Neutral Grassland',
     'Mountain heaths and willow scrub':'Scrub',
@@ -78,14 +78,12 @@ habitat_type_lookup = {
     'Lowland raised bog':'Bog',
     'Upland heathland':'Dwarf Shrub Heath',
     'Reedbeds':'Fen, Marsh and Swamp',
-    #'No main habitat but additional habitats present':'',
-    #'Maritime cliff and slope':'',
     'Lowland heathland':'Dwarf Shrub Heath',
     'Upland calcareous grassland':'Acid, Calcareous, Neutral Grassland',
     'Calaminarian grassland':'Acid, Calcareous, Neutral Grassland',
     'Blanket bog':'Bog',
     'Traditional orchard':'Arable and Horticultural',
-    'Upland hay meadow':'Arable and Horticultural',
+    'Upland hay meadow':'Acid, Calcareous, Neutral Grassland',
     'Mudflats':'Bare Ground',
     'Upland flushes, fens and swamps':'Fen, Marsh and Swamp',
     'Coastal and floodplain grazing marsh':'Fen, Marsh and Swamp',
@@ -378,7 +376,3 @@ fig.suptitle("Comparing Defra Priority Habitat data to the Living England Habita
 # COMMAND ----------
 
 fig
-
-# COMMAND ----------
-
-
