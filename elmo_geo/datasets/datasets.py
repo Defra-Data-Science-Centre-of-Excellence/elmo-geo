@@ -409,7 +409,7 @@ priority_habitat_inventory = Dataset(
             path_read=("/dbfs/mnt/lab/unrestricted/elm_data/defra/priority_habitat_inventory/unified_2021_03_26.parquet"),
         ),
     ],
-    keep_cols=['Main_Habit', 'Confidence', 'Source1', 'Source2', 'S2Habclass', 'S2HabType', 'Source3', 'S3Habclass', 'S3HabType', 'geometry'],
+    keep_cols=["Main_Habit", "Confidence", "Source1", "Source2", "S2Habclass", "S2HabType", "Source3", "S3Habclass", "S3HabType", "geometry"],
     output_coltypes={
         "proportion": "float",
     },
@@ -424,7 +424,7 @@ habitat_map = Dataset(
             path_read=("dbfs:/mnt/lab/unrestricted/elm_data/natural_england/living_england/2022_09_16.parquet"),
         ),
     ],
-    keep_cols=['A_pred', 'A_prob', 'geometry'],
+    keep_cols=["A_pred", "A_prob", "geometry"],
     output_coltypes={
         "proportion": "float",
         "A_pred": "category",
