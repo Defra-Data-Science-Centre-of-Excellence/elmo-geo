@@ -14,6 +14,7 @@ import numpy as np
 import pandas as pd
 from dataclasses import dataclass
 import matplotlib.pyplot as plt
+import matplotlib.ticker as tick
 import matplotlib.gridspec as gridspec
 import seaborn as sns
 
@@ -24,6 +25,10 @@ from elmo_geo.st.geometry import load_geometry, load_missing
 
 #elmo_geo.register()
 from pyspark.sql import functions as F
+
+# COMMAND ----------
+
+# MAGIC %matplotlib inline
 
 # COMMAND ----------
 
@@ -208,11 +213,12 @@ count_match
 
 # create plots
 fig = plt.figure(tight_layout=False, figsize = (30,30))
-gs = gridspec.GridSpec(3, 2, height_ratios = [1,3,3])
+gs = gridspec.GridSpec(3, 2, height_ratios = [1,4,4])
 
 defra_green = "#00A33B"
 defra_green_dark = "#006123"
 grey = "#8a836e"
+dary_grey = "#454137"
 
 title_size = 30
 title_y = 1.03
@@ -239,10 +245,13 @@ b1 = ax0.barh(dataset, with_habitat, color=defra_green)
 b2 = ax0.barh(dataset, without_habitat, left=with_habitat, color=grey)
 
 ax0.legend([b1, b2], ["Overlapping habitat", "No habitat"], loc="upper right")
+ax0.xaxis.set_major_formatter(tick.FuncFormatter(lambda x, y: f"{x:.0f}%"))
+ax0.set_title("1. Parcels overlapping a habitat geometry", y=title_y)
 
-ax0.set_title("Parcels overlapping a habitat geometry", y=title_y)
-
-plt.show()
+# add data labels
+for i, v1 in enumerate(b1.datavalues):
+    s = f"{v1:.0f}%"
+    ax0.text(v1-(2*len(s)), i-0.1, s, c = dary_grey, transform=ax0.transData)
 
 # COMMAND ----------
 
@@ -257,11 +266,13 @@ sns.set(
 
 ax1 = fig.add_subplot(gs[1, 0])
 ax1.barh(ph_frequency["Main_Habit"], ph_frequency["parcel_count"], color = defra_green)
-ax1.set_title("Priority Habitats parcel count", fontsize = title_size, y = title_y)
+ax1.xaxis.set_major_formatter(tick.FuncFormatter(lambda x, y: f"{x/1_000:.0f}k"))
+ax1.set_title("2. Priority Habitats parcel count", fontsize = title_size, y = title_y)
 
 ax2 = fig.add_subplot(gs[1, 1])
 ax2.barh(hm_frequency["A_pred"], hm_frequency["parcel_count"], color = defra_green)
-ax2.set_title("Habitat Map parcel count", fontsize = title_size, y = title_y)
+ax2.xaxis.set_major_formatter(tick.FuncFormatter(lambda x, y: f"{x/1e6:.1f}m"))
+ax2.set_title("3. Habitat Map parcel count", fontsize = title_size, y = title_y)
 
 
 # COMMAND ----------
@@ -274,29 +285,83 @@ sns.set(
     font_scale=1.2,
 )
 
-ax3 = fig.add_subplot(gs[2, 0])
-b1 = ax3.barh(count_match.index, count_match["true_pct"], color = defra_green)
-b2 = ax3.barh(count_match.index, count_match["false_pct"], left=count_match["true_pct"], color=grey)
-ax3.legend([b1, b2], ["Matching", "Not matching"], loc="upper right")
-ax3.set_title("Percetage of matching habitat", fontsize = title_size, y = title_y)
-
 # spine chart comparing number of parcels matching certain classifications under each dataset
-ax4 = fig.add_subplot(gs[2, 1])
-b2 = ax4.barh(frequency_comp["A_pred_plus_missing_Main_Habit"], frequency_comp["parcel_count_hm"].fillna(0) * -1, color = defra_green)
-b1 = ax4.barh(frequency_comp["A_pred_plus_missing_Main_Habit"], frequency_comp["parcel_count_ph"].fillna(0), color = defra_green_dark)
-ax4.legend([b1, b2], ["Priority Habitats", "Habitat Map"], loc="lower left")
-ax4.set_title("Comparison parcel count", fontsize = title_size, y = title_y)
+ax3 = fig.add_subplot(gs[2, 0])
+b2 = ax3.barh(frequency_comp["A_pred_plus_missing_Main_Habit"], frequency_comp["parcel_count_hm"].fillna(0) * -1, color = defra_green)
+b1 = ax3.barh(frequency_comp["A_pred_plus_missing_Main_Habit"], frequency_comp["parcel_count_ph"].fillna(0), color = defra_green_dark)
+ax3.legend([b1, b2], ["Priority Habitats", "Habitat Map"], loc="lower left")
+ax3.xaxis.set_major_formatter(tick.FuncFormatter(lambda x, y: f"{x/1e6:.1f}m".replace("-","")))
+ax3.set_title("4. Comparison parcel count", fontsize = title_size, y = title_y)
 
 # addtext indicating where there is no matching habitat
-y_labels = ax4.get_yticklabels()
+y_labels = ax3.get_yticklabels()
 for ix, r in frequency_comp.iterrows():
     name = r["A_pred_plus_missing_Main_Habit"]
     label = [i for i in y_labels if i.get_text() == name][0]
     if np.isnan(r["parcel_count_hm"]):
-        ax4.text(0-50_000, label.get_position()[1]-0.2, "NA", ha = "right", transform=ax4.transData, fontsize = 20)
+        ax3.text(0-50_000, label.get_position()[1]-0.2, "NA", ha = "right", transform=ax3.transData, fontsize = 20)
     elif np.isnan(r["parcel_count_ph"]):
-        ax4.text(0+50_000, label.get_position()[1]-0.2, "NA", ha = "left", transform=ax4.transData, fontsize = 20)
+        ax3.text(0+50_000, label.get_position()[1]-0.2, "NA", ha = "left", transform=ax3.transData, fontsize = 20)
+
+
+# percentage of matching habitat classification
+count_match = count_match.dropna()
+ax4 = fig.add_subplot(gs[2, 1])
+b1 = ax4.barh(count_match.index, count_match["true_pct"], color = defra_green)
+b2 = ax4.barh(count_match.index, count_match["false_pct"], left=count_match["true_pct"], color=grey)
+ax4.legend([b1, b2], ["Matching", "Not matching"], loc="upper right")
+ax4.xaxis.set_major_formatter(tick.FuncFormatter(lambda x, y: f"{x:.0f}%"))
+ax4.set_title("5. Percetage of matching habitat", fontsize = title_size, y = title_y)
+
+# add data labels
+for i, v1 in enumerate(b1.datavalues):
+    s = f"{v1:.0f}%"
+    ax4.text(v1+1, i-0.1, s, c = dary_grey, transform=ax4.transData)
+
+for ax in [ax1, ax2, ax3]:
+    ax.grid( which = "major", axis="x")
+
+# COMMAND ----------
+
+fig.text(0, -0.3, 
+"""
+1. Parcels overlapping a habitat geometry
+
+The Living England Hanitat Map is exhaustive and mutually exclusive; it covers the whole contry with non-overlapping polygons with habitat classifications. Therefore, this dataset overlaps with 
+100% of RPA parcel geometries. Conversey the Priority Habitats dataset is non-exhaustive. It does not attempt to map every habitat and covers just over a third of parcels.
+
+2. Priority Habitats parcel count
+
+The Priority Habitats dataset has a larger number of more specific habitat types. Due to it's non-exhaustic nature. All habitat types apart from deciduous woodland are found in less tha 100,000 
+parcels.
+
+3. Habitat Map parcel count
+
+Living England's Habitat Map uses a smaller number of boarder categories. The number of parcels in each category is high, with many parcels overlapping multiple habitat types (for reference there 
+are 2.6m parcels).
+
+4. Comparison parcel count
+
+By assiging one f the broader Habitat Map classifications to each of the Priority Habitat classifications we can compare the number of parcels linked to these habitats acording to each dataset. This 
+chart shows that the Living England Habitat Map contans a differet distribution of habitats, as well as greater overall coverage. For example, 'Broadleave, Mixed and Yew Woodland' is the most frequent 
+category according to the Priority Habitats data but this is third most frequent according to the Habitat Map.
+
+5. Percentage matching habitat type
+
+This chart shows the percentage of parcels with a Priority Habitats classification that matches the Habitat Map classification. The aggrement is poor showing that most parcels have a different habitat 
+classification under each dataset.
+
+Sources: Defra Priority Habitats, Living England Habitat Map, RPA Parcels November 2021
+""",
+fontsize = 20,
+color = dary_grey)
+
+fig.suptitle("Comparing Defra Priority Habitat data to the Living England Habitat Map", fontsize = 60, y = 1.05)
 
 # COMMAND ----------
 
 fig
+
+# COMMAND ----------
+
+
