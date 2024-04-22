@@ -28,10 +28,6 @@ from pyspark.sql import functions as F
 
 # COMMAND ----------
 
-# MAGIC %matplotlib inline
-
-# COMMAND ----------
-
 ph_name = "priority_habitat_inventory"
 ph_version = "2021_03_26"
 ph_dataset = next(d for d in datasets if d.name == ph_name)
@@ -127,11 +123,11 @@ df_comp["Main_Habit_from_A_pred"] = df_comp["A_pred"].map(lambda x: {v:k for k,v
 
 # COMMAND ----------
 
-df_ph.drop_duplicates(subset="id_parcel").shape
+df_ph.drop_duplicates(subset="id_parcel").shape, df_ph.shape
 
 # COMMAND ----------
 
-df_comp.drop_duplicates(subset="id_parcel")["Main_Habit"].isna().value_counts()
+df_hm.drop_duplicates(subset="id_parcel").shape, df_hm.shape
 
 # COMMAND ----------
 
@@ -150,15 +146,11 @@ print(f"""
 
 # COMMAND ----------
 
-df_ph.head()
-
-# COMMAND ----------
-
 # for each dataset separaetely rank the frequency of each habitat type
 ph_frequency = (df_ph
                 .groupby("Main_Habit")
                 .aggregate(
-                    parcel_count = pd.NamedAgg("id_parcel", lambda s: s.count()),
+                    parcel_count = pd.NamedAgg("id_parcel", lambda s: s.unique().shape[0]),
                     proportion_main_habit_sum = pd.NamedAgg("proportion_main_habit", lambda s: s.sum()),
                 )
                 .reset_index()
@@ -168,7 +160,7 @@ ph_frequency = (df_ph
 hm_frequency = (df_hm
                 .groupby("A_pred")
                 .aggregate(
-                    parcel_count = pd.NamedAgg("id_parcel", lambda s: s.count()),
+                    parcel_count = pd.NamedAgg("id_parcel", lambda s: s.unique().shape[0]),
                     proportion_a_pred_sum = pd.NamedAgg("proportion_a_pred", lambda s: s.sum()),
                 )
                 .reset_index()
@@ -200,10 +192,15 @@ frequency_comp = pd.merge(ph_frequency, hm_frequency, left_on = "A_pred_from_Mai
 frequency_comp["A_pred_plus_missing_Main_Habit"] = np.where(frequency_comp["A_pred"].isna(), frequency_comp["Main_Habit"], frequency_comp["A_pred"])
 frequency_comp.index = np.arange(frequency_comp.shape[0])
 
-# count number of time datasets agree on habitat types
+# count number of time datasets agree on habitat types, including only parcels that overlap with both datasets
 df_comp["habitats_match"] = df_comp["A_pred"] == df_comp["A_pred_from_Main_Habit"]
 
-count_match = df_comp.groupby("A_pred")["habitats_match"].value_counts().unstack()
+count_match = (df_comp
+                .dropna(subset = ["Main_Habit", "A_pred"]) # only parcels with a habitat from both datasets
+                .groupby(["id_parcel", "A_pred"])["habitats_match"].apply(lambda s: s.any()) # count number of parcels that have a habitat match for each A_pre category
+                .reset_index().groupby("A_pred")["habitats_match"].value_counts() # count total number of matches across haabitats
+                .unstack() # pivot
+)
 count_match["true_pct"] = count_match[True]/count_match.sum(axis=1) * 100
 count_match["false_pct"] = count_match[False]/count_match.sum(axis=1) * 100
 count_match = count_match.sort_values(by="true_pct")
@@ -309,9 +306,9 @@ count_match = count_match.dropna()
 ax4 = fig.add_subplot(gs[2, 1])
 b1 = ax4.barh(count_match.index, count_match["true_pct"], color = defra_green)
 b2 = ax4.barh(count_match.index, count_match["false_pct"], left=count_match["true_pct"], color=grey)
-ax4.legend([b1, b2], ["Matching", "Not matching"], loc="upper right")
+ax4.legend([b1, b2], ["Matching", "Not matching"], loc="lower right")
 ax4.xaxis.set_major_formatter(tick.FuncFormatter(lambda x, y: f"{x:.0f}%"))
-ax4.set_title("5. Percetage of matching habitat", fontsize = title_size, y = title_y)
+ax4.set_title("5. Comparison habitat classification", fontsize = title_size, y = title_y)
 
 # add data labels
 for i, v1 in enumerate(b1.datavalues):
@@ -323,22 +320,25 @@ for ax in [ax1, ax2, ax3]:
 
 # COMMAND ----------
 
-fig.text(0, -0.3, 
+fig.text(0, -0.52, 
 """
 1. Parcels overlapping a habitat geometry
 
 The Living England Hanitat Map is exhaustive and mutually exclusive; it covers the whole contry with non-overlapping polygons with habitat classifications. Therefore, this dataset overlaps with 
 100% of RPA parcel geometries. Conversey the Priority Habitats dataset is non-exhaustive. It does not attempt to map every habitat and covers just over a third of parcels.
 
+
 2. Priority Habitats parcel count
 
 The Priority Habitats dataset has a larger number of more specific habitat types. Due to it's non-exhaustic nature. All habitat types apart from deciduous woodland are found in less tha 100,000 
 parcels.
 
+
 3. Habitat Map parcel count
 
 Living England's Habitat Map uses a smaller number of boarder categories. The number of parcels in each category is high, with many parcels overlapping multiple habitat types (for reference there 
 are 2.6m parcels).
+
 
 4. Comparison parcel count
 
@@ -346,17 +346,34 @@ By assiging one f the broader Habitat Map classifications to each of the Priorit
 chart shows that the Living England Habitat Map contans a differet distribution of habitats, as well as greater overall coverage. For example, 'Broadleave, Mixed and Yew Woodland' is the most frequent 
 category according to the Priority Habitats data but this is third most frequent according to the Habitat Map.
 
+NA annotations indicate habitat categories which do not have an equivalent in the comparison dataset. The following Priority Habitat types have no Habitat Map equivalent:
+ - No main habitat but additional habitats present (94,138 parcels)
+ - Maratime cliffs and slopes (5,087 parcels)
+
+The following Habitat Map types have no equivalent in Priority Habitats:
+- Built-up Araes and Gardens (303,195 parcels)
+- Coniferous Woodland (119,523 parcels)
+- Bracken (56,524 parcels)
+- Unclassified (23,307 parcels) 
+
 5. Percentage matching habitat type
 
-This chart shows the percentage of parcels with a Priority Habitats classification that matches the Habitat Map classification. The aggrement is poor showing that most parcels have a different habitat 
-classification under each dataset.
+This chart compares the classifications themselves rather than the volume of classifications. Only parcels with boht a Priority Habitat and Habitat Map classification. Furthermore for 
+each category the number of matching classifications is defined as the number of parcels where at least one of its habitats match between the datasets. This is a more permissive definition that 
+aims to control for the Priority Habitat data potentially having overlapping classifications.
 
-Sources: Defra Priority Habitats, Living England Habitat Map, RPA Parcels November 2021
-""",
+The results show good agreement in the classification of woodland and saltmarsh but generally poor agreement otherwise.
+
+The level of disagreement is sensitive to the mapping between the to sets of habitat classes. Broader groupings (e.g. into grassland, woodland, scrub, bog, other) might be more suitable.
+
+
+Sources: Defra Priority Habitats, Living England Habitat Map, RPA Parcels November 2021.
+"""
+,
 fontsize = 20,
 color = dary_grey)
 
-fig.suptitle("Comparing Defra Priority Habitat data to the Living England Habitat Map", fontsize = 60, y = 1.05)
+fig.suptitle("Comparing Defra Priority Habitat data to the Living England Habitat Map", fontsize = 60, y = 1.035)
 
 # COMMAND ----------
 
