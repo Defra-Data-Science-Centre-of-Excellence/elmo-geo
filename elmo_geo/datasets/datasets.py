@@ -409,8 +409,12 @@ priority_habitat_inventory = Dataset(
             path_read=("/dbfs/mnt/lab/unrestricted/elm_data/defra/priority_habitat_inventory/unified_2021_03_26.parquet"),
         ),
     ],
-    keep_cols=["Main_Habit", "Confidence", "Source1", "Source2", "S2Habclass", "S2HabType", "Source3", "S3Habclass", "S3HabType", "geometry"],
+    keep_cols=["Main_Habit", "Confidence", "Source1", "Source2", "geometry"],
     output_coltypes={
+        "Main_Habit":"category",
+        "Confidence":"category",
+        "Source1":"string",
+        "Source2":"string",
         "proportion": "float",
     },
 )
