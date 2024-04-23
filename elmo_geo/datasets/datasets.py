@@ -411,8 +411,8 @@ priority_habitat_inventory = Dataset(
     ],
     keep_cols=["Main_Habit", "Confidence", "geometry"],
     output_coltypes={
-        "Main_Habit":"category",
-        "Confidence":"category",
+        "Main_Habit": "category",
+        "Confidence": "category",
         "proportion": "float",
     },
 )
