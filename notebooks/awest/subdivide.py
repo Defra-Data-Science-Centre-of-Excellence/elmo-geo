@@ -1,15 +1,25 @@
 # Databricks notebook source
 # MAGIC %md
 # MAGIC # Subdivide
-# MAGIC https://snorfalorpagus.net/blog/2016/03/13/splitting-large-polygons-for-faster-intersections/
+# MAGIC Explore subdividing algorithms, useful large geometries.  Single geometries can be so large they cause OOM errors.  By subdividing them, the geometries can be analysed separately on partitions.  Examples are datasets like flood warning areas, where many organisations provide a single geometry to a large dataset, some of these geometries are for areas around whole river basins.  Another example is none generalised country geometries.  
+# MAGIC https://snorfalorpagus.net/blog/2016/03/13/splitting-large-polygons-for-faster-intersections/  
+# MAGIC https://gist.github.com/JoaoCarabetta/8a5df60ac0012e56219a5b2dffcb20e3  
 # MAGIC
-# MAGIC |method|threshold|timeit|vertices|increase|conclusion|
-# MAGIC |---|---|---|---|---|---|
-# MAGIC | | | |49,314|
-# MAGIC |fishnet|max_length=100m|3 s ± 214 ms|56,346|14.3%|may as well chip+index|
-# MAGIC |katana|max_area=1ha|421 ms ± 13.2 ms|54,978|11.5%|doesn't suit varied sized geometries|
-# MAGIC |katana|max_vertices=256|329 ms ± 4.75 ms|51,046|3.5%|use this, perhaps review better cutting methods|
-# MAGIC |delaunay|max_vertices=256|30.8 s ± 129 ms|95502|93.7%|why did I think this was a good idea|
+# MAGIC |method|timeit|vertices|increase|conclusion|
+# MAGIC |---|---|---|---|---|
+# MAGIC | | |49,314|
+# MAGIC |fishnet, max_length=100m|3 s ± 214 ms|56,346|14.3%|may as well chip+index|
+# MAGIC |katana, max_area=1ha, split by box|407 ms ± 9.3 ms|54,978|11.5%|doesn't suit varied sized geometries|
+# MAGIC |delaunay, max_vertices=256|30.8 s ± 129 ms|95502|93.7%|why did I think this was a good idea|
+# MAGIC |katana, max_vertices=256, split by box|313 ms ± 4 ms|51,046|3.5%|better suited for subdividing|
+# MAGIC |katana, max_vertices=256, split by line|463 ms ± 8.26 ms|51,046|3.5%|more simple cutting method|
+# MAGIC |katana, max_vertices=256, split by rect|142 ms ± 2.48 ms|51,027|3.5%|faster cutting method|
+# MAGIC
+
+# COMMAND ----------
+
+54978/49314, 51046/49314, 51027/49314, 51046/49314
+
 
 # COMMAND ----------
 
@@ -20,7 +30,8 @@
 import geopandas as gpd
 import matplotlib.pyplot as plt
 from shapely import box, delaunay_triangles, from_wkt
-from shapely.geometry import MultiPolygon, Polygon
+from shapely.geometry import LineString, MultiPolygon, Polygon
+from shapely.ops import split, clip_by_rect
 from matplotlib.animation import FuncAnimation
 
 # COMMAND ----------
@@ -62,7 +73,7 @@ def fishnet(geometry, threshold):
                 # Ignore: Empty, Points, LineStrings
     return MultiPolygon(_fn())
 
-def geometry_split(geometry):
+def geometry_split_box(geometry):
     xmin, ymin, xmax, ymax = geometry.bounds
     width, height = xmax-xmin, ymax-ymin
     if width < height:
@@ -74,7 +85,37 @@ def geometry_split(geometry):
     a, b = geometry.intersection(a), geometry.intersection(b)
     return [*getattr(a, 'geoms', [a]), *getattr(b, 'geoms', [b])]
 
-def katana(geometry: MultiPolygon|Polygon, threshold:callable, max_depth:int=100):
+def geometry_split_line(geometry):
+    xmin, ymin, xmax, ymax = geometry.bounds
+    width, height = xmax-xmin, ymax-ymin
+    if width < height:
+        ymid = ymin+height/2
+        line = LineString([[xmin, ymid], [xmax, ymid]])
+    else:
+        xmid = xmin+width/2
+        line = LineString([[xmid, ymin], [xmid, ymax]])
+    return split(geometry, line).geoms
+
+def geometry_split_rect(geometry):
+    xmin, ymin, xmax, ymax = geometry.bounds
+    width, height = xmax-xmin, ymax-ymin
+    if width < height:
+        ymid = ymin+height/2
+        a = clip_by_rect(geometry, xmin, ymin, xmax, ymid)
+        b = clip_by_rect(geometry, xmin, ymid, xmax, ymax)
+    else:
+        xmid = xmin+width/2
+        a = clip_by_rect(geometry, xmin, ymin, xmid, ymax)
+        b = clip_by_rect(geometry, xmid, ymin, xmax, ymax)
+    return [*getattr(a, 'geoms', [a]), *getattr(b, 'geoms', [b])]
+
+def original_threshold(geometry):
+    return geometry.area < 10_000
+
+def vertices_threshold(geometry):
+    return geometry_length(geometry) <= 256
+
+def katana(geometry: MultiPolygon|Polygon, threshold:callable=vertices_threshold, geometry_split:callable=geometry_split_rect, max_depth:int=100):
     '''If a geometry is passes the threshold, cut it in half, repeat recursively
     '''
     def _fn(geometry, max_depth):
@@ -87,12 +128,6 @@ def katana(geometry: MultiPolygon|Polygon, threshold:callable, max_depth:int=100
             for g in geometry_split(geometry):
                 yield from _fn(g, max_depth-1)
     return MultiPolygon(_fn(geometry, max_depth))  # drop empty, line
-
-def original_threshold(geometry):
-    return geometry.area < 10_000
-
-def vertices_threshold(geometry):
-    return geometry_length(geometry) <= 256
 
 def delaunay(geometry, max_vertices=256):
     '''Split a geometry into triangles, group those triangles into areas.
@@ -116,8 +151,8 @@ def update(frame):
     ax.axis('off')
     g0 = df['geometry'][frame:frame+1]
     g1 = gpd.GeoSeries(g0.apply(delaunay_triangles, tolerance=0.001))
-    g0.plot(ax=ax, color='C0')
-    g1.plot(ax=ax, color='#0f01', edgecolor='k')
+    g0.plot(ax=ax, color='r')
+    g1.plot(ax=ax, color='C0', edgecolor='k')
 ani = FuncAnimation(fig, update, frames=df.shape[0], interval=200)
 
 displayHTML(ani.to_html5_video())
@@ -139,8 +174,8 @@ def update(frame):
     ax.axis('off')
     g0 = df['geometry'][frame:frame+1]
     g1 = g0.transform(fishnet, threshold=100)
-    g0.plot(ax=ax, color='C0')
-    g1.plot(ax=ax, color='#0f01', edgecolor='k')
+    g0.plot(ax=ax, color='r')
+    g1.plot(ax=ax, color='C0', edgecolor='k')
 ani = FuncAnimation(fig, update, frames=df.shape[0], interval=200)
 
 displayHTML(ani.to_html5_video())
@@ -148,12 +183,16 @@ displayHTML(ani.to_html5_video())
 # COMMAND ----------
 
 print(
-    df['geometry'].transform(katana, threshold=original_threshold).transform(geometry_length).sum(),
-    df['geometry'].transform(katana, threshold=vertices_threshold).transform(geometry_length).sum(),
+    df['geometry'].transform(katana, threshold=original_threshold, geometry_split=geometry_split_box).transform(geometry_length).sum(),
+    df['geometry'].transform(katana, threshold=vertices_threshold, geometry_split=geometry_split_box).transform(geometry_length).sum(),
+    df['geometry'].transform(katana, threshold=vertices_threshold, geometry_split=geometry_split_line).transform(geometry_length).sum(),
+    df['geometry'].transform(katana, threshold=vertices_threshold, geometry_split=geometry_split_rect).transform(geometry_length).sum(),
 )
-%timeit df['geometry'].transform(katana, threshold=original_threshold)
-%timeit df['geometry'].transform(katana, threshold=vertices_threshold)
-katana(multipolygon, vertices_threshold)
+%timeit df['geometry'].transform(katana, threshold=original_threshold, geometry_split=geometry_split_box)
+%timeit df['geometry'].transform(katana, threshold=vertices_threshold, geometry_split=geometry_split_box)
+%timeit df['geometry'].transform(katana, threshold=vertices_threshold, geometry_split=geometry_split_line)
+%timeit df['geometry'].transform(katana, threshold=vertices_threshold, geometry_split=geometry_split_rect)
+katana(multipolygon)
 
 # COMMAND ----------
 
@@ -162,9 +201,9 @@ def update(frame):
     ax.clear()
     ax.axis('off')
     g0 = df['geometry'][frame:frame+1]
-    g1 = g0.transform(katana, threshold=vertices_threshold)
-    g0.plot(ax=ax, color='C0')
-    g1.plot(ax=ax, color='#0f01', edgecolor='k')
+    g1 = g0.transform(katana)
+    g0.plot(ax=ax, color='r')
+    g1.plot(ax=ax, color='C0', edgecolor='k')
 ani = FuncAnimation(fig, update, frames=df.shape[0], interval=200)
 
 displayHTML(ani.to_html5_video())
@@ -185,8 +224,8 @@ def update(frame):
     ax.axis('off')
     g0 = df['geometry'][frame:frame+1]
     g1 = g0.transform(delaunay)
-    g0.plot(ax=ax, color='C0')
-    g1.plot(ax=ax, color='#0f01', edgecolor='k')
+    g0.plot(ax=ax, color='r')
+    g1.plot(ax=ax, color='C0', edgecolor='k')
 ani = FuncAnimation(fig, update, frames=df.shape[0], interval=200)
 
 displayHTML(ani.to_html5_video())
