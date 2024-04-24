@@ -1,4 +1,4 @@
-
+# This is a work in progress and does not reflect the current state of code.
 |   |   |
 |---|---|
 | **Authors** | Andrew West, Obi Thompson Sargoni, [elmo-geo](https://github.com/Defra-Data-Science-Centre-of-Excellence/elmo-geo) |
@@ -9,7 +9,7 @@
 This project produces multiple datasets that detail what features intersect parcel boundaries. This information can be used to inform option edibility. Relevant ELM Options are those that include the management (potentially with a buffer strip) or creation of boundaries.
 
 ## Methodology
-1. [Segment](../segment.py): first the boundaries of parcels are split into segments, these will be determined to be totally a combination of features.
+1. [Segment](../segment.py): first the boundaries of parcels are split into segments, each with an id_boundary, which can be used to identify which combination of features overlap it.
 2. [Sylvan](../sylvan/readme.md): next boundary segments are assigned woody feature classifications, be that hedgerow, woodland, or relict hedges.  This uses the prioritisation method.  If it's hedgerow the boundary segment is not woodland or relict hedge (hedge>wood>relict).
 3. [Boundary Use](boundary_use.py): All boundary segments are assigned to each additional feature; [adjacency](adjacency.py), sylvan, [water](water.py), [wall](wall.py), and [hefer](hefer.py).
     1. Feature geometries are buffered 12m to attach to nearby segments.  Linear features are considered 2m wide for cross compliance.
@@ -17,6 +17,7 @@ This project produces multiple datasets that detail what features intersect parc
     3. A segment can be used by multiple feature types, otherwise it's considered "available".  This means it's suitable for options like hedgerow creation. As part of assessing adjacency we differentiate between parcels managed by the same or different farm business.
 
 ## Data
+These following datasets are used as part of this project.
 | Category | Dataset | Link | Description |
 |---|---|---|---|
 | Segment | [elmo_geo-business_info](../business_info.py) |
@@ -27,6 +28,7 @@ This project produces multiple datasets that detail what features intersect parc
 | HEFER | RPA, HEFER | ... | ... |
 
 ## Output
+These following outputs are created from this project.
 Note: [class] = hedgerow, woodland, relict_hedge, waterway, waterbody, ditch, wall, hefer
 
 ### elmo_geo-boundary_use  
@@ -38,6 +40,7 @@ Schema: `id_business:int, id_parcel:str, m_[class], ha_[class]_buf[2,4,8,12]`
 ### <TILE> Map
 
 ### Intermediate Outputs
+_Some of these tables will be displayed here, some will become schemas, some removed_
 
 > Table 1 - Parcel Adjacency. Outpath - 'sf_adj'  
 > This table is produced by performing a distance base spatial join between the parcels dataset and itself, with a 12m distance threshold. This provides a lookup from each parcel to its nearby parcels.
