@@ -1,6 +1,6 @@
 import os
 
-from elmo_geo.utils.dbr import RemoteDbUtils, dbutils, spark
+from elmo_geo.utils.dbr import spark
 from elmo_geo.utils.log import LOG
 from elmo_geo.utils.types import SparkSession
 
@@ -25,7 +25,7 @@ def register_dir(dir: str):
         LOG.info(f"Changed Directory: {cwd} => {nwd}")
 
 
-def register(spark: SparkSession = spark, dbutils: RemoteDbUtils = dbutils, dir: str = "/elmo-geo"):
+def register(spark: SparkSession = spark, dir: str = "/elmo-geo"):
     register_dir(dir)
     register_sedona(spark)
     LOG.info("Registered: Sedona")
