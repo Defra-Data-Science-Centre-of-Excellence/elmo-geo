@@ -19,6 +19,6 @@ else
     mkdir $f_out
     for layer in $layers; do
         echo $f_out/$layer
-        ogr2ogr -f Parquet $f_out/$layer $f_in $layer
+        ogr2ogr -f Parquet $f_out/layer=$layer $f_in $layer
     done
 fi
