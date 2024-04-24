@@ -8,7 +8,6 @@ dependencies = [
     "beautifulsoup4",
     "contextily",
     "databricks-cli",
-    "databricks-mosaic",
     "databricks-sdk",
     "python-dotenv",
     "esridump",
@@ -43,6 +42,7 @@ dev = [
     "dbx",
     "ipykernel",
     "ipython",
+    "ipywidgets",
 ]
 
 [project.urls]
