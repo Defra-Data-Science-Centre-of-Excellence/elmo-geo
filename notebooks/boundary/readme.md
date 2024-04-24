@@ -6,16 +6,15 @@
 | **Objective** | Determine parcel boundary uses |
 
 # Boundary Use
-This project produces multiple datasets that detail what features intersect parcel boundaries. This information can be used to inform what option edibility.  Relevant ELM Options are those that include the management (potentially with a buffer strip) or creation of boundaries.
+This project produces multiple datasets that detail what features intersect parcel boundaries. This information can be used to inform option edibility. Relevant ELM Options are those that include the management (potentially with a buffer strip) or creation of boundaries.
 
 ## Methodology
 1. [Segment](../segment.py): first the boundaries of parcels are split into segments, these will be determined to be totally a combination of features.
-2. [Sylvan](../sylvan/readme.md): next types of woody features are created, be that hedgerow, woodland, or relict hedges.  This uses the prioritisation method.  If it's hedgerow the boundary segment is not woodland or relict hedge (hedge>wood>relict).
-3. [Boundary Use](boundary_use.py): All boundary segments are assigned to each feature; [adjacency](adjacency.py), sylvan, [water](water.py), [wall](wall.py), and [hefer](hefer.py).
-    1. Linear geometries are buffered 12m to attach to near by segments.  Linear features are considered 2m wide for cross compliance.
-    2. If the proportion of the segment inside the (buffered) feature type is above a threshold, then it is considered as used by that feature type, "assigned".
-    3. A segment can be used by multiple feature types, otherwise it's considered "available".  This means it's suitable for options like hedgerow creation.
-    4. <span style='color:red'>Adjacency</span>
+2. [Sylvan](../sylvan/readme.md): next boundary segments are assigned woody feature classifications, be that hedgerow, woodland, or relict hedges.  This uses the prioritisation method.  If it's hedgerow the boundary segment is not woodland or relict hedge (hedge>wood>relict).
+3. [Boundary Use](boundary_use.py): All boundary segments are assigned to each additional feature; [adjacency](adjacency.py), sylvan, [water](water.py), [wall](wall.py), and [hefer](hefer.py).
+    1. Feature geometries are buffered 12m to attach to nearby segments.  Linear features are considered 2m wide for cross compliance.
+    2. If the proportion of the segment inside the (buffered) feature type is above a threshold, then it is "assigned" that feature type.
+    3. A segment can be used by multiple feature types, otherwise it's considered "available".  This means it's suitable for options like hedgerow creation. As part of assessing adjacency we differentiate between parcels managed by the same or different farm business.
 
 ## Data
 | Category | Dataset | Link | Description |
