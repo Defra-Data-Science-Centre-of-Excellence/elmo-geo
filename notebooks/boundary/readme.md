@@ -32,9 +32,11 @@ These following outputs are created from this project.
 Note: [class] = hedgerow, woodland, relict_hedge, waterway, waterbody, ditch, wall, hefer
 
 ### elmo_geo-boundary_use  
+This dataset describes the assignment of features to each boundary segment.
 Schema: `id_business:int, id_parcel:str, id_boundary:int, m:float, is_[class]:bool`
 
 ### elmo_geo-buffer_strips
+This dataset merges the boundary segments, and describes the area of buffer strips in a parcel.  It removed over estimation  by calculating unary union of buffered boundaries.
 Schema: `id_business:int, id_parcel:str, m_[class], ha_[class]_buf[2,4,8,12]`
 
 ### <TILE> Map
