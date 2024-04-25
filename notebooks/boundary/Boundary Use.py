@@ -1,4 +1,36 @@
 # Databricks notebook source
+# MAGIC %md
+# MAGIC # Boundary Use
+# MAGIC **Objective**:  determine parcel boundary uses.
+# MAGIC
+# MAGIC **Author:** Andrew West
+# MAGIC
+# MAGIC **Updated April 2024:** Obi Thompson Sargoni
+# MAGIC   
+# MAGIC This notebook produces multiple datasets that detail what features intersect parcel boundaries. This information can be used to inform what actions parcels are eligible for, and the amount of parcel boundaries eligible for those actions.
+# MAGIC
+# MAGIC ### Data
+# MAGIC - Parcels - November 2021 (ADAS) - Elm-Project
+# MAGIC - Waterbodys, produced by 'Waterbody' elmo-geo notebook
+# MAGIC - Walls, produced by Heritage Wall elmo-geo notebook
+# MAGIC - Hedgerow, produced by Hedgerow elmo-geo notebook
+# MAGIC - WFM Farm Type, from WFM Farms dataset
+# MAGIC - Woodland Uptake, EVAST
+# MAGIC - Priority Habitats, linked to parcels by 'process_dataset' notebook
+# MAGIC - Peatland, linked to parcels by 'process_dataset' notebook
+# MAGIC - Wetland, linked to parcels by 'process_dataset' notebook
+# MAGIC
+# MAGIC ### Methodology
+# MAGIC This notebook implements a 'splitting' method to classify sections of parcel boundaries based on the features they intersect. This method is implemented in Cell 10.
+# MAGIC
+# MAGIC The splitting method repeatedly intersects parcel boundaries with different features. The intersection between the boundary and the feature is returned as one set of geometries that are tagged as overlapping with this feature type. The non-intersecting sections of the boundary are tagged as not intersecting the features. By repeating this process the initial boundary geometry is split into different components that intersect different combinations of natural features (e.g. a section that intersects a wall and a hedge, a section that intersects just a waterbody). 
+# MAGIC
+# MAGIC The intersections are based on a 2m ([Source](https://townsendcharteredsurveyors.co.uk/sustainable-farming-incentive-pilot-starting-2021-water-body-buffering-standard/)) buffer of the feature geometries which is why some boundary sections can intersect multiple features (we typically expect section of a boundary to be either intersected by a wall or hedge or waterbody).
+# MAGIC
+# MAGIC The notebook cells leading up to cell 10 preprocess features datasets to ensure geometries are cleaned, grouped into a single geometry per parcel ID, and joined together into a single spark dataframe.
+
+# COMMAND ----------
+
 import pandas as pd
 from datetime import datetime as dt
 
