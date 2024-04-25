@@ -1,6 +1,7 @@
 # Hidden
 .*
 !.gitkeep
+!.gitignore
 /data/
 
 # Manual
