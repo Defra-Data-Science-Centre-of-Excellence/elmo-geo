@@ -28,45 +28,6 @@
 # MAGIC The intersections are based on a 2m ([Source](https://townsendcharteredsurveyors.co.uk/sustainable-farming-incentive-pilot-starting-2021-water-body-buffering-standard/)) buffer of the feature geometries which is why some boundary sections can intersect multiple features (we typically expect section of a boundary to be either intersected by a wall or hedge or waterbody).
 # MAGIC
 # MAGIC The notebook cells leading up to cell 10 preprocess features datasets to ensure geometries are cleaned, grouped into a single geometry per parcel ID, and joined together into a single spark dataframe.
-# MAGIC
-# MAGIC ### Intermediate Outputs
-# MAGIC > Table 1 - Parcel Adjacency. Outpath - 'sf_adj'
-# MAGIC > This table is produced by performing a distance base spatial join between the parcels dataset and itself, with a 12m distance threshold. This provides a lookup from each parcel to its nearby parcels.
-# MAGIC |id_parcel |    id_business |   id_parcel_adj|  id_business_adj|
-# MAGIC |---|---|---|---|
-# MAGIC |   |   |   |   |
-# MAGIC
-# MAGIC > Table 2 - Neighbouring Land Use. Outpath - 'sf_neighbour'
-# MAGIC > This table has the nearby geometries for each parcel.  These are geometries joined to parcels with a distance of 12m, they are unioned according to their land use.
-# MAGIC |id_parcel |    geometry_boundary | geometry_adj_diff_bus|  geometry_adj_same_bus|  geometry_water| geometry_ditch| geometry_wall|  geometry_hedge|
-# MAGIC |---|---|---|---|---|---|---|--|
-# MAGIC |   |   |   |   |   |   |   |  |
-# MAGIC
-# MAGIC > Table 3 - Boundary Section Use. Outpath - 'sf_boundary'
-# MAGIC > This table is the output from the boundary splitting methods. Each row is a section of the parcel boundary with boolean tags indicating which features this section intersects. elg_adj_diff_bus and elg_adj_same_bus differentiate between sections that boarder parcels belonging to the same business or not.
-# MAGIC |id_parcel| geometry_boundary|  elg_adj_diff_bus    |elg_adj_same_bus   |elg_water| elg_ditch|  elg_wall|   elg_hedge|
-# MAGIC |---|---|---|---|---|---|---|---|
-# MAGIC |   |   |   |   |   |   |   |   |
-# MAGIC
-# MAGIC > Table 4 - Uptake. Outpath - 'sf_update'
-# MAGIC > This table is the Table 3 with additional parcel level classifications joined in. These classifications indicate whether a parcel has joined a woodland scheme (from EVAST data) or is in a wetland or peat area. It also calculates the total area and boundary length of the parcel.
-# MAGIC |id_business|   id_parcel|  farm_type|  priority_habitat|   elg_adj_diff_bus|   elg_adj_same_bus|   elg_water|  elg_ditch   |elg_wall|  elg_hedge   |woodland   |peatland|  wetland|    ha| m|
-# MAGIC |---|---|---|---|---|---|---|---|--|--|--|--|--|--|--|
-# MAGIC |   |   |   |   |   |   |   |   |  |  |  |  |  |  |  |
-# MAGIC
-# MAGIC ### Final Outputs
-# MAGIC
-# MAGIC > Table 5 - Boundary Lengths. Outpath - 'sf_boundary_lengths'
-# MAGIC > This table sums the length of sections of parcel boundaries to produce total lengths of boundary sections per parcel. These lengths are used to inform parcel eligibility for ELMS actions.
-# MAGIC |id_parcel| m_boundary_unadj    |m_boundary |m_water|   m_ditch|    m_wall| m_hedge|    m_available|    m_available_same_business|  m_hedge_only|   m_hedge_on_ewco|    m_ditch_on_peatland|
-# MAGIC |---|---|---|---|---|---|---|---|--|--|--|--|
-# MAGIC |   |   |   |   |   |   |   |   |  |  |  |  |
-# MAGIC
-# MAGIC ## To do
-# MAGIC
-# MAGIC Consider splitting up the boundary for each land use
-# MAGIC Consider recording if the boundary is adjacent to another (and such land use will be shared)
-# MAGIC
 
 # COMMAND ----------
 
