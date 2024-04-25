@@ -47,10 +47,4 @@ def find_datasets(string: str) -> list[dict]:
         sdf_parcel = spark.read.parquet(parcel['uri'])
         ```
     """
-
-    def fn():
-        for dataset in load_catalogue():
-            if string in dataset["name"]:
-                yield dataset
-
-    return list(fn())
+    return [dataset for dataset in load_catalogue() if string in dataset["name"]]

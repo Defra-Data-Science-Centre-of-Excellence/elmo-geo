@@ -1,5 +1,6 @@
-import re
+import os
 import subprocess
+import re
 
 from pyspark.sql import functions as F
 
@@ -31,7 +32,11 @@ def sh_run(exc: str, **kwargs):
     return out
 
 
-def info_sdf(sdf: SparkDataFrame, col: str = "geometry") -> SparkDataFrame:
+def count_files(folder):
+    return sum(len(files) for _, _, files in os.walk(folder))
+
+
+def info_sdf(sdf: SparkDataFrame, f: str = None, col: str = "geometry") -> SparkDataFrame:
     """Get Info about SedonaDataFrame
     Logs the number of partitions, geometry types, number of features, and average number of coordinates.
 
@@ -58,7 +63,6 @@ def info_sdf(sdf: SparkDataFrame, col: str = "geometry") -> SparkDataFrame:
     >>> 6             ST_Polygon   737962         44.8
     ```
     """
-    n = sdf.rdd.getNumPartitions()
     df = (
         sdf.selectExpr(
             f"ST_GeometryType({col}) AS gtype",
@@ -71,7 +75,16 @@ def info_sdf(sdf: SparkDataFrame, col: str = "geometry") -> SparkDataFrame:
         )
         .toPandas()
     )
-    LOG.info(f"partitions:  {n}\n{df}")
+    LOG.info(
+        f"""
+        Wrote Parquet: {f}
+        Count: {sdf.count()}
+        sindexes: {sdf.select("sindex").distinct().count()}
+        Partitions: {sdf.rdd.getNumPartitions()}
+        Files: {count_files(f) if f else f}
+        {df}
+    """
+    )
     return df
 
 

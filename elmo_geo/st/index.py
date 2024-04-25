@@ -59,6 +59,13 @@ def chipped_index(sdf: SparkDataFrame, grid: SparkDataFrame) -> SparkDataFrame:
     return sdf.transform(sjoin, grid, lsuffix="").withColumn("geometry", F.expr("ST_Intersection(geometry, geometry_right)")).drop("geometry_right")
 
 
+def chip(sdf):
+    """Chip geometries using tile dataframe"""
+    sf = "dbfs:/mnt/lab/restricted/ELM-Project/stg/os-bng-2023_08_24.parquet/1km"
+    grid = spark.read.parquet.load(sf).selectExpr("tile_name AS sindex", "ST_GeomFromWKB(geometry) AS geometry")
+    return sdf.transform(sjoin, grid, lsuffix="").withColumn("geometry", F.expr("ST_Intersection(geometry, geometry_right)")).drop("geometry_right")
+
+
 def sindex(
     sdf,
     method: str = "BNG",
