@@ -147,4 +147,4 @@ convert(dataset_parcel)
 
 # COMMAND ----------
 
-run_task_on_catalogue(convert, 'convert')
+# run_task_on_catalogue(convert, 'convert')
