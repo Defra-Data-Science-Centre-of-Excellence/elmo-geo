@@ -100,7 +100,7 @@ def snake_case(string: str) -> str:
     snake_case('Terrible01 dataset_name%') == 'terrible01_dataset_name'
     ```
     """
-    return re.sub("[^\w\d_]", "", re.sub("[\s-]", "_", string.lower()))
+    return re.sub(r"[^\w\d_]", "", re.sub(r"[\s/-]", "_", string.lower()))
 
 
 def string_to_dict(string: str, pattern: str) -> dict:

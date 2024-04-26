@@ -21,6 +21,7 @@ import subprocess
 
 from datetime import datetime
 from fiona import listlayers
+from fiona.errors import DriverError
 from glob import iglob
 from pyspark.sql import functions as F, types as T
 
@@ -40,13 +41,50 @@ register()
 
 # COMMAND ----------
 
+def list_layers(f):
+    try:
+        layers = listlayers(f)
+    except DriverError:
+        layers = []
+    return layers
+
+def list_files(f):
+    for f1 in iglob(f+'**', recursive=True):
+        if os.path.isfile(f1):
+            yield f1
+
+def get_to_convert(f):
+    if not f.endswith(".parquet"):
+        if os.path.isfile(f):
+            for layer in list_layers(f):
+                name = f"layer={snake_case(layer)}"
+                yield f, name, layer
+        else:
+            f = f if f.endswith("/") else f+"/"
+            for f1 in list_files(f):
+                for layer in list_layers(f1):
+                    name = f"file={snake_case(f1.replace(f, '').split('.')[0])}/layer={snake_case(layer)}"
+                    yield f1, name, layer
+
+def convert_file(f_in, f_out, layer):
+    out = subprocess.run([r'''
+        PATH=$PATH:/databricks/miniconda/bin
+        TMPDIR=/tmp
+        PROJ_LIB=/databricks/miniconda/share/proj
+        OGR_GEOMETRY_ACCEPT_UNCLOSED_RING=NO
+        echo ogr2ogr -f Parquet $2 $1 $3
+    ''', f_in, f_out, layer], capture_output=True, text=True, shell=True)
+    LOG.info(out.__repr__())
+    return out
+
 def convert(dataset):
     name = dataset['name']
-    crs = getattr(dataset, 'crs', 'EPSG:27700')  # Coordinate Reference System
-    precision = getattr(dataset, 'precision', 0.001)  # Precision at 1mm
-    resolution = getattr(dataset, 'resolution', 3)  # 3=1km BNG grid
+    crs = dataset.get('crs', 'EPSG:27700')  # Coordinate Reference System
+    precision = dataset.get('precision', 0.001)  # Precision at 1mm
+    resolution = dataset.get('resolution', 3)  # 3=1km BNG grid
+    columns = dataset.get('columns', {})  # rename columns, but don't drop any
 
-    f_raw = getattr(dataset, 'bronze', dataset['uri'])
+    f_raw = dataset.get('bronze', dataset['uri'])
     f_tmp = f'{BRONZE}/{name}.parquet'
     f_out = f'{SILVER}/{name}.parquet'
 
@@ -55,36 +93,20 @@ def convert(dataset):
         raise TypeError(f'Expecting /dbfs/ dataset: {f_raw}')
 
     # Convert
-    if f_raw.endswith('.parquet'):
-        f_tmp = f_raw
-    else:
-        LOG.info(f'Convert: {f_raw}, {f_tmp}')
-        if os.path.isfile(f_raw):
-            f2
-        else:
-            for f0 in iglob(f'{f_raw}/*'):
-                f1 = f"{f_tmp}/file={snake_case(f0.replace(f_raw, ''))}"
-                for layer in listlayers(f0):
-                    f2 = f"{f1}/layer={snake_case(layer)}"
-                    print(f0, f2, layer)
-                    # out = subprocess.run([r'''
-                    #     PATH=$PATH:/databricks/miniconda/bin
-                    #     TMPDIR=/tmp
-                    #     PROJ_LIB=/databricks/miniconda/share/proj
-                    #     OGR_GEOMETRY_ACCEPT_UNCLOSED_RING=NO
-                    #     echo ogr2ogr -f Parquet $2 $1 $3
-                    # ''', f, f'{f_tmp}/layer={name}', layer], capture_output=True, text=True, shell=True)
-                    # LOG.info(out.__repr__())
+    for f0, name, layer in get_to_convert(f_raw):
+        f1 = f"{f_out}/{name}"
+        LOG.info(f"Convert File: {f0}, {f1}, {layer}")
+        convert_file(f0, f1, layer)
 
-    # # Partition
-    # LOG.info(f'Partition: {f_tmp}, {f_out}')
-    # sdf = (spark.read.parquet(dbfs(f_tmp, True))
-    #     .withColumn('fid', F.monotonically_increasing_id())
-    #     .withColumnsRenamed(dataset['columns'])
-    #     .withColumn('geometry', load_geometry(crs=crs))
-    #     .transform(chip)
-    #     .transform(to_pq, f_out)
-    # )
+    # Partition
+    LOG.info(f'Partition: {f_tmp}, {f_out}')
+    sdf = (spark.read.parquet(dbfs(f_tmp, True))
+        .withColumn('fid', F.monotonically_increasing_id())
+        .withColumnsRenamed(columns)
+        .withColumn('geometry', load_geometry(from_crs=crs))
+        .transform(chip)
+        .transform(to_pq, f_out)
+    )
 
     dataset['bronze'] = dataset['uri']
     dataset['silver'] = f_out
@@ -93,26 +115,31 @@ def convert(dataset):
 
 # COMMAND ----------
 
-dataset_osm = {
-    "name": "osm-united_kingdom-2024_04_25",
-    "uri": "/dbfs/mnt/base/unrestricted/source_openstreetmap/dataset_united_kingdom/format_PBF_united_kingdom/SNAPSHOT_2024_04_25_united_kingdom/united-kingdom-latest.osm.pbf",
+# dataset_osm = {
+#     "name": "osm-united_kingdom-2024_04_25",
+#     "uri": "/dbfs/mnt/base/unrestricted/source_openstreetmap/dataset_united_kingdom/format_PBF_united_kingdom/SNAPSHOT_2024_04_25_united_kingdom/united-kingdom-latest.osm.pbf",
+#     "columns": {
+#     },
+#     "tasks": {
+#         "convert": "todo"
+#     },
+#     "distance": 24,
+#     "knn": True
+# }
+# convert(dataset_osm)
+
+
+dataset_parcel = {
+    'uri': '/dbfs/mnt/lab/restricted/ELM-Project/bronze/rpa-parcel-adas.parquet',
+    'name': 'rpa-parcel-adas',
     "columns": {
+        "Shape": "geometry"
     },
-    "tasks": {
-        "convert": "todo"
+    'tasks': {
+        'convert': 'todo'
     }
 }
-convert(dataset_osm)
-
-
-# dataset_parcel = {
-#     'uri': '/dbfs/mnt/lab/restricted/ELM-Project/bronze/rpa-parcel-adas.parquet',
-#     'name': 'rpa-parcel-adas',
-#     'tasks': {
-#         'convert': 'todo'
-#     }
-# }
-# convert(dataset_parcel)
+convert(dataset_parcel)
 
 
 # dataset_hedge = find_datasets('rpa-hedge-adas')[0]

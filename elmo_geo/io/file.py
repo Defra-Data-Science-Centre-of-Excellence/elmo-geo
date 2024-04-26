@@ -23,9 +23,10 @@ def to_pq(sdf: SparkDataFrame, f: str, **kwargs):
     This assumes a indexing method has been used externally.
     """
     sdf = sdf.transform(repartitonBy, "sindex").withColumn("geometry", F.expr("ST_AsBinary(geometry)"))
-    sdf.write.parquet.save(dbfs(f, True), partitionBy="sindex", **kwargs)
+    sdf.write.parquet(dbfs(f, True), partitionBy="sindex", **kwargs)
     info_sdf(sdf, f)
     return sdf
+
 
 def to_gpq_partitioned(sdf: SparkDataFrame, f: str, **kwargs):
     """SparkDataFrame to GeoParquet, partitioned by BNG index"""
@@ -35,11 +36,10 @@ def to_gpq_partitioned(sdf: SparkDataFrame, f: str, **kwargs):
     return sdf
 
 
-
 def to_pq_partitioned(sdf: SparkDataFrame, f: str, **kwargs):
     """SparkDataFrame to Parquet, partitioned by BNG index"""
     sdf = sdf.transform(sindex).transform(repartitonBy, "sindex").withColumn("geometry", F.expr("ST_AsBinary(geometry)"))
-    sdf.write.parquet.save(dbfs(f, True), partitionBy="sindex", **kwargs)
+    sdf.write.parquet(dbfs(f, True), partitionBy="sindex", **kwargs)
     info_sdf(sdf, f)
     return sdf
 
