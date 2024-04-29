@@ -1,6 +1,46 @@
 # elmo-geo
+Part of [ELMO][elmo], separated to work on [DASH][dash] for large scale geospatial analysis.
 
-## Setup
+
+## Getting Started
+Request DASH Access, using the MyIT request "[DASH Order Guide][dash_myit]".  You will need access to:  
+|   |   |
+|---|---|
+Workspace | PRDDAPINFDB02<b>406</b>
+User Group | UC_DASH_ELM_Users
+
+Seek help from FCP Business Admins; Amy Cairns, Ed Burrows, Andrew West.
+
+
+## Workflow
+
+### Databricks, Clusters, Notebooks, and Environments
+
+### Medallion Architecture
+|   |   |   |
+|---|---|---|
+bronze | As it comes | `dbfs:/mnt/base`<br>`dbfs:/mnt/lab/restricted/ELM-Project/bronze`<br>~`/Volumes/prd_dash_lab/fcp_restricted/bronze`~
+silver | ready to use | `dbfs:/mnt/lab/restricted/ELM-Project/silver`<br>~`/Volumes/prd_dash_lab/fcp_restricted/silver`~
+gold | ready to output | `dbfs:/mnt/lab/restricted/ELM-Project/gold`<br>~`/Volumes/prd_dash_lab/fcp_restricted/gold`~
+
+Unity Catalog (`/Volumes/`) is in testing.
+
+### Testing
+
+
+## Projects
+| Status | Project | Description |
+| ------ | ------- | ----------- |
+| | Ingestion |
+| | Parcel Join]() |
+| | Sylvan]() |
+| | Boundary Use]() |
+| | [Bare Soils]() |
+| | [Others]() | Business Info, Segementation,
+
+
+
+<details><summary><h2>Setup</h2></summary>
 
 ### Install requirements
 
@@ -82,7 +122,9 @@ To install the package and all required development dependencies:
 pip install -e .[dev]
 ```
 
-## Testing
+</details>
+
+<details><summary><h2>Testing</h2></summary>
 
 There are currently two ways to run the tests located in the ./tests/ directory.
 
@@ -95,3 +137,10 @@ Because the notebook can be connected to a Databricks compute resource (i.e. a c
 This only runs tests that have been marked as "without_cluster" as when running from the command line some features of Databricks comute resources are not available. If these features can be effectively mocked the "without_cluster" marker may not be required. Separating out these tests enables some test to be run as part of a continuous integration process.
 
 For more information on using pytest with Databricks see https://docs.databricks.com/en/notebooks/testing.html
+
+</details>
+
+
+[elmo]: https://github.com/Defra-Data-Science-Centre-of-Excellence/elm_modelling_strategy/
+[dash]: https://github.com/Defra-Data-Science-Centre-of-Excellence/DASH-Playbook
+[dash_myit]: https://defragroup.service-now.com/esc?id=sc_cat_item_guide&table=sc_cat_item&sys_id=025906fb1b99f190848b8594e34bcb67
