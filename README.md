@@ -13,11 +13,12 @@ Seek help from FCP Business Admins; Amy Cairns, Ed Burrows, Andrew West.
 
 
 ## Workflow
-[DASH Playbook][dash_playbook]
+Use the [DASH Playbook][dash_playbook] as a guide on how to use Databricks.  Hopefully topics like clusters and environments are managed by your Business Admins.
 
-### Databricks, Clusters, Notebooks, and Environments
+You will be using Databricks Notebooks, rather than RStudio or Spyder, similar to Jupyter.
 
 ### Medallion Architecture
+[Medallion Architecture][databricks_medallion] uses Bronze/Silver/Gold to organise datasets that are; Bronze have come from a data provider ("as is"), Silver have been modified for easier analysis ("ready to use"), Gold are analysis outputs suitable for stakeholders ("ready to output").
 |   |   |   |
 |---|---|---|
 bronze | As it comes | `dbfs:/mnt/base`<br>`dbfs:/mnt/lab/restricted/ELM-Project/bronze`<br>~`/Volumes/prd_dash_lab/fcp_restricted/bronze`~
@@ -147,3 +148,4 @@ For more information on using pytest with Databricks see https://docs.databricks
 [dash_onboarding]: https://defra.sharepoint.com/sites/Community448/SitePages/Onboarding.aspx
 [dash_playbook]: https://github.com/Defra-Data-Science-Centre-of-Excellence/DASH-Playbook
 [dash_myit]: https://defragroup.service-now.com/esc?id=sc_cat_item_guide&table=sc_cat_item&sys_id=025906fb1b99f190848b8594e34bcb67
+[databricks_medallion]: https://www.databricks.com/glossary/medallion-architecture
