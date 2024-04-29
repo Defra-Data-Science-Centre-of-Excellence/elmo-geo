@@ -21,6 +21,7 @@ from elmo_geo.datasets.datasets import datasets, parcels
 from elmo_geo.io import download_link
 from elmo_geo.io.preprocessing import geometry_to_wkb, make_geometry_valid, transform_crs
 from elmo_geo.st import sjoin 
+from elmo_geo.utils.misc import dbfs
 
 register()
 
@@ -49,40 +50,31 @@ path_parcels = next(v.path_read for v in parcels.versions if v.name == pversion)
 # COMMAND ----------
 
 # inspect raw data
-if path_read[:5] == "dbfs:":
-    spark.read.parquet(path_read).display()
-
-elif path_read[:5] == "/dbfs":
-    if os.path.splitext(path_read)[1] == ".parquet":
-        gpd_read = gpd.read_parquet
-        print(gpd_read(path_read).head(8))
-    else:
-        gpd_read = partial(gpd.read_file, engine = "pyogrio")
-        print(gpd_read(path_read, rows=8))
+if os.path.splitext(path_read)[1] == ".parquet":
+    spark.read.parquet(dbfs(path_read, True)).display()
+else:
+    gpd_read = partial(gpd.read_file, engine = "pyogrio")
+    print(gpd_read(path_read, rows=8))
 
 # COMMAND ----------
 
 # pre-process data
-if path_read[:5] == "dbfs:":
+if os.path.splitext(path_read)[1] == ".parquet":
 
     # load file with spark, filter and rename columns
     mapping = dataset.rename_cols | {c:c for c in dataset.keep_cols if c not in dataset.rename_cols.keys()}
-    sdf = (spark.read.parquet(path_read)
+    sdf = (spark.read.parquet(dbfs(path_read, True))
           .select(
               [F.col(c).alias(mapping.get(c, c)) for c in dataset.keep_cols]
               )
     )
 
-elif path_read[:5] == "/dbfs":
+else:
 
-    # load data with approporiate geopandas function
-    if os.path.splitext(path_read)[1] == ".parquet":
-        gpd_read = gpd.read_parquet
-    else:
-        gpd_read = partial(gpd.read_file, engine = "pyogrio")
+    gpd_read = partial(gpd.read_file, engine = "pyogrio")
     
     df = (
-        gpd_read(path_read)
+        gpd_read(dbfs(path_read, False))
         .explode(index_parts=False)
         .set_crs("epsg:27700")
         #.pipe(transform_crs, target_epsg=27700)
