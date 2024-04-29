@@ -116,8 +116,8 @@ df_comp.head(10)
 # COMMAND ----------
 
 # map from one habitat type to another
-df_comp["A_pred_from_Main_Habit"] = df_comp["Main_Habit"].map(lambda x: habitat_type_lookup.get(x))
-df_comp["Main_Habit_from_A_pred"] = df_comp["A_pred"].map(lambda x: {v:k for k,v in habitat_type_lookup.items()}.get(x))
+df_comp["A_pred_from_Main_Habit"] = df_comp["Main_Habit"].map(habitat_type_lookup.get)
+df_comp["Main_Habit_from_A_pred"] = df_comp["A_pred"].map({v:k for k,v in habitat_type_lookup.items()}.get)
 
 # COMMAND ----------
 
@@ -148,7 +148,7 @@ print(f"""
 ph_frequency = (df_ph
                 .groupby("Main_Habit")
                 .aggregate(
-                    parcel_count = pd.NamedAgg("id_parcel", lambda s: s.unique().shape[0]),
+                    parcel_count = pd.NamedAgg("id_parcel", lambda s: s.nunique()),
                     proportion_main_habit_sum = pd.NamedAgg("proportion_main_habit", lambda s: s.sum()),
                 )
                 .reset_index()
@@ -158,7 +158,7 @@ ph_frequency = (df_ph
 hm_frequency = (df_hm
                 .groupby("A_pred")
                 .aggregate(
-                    parcel_count = pd.NamedAgg("id_parcel", lambda s: s.unique().shape[0]),
+                    parcel_count = pd.NamedAgg("id_parcel", lambda s: s.nunique()),
                     proportion_a_pred_sum = pd.NamedAgg("proportion_a_pred", lambda s: s.sum()),
                 )
                 .reset_index()
@@ -167,9 +167,9 @@ hm_frequency = (df_hm
 
 # COMMAND ----------
 
-ph_main_habits_not_mapped = df_comp.loc[ (df_comp["A_pred_from_Main_Habit"].isnull() & df_comp["Main_Habit"].notna())].groupby("Main_Habit")["id_parcel"].apply(lambda s: s.drop_duplicates().count()).sort_values().to_dict()
+ph_main_habits_not_mapped = df_comp.loc[ (df_comp["A_pred_from_Main_Habit"].isnull() & df_comp["Main_Habit"].notna())].groupby("Main_Habit")["id_parcel"].apply(lambda s: s.nunique()).sort_values().to_dict()
 
-hm_a_pred_not_mapped = df_comp.loc[ (df_comp["Main_Habit_from_A_pred"].isnull() & df_comp["A_pred"].notna())].groupby("A_pred")["id_parcel"].apply(lambda s: s.drop_duplicates().count()).sort_values().to_dict()
+hm_a_pred_not_mapped = df_comp.loc[ (df_comp["Main_Habit_from_A_pred"].isnull() & df_comp["A_pred"].notna())].groupby("A_pred")["id_parcel"].apply(lambda s: s.nunique()).sort_values().to_dict()
 
 nl = "\n - "
 print(f"""
@@ -188,14 +188,14 @@ ph_frequency["A_pred_from_Main_Habit"] = ph_frequency["Main_Habit"].map(lambda x
 
 frequency_comp = pd.merge(ph_frequency, hm_frequency, left_on = "A_pred_from_Main_Habit", right_on = "A_pred", how = "outer", suffixes = ("_ph", "_hm")).sort_values("parcel_count_hm", na_position='first')
 frequency_comp["A_pred_plus_missing_Main_Habit"] = np.where(frequency_comp["A_pred"].isna(), frequency_comp["Main_Habit"], frequency_comp["A_pred"])
-frequency_comp.index = np.arange(frequency_comp.shape[0])
+frequency_comp = frequency_comp.reset_index(drop=True)
 
 # count number of time datasets agree on habitat types, including only parcels that overlap with both datasets
 df_comp["habitats_match"] = df_comp["A_pred"] == df_comp["A_pred_from_Main_Habit"]
 
 count_match = (df_comp
                 .dropna(subset = ["Main_Habit", "A_pred"]) # only parcels with a habitat from both datasets
-                .groupby(["id_parcel", "A_pred"])["habitats_match"].apply(lambda s: s.any()) # count number of parcels that have a habitat match for each A_pre category
+                .groupby(["id_parcel", "A_pred"])["habitats_match"].any() # count number of parcels that have a habitat match for each A_pre category
                 .reset_index().groupby("A_pred")["habitats_match"].value_counts() # count total number of matches across haabitats
                 .unstack() # pivot
 )
@@ -240,7 +240,7 @@ b1 = ax0.barh(dataset, with_habitat, color=defra_green)
 b2 = ax0.barh(dataset, without_habitat, left=with_habitat, color=grey)
 
 ax0.legend([b1, b2], ["Overlapping habitat", "No habitat"], loc="upper right")
-ax0.xaxis.set_major_formatter(tick.FuncFormatter(lambda x, y: f"{x:.0f}%"))
+ax0.xaxis.set_major_formatter(tick.FuncFormatter("{x:.0f}%".format))
 ax0.set_title("1. Parcels overlapping a habitat geometry", y=title_y)
 
 # add data labels
@@ -261,12 +261,12 @@ sns.set(
 
 ax1 = fig.add_subplot(gs[1, 0])
 ax1.barh(ph_frequency["Main_Habit"], ph_frequency["parcel_count"], color = defra_green)
-ax1.xaxis.set_major_formatter(tick.FuncFormatter(lambda x, y: f"{x/1_000:.0f}k"))
+ax1.xaxis.set_major_formatter(tick.FuncFormatter("{x/1_000:.0f}k".format))
 ax1.set_title("2. Priority Habitats parcel count", fontsize = title_size, y = title_y)
 
 ax2 = fig.add_subplot(gs[1, 1])
 ax2.barh(hm_frequency["A_pred"], hm_frequency["parcel_count"], color = defra_green)
-ax2.xaxis.set_major_formatter(tick.FuncFormatter(lambda x, y: f"{x/1e6:.1f}m"))
+ax2.xaxis.set_major_formatter(tick.FuncFormatter("{x/1e6:.1f}m".format))
 ax2.set_title("3. Habitat Map parcel count", fontsize = title_size, y = title_y)
 
 
@@ -305,7 +305,7 @@ ax4 = fig.add_subplot(gs[2, 1])
 b1 = ax4.barh(count_match.index, count_match["true_pct"], color = defra_green)
 b2 = ax4.barh(count_match.index, count_match["false_pct"], left=count_match["true_pct"], color=grey)
 ax4.legend([b1, b2], ["Matching", "Not matching"], loc="lower right")
-ax4.xaxis.set_major_formatter(tick.FuncFormatter(lambda x, y: f"{x:.0f}%"))
+ax4.xaxis.set_major_formatter(tick.FuncFormatter("{x:.0f}%".format))
 ax4.set_title("5. Comparison habitat classification", fontsize = title_size, y = title_y)
 
 # add data labels
