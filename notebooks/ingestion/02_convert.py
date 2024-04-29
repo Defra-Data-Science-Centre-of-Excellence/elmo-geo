@@ -41,6 +41,7 @@ register()
 
 # COMMAND ----------
 
+# DBTITLE 1,move to a module
 def list_layers(f):
     try:
         layers = listlayers(f)
@@ -67,13 +68,7 @@ def get_to_convert(f):
                     yield f1, name, layer
 
 def convert_file(f_in, f_out, layer):
-    out = subprocess.run([r'''
-        PATH=$PATH:/databricks/miniconda/bin
-        TMPDIR=/tmp
-        PROJ_LIB=/databricks/miniconda/share/proj
-        OGR_GEOMETRY_ACCEPT_UNCLOSED_RING=NO
-        echo ogr2ogr -f Parquet $2 $1 $3
-    ''', f_in, f_out, layer], capture_output=True, text=True, shell=True)
+    out = subprocess.run(['/databricks/miniconda/bin/ogr2ogr -f Parquet', f_out, f_in, layer], capture_output=True, text=True, shell=True)
     LOG.info(out.__repr__())
     return out
 
@@ -115,6 +110,7 @@ def convert(dataset):
 
 # COMMAND ----------
 
+# DBTITLE 1,Testing
 # dataset_osm = {
 #     "name": "osm-united_kingdom-2024_04_25",
 #     "uri": "/dbfs/mnt/base/unrestricted/source_openstreetmap/dataset_united_kingdom/format_PBF_united_kingdom/SNAPSHOT_2024_04_25_united_kingdom/united-kingdom-latest.osm.pbf",
@@ -147,4 +143,9 @@ convert(dataset_parcel)
 
 # COMMAND ----------
 
+# MAGIC %ls /dbfs/mnt/lab/restricted/ELM-Project/*/
+
+# COMMAND ----------
+
+# DBTITLE 1,main
 # run_task_on_catalogue(convert, 'convert')

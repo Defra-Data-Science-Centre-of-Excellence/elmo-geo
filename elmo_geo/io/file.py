@@ -42,23 +42,20 @@ def to_pq_partitioned(sdf: SparkDataFrame, f: str, **kwargs):
 
 def to_gpq_sorted(sdf: SparkDataFrame, f: str, **kwargs):
     """SparkDataFrame to GeoParquet, sorted by BNG index"""
-    sdf.transform(centroid_index, resolution="1km").sort("sindex").write.format("geoparquet").save(dbfs(f, True), **kwargs)
+    sdf = sdf.transform(centroid_index, resolution="1km").sort("sindex")
+    sdf.write.format("geoparquet").save(dbfs(f, True), **kwargs)
     info_sdf(sdf, f)
     return sdf
 
 
 def to_gpq_zsorted(sdf: SparkDataFrame, f: str, **kwargs):
     """SparkDataFrame to GeoParquet, sorted by geohash index"""
-    (
+    sdf = (
         sdf.transform(sindex, resolution="1km", index_join=chipped_index)
-        .withColumn(
-            "geohash",
-            F.expr('ST_GeoHash(ST_FlipCoordinates(ST_Transform(geometry, "EPSG:27700", "EPSG:4326")))'),
-        )
+        .withColumn("geohash", F.expr('ST_GeoHash(ST_FlipCoordinates(ST_Transform(geometry, "EPSG:27700", "EPSG:4326")))'))
         .sort("geohash")
-        .write.format("geoparquet")
-        .save(dbfs(f, True), **kwargs)
     )
+    sdf.write.format("geoparquet").save(dbfs(f, True), **kwargs)
     info_sdf(sdf, f)
     return sdf
 
