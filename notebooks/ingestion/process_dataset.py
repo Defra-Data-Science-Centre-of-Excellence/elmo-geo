@@ -81,7 +81,7 @@ else:
         .filter(dataset.keep_cols, axis="columns")
         .rename(columns=dataset.rename_cols)
         .pipe(make_geometry_valid)
-        .pipe(geometry_to_wkb)
+        .to_wkb()
     )
     sdf = spark.createDataFrame(df)
     df = None
