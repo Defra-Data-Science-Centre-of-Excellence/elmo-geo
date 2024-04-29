@@ -3,7 +3,7 @@ Part of [ELMO][elmo], separated to work on [DASH][dash] for large scale geospati
 
 
 ## Getting Started
-Request DASH Access, using the MyIT request "[DASH Order Guide][dash_myit]".  You will need access to:  
+Use DASH's [onbording guide][dash_onboarding] to get access, it requires you to submit a MyIT ticket.  For elmo-geo you will need extra permissions.
 |   |   |
 |---|---|
 Workspace | PRDDAPINFDB02<b>406</b>
@@ -13,6 +13,7 @@ Seek help from FCP Business Admins; Amy Cairns, Ed Burrows, Andrew West.
 
 
 ## Workflow
+[DASH Playbook][dash_playbook]
 
 ### Databricks, Clusters, Notebooks, and Environments
 
@@ -142,5 +143,7 @@ For more information on using pytest with Databricks see https://docs.databricks
 
 
 [elmo]: https://github.com/Defra-Data-Science-Centre-of-Excellence/elm_modelling_strategy/
-[dash]: https://github.com/Defra-Data-Science-Centre-of-Excellence/DASH-Playbook
+[dash]: https://defra.sharepoint.com/sites/Community448/SitePages/Welcome-to-the-Data-Science-Centre-of-Excellence.aspx
+[dash_onboarding]: https://defra.sharepoint.com/sites/Community448/SitePages/Onboarding.aspx
+[dash_playbook]: https://github.com/Defra-Data-Science-Centre-of-Excellence/DASH-Playbook
 [dash_myit]: https://defragroup.service-now.com/esc?id=sc_cat_item_guide&table=sc_cat_item&sys_id=025906fb1b99f190848b8594e34bcb67
