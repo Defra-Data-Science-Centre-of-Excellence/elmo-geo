@@ -23,7 +23,7 @@ from elmo_geo.datasets.datasets import datasets
 from elmo_geo.st import sjoin
 from elmo_geo.st.geometry import load_geometry, load_missing
 
-#elmo_geo.register()
+elmo_geo.register()
 from pyspark.sql import functions as F
 
 # COMMAND ----------
@@ -240,7 +240,7 @@ b1 = ax0.barh(dataset, with_habitat, color=defra_green)
 b2 = ax0.barh(dataset, without_habitat, left=with_habitat, color=grey)
 
 ax0.legend([b1, b2], ["Overlapping habitat", "No habitat"], loc="upper right")
-ax0.xaxis.set_major_formatter(tick.FuncFormatter("{x:.0f}%".format))
+ax0.xaxis.set_major_formatter(tick.FuncFormatter("{:.0f}%".format))
 ax0.set_title("1. Parcels overlapping a habitat geometry", y=title_y)
 
 # add data labels
@@ -261,12 +261,12 @@ sns.set(
 
 ax1 = fig.add_subplot(gs[1, 0])
 ax1.barh(ph_frequency["Main_Habit"], ph_frequency["parcel_count"], color = defra_green)
-ax1.xaxis.set_major_formatter(tick.FuncFormatter("{x/1_000:.0f}k".format))
+ax1.xaxis.set_major_formatter(tick.FuncFormatter(lambda x, y: f"{x/1_000:.0f}k"))
 ax1.set_title("2. Priority Habitats parcel count", fontsize = title_size, y = title_y)
 
 ax2 = fig.add_subplot(gs[1, 1])
 ax2.barh(hm_frequency["A_pred"], hm_frequency["parcel_count"], color = defra_green)
-ax2.xaxis.set_major_formatter(tick.FuncFormatter("{x/1e6:.1f}m".format))
+ax2.xaxis.set_major_formatter(tick.FuncFormatter(lambda x, y: f"{x/1e6:.1f}m"))
 ax2.set_title("3. Habitat Map parcel count", fontsize = title_size, y = title_y)
 
 
@@ -305,7 +305,7 @@ ax4 = fig.add_subplot(gs[2, 1])
 b1 = ax4.barh(count_match.index, count_match["true_pct"], color = defra_green)
 b2 = ax4.barh(count_match.index, count_match["false_pct"], left=count_match["true_pct"], color=grey)
 ax4.legend([b1, b2], ["Matching", "Not matching"], loc="lower right")
-ax4.xaxis.set_major_formatter(tick.FuncFormatter("{x:.0f}%".format))
+ax4.xaxis.set_major_formatter(tick.FuncFormatter("{:.0f}%".format))
 ax4.set_title("5. Comparison habitat classification", fontsize = title_size, y = title_y)
 
 # add data labels
