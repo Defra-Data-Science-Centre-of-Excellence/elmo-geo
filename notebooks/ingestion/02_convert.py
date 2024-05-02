@@ -6,6 +6,7 @@
 # MAGIC ## Format
 # MAGIC (Geo)Parquet is the best option, however we must be cautious to save with encoding=WKB as Sedona's `sdf.write.format('geoparquet')` seems unstable between versions, potentially saving as a UDT rather than WKB+metadata as defined in (Geo)Parquet's specification: https://geoparquet.org/.  
 # MAGIC Unfortunately, with Sedona we will need the extra steps of, ST_GeomFromWKB and ST_AsBinary, for loading and writing datasets.
+# MAGIC We use [BNG](https://www.ordnancesurvey.co.uk/documents/resources/guide-to-nationalgrid.pdf) ([map](https://britishnationalgrid.uk/)) instead of [GeoHash](https://geohash.softeng.co/gc), [H3](https://h3geo.org/), or [S2](https://s2geometry.io/), because most data comes in this form and 1 unit = 1 meter.
 # MAGIC
 # MAGIC ## Method
 # MAGIC 1.  Convert any vector format to (Geo)Parquet with `ogr2ogr`.
@@ -31,11 +32,7 @@ from elmo_geo.io.file import to_parquet
 from elmo_geo.st.geometry import load_geometry
 from elmo_geo.st.index import sindex
 from elmo_geo.utils.misc import dbfs, sh_run, snake_case
-# from elmo_geo.utils.settings import BRONZE, SILVER
-
-
-BRONZE = '/dbfs/mnt/lab/restricted/ELM-Project/bronze'
-SILVER = '/dbfs/mnt/lab/restricted/ELM-Project/silver'
+from elmo_geo.utils.settings import BRONZE, SILVER
 
 register()
 
@@ -84,7 +81,7 @@ def convert(dataset):
     columns = dataset.get('columns', {})  # rename columns, but don't drop any
 
     f_raw = dataset.get('bronze', dataset['uri'])
-    f_tmp = f'{BRONZE}/{name}.parquet'
+    f_tmp = f'/tmp/{name}.parquet'
     f_out = f'{SILVER}/{name}.parquet'
 
     # Download
@@ -143,7 +140,6 @@ dataset_osm = {
     "knn": True
 }
 convert(dataset_osm)
-
 
 
 # dataset_hedge = find_datasets('rpa-hedge-adas')[0]
