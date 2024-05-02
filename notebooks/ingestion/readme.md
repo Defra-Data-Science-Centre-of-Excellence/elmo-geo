@@ -1,9 +1,10 @@
 # Ingest
 
 ## Method
-1. `01_identify`, Identify datasets, manually adding the "dataset" to `data/catalogue.json`.
-2. `02_convert`, Convert datasets to be easily access by spark, partitioning large datasets approriately.
-3. `03_lookup`, Spatially join with parcels, using distance, KNN, and metrics if declared in dataset, saving just lookup tables.
+- (work in progress) `01_identify`, Identify datasets, manually adding the "dataset" to `data/catalogue.json`.
+- `02_convert`, Convert datasets to be easily access by spark, partitioning large datasets approriately.
+- (work in progress) `03_lookup`, Spatially join with parcels, using distance, KNN, and metrics if declared in dataset, saving just lookup tables.
+- (work in progress) `00_data_listing`, is a tool used to see potential datasets available.
 
 ## Data Sources
 A list of places that have been used to identify datasets.

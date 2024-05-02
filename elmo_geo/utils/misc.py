@@ -32,8 +32,9 @@ def sh_run(exc: str, **kwargs):
     return out
 
 
-def count_files(folder):
-    return sum(len(files) for _, _, files in os.walk(folder))
+def count_parquet_files(folder):
+    """Get the number of parquet files in a dataset."""
+    return sum(1 for _, _, files in os.walk(folder) for f in files if f.endswith(".parquet"))
 
 
 def info_sdf(sdf: SparkDataFrame, f: str = None, col: str = "geometry") -> SparkDataFrame:
@@ -81,7 +82,7 @@ def info_sdf(sdf: SparkDataFrame, f: str = None, col: str = "geometry") -> Spark
         Count: {sdf.count()}
         sindexes: {sdf.select("sindex").distinct().count()}
         Partitions: {sdf.rdd.getNumPartitions()}
-        Files: {count_files(f) if f else f}
+        Files: {count_parquet_files(f) if f else f}
         {df}
     """
     )

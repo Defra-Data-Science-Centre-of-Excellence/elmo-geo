@@ -49,8 +49,8 @@ def centroid_index(sdf: SparkDataFrame, grid: SparkDataFrame) -> SparkDataFrame:
     return (
         sdf.withColumnRenamed("geometry", "geometry_feature")
         .withColumn("geometry", F.expr("ST_Centroid(geometry_feature)"))
-        .transform(sjoin, grid, lsuffix="")
-        .drop("geometry", "geometry_right")
+        .transform(sjoin, grid)
+        .drop("geometry_left", "geometry_right")
         .withColumnRenamed("geometry_feature", "geometry")
     )
 
@@ -59,24 +59,26 @@ def chipped_index(sdf: SparkDataFrame, grid: SparkDataFrame) -> SparkDataFrame:
     return sdf.transform(sjoin, grid, lsuffix="").withColumn("geometry", F.expr("ST_Intersection(geometry, geometry_right)")).drop("geometry_right")
 
 
-def chip(sdf):
-    """Chip geometries using tile dataframe"""
-    sf = "dbfs:/mnt/lab/restricted/ELM-Project/stg/os-bng-2023_08_24.parquet/1km"
-    grid = spark.read.parquet(sf).selectExpr("tile_name AS sindex", "ST_GeomFromWKB(geometry) AS geometry")
-    return sdf.transform(sjoin, grid, lsuffix="").withColumn("geometry", F.expr("ST_Intersection(geometry, geometry_right)")).drop("geometry_right")
+index_fns = {
+    "multi_index": multi_index,
+    "centroid_index": centroid_index,
+    "chipped_index": chipped_index,
+}
 
 
 def sindex(
     sdf,
     method: str = "BNG",
     resolution: str = None,
-    index_join: callable = centroid_index,
+    index_fn: str = "centroid_index",
 ):
     """Index a SparkDataFrame
     this requires geometry_column == "geometry"
-    index_join: {centroid_index, chipped_index, multi_index}
+    index_fn: {centroid_index, chipped_index, multi_index} or as string
     """
     if resolution is None:
         resolution = get_bng_resolution(sdf.count(), target=BATCHSIZE)
+    if isinstance(index_fn, str):
+        index_fn = index_fns[index_fn]
     grid = get_grid(method=method, resolution=resolution)
-    return index_join(sdf, grid=grid)
+    return index_fn(sdf, grid=grid)
