@@ -1,7 +1,7 @@
 [
     {
-        "name": "ons-country-2023_12",
-        "uri": "https://services1.arcgis.com/ESMARspQHYMw9BZ9/ArcGIS/rest/services/Countries_December_2023_Boundaries_UK_BFE/FeatureServer/0",
+        "name": "ons-country-2023_07_03",
+        "uri": "/dbfs/mnt/base/unrestricted/source_ons_open_geography_portal/dataset_countries_bdy_uk_bfe/format_SHP_countries_bdy_uk_bfe/SNAPSHOT_2023_07_03_countries_bdy_uk_bfe/countries_bdy_uk_bfe.shp",
         "columns": {
             "CTRY23NM": "country",
             "geometry": "geometry"
@@ -13,8 +13,8 @@
         }
     },
     {
-        "name": "ons-region-2023_12",
-        "uri": "https://services1.arcgis.com/ESMARspQHYMw9BZ9/ArcGIS/rest/services/Regions_December_2023_Boundaries_EN_BFC/FeatureServer/0",
+        "name": "ons-region-2023_07_03",
+        "uri": "/dbfs/mnt/base/unrestricted/source_ons_open_geography_portal/dataset_regions_bdy_en_bfe/format_SHP_regions_bdy_en_bfe/SNAPSHOT_2023_07_03_regions_bdy_en_bfe/regions_bdy_en_bfe.shp",
         "columns": {
             "RGN23NM": "region",
             "geometry": "geometry"
@@ -26,8 +26,8 @@
         }
     },
     {
-        "name": "ons-county-2023_12",
-        "uri": "https://services1.arcgis.com/ESMARspQHYMw9BZ9/ArcGIS/rest/services/Counties_and_Unitary_Authorities_December_2023_Boundaries_UK_BFC/FeatureServer/0",
+        "name": "ons-county-2023_07_03",
+        "uri": "/dbfs/mnt/base/unrestricted/source_ons_open_geography_portal/dataset_counties_uni_authorities_bdy_uk_bfe/format_SHP_counties_uni_authorities_bdy_uk_bfe/SNAPSHOT_2023_07_03_counties_uni_authorities_bdy_uk_bfe/counties_uni_authorities_bdy_uk_bfe.shp",
         "columns": {
             "CTYUA23NM": "county",
             "geometry": "geometry"
@@ -39,8 +39,8 @@
         }
     },
     {
-        "name": "ons-district-2023_12",
-        "uri": "https://services1.arcgis.com/ESMARspQHYMw9BZ9/ArcGIS/rest/services/Local_Authority_Districts_December_2023_Boundaries_UK_BFC/FeatureServer/0",
+        "name": "ons-district-2023_07_03",
+        "uri": "/dbfs/mnt/base/unrestricted/source_ons_open_geography_portal/dataset_local_authority_districts_bdy_uk_bfe/format_SHP_local_authority_districts_bdy_uk_bfe/SNAPSHOT_2023_07_03_local_authority_districts_bdy_uk_bfe/local_auth_dist_bdy_uk_bfe.shp",
         "columns": {
             "LAD23NM": "district",
             "geometry": "geometry"
@@ -53,7 +53,7 @@
     },
     {
         "name": "ons-ward-2023_12",
-        "uri": "https://services1.arcgis.com/ESMARspQHYMw9BZ9/ArcGIS/rest/services/Wards_December_2023_Boundaries_UK_BFC/FeatureServer/0",
+        "uri": "/dbfs/mnt/base/unrestricted/source_ons_open_geography_portal/dataset_wards_bdy_uk_bfe/format_SHP_wards_bdy_uk_bfe/SNAPSHOT_2023_07_03_wards_bdy_uk_bfe/wards_bdy_uk_bfe.shp",
         "columns": {
             "WD23NM": "ward",
             "geometry": "geometry"
@@ -201,6 +201,15 @@
         }
     },
     {
+        "name": "osm-united_kingdom-2024_04_25",
+        "uri": "/dbfs/mnt/base/unrestricted/source_openstreetmap/dataset_united_kingdom/format_PBF_united_kingdom/SNAPSHOT_2024_04_25_united_kingdom/united-kingdom-latest.osm.pbf",
+        "columns": {
+        },
+        "tasks": {
+            "convert": "todo"
+        }
+    },
+    {
         "name": "ewco-priority_habitat_network-2022_10_06",
         "uri": "/dbfs/mnt/lab/unrestricted/elm_data/ewco/priority_habitat_network/2022_10_06/EWCO_Biodiversity___Priority_Habitat_Network.shp",
         "columns": {
@@ -287,21 +296,10 @@
         }
     },
     {
-        "name": "os-ngd-2024_03_01",
+        "name": "os-ngd-2023_12_16",
         "uri": "https://api.os.uk/downloads/v1/dataPackages/4143/versions/26940?key=WxgUdETn6cy58WZkfwZ7wdMVLlt5eDsX",
-        "product_id": 4143,
-        "version_id": 26940,
         "columns": {},
         "tasks": {
-            "os": "todo",
-            "convert": "todo"
-        }
-    },
-    {
-        "name": "osm-uk-2024",
-        "uri": "https://download.geofabrik.de/europe/united-kingdom-latest.osm.pbf",
-        "tasks": {
-            "osm_pbf": "todo",
             "convert": "todo"
         }
     },

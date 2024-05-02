@@ -38,7 +38,6 @@ register()
 
 # COMMAND ----------
 
-# DBTITLE 1,move to a module
 def list_layers(f):
     try:
         layers = listlayers(f)
@@ -114,7 +113,6 @@ def convert(dataset):
 
 # COMMAND ----------
 
-# DBTITLE 1,Testing
 # dataset_parcel = {
 #     'uri': '/dbfs/mnt/lab/restricted/ELM-Project/bronze/rpa-parcel-adas.parquet',
 #     'name': 'rpa-parcel-adas',
@@ -128,24 +126,9 @@ def convert(dataset):
 # convert(dataset_parcel)
 
 
-dataset_osm = {
-    "name": "osm-united_kingdom-2024_04_25",
-    "uri": "/dbfs/mnt/base/unrestricted/source_openstreetmap/dataset_united_kingdom/format_PBF_united_kingdom/SNAPSHOT_2024_04_25_united_kingdom/united-kingdom-latest.osm.pbf",
-    "columns": {
-    },
-    "tasks": {
-        "convert": "todo"
-    },
-    "distance": 24,
-    "knn": True
-}
+dataset_osm = find_datasets('osm')[0]
 convert(dataset_osm)
-
-
-# dataset_hedge = find_datasets('rpa-hedge-adas')[0]
-# convert(dataset_hedge)
 
 # COMMAND ----------
 
-# DBTITLE 1,main
 # run_task_on_catalogue(convert, 'convert')
