@@ -1,5 +1,5 @@
 # elmo-geo
-Part of [ELMO][elmo], separated to work on [DASH][dash] for large scale geospatial analysis.
+Part of [ELMO][elmo], separated to work on [DASH][dash] for large scale geospatial analysis.  Primarily aimed at filling the missing [eligibility criteria][elig] for ELMO.
 
 
 ## Getting Started
@@ -145,6 +145,7 @@ For more information on using pytest with Databricks see https://docs.databricks
 
 [elmo]: https://github.com/Defra-Data-Science-Centre-of-Excellence/elm_modelling_strategy/
 [dash]: https://defra.sharepoint.com/sites/Community448/SitePages/Welcome-to-the-Data-Science-Centre-of-Excellence.aspx
+[elig]: https://animated-system-bf6fb80a.pages.github.io/Reference/elmo/eligibility/criteria.html
 [dash_onboarding]: https://defra.sharepoint.com/sites/Community448/SitePages/Onboarding.aspx
 [dash_playbook]: https://github.com/Defra-Data-Science-Centre-of-Excellence/DASH-Playbook
 [dash_myit]: https://defragroup.service-now.com/esc?id=sc_cat_item_guide&table=sc_cat_item&sys_id=025906fb1b99f190848b8594e34bcb67
