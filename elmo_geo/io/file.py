@@ -1,4 +1,3 @@
-# TODO: geometry_column
 from pyspark.sql import functions as F
 
 from elmo_geo.st.index import centroid_index, sindex
