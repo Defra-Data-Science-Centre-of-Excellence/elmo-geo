@@ -48,3 +48,7 @@ def find_datasets(string: str) -> list[dict]:
         ```
     """
     return [dataset for dataset in load_catalogue() if string in dataset["name"]]
+
+
+def add_to_catalogue(datasets: list[dict]):
+    raise NotImplementedError()
