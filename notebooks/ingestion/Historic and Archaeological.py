@@ -26,6 +26,12 @@ sf_registered_parks_and_gardens = sf_historic_england_template.format(name1="reg
 sf_scheduled_monuments = sf_historic_england_template.format(name1="scheduled_monuments", name2="Scheduled_Monuments")
 sf_world_heritage_sites = sf_historic_england_template.format(name1="world_heritage_sites", name2="World_Heritage_Sites")
 
+sf_shine = "/dbfs/mnt/lab/restricted/ELM-Project/stg/he-shine-2022_12_30.parquet"
+
+output_all_historic = "/dbfs/mnt/lab/restricted/ELM-Project/stg/he-shine-2022_12_30.parquet"
+
+# COMMAND ----------
+
 paths = [
     sf_listed_buildings,
     sf_protected_wreck_sites,
@@ -34,8 +40,6 @@ paths = [
     sf_scheduled_monuments,
     sf_world_heritage_sites,
 ]
-
-# COMMAND ----------
 
 for p in paths:
     print(p.split("/")[-1])
