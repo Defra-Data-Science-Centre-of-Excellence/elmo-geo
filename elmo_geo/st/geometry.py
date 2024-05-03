@@ -38,3 +38,23 @@ def load_geometry(column: str = "geometry", from_crs: str = "EPSG:27700", encodi
     string = f"ST_SimplifyPreserveTopology(ST_PrecisionReduce({string}, {precision}), 0)"
     string = string + " AS " + column
     return F.expr(string)
+
+
+def get_boundary(column: str) -> callable:
+    """Get geometry boundaries.
+
+    Returns a function that operates on the input column to produce geometry boundaries.
+
+    Parameters:
+      coluns: The geometry column to convert to geometry boundaries.
+
+    Returns:
+      Pyspark sql function
+    """
+    return F.expr(
+        f"""
+                ST_MakeValid(ST_Force_2D(ST_PrecisionReduce(
+                    ST_SimplifyPreserveTopology(ST_Boundary({column}), 1),
+                     3))) AS geometry_boundary
+                """
+    )
