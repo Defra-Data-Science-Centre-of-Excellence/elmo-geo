@@ -20,7 +20,9 @@ from elmo_geo import LOG, register
 from elmo_geo.datasets.datasets import datasets, parcels
 from elmo_geo.io import download_link
 from elmo_geo.io.preprocessing import geometry_to_wkb, make_geometry_valid, transform_crs
-from elmo_geo.st import sjoin 
+from elmo_geo.st import sjoin
+from elmo_geo.st.geometry import load_geometry
+from elmo_geo.st.udf import st_union
 from elmo_geo.utils.misc import dbfs, info_sdf
 
 register()
@@ -46,7 +48,7 @@ sf_output_historic_combined = f"/dbfs/mnt/lab/restricted/ELM-Project/stg/histori
 # COMMAND ----------
 
 paths = [
-    sf_listed_buildings,
+    #sf_listed_buildings,
     sf_protected_wreck_sites,
     sf_registered_battlefields,
     sf_registered_parks_and_gardens,
@@ -61,7 +63,12 @@ for p in paths:
 # COMMAND ----------
 
 # load shine data and rename columns to match other historic england datasets
-sdf_historical_sites = (spark.read.format("parquet").load(dbfs(sf_shine, True))
+sdf_shine_sites = spark.read.format("parquet").load(dbfs(sf_shine, True))
+sdf_shine_sites.display()
+
+# COMMAND ----------
+
+sdf_historical_sites = (sdf_shine_sites
                        .select(
                                F.col("shine_uid").alias("ListEntry"),
                                F.col("shine_name").alias("Name"),
@@ -69,9 +76,6 @@ sdf_historical_sites = (spark.read.format("parquet").load(dbfs(sf_shine, True))
                        )
                        .withColumn("dataset", F.lit("SHINE"))
                        )
-sdf_historical_sites.display()
-
-# COMMAND ----------
 
 for p in paths:
     sdf_historical_sites = sdf_historical_sites.unionByName(
@@ -82,11 +86,58 @@ for p in paths:
         allowMissingColumns=False
     )
 
+# add a new id field
+sdf_historical_sites = sdf_historical_sites.withColumn("id_historic_site", F.monotonically_increasing_id())
+
 # COMMAND ----------
 
 sdf_historical_sites.groupBy("dataset").agg(F.count("ListEntry")).display()
 
 # COMMAND ----------
 
+# prepare for dissolving overlapping geometries
+sdf_historical_sites = (sdf_historical_sites
+                        .withColumn("geometry", load_geometry("geometry"))
+                        .withColumn("geometry", F.expr("EXPLODE(ST_Dump(geometry))")) # convert any multi parts to single parts
+                        .repartition(1_000)
+)
+
+# report geometry types
+(sdf_historical_sites
+ .withColumn("gtype", F.expr("ST_GeometryType(geometry)"))
+ .groupby("gtype")
+ .agg(F.count("geometry"))
+).display()
+
+# COMMAND ----------
+
+sdf_intersected = (sjoin(sdf_historical_sites,
+                        sdf_historical_sites,
+                        how="left",
+                        lsuffix="",
+                        rsuffix="_right",
+                        )
+                   .groupby(["id_historic_site"])
+                   .agg(
+                       # combine overlapping geometries into single multi geometry and concatenate the datasets and listentry ids
+                       F.array_join(F.collect_set("dataset_right"), "-").alias("datasets"),
+                       F.array_join(F.collect_set("ListEntry_right"), "-").alias("ListEntries"),
+                       F.expr("ST_Union_Aggr(geometry_right) as geometry"),
+                   )
+)
+
+# COMMAND ----------
+
+# finally dissolve geometry collections
+sdf_intersected = sdf_intersected.repartition("id_historic_site", "datasets", "ListEntries")
+sdf_intersected = (sdf_intersected
+                        .transform(st_union, ["id_historic_site", "datasets", "ListEntries"], 'geometry'))
+sdf_intersected.display()
+
+# COMMAND ----------
+
 # save combined data to staging
-sdf_historical_sites.write.format("parquet").save(sf_output_historic_combined)
+(sdf_intersected
+ .withColumn("geometry", F.expr("ST_AsBinary(geometry)"))
+ .write.format("parquet").mode("overwrite").save(sf_output_historic_combined)
+)
