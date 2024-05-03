@@ -35,7 +35,10 @@ def run_task_on_catalogue(task: str, fn: callable):
     catalogue = load_catalogue()
     for i, dataset in enumerate(catalogue):
         if getattr(dataset["tasks"], task, False) == "todo":
-            catalogue[i] = fn(dataset)
+            try:
+                catalogue[i] = fn(dataset)
+            except Exception as err:
+                LOG.warning(f"Failed {task}\n{dataset}\n{err}")
     save_catalogue(catalogue)
 
 
@@ -51,4 +54,15 @@ def find_datasets(string: str) -> list[dict]:
 
 
 def add_to_catalogue(datasets: list[dict]):
-    raise NotImplementedError()
+    """Add a new dataset to the catalogue
+    By replacing the same name or appending.
+    """
+    catalogue = load_catalogue()
+    for dataset_new in datasets:
+        for i, dataset_catalogue in enumerate(catalogue):
+            if dataset_new["name"] == dataset_catalogue["name"]:
+                catalogue[i] = dataset_new 
+                break
+        else:
+            catalogue.append(dataset_new)
+    save_catalogue(catalogue)
