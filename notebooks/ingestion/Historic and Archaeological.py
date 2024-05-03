@@ -28,7 +28,8 @@ sf_world_heritage_sites = sf_historic_england_template.format(name1="world_herit
 
 sf_shine = "/dbfs/mnt/lab/restricted/ELM-Project/stg/he-shine-2022_12_30.parquet"
 
-output_all_historic = "/dbfs/mnt/lab/restricted/ELM-Project/stg/he-shine-2022_12_30.parquet"
+date = "2024-05-03"
+sf_output_historic_combined = f"/dbfs/mnt/lab/restricted/ELM-Project/stg/historic_archaeological_sites_combined-{date}.parquet"
 
 # COMMAND ----------
 
@@ -47,16 +48,30 @@ for p in paths:
 
 # COMMAND ----------
 
-# Union datasets into single source of historical sites.
-sdf_historical_sites = (spark.read.format("geoparquet").load(dbfs(paths[0], True))
-                        .select("ListEntry", "Name", "geometry")
-                        .withColumn("dataset", F.lit(re.search(r"layer=(.*).snappy.parquet", paths[0]).groups()[0]))
-)
+# load shine data and rename columns to match other historic england datasets
+sdf_historical_sites = (spark.read.format("parquet").load(dbfs(sf_shine, True))
+                       .select(
+                               F.col("shine_uid").alias("ListEntry"),
+                               F.col("shine_name").alias("Name"),
+                               F.col("geom").alias("geometry"),
+                       )
+                       .withColumn("dataset", F.lit("SHINE"))
+                       )
+sdf_historical_sites.display()
 
-for p in paths[1:]:
+# COMMAND ----------
+
+# Union datasets into single source of historical sites.
+# sdf_historical_sites = (spark.read.format("geoparquet").load(dbfs(paths[0], True))
+#                         .select("ListEntry", "Name", "geometry")
+#                         .withColumn("dataset", F.lit(re.search(r"layer=(.*).snappy.parquet", paths[0]).groups()[0]))
+# )
+
+for p in paths:
     sdf_historical_sites = sdf_historical_sites.unionByName(
         spark.read.format("geoparquet").load(dbfs(p, True))
         .select("ListEntry", "Name", "geometry")
+        .withColumn("geometry", F.expr("ST_AsBinary(geometry)"))
         .withColumn("dataset", F.lit(re.search(r"layer=(.*).snappy.parquet", p).groups()[0])),
         allowMissingColumns=False
     )
@@ -67,4 +82,10 @@ sdf_historical_sites.groupBy("dataset").agg(F.count("ListEntry")).display()
 
 # COMMAND ----------
 
+# save combined data to staging
+sdf_historical_sites.write.format("parquet").save(sf_output_historic_combined)
+
+# COMMAND ----------
+
+# boundaries
 
