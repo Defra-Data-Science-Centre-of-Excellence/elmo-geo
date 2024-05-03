@@ -1,4 +1,5 @@
 import json
+
 from elmo_geo import LOG
 
 
@@ -62,7 +63,7 @@ def add_to_catalogue(datasets: list[dict]):
     for dataset_new in datasets:
         for i, dataset_catalogue in enumerate(catalogue):
             if dataset_new["name"] == dataset_catalogue["name"]:
-                catalogue[i] = dataset_new 
+                catalogue[i] = dataset_new
                 break
         else:
             catalogue.append(dataset_new)
