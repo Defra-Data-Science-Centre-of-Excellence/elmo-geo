@@ -1,4 +1,5 @@
 import json
+from elmo_geo import LOG
 
 
 def load_catalogue() -> dict | list:
