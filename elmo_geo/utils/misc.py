@@ -37,7 +37,7 @@ def count_parquet_files(folder):
     return sum(1 for _, _, files in os.walk(folder) for f in files if f.endswith(".parquet"))
 
 
-def info_sdf(sdf: SparkDataFrame, f: str = None, col: str = "geometry") -> SparkDataFrame:
+def info_sdf(sdf: SparkDataFrame, f: str = None, geometry_column: str = "geometry", sindex_column: str = "sindex") -> SparkDataFrame:
     """Get Info about SedonaDataFrame
     Logs the number of partitions, geometry types, number of features, and average number of coordinates.
 
@@ -66,8 +66,8 @@ def info_sdf(sdf: SparkDataFrame, f: str = None, col: str = "geometry") -> Spark
     """
     df = (
         sdf.selectExpr(
-            f"ST_GeometryType({col}) AS gtype",
-            f"ST_NPoints({col}) AS n",
+            f"ST_GeometryType({geometry_column}) AS gtype",
+            f"ST_NPoints({geometry_column}) AS n",
         )
         .groupby("gtype")
         .agg(
@@ -80,7 +80,7 @@ def info_sdf(sdf: SparkDataFrame, f: str = None, col: str = "geometry") -> Spark
         f"""
         Wrote Parquet: {f}
         Count: {sdf.count()}
-        sindexes: {sdf.select("sindex").distinct().count()}
+        sindexes: {sdf.select(sindex_column).distinct().count()}
         Partitions: {sdf.rdd.getNumPartitions()}
         Files: {count_parquet_files(f) if f else f}
         {df}
