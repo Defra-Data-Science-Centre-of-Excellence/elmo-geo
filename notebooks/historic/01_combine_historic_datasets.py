@@ -42,8 +42,9 @@ sf_world_heritage_sites = sf_historic_england_template.format(name1="world_herit
 
 sf_shine = "/dbfs/mnt/lab/restricted/ELM-Project/stg/he-shine-2022_12_30.parquet"
 
-date = "2024-05-03"
-sf_output_historic_combined = f"/dbfs/mnt/lab/restricted/ELM-Project/stg/historic_archaeological_sites_combined-{date}.parquet"
+date = "2024_05_03"
+sf_output_historic_combined = f"/dbfs/mnt/lab/restricted/ELM-Project/stg/he-combined_sites-{date}.parquet"
+sf_output_historic_excl_scheduled_monuments = f"/dbfs/mnt/lab/restricted/ELM-Project/stg/he-combined_sites_excl_sch_monuments-{date}.parquet"
 
 # COMMAND ----------
 
@@ -111,7 +112,8 @@ sdf_historical_sites = (sdf_historical_sites
 
 # COMMAND ----------
 
-sdf_intersected = (sjoin(sdf_historical_sites,
+# disolve all historic features to avoid overlapping geometries
+sdf_dissolved =     (sjoin(sdf_historical_sites,
                         sdf_historical_sites,
                         how="left",
                         lsuffix="",
@@ -124,20 +126,44 @@ sdf_intersected = (sjoin(sdf_historical_sites,
                        F.array_join(F.collect_set("ListEntry_right"), "-").alias("ListEntries"),
                        F.expr("ST_Union_Aggr(geometry_right) as geometry"),
                    )
+                   # repartition so ("id_historic_site", "datasets", "ListEntries") groups are not split across clusters
+                   .repartition("id_historic_site", "datasets", "ListEntries")
+                   .transform(st_union, ["id_historic_site", "datasets", "ListEntries"], 'geometry')
 )
+sdf_dissolved.display()
 
 # COMMAND ----------
 
-# finally dissolve geometry collections
-sdf_intersected = sdf_intersected.repartition("id_historic_site", "datasets", "ListEntries")
-sdf_intersected = (sdf_intersected
-                        .transform(st_union, ["id_historic_site", "datasets", "ListEntries"], 'geometry'))
-sdf_intersected.display()
+# disolve all historic features, excluding scheduled monuments, to avoid overlapping geometries
+sdf_hist_sites_ex_sch_monuments = sdf_historical_sites.filter("dataset != 'Scheduled_Monuments'")
+sdf_dissolved_ex_sm = (sjoin(sdf_hist_sites_ex_sch_monuments,
+                        sdf_hist_sites_ex_sch_monuments,
+                        how="left",
+                        lsuffix="",
+                        rsuffix="_right",
+                        )
+                   .groupby(["id_historic_site"])
+                   .agg(
+                       # combine overlapping geometries into single multi geometry and concatenate the datasets and listentry ids
+                       F.array_join(F.collect_set("dataset_right"), "-").alias("datasets"),
+                       F.array_join(F.collect_set("ListEntry_right"), "-").alias("ListEntries"),
+                       F.expr("ST_Union_Aggr(geometry_right) as geometry"),
+                   )
+                   # repartition so ("id_historic_site", "datasets", "ListEntries") groups are not split across clusters
+                   .repartition("id_historic_site", "datasets", "ListEntries")
+                   .transform(st_union, ["id_historic_site", "datasets", "ListEntries"], 'geometry')
+)
+sdf_dissolved_ex_sm.display()
 
 # COMMAND ----------
 
 # save combined data to staging
-(sdf_intersected
+(sdf_dissolved
  .withColumn("geometry", F.expr("ST_AsBinary(geometry)"))
- .write.format("parquet").mode("overwrite").save(sf_output_historic_combined)
+ .write.format("parquet").mode("overwrite").save(dbfs(sf_output_historic_combined, True))
+)
+
+(sdf_dissolved_ex_sm
+ .withColumn("geometry", F.expr("ST_AsBinary(geometry)"))
+ .write.format("parquet").mode("overwrite").save(dbfs(sf_output_historic_excl_scheduled_monuments, True))
 )
