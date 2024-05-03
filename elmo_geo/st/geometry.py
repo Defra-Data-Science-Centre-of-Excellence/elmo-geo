@@ -28,7 +28,7 @@ def load_geometry(column: str = "geometry", precision: int = 3, encoding_fn: str
     null = 'ST_GeomFromText("Point EMPTY")'
     string = f"ST_MakeValid({encoding_fn}({column}))"
     string = f"COALESCE({string}, {null})"
-    string = f'ST_MakeValid(ST_Force_2D({string}))'
+    string = f"ST_MakeValid(ST_Force_2D({string}))"
     string = f"ST_MakeValid(ST_PrecisionReduce({string}, {precision}))"
     string = f"ST_MakeValid(ST_SimplifyPreserveTopology({string}, 0))"
     string = string + " AS " + column

@@ -19,21 +19,20 @@
 
 import os
 import subprocess
-
 from datetime import datetime
+from glob import iglob
+
 from fiona import listlayers
 from fiona.errors import DriverError
-from glob import iglob
-from pyspark.sql import functions as F, types as T
+from pyspark.sql import functions as F
 
-from elmo_geo import register, LOG
-from elmo_geo.datasets.catalogue import run_task_on_catalogue, find_datasets
+from elmo_geo import LOG, register
 from elmo_geo.io.file import to_parquet
 from elmo_geo.st.geometry import load_geometry
 from elmo_geo.st.index import sindex
+from elmo_geo.utils.dbr import spark
 from elmo_geo.utils.misc import dbfs, snake_case
-from elmo_geo.utils.settings import BRONZE, SILVER
-
+from elmo_geo.utils.settings import SILVER
 
 register()
 
@@ -46,10 +45,12 @@ def list_layers(f: str) -> list[str]:
         layers = []
     return layers
 
+
 def list_files(f: str) -> list[str]:
-    for f1 in iglob(f+'**', recursive=True):
+    for f1 in iglob(f + "**", recursive=True):
         if os.path.isfile(f1):
             yield f1
+
 
 def get_to_convert(f: str) -> list[tuple[str, str, str]]:
     if os.path.isfile(f):
@@ -57,35 +58,42 @@ def get_to_convert(f: str) -> list[tuple[str, str, str]]:
             name = f"layer={snake_case(layer)}"
             yield f, name, layer
     else:
-        f = f if f.endswith("/") else f+"/"
+        f = f if f.endswith("/") else f + "/"
         for f1 in list_files(f):
             for layer in list_layers(f1):
                 name = f"file={snake_case(f1.replace(f, '').split('.')[0])}/layer={snake_case(layer)}"
                 yield f1, name, layer
 
+
 def convert_file(f_in, f_out, layer):
-    os.makedirs('/'.join(f_out.split('/')[:-1]), exist_ok=True)
-    out = subprocess.run(f'''
+    os.makedirs("/".join(f_out.split("/")[:-1]), exist_ok=True)
+    out = subprocess.run(
+        f"""
         export CONDA_DIR=/databricks/miniconda
         export TMPDIR=/tmp
         export OGR_GEOMETRY_ACCEPT_UNCLOSED_RING=NO
         export PROJ_LIB=$CONDA_DIR/share/proj
         $CONDA_DIR/bin/ogr2ogr -t_srs EPSG:27700 -f Parquet {f_out} {f_in} {layer}
-    ''', capture_output=True, text=True, shell=True)
+    """,
+        capture_output=True,
+        text=True,
+        shell=True,
+    )
     LOG.info(out.__repr__())
     return out
 
-def convert(dataset):
-    name = dataset['name']
-    columns = dataset.get('columns', {})  # rename columns, but don't drop any
 
-    f_raw = dataset.get('bronze', dataset['uri'])
-    f_tmp = f'/dbfs/tmp/{name}.parquet'
-    f_out = f'{SILVER}/{name}.parquet'
+def convert(dataset):
+    name = dataset["name"]
+    columns = dataset.get("columns", {})  # rename columns, but don't drop any
+
+    f_raw = dataset.get("bronze", dataset["uri"])
+    f_tmp = f"/dbfs/tmp/{name}.parquet"
+    f_out = f"{SILVER}/{name}.parquet"
 
     # Download
-    if not f_raw.startswith('/dbfs/'):
-        raise TypeError(f'Expecting /dbfs/ dataset: {f_raw}')
+    if not f_raw.startswith("/dbfs/"):
+        raise TypeError(f"Expecting /dbfs/ dataset: {f_raw}")
 
     # Convert
     if f_raw.endswith(".parquet"):
@@ -97,20 +105,21 @@ def convert(dataset):
             convert_file(f0, f1, layer)
 
     # Partition
-    LOG.info(f'Partition: {f_tmp}, {f_out}')
-    sdf = (spark.read.parquet(dbfs(f_tmp, True))
-        .withColumn('fid', F.monotonically_increasing_id())
+    LOG.info(f"Partition: {f_tmp}, {f_out}")
+    (
+        spark.read.parquet(dbfs(f_tmp, True))
+        .withColumn("fid", F.monotonically_increasing_id())
         .withColumnsRenamed(columns)
-        .withColumn('geometry', load_geometry())
-        .transform(sindex, method = "BNG", resolution = "10km", index_fn = "chipped_index")
+        .withColumn("geometry", load_geometry())
+        .transform(sindex, method="BNG", resolution="10km", index_fn="chipped_index")
         .transform(to_parquet, f_out)
     )
-    return sdf
 
-    dataset['bronze'] = dataset['uri']
-    dataset['silver'] = f_out
-    dataset['tasks']['convert'] = datetime.today().strftime('%Y_%m_%d')
+    dataset["bronze"] = dataset["uri"]
+    dataset["silver"] = f_out
+    dataset["tasks"]["convert"] = datetime.today().strftime("%Y_%m_%d")
     return dataset
+
 
 # COMMAND ----------
 
@@ -125,10 +134,8 @@ dataset_parcel = {
         'convert': 'todo'
     }
 }
-sdf = convert(dataset_parcel)
-sdf.display()
+convert(dataset_parcel)
 
-# COMMAND ----------
 
 dataset_hedge = {
     'uri': '/dbfs/mnt/lab/restricted/ELM-Project/bronze/rpa-hedge-adas.parquet',
