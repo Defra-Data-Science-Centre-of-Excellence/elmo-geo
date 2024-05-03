@@ -61,12 +61,6 @@ sdf_historical_sites.display()
 
 # COMMAND ----------
 
-# Union datasets into single source of historical sites.
-# sdf_historical_sites = (spark.read.format("geoparquet").load(dbfs(paths[0], True))
-#                         .select("ListEntry", "Name", "geometry")
-#                         .withColumn("dataset", F.lit(re.search(r"layer=(.*).snappy.parquet", paths[0]).groups()[0]))
-# )
-
 for p in paths:
     sdf_historical_sites = sdf_historical_sites.unionByName(
         spark.read.format("geoparquet").load(dbfs(p, True))
@@ -84,8 +78,3 @@ sdf_historical_sites.groupBy("dataset").agg(F.count("ListEntry")).display()
 
 # save combined data to staging
 sdf_historical_sites.write.format("parquet").save(sf_output_historic_combined)
-
-# COMMAND ----------
-
-# boundaries
-
