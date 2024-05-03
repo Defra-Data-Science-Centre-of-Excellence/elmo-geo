@@ -28,6 +28,7 @@ from pyspark.sql import functions as F
 
 from elmo_geo import LOG, register
 from elmo_geo.io.file import to_parquet
+from elmo_geo.datasets.catalogue import find_datasets, run_task_on_catalogue
 from elmo_geo.st.geometry import load_geometry
 from elmo_geo.st.index import sindex
 from elmo_geo.utils.dbr import spark
@@ -65,7 +66,7 @@ def get_to_convert(f: str) -> list[tuple[str, str, str]]:
                 yield f1, name, layer
 
 
-def convert_file(f_in, f_out, layer):
+def ogr_to_geoparquet(f_in, f_out, layer):
     os.makedirs("/".join(f_out.split("/")[:-1]), exist_ok=True)
     out = subprocess.run(
         f"""
@@ -82,6 +83,22 @@ def convert_file(f_in, f_out, layer):
     LOG.info(out.__repr__())
     return out
 
+def convert_dataset(f_in, f_out):
+    for f0, part, layer in get_to_convert(f_in):
+        f1 = f"{f_out}/{part}"
+        LOG.info(f"Converting: {f1}")
+        ogr_to_geoparquet(f0, f1, layer)
+
+def partition_geoparquet(f_in, f_out, columns):
+    return (
+        spark.read.parquet(dbfs(f_in, True))
+        .withColumn("fid", F.monotonically_increasing_id())
+        .withColumnsRenamed(columns)
+        .withColumn("geometry", load_geometry())
+        .withColumn("geometry", F.expr("EXPLODE(ST_Dump(geometry))"))
+        .transform(sindex, method="BNG", resolution="10km", index_fn="chipped_index")
+        .transform(to_parquet, f_out)
+    )
 
 def convert(dataset):
     name = dataset["name"]
@@ -99,21 +116,11 @@ def convert(dataset):
     if f_raw.endswith(".parquet"):
         f_tmp = f_raw
     else:
-        for f0, part, layer in get_to_convert(f_raw):
-            f1 = f"{f_tmp}/{part}"
-            LOG.info(f"Converting: {f1}")
-            convert_file(f0, f1, layer)
+        convert_dataset(f_raw, f_tmp)
 
     # Partition
     LOG.info(f"Partition: {f_tmp}, {f_out}")
-    (
-        spark.read.parquet(dbfs(f_tmp, True))
-        .withColumn("fid", F.monotonically_increasing_id())
-        .withColumnsRenamed(columns)
-        .withColumn("geometry", load_geometry())
-        .transform(sindex, method="BNG", resolution="10km", index_fn="chipped_index")
-        .transform(to_parquet, f_out)
-    )
+    partition_geoparquet(f_tmp, f_out, columns)
 
     dataset["bronze"] = dataset["uri"]
     dataset["silver"] = f_out
@@ -123,34 +130,36 @@ def convert(dataset):
 
 # COMMAND ----------
 
-dataset_parcel = {
-    'uri': '/dbfs/mnt/lab/restricted/ELM-Project/bronze/rpa-parcel-adas.parquet',
-    'name': 'rpa-parcel-adas',
-    "columns": {
-        "RLR_RW_REFERENCE_PARCELS_DEC_21_LPIS_REF": "id_parcel",
-        "Shape": "geometry"
-    },
-    'tasks': {
-        'convert': 'todo'
-    }
-}
-convert(dataset_parcel)
+# dataset_parcel = {
+#     "name": "rpa-parcel-adas",
+#     "bronze": "/dbfs/mnt/lab/restricted/ELM-Project/bronze/rpa-parcel-adas.parquet",
+#     "columns": {
+#         "RLR_RW_REFERENCE_PARCELS_DEC_21_LPIS_REF": "id_parcel",
+#         "Shape": "geometry"
+#     },
+#     "tasks": {
+#         "convert": "todo"
+#     }
+# }
+
+# convert(dataset_parcel)
 
 
-dataset_hedge = {
-    'uri': '/dbfs/mnt/lab/restricted/ELM-Project/bronze/rpa-hedge-adas.parquet',
-    'name': 'rpa-hedge-adas',
-    "columns": {
-        "geom": "geometry"
-    },
-    'tasks': {
-        'convert': 'todo'
-    }
-}
-convert(dataset_hedge)
+# dataset_hedge = {
+#     "name": "rpa-hedge-adas",
+#     "bronze": "/dbfs/mnt/lab/restricted/ELM-Project/bronze/rpa-hedge-adas.parquet",
+#     "columns": {
+#         "geom": "geometry"
+#     },
+#     "tasks": {
+#         "convert": "todo"
+#     }
+# }
+# convert(dataset_hedge)
 
 
-dataset_osm = find_datasets('osm')[0]
+dataset_osm = find_datasets("osm")[0]
+dataset_osm["bronze"] = "/dbfs/tmp/osm-united_kingdom-2024_04_25.parquet"
 convert(dataset_osm)
 
 # COMMAND ----------
