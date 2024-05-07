@@ -59,20 +59,7 @@ simplify_tolerence: float = 0.5  # metres
 max_vertices: int = 256  # per polygon (row)
 
 date = "2024_05_03"
-sf_output_historic_features = f"/dbfs/mnt/lab/restricted/ELM-Project/out/he-historic_features-{date}"
-
-# COMMAND ----------
-
-# load file with spark, filter and rename columns
-sdf = (spark.read.parquet(dbfs(path_read, True))
-        .select(
-            [F.col(c).alias(mapping.get(c, c)) for c in dataset.keep_cols]
-            )
-)
-
-LOG.info(f"Dataset has {sdf.count():,.0f} rows")
-LOG.info(f"Dataset has the following columns: {list(sdf.columns)}")
-sdf.display()
+sf_output_historic_features = f"dbfs:/mnt/lab/restricted/ELM-Project/out/he-historic_features-{date}.parquet"
 
 # COMMAND ----------
 
@@ -91,53 +78,67 @@ df_parcels.display()
 # COMMAND ----------
 
 # load each of the historic england datasets
-sdf_combined_sites = (spark.read.format("parquet").load(sf_combined_sites)
+sdf_combined_sites = (spark.read.format("parquet").load(dbfs(sf_combined_sites, True))
                       .withColumn("geometry", load_geometry("geometry"))
                       .select("geometry")
+                      .repartition(1_000)
 )
 sdf_combined_sites.display()
 
-sdf_scheduled_monuments = (spark.read.format("parquet").load(sf_scheduled_monuments)
+sdf_scheduled_monuments = (spark.read.format("parquet").load(dbfs(sf_scheduled_monuments, True))
                            .withColumn("geometry", load_geometry("geometry"))
                            .select("geometry")
+                           .repartition(100)
 )
 sdf_scheduled_monuments.display()
 
-sdf_combined_ex_sm = (spark.read.format("parquet").load(sf_combined_sites_ex_sch_monuments)
+sdf_combined_ex_sm = (spark.read.format("parquet").load(dbfs(sf_combined_sites_ex_sch_monuments, True))
                       .withColumn("geometry", load_geometry("geometry"))
                       .select("geometry")
+                      .repartition(1_000)
 )
 sdf_combined_ex_sm.display()
 
+historic_datasets = {
+    "he_combined": sdf_combined_sites,
+    "he_combined_ex_sch_monuments": sdf_combined_ex_sm,
+    "scheduled_monuments": sdf_scheduled_monuments
+
+}
 
 # COMMAND ----------
 
 # join the two datasets and calculate the proportion of the parcel that intersects
 sdf_historic_features = None
 
-for sdf_feature in [sdf_combined_sites, sdf_scheduled_monuments, sdf_combined_ex_sm]
-    df = (
-        sjoin(df_parcels, df_feature)
-        .withColumn("geometry_intersection", F.expr("ST_Intersection(geometry_left, geometry_right)"))
-        .withColumn("area_left", F.expr("ST_Area(geometry_left)"))
-        .withColumn("area_intersection", F.expr("ST_Area(geometry_intersection)"))
-        .withColumn("prop", F.col("area_intersection") / F.col("area_left"))
-        .drop("area_left", "area_intersection", "geometry_left", "geometry_right", "geometry_intersection")
-    )
-    # group up the result and sum the proportions in case multiple polygons with
-    # the same attributes intersect with the parcel
-    df = (
-        df.groupBy(*[col for col in df.columns if col != "proportion"])
-        .sum("prop")
-        .withColumn("prop", F.round("sum(proportion)", 6))
-        .where("proportion > 0")
-        .drop("sum(prop)")
-    )
+for buf in [0,6]:
+    buf_suffix = f"_{buf}m" if buf !=0 else ""
+    for name, sdf_feature in historic_datasets.items():
+        prop_col = f"prop_{name}{buf_suffix}"
+        df = (
+            sjoin(df_parcels, 
+                  sdf_feature.withColumn("geometry", F.expr(f"ST_MakeValid(ST_Buffer(geometry, {buf}))")),
+                  )
+            .withColumn("geometry_intersection", F.expr("ST_Intersection(geometry_left, geometry_right)"))
+            .withColumn("area_left", F.expr("ST_Area(geometry_left)"))
+            .withColumn("area_intersection", F.expr("ST_Area(geometry_intersection)"))
+            .withColumn(prop_col, F.col("area_intersection") / F.col("area_left"))
+            .drop("area_left", "area_intersection", "geometry_left", "geometry_right", "geometry_intersection")
+        )
+        # group up the result and sum the proportions in case multiple polygons with
+        # the same attributes intersect with the parcel
+        df = (
+            df.groupBy(*[col for col in df.columns if col != prop_col])
+            .sum(prop_col)
+            .withColumn(prop_col, F.round(f"sum({prop_col})", 6))
+            .where(f"{prop_col} > 0")
+            .drop(f"sum({prop_col})")
+        )
 
-    if sdf_historic_features is None:
-        sdf_historic_features = df
-    else:
-        sdf_historic_features = sdf_historic_features.join(df, on="id_parcel")
+        if sdf_historic_features is None:
+            sdf_historic_features = df
+        else:
+            sdf_historic_features = sdf_historic_features.join(df, on="id_parcel")
 
 sdf_historic_features.display()
 
@@ -172,8 +173,6 @@ result.toPandas().proportion.describe()
 # download
 pandas_df = result.toPandas()
 path_parquet = "/dbfs" + dataset.path_output.format(version=version).replace("output", dataset.name)
-path_feather = "/dbfs" + dataset.path_output.format(version=version).replace("output", dataset.name).replace(".parquet", ".feather")
-path_csv = "/dbfs" + dataset.path_output.format(version=version).replace("output", dataset.name).replace(".parquet", ".csv")
 
 # convert types
 for col, newtype in dataset.output_coltypes.items():
@@ -181,11 +180,7 @@ for col, newtype in dataset.output_coltypes.items():
 
 # output
 pandas_df.to_parquet(path_parquet)
-pandas_df.to_feather(path_feather)
-pandas_df.to_csv(path_csv, index=False)
 displayHTML(download_link(path_parquet))
-displayHTML(download_link(path_feather))
-displayHTML(download_link(path_csv))
 
 # COMMAND ----------
 

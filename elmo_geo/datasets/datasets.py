@@ -557,7 +557,7 @@ historic_archaeological = Dataset(
     versions=[
         Version(
             name="2024_04_29",
-            path_read=("/dbfs/mnt/lab/restricted/ELM-Project/stg/historic_archaeological_sites_combined-2024_05_03.parquet"),
+            path_read=("/dbfs/mnt/lab/restricted/ELM-Project/stg/he-combined_sites-2024_05_03.parquet"),
         ),
     ],
     keep_cols=[
@@ -573,7 +573,7 @@ historic_archaeological_ex_sch_monuments = Dataset(
     versions=[
         Version(
             name="2024_04_29",
-            path_read=("/dbfs/mnt/lab/restricted/ELM-Project/stg/historic_archaeological_sites_excl_sch_monuments-2024_05_03.parquet"),
+            path_read=("/dbfs/mnt/lab/restricted/ELM-Project/stg/he-combined_sites_excl_sch_monuments-2024_05_03.parquet"),
         ),
     ],
     keep_cols=[
