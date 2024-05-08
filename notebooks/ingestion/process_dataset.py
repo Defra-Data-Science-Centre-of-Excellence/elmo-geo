@@ -72,11 +72,14 @@ if os.path.splitext(path_read)[1] == ".parquet":
 else:
 
     gpd_read = partial(gpd.read_file, engine = "pyogrio")
+
+    dissolveby = list(set(dataset.keep_cols)-{"geometry"}) or None
     
     df = (
         gpd_read(dbfs(path_read, False))
-        .explode(index_parts=False)
-        .set_crs("epsg:27700")
+        .dissolve(by=dissolveby) # union rows where we don't care about the differences in category
+        .explode(index_parts=False) # explode multi-geometries to enable better pararallelisation
+        .set_crs("epsg:27700") # assume CRS
         #.pipe(transform_crs, target_epsg=27700)
         .filter(dataset.keep_cols, axis="columns")
         .rename(columns=dataset.rename_cols)
