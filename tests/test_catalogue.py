@@ -12,6 +12,7 @@ def test_datasets_superset():
         "aonb",  # national_landscape
         "lfa",  # moorline
         "sssi",  # sssi_units
+        "sssi_mask",  # na
     }
     assert (catalogue_names.union(known_differences)).issuperset(dataset_names)
 
