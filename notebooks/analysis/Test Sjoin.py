@@ -19,6 +19,7 @@ import pandas as pd
 
 from elmo_geo import LOG, register
 from elmo_geo.st import sjoin
+from elmo_geo.utils.misc import cache
 
 register()
 
@@ -31,7 +32,7 @@ def test_self_sjoin(sdf):
     Expect all rows to have an intersecting geometry.
     """
     sdf_joined = sjoin(sdf, sdf, how = "inner")
-    count_no_intersection = sdf_joined.filter(F.expr("ST_IsEmpty(ST_Intersection(geometry_left, geometry_right))")).count()
+    count_no_intersection = sdf_joined.filter("NOT ST_Intersects(geometry_left, geometry_right)").count()
     return count_no_intersection==0
 
 # COMMAND ----------
@@ -40,7 +41,7 @@ def test_self_sjoin(sdf):
 # create the test dataframe
 n = 1_000
 geoms = [Point(i,i).wkt for i in range (n)]
-df = pd.DataFrame({"id":range(n), "geometry":geoms})
+df = pd.DataFrame({"id_orig":range(n), "geometry":geoms})
 df.head()
 
 # COMMAND ----------
@@ -69,9 +70,13 @@ LOG.info(f"Test passes: {test_self_sjoin(sdf)}")
 sdf = (spark.createDataFrame(df)
        .withColumn("geometry", F.expr("ST_GeomFromText(geometry)"))
        .withColumn("id2", F.monotonically_increasing_id())
-       .repartition(10)
+       .repartition(1)
 )
 LOG.info(f"Test passes: {test_self_sjoin(sdf)}")
+
+sdfj = sjoin(sdf, sdf, how="inner")
+print(sdfj.count())
+sdfj.display()
 
 # COMMAND ----------
 
@@ -83,4 +88,52 @@ sdf = (spark.createDataFrame(df)
 
 sdf.write.format("noop").mode("overwrite").save()
 sdf.repartition(10)
+LOG.info(f"Test passes: {test_self_sjoin(sdf)}")
+
+# COMMAND ----------
+
+# fails with cache, even though this is the same as line 6 above
+sdf = (spark.createDataFrame(df)
+       .withColumn("geometry", F.expr("ST_GeomFromText(geometry)"))
+       .withColumn("id2", F.monotonically_increasing_id())
+       .transform(cache)
+       .repartition(10)
+)
+LOG.info(f"Test passes: {test_self_sjoin(sdf)}")
+
+# COMMAND ----------
+
+# fails with cache, even though this is the same as line 6 above
+sdf = (spark.createDataFrame(df)
+       .withColumn("geometry", F.expr("ST_GeomFromText(geometry)"))
+       .withColumn("id2", F.monotonically_increasing_id())
+)
+
+sdf = cache(sdf)
+sdf.repartition(10)
+LOG.info(f"Test passes: {test_self_sjoin(sdf)}")
+
+# COMMAND ----------
+
+# passes with coalesce rather than repartition
+sdf = (spark.createDataFrame(df)
+       .withColumn("geometry", F.expr("ST_GeomFromText(geometry)"))
+       .withColumn("id2", F.monotonically_increasing_id())
+       .coalesce(1)
+)
+LOG.info(f"Test passes: {test_self_sjoin(sdf)}")
+
+sdfj = sjoin(sdf, sdf, how="inner")
+print(sdfj.count())
+sdfj.display()
+
+# COMMAND ----------
+
+# fails with repartition before id, even with cache
+sdf = (spark.createDataFrame(df)
+       .withColumn("geometry", F.expr("ST_GeomFromText(geometry)"))
+       .repartition(10)
+       .withColumn("id2", F.monotonically_increasing_id())
+       .transform(cache)
+)
 LOG.info(f"Test passes: {test_self_sjoin(sdf)}")
