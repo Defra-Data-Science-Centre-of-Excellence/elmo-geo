@@ -29,14 +29,14 @@ register()
 
 # COMMAND ----------
 
-sf_historic_england_template = "/dbfs/mnt/base/unrestricted/source_historic_england_open_data_site/dataset_{name1}/format_GEOPARQUET_{name1}/SNAPSHOT_2024_04_29_{name1}/layer={name2}.snappy.parquet"
+sf_historic_england_template = "/dbfs/mnt/base/unrestricted/source_historic_england_open_data_site/dataset_{name1}/format_GEOPARQUET_{name1}/SNAPSHOT_{snapshot_date}_{name1}/layer={name2}.snappy.parquet"
 
-sf_listed_buildings = sf_historic_england_template.format(name1="listed_buildings", name2="Listed_Buildings")
-sf_protected_wreck_sites = sf_historic_england_template.format(name1="protected_wreck_sites", name2="Protected_Wreck_Sites")
-sf_registered_battlefields = sf_historic_england_template.format(name1="registered_battlefields", name2="Registered_Battlefields")
-sf_registered_parks_and_gardens = sf_historic_england_template.format(name1="registered_parks_and_gardens", name2="Registered_Parks_and_Gardens")
-sf_scheduled_monuments = sf_historic_england_template.format(name1="scheduled_monuments", name2="Scheduled_Monuments")
-sf_world_heritage_sites = sf_historic_england_template.format(name1="world_heritage_sites", name2="World_Heritage_Sites")
+sf_protected_wreck_sites = sf_historic_england_template.format(name1="protected_wreck_sites", name2="Protected_Wreck_Sites", snapshot_date = "2024_04_29")
+sf_registered_battlefields = sf_historic_england_template.format(name1="registered_battlefields", name2="Registered_Battlefields", snapshot_date = "2024_04_29")
+sf_registered_parks_and_gardens = sf_historic_england_template.format(name1="registered_parks_and_gardens", name2="Registered_Parks_and_Gardens", snapshot_date = "2024_04_29")
+sf_scheduled_monuments = sf_historic_england_template.format(name1="scheduled_monuments", name2="Scheduled_Monuments", snapshot_date = "2024_04_29")
+sf_world_heritage_sites = sf_historic_england_template.format(name1="world_heritage_sites", name2="World_Heritage_Sites", snapshot_date = "2024_04_29")
+sf_listed_buildings = sf_historic_england_template.format(name1="listed_buildings_polys", name2="Listed_Buildings_polygons", snapshot_date = "2024_05_03")
 
 sf_shine = "/dbfs/mnt/lab/restricted/ELM-Project/stg/he-shine-2022_12_30.parquet"
 
@@ -48,7 +48,7 @@ sf_output_historic_excl_scheduled_monuments = f"/dbfs/mnt/lab/restricted/ELM-Pro
 # COMMAND ----------
 
 paths = [
-    #sf_listed_buildings,
+    #sf_listed_buildings, # TODO: Include listed buildings once available: https://github.com/Defra-Data-Science-Centre-of-Excellence/elmo-geo/issues/126
     sf_protected_wreck_sites,
     sf_registered_battlefields,
     sf_registered_parks_and_gardens,
