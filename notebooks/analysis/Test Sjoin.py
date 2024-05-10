@@ -5,7 +5,9 @@
 # MAGIC
 # MAGIC **Author:** Obi Thompson Sargoni
 # MAGIC
-# MAGIC Testing that the elmo-geo sjoin functions works correctly when joining a dataset to itself
+# MAGIC Highlighting a scenario in while sjoin fails.
+# MAGIC
+# MAGIC Fail case: when the input spark dataframe has an F.monotonically_increasing_id() field and is re-partitioned.
 
 # COMMAND ----------
 
