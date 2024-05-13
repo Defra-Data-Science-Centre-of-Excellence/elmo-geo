@@ -1,15 +1,18 @@
 # Databricks notebook source
 # MAGIC %md
 # MAGIC # Intersect historic and archaaeological features with parcels 
+# MAGIC **Author:** Obi Thompson Sargoni
 # MAGIC
-# MAGIC This notebook loads the outputs of `01_combine_histori_datasets` and intersects these with parcels.
+# MAGIC **Date:** 13-05-2024
+# MAGIC
+# MAGIC This notebook loads the outputs of `01_combine_historic_datasets` and intersects these with parcels.
 # MAGIC
 # MAGIC It is based on the `proces_datasets` notebook but is different in the following ways:
 # MAGIC - combines the intersection prportions of three different historic dfeatures datasets into a single output dataset
-# MAGIC - intersects historic features with parcel boundaries as well as parcel polygons
+# MAGIC - buffers the historic geometries by 0m and 6m and calcualtes the proportion for each
 # MAGIC
 # MAGIC To do:
-# MAGIC - intersect 6m buffered historic features with parcel polygons and boundaries.
+# MAGIC - intersect features with parcel boundaries and calculate proportion of boudnary
 
 # COMMAND ----------
 

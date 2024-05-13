@@ -2,12 +2,13 @@
 # MAGIC %md
 # MAGIC
 # MAGIC # Combine Historic and Archaeological Datasets
+# MAGIC **Author:** Obi Thompson Sargoni
+# MAGIC
+# MAGIC **Date:** 13-05-2024
 # MAGIC
 # MAGIC This notebook combines multiple sources of historic and archaeological features into a single parquet file.
 # MAGIC
 # MAGIC This enables the proportion of parcels intersected by historic or archaeological features to be calculated, though this is done in a separate notebooks.
-# MAGIC
-# MAGIC See the readme in this folder for more information.
 
 # COMMAND ----------
 
