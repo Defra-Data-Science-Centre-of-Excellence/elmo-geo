@@ -234,7 +234,36 @@ sssi = Dataset(
     rename_cols={"status": "sssi_status"},
     output_coltypes={"sssi_status": "category"},
 )
+"""Proportional overlap with Sites of Special Scientific Interest (SSSI) with SSSI name. SSSIs can overlap so proportions may sum to >1."""
 
+sssi_mask = Dataset(
+    name="sssi_mask",
+    source="defra",
+    versions=[
+        Version(
+            name="2021_03_17",
+            path_read=(
+                "/dbfs/mnt/base/unrestricted/source_defra_data_services_platform"
+                "/dataset_sites_of_special_scientific_interest"
+                "/format_SHP_sites_of_special_scientific_interest"
+                "/SNAPSHOT_2021_03_17_sites_of_special_scientific_interest"
+                "/Sites_of_Special_Scientific_Interest_England.shp"
+            ),
+        ),
+        Version(
+            name="2023_02_14",
+            path_read=(
+                "/dbfs/mnt/base/unrestricted/source_defra_data_services_platform"
+                "/dataset_sites_of_special_scientific_interest"
+                "/format_SHP_sites_of_special_scientific_interest"
+                "/SNAPSHOT_2023_02_14_sites_of_special_scientific_interest"
+                "/Sites_of_Special_Scientific_Interest_England.shp"
+            ),
+        ),
+    ],
+    keep_cols=["geometry"],
+)
+"""Proportional overlap with any Sites of Special Scientific Interest (SSSI), no names."""
 
 aonb = Dataset(
     name="aonb",
@@ -576,6 +605,7 @@ datasets = [
     peaty_soils,
     national_character_areas,
     sssi,
+    sssi_mask,
     aonb,
     lfa,
     region,
