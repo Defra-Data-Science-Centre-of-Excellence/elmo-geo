@@ -46,7 +46,6 @@ path_parcels = next(v.path_read for v in parcels.versions if v.name == pversion)
 version = "2024_04_29"
 he_combined_dataset = next(d for d in datasets if d.name == "historic_archaeological")
 he_scheduled_monuments_dataset = next(d for d in datasets if d.name == "scheduled_monuments")
-he_combined_dataset_ex_sch_monuments = next(d for d in datasets if d.name == "historic_archaeological_ex_sch_monuments")
 
 sf_combined_sites = next(v for v in he_combined_dataset.versions if v.name==version).path_read
 sf_scheduled_monuments = next(v for v in he_scheduled_monuments_dataset.versions if v.name==version).path_read

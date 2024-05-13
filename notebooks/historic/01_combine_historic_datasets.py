@@ -29,14 +29,6 @@ register()
 
 # COMMAND ----------
 
-# MAGIC %md
-# MAGIC
-# MAGIC To do
-# MAGIC - delete temp file: /dbfs/mnt/lab/restricted/ELM-Project/stg/he-combined-sites-tmp.parquet
-# MAGIC - delete combined ex sm: /dbfs/mnt/lab/restricted/ELM-Project/stg/he-combined_sites_excl_sch_monuments-{date}.parquet
-
-# COMMAND ----------
-
 sf_historic_england_template = "/dbfs/mnt/base/unrestricted/source_historic_england_open_data_site/dataset_{name1}/format_GEOPARQUET_{name1}/SNAPSHOT_{snapshot_date}_{name1}/layer={name2}.snappy.parquet"
 
 sf_protected_wreck_sites = sf_historic_england_template.format(name1="protected_wreck_sites", name2="Protected_Wreck_Sites", snapshot_date = "2024_04_29")

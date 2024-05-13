@@ -541,7 +541,9 @@ scheduled_monuments = Dataset(
     versions=[
         Version(
             name="2024_04_29",
-            path_read=("/dbfs/mnt/base/unrestricted/source_historic_england_open_data_site/dataset_scheduled_monuments/format_GEOPARQUET_scheduled_monuments/SNAPSHOT_2024_04_29_scheduled_monuments/layer=Scheduled_Monuments.snappy.parquet"),
+            path_read=(
+                "/dbfs/mnt/base/unrestricted/source_historic_england_open_data_site/dataset_scheduled_monuments/format_GEOPARQUET_scheduled_monuments/SNAPSHOT_2024_04_29_scheduled_monuments/layer=Scheduled_Monuments.snappy.parquet"
+            ),
         ),
     ],
     keep_cols=[
@@ -566,24 +568,6 @@ historic_archaeological = Dataset(
     ],
     rename_cols={"geom": "geometry"},
 )
-
-historic_archaeological_ex_sch_monuments = Dataset(
-    name="historic_archaeological_ex_sch_monuments",
-    source="historic_england",
-    versions=[
-        Version(
-            name="2024_04_29",
-            path_read=("/dbfs/mnt/lab/restricted/ELM-Project/stg/he-combined_sites_excl_sch_monuments-2024_05_03.parquet"),
-        ),
-    ],
-    keep_cols=[
-        "geometry",
-        "datasets",
-    ],
-    rename_cols={"geom": "geometry"},
-)
-
-
 
 datasets = [
     alc,
@@ -610,7 +594,5 @@ datasets = [
     shine,
     scheduled_monuments,
     historic_archaeological,
-    historic_archaeological_ex_sch_monuments,
-
 ]
 """A list of all defined datasets"""
