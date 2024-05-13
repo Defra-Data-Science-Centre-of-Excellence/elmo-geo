@@ -98,27 +98,6 @@ historic_datasets = {
 
 # COMMAND ----------
 
-# collect = lambda col: F.array_join(F.array_sort(F.collect_set(col)), "-")
-# df  =(    sjoin(df_parcels, 
-#             sdf_combined_sites.withColumn("geometry", F.expr(f"ST_MakeValid(ST_Buffer(geometry, {0}))")),
-#             )
-#                   .groupBy(["id_parcel", "geometry_left"])
-#             .agg(
-#                 # combine overlapping geometries into single multi geometry and concatenate the datasets and listentry ids
-#                 collect("dataset").alias(f"datasets"),
-#                 F.expr("ST_Union_Aggr(geometry_right) as geometry_right"),
-#             )
-#             .withColumn("geometry_intersection", F.expr("ST_Intersection(geometry_left, geometry_right)"))
-#             .withColumn("area_left", F.expr("ST_Area(geometry_left)"))
-#             .withColumn("area_right", F.expr("ST_Area(geometry_right)"))
-#             .withColumn("area_intersection", F.expr("ST_Area(geometry_intersection)"))
-#             .withColumn("prop_col", F.col("area_intersection") / F.col("area_left"))
-#             #.drop("area_left", "area_intersection", "geometry_left", "geometry_right", "geometry_intersection")
-#         )
-# df.display()
-
-# COMMAND ----------
-
 # join the two datasets and calculate the proportion of the parcel that intersects
 sdf_historic_features = None
 collect = lambda col: F.array_join(F.array_sort(F.collect_set(col)), "-")
