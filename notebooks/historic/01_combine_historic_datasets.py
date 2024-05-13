@@ -90,7 +90,7 @@ for p in paths:
 sdf_historical_sites = (sdf_historical_sites
                         .withColumn("geometry", load_geometry("geometry"))
                         .withColumn("geometry", F.expr("EXPLODE(ST_Dump(geometry))")) # convert any multi parts to single parts
-                        .repartition(1_000)
+                        .repartition(100)
                         .withColumn("id_historic_site", F.monotonically_increasing_id()) # add new id field
 )
 
@@ -152,19 +152,27 @@ joined_ids = sdf_joined.select("id_historic_site").union(sdf_joined.select("id_h
 original_ids = sdf_historical_sites.select("id_historic_site").toPandas()
 assert joined_ids.merge(original_ids, indicator=True)["_merge"].map(lambda x: x=="both").all()
 
+collect = lambda col: F.array_join(F.array_sort(F.collect_set(col)), "-")
 sdf_dissolved =     (sdf_joined
                    .groupby(["id_historic_site"])
                    .agg(
                        # combine overlapping geometries into single multi geometry and concatenate the datasets and listentry ids
-                       F.array_join(F.collect_set("dataset_right"), "-").alias("datasets"),
-                       F.array_join(F.collect_set("ListEntry_right"), "-").alias("ListEntries"),
+                       collect("dataset_right").alias("datasets"),
+                       collect("ListEntry_right").alias("ListEntries"),
+                       collect("id_historic_site_right").alias("ids"),
                        F.expr("ST_Union_Aggr(geometry_right) as geometry"),
                    )
-                   .withColumn("geometry", load_geometry("geometry", encoding_fn="")) # simplify geometries
+                   .dropDuplicates(["ids"]).drop("ids") # remove entries made up of the same component geometries
                    .withColumn("geometry", F.expr("EXPLODE(ST_Dump(geometry))")) # convert any multi parts to single parts - at this stage these due to geometries which touch but do not overlap
+                   .withColumn("geometry", F.expr("ST_SimplifyPreserveTopology(geometry, 1)"))
+                   .dropDuplicates(["geometry"]) # still some duplicate geometries at this stage, remove
                    .withColumn("id_historic_site", F.monotonically_increasing_id()) # recreate id
 )
 sdf_dissolved.display()
+
+# COMMAND ----------
+
+sdf_dissolved.count()
 
 # COMMAND ----------
 
@@ -186,21 +194,28 @@ joined_ids = sdf_joined.select("id_historic_site").union(sdf_joined.select("id_h
 original_ids = sdf_hist_sites_ex_sch_monuments.select("id_historic_site").toPandas()
 assert joined_ids.merge(original_ids, indicator=True)["_merge"].map(lambda x: x=="both").all()
 
+collect = lambda col: F.array_join(F.array_sort(F.collect_set(col)), "-")
 sdf_dissolved_ex_sm = (sdf_joined
                    .groupby(["id_historic_site"])
                    .agg(
                        # combine overlapping geometries into single multi geometry and concatenate the datasets and listentry ids
-                       F.array_join(F.collect_set("dataset_right"), "-").alias("datasets"),
-                       F.array_join(F.collect_set("ListEntry_right"), "-").alias("ListEntries"),
+                       collect("dataset_right").alias("datasets"),
+                       collect("ListEntry_right").alias("ListEntries"),
+                       collect("id_historic_site_right").alias("ids"),
                        F.expr("ST_Union_Aggr(geometry_right) as geometry"),
                    )
-                   # repartition so ("id_historic_site", "datasets", "ListEntries") groups are not split across clusters
-                   .withColumn("geometry", load_geometry("geometry", encoding_fn="")) # simplify geometries
+                   .dropDuplicates(["ids"]).drop("ids") # remove entries made up of the same component geometries
                    .withColumn("geometry", F.expr("EXPLODE(ST_Dump(geometry))")) # convert any multi parts to single parts - at this stage these due to geometries which touch but do not overlap
+                   .withColumn("geometry", F.expr("ST_SimplifyPreserveTopology(geometry, 1)"))
+                   .dropDuplicates(["geometry"]) # still some duplicate geometries at this stage, remove
                    .withColumn("id_historic_site", F.monotonically_increasing_id()) # recreate id
                    .withColumnRenamed("id_historic_site", "id_historic_site_ex_sm")
 )
 sdf_dissolved_ex_sm.display()
+
+# COMMAND ----------
+
+sdf_dissolved_ex_sm.count()
 
 # COMMAND ----------
 
@@ -222,7 +237,7 @@ sdf_dissolved_ex_sm.display()
 # save combined data to staging
 (sdf_dissolved
  .withColumn("geometry", F.expr("ST_AsBinary(geometry)"))
- .repartition(1_000)
+ .repartition(100)
  .write.format("parquet").mode("overwrite").save(dbfs(sf_output_historic_combined, True))
 )
 
