@@ -57,7 +57,8 @@ simplify_tolerence: float = 0.5  # metres
 max_vertices: int = 256  # per polygon (row)
 
 date = "2024_05_03"
-sf_output_historic_features = f"dbfs:/mnt/lab/restricted/ELM-Project/out/he-historic_features-{date}.parquet"
+file_name = f"he-historic_features-{date}.parquet"
+sf_output_historic_features = f"dbfs:/mnt/lab/restricted/ELM-Project/out/{file_name}"
 
 # COMMAND ----------
 
@@ -134,7 +135,7 @@ for buf in [0, 6]:
             .groupBy(["id_parcel", "geometry_left"])
             .agg(
                 # combine overlapping geometries into single multi geometry and concatenate the datasets and listentry ids
-                collect("dataset").alias(f"datasets_{name}{buf_suffix}"),
+                collect("dataset").alias(f"sources_{name}{buf_suffix}"),
                 F.expr("ST_Union_Aggr(geometry_right) as geometry_right"),
             )
             .withColumn("geometry_intersection", F.expr("ST_Intersection(geometry_left, geometry_right)"))
@@ -188,16 +189,14 @@ result.display()
 
 # COMMAND ----------
 
-pandas_df["datasets_he_combined"].isnull().value_counts()
-
-# COMMAND ----------
-
-displayHTML(download_link(dbfs(sf_output_historic_features, False)))
+download_path = f"/dbfs/FileStore/{file_name}"
+pandas_df.to_parquet(download_path)
+displayHTML(download_link(dbfs(download_path, False), name = "download.parquet"))
 
 # COMMAND ----------
 
 import pandas as pd
-df = pd.read_parquet(dbfs(sf_output_historic_features, False))
+df = pd.read_parquet(dbfs(download_path, False))
 df
 
 # COMMAND ----------
