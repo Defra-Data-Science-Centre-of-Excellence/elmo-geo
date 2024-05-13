@@ -29,6 +29,14 @@ register()
 
 # COMMAND ----------
 
+# MAGIC %md
+# MAGIC
+# MAGIC To do
+# MAGIC - delete temp file: /dbfs/mnt/lab/restricted/ELM-Project/stg/he-combined-sites-tmp.parquet
+# MAGIC - delete combined ex sm: /dbfs/mnt/lab/restricted/ELM-Project/stg/he-combined_sites_excl_sch_monuments-{date}.parquet
+
+# COMMAND ----------
+
 sf_historic_england_template = "/dbfs/mnt/base/unrestricted/source_historic_england_open_data_site/dataset_{name1}/format_GEOPARQUET_{name1}/SNAPSHOT_{snapshot_date}_{name1}/layer={name2}.snappy.parquet"
 
 sf_protected_wreck_sites = sf_historic_england_template.format(name1="protected_wreck_sites", name2="Protected_Wreck_Sites", snapshot_date = "2024_04_29")
@@ -41,9 +49,7 @@ sf_listed_buildings = sf_historic_england_template.format(name1="listed_building
 sf_shine = "/dbfs/mnt/lab/restricted/ELM-Project/stg/he-shine-2022_12_30.parquet"
 
 date = "2024_05_03"
-sf_tmp_historic_sites_combined = "/dbfs/mnt/lab/restricted/ELM-Project/stg/he-combined-sites-tmp.parquet"
 sf_output_historic_combined = f"/dbfs/mnt/lab/restricted/ELM-Project/stg/he-combined_sites-{date}.parquet"
-sf_output_historic_excl_scheduled_monuments = f"/dbfs/mnt/lab/restricted/ELM-Project/stg/he-combined_sites_excl_sch_monuments-{date}.parquet"
 
 # COMMAND ----------
 
@@ -91,13 +97,16 @@ sdf_historical_sites = (sdf_historical_sites
                         .withColumn("geometry", load_geometry("geometry"))
                         .withColumn("geometry", F.expr("EXPLODE(ST_Dump(geometry))")) # convert any multi parts to single parts
                         .repartition(100)
-                        .withColumn("id_historic_site", F.monotonically_increasing_id()) # add new id field
 )
 
 (sdf_historical_sites
  .withColumn("geometry", F.expr("ST_AsBinary(geometry)"))
- .write.format("parquet").mode("overwrite").save(sf_tmp_historic_sites_combined)
+ .write.format("parquet").mode("overwrite").save(dbfs(sf_output_historic_combined, True))
 )
+
+# COMMAND ----------
+
+spark.read.format("parquet").load(sf_output_historic_combined).display()
 
 # COMMAND ----------
 
@@ -110,139 +119,3 @@ sdf_historical_sites.groupBy("dataset").agg(F.count("ListEntry")).display()
  .groupby("gtype")
  .agg(F.count("geometry"))
 ).display()
-
-# COMMAND ----------
-
-sdf_joined = sjoin(sdf_historical_sites,
-                        sdf_historical_sites,
-                        how="inner",
-                        lsuffix="",
-                        rsuffix="_right",
-                        )
-
-count_check = sdf_joined.filter(F.expr("ST_IsEMPTy(ST_Intersection(geometry, geometry_right))")).count()
-count_check
-
-# COMMAND ----------
-
-sdf_joined_file = sjoin(spark.read.format("parquet").load(sf_tmp_historic_sites_combined).withColumn("geometry", F.expr("ST_GeomFromWKB(geometry)")),
-                        spark.read.format("parquet").load(sf_tmp_historic_sites_combined).withColumn("geometry", F.expr("ST_GeomFromWKB(geometry)")),
-                        how="inner",
-                        lsuffix="",
-                        rsuffix="_right",
-                        )
-
-count_check_file = sdf_joined_file.filter(F.expr("ST_IsEMPTy(ST_Intersection(geometry, geometry_right))")).count()
-count_check_file
-
-# COMMAND ----------
-
-# disolve all historic features to avoid overlapping geometries
-sdf_historical_sites = spark.read.format("parquet").load(sf_tmp_historic_sites_combined).withColumn("geometry", F.expr("ST_GeomFromWKB(geometry)"))
-
-sdf_joined = sjoin(sdf_historical_sites,
-                        sdf_historical_sites,
-                        how="inner",
-                        lsuffix="",
-                        rsuffix="_right",
-                        )
-
-# check that all historic site ids included in the joined dataset
-joined_ids = sdf_joined.select("id_historic_site").union(sdf_joined.select("id_historic_site_right")).dropDuplicates().toPandas()
-original_ids = sdf_historical_sites.select("id_historic_site").toPandas()
-assert joined_ids.merge(original_ids, indicator=True)["_merge"].map(lambda x: x=="both").all()
-
-collect = lambda col: F.array_join(F.array_sort(F.collect_set(col)), "-")
-sdf_dissolved =     (sdf_joined
-                   .groupby(["id_historic_site"])
-                   .agg(
-                       # combine overlapping geometries into single multi geometry and concatenate the datasets and listentry ids
-                       collect("dataset_right").alias("datasets"),
-                       collect("ListEntry_right").alias("ListEntries"),
-                       collect("id_historic_site_right").alias("ids"),
-                       F.expr("ST_Union_Aggr(geometry_right) as geometry"),
-                   )
-                   .dropDuplicates(["ids"]).drop("ids") # remove entries made up of the same component geometries
-                   .withColumn("geometry", F.expr("EXPLODE(ST_Dump(geometry))")) # convert any multi parts to single parts - at this stage these due to geometries which touch but do not overlap
-                   .withColumn("geometry", F.expr("ST_SimplifyPreserveTopology(geometry, 1)"))
-                   .dropDuplicates(["geometry"]) # still some duplicate geometries at this stage, remove
-                   .withColumn("id_historic_site", F.monotonically_increasing_id()) # recreate id
-)
-sdf_dissolved.display()
-
-# COMMAND ----------
-
-sdf_dissolved.count()
-
-# COMMAND ----------
-
-# disolve all historic features, excluding scheduled monuments, to avoid overlapping geometries
-sdf_hist_sites_ex_sch_monuments = (spark.read.format("parquet").load(sf_tmp_historic_sites_combined)
-                                   .withColumn("geometry", F.expr("ST_GeomFromWKB(geometry)"))
-                                   .filter("dataset != 'Scheduled_Monuments'")
-)
-
-sdf_joined = sjoin(sdf_hist_sites_ex_sch_monuments,
-                   sdf_hist_sites_ex_sch_monuments,
-                   how = "inner",
-                   lsuffix="",
-                   rsuffix="_right",
-)
-
-# check that all historic site ids included in the joined dataset
-joined_ids = sdf_joined.select("id_historic_site").union(sdf_joined.select("id_historic_site_right")).dropDuplicates().toPandas()
-original_ids = sdf_hist_sites_ex_sch_monuments.select("id_historic_site").toPandas()
-assert joined_ids.merge(original_ids, indicator=True)["_merge"].map(lambda x: x=="both").all()
-
-collect = lambda col: F.array_join(F.array_sort(F.collect_set(col)), "-")
-sdf_dissolved_ex_sm = (sdf_joined
-                   .groupby(["id_historic_site"])
-                   .agg(
-                       # combine overlapping geometries into single multi geometry and concatenate the datasets and listentry ids
-                       collect("dataset_right").alias("datasets"),
-                       collect("ListEntry_right").alias("ListEntries"),
-                       collect("id_historic_site_right").alias("ids"),
-                       F.expr("ST_Union_Aggr(geometry_right) as geometry"),
-                   )
-                   .dropDuplicates(["ids"]).drop("ids") # remove entries made up of the same component geometries
-                   .withColumn("geometry", F.expr("EXPLODE(ST_Dump(geometry))")) # convert any multi parts to single parts - at this stage these due to geometries which touch but do not overlap
-                   .withColumn("geometry", F.expr("ST_SimplifyPreserveTopology(geometry, 1)"))
-                   .dropDuplicates(["geometry"]) # still some duplicate geometries at this stage, remove
-                   .withColumn("id_historic_site", F.monotonically_increasing_id()) # recreate id
-                   .withColumnRenamed("id_historic_site", "id_historic_site_ex_sm")
-)
-sdf_dissolved_ex_sm.display()
-
-# COMMAND ----------
-
-sdf_dissolved_ex_sm.count()
-
-# COMMAND ----------
-
-# check geometry types
-(sdf_dissolved
- .withColumn("gtype", F.expr("ST_GeometryType(geometry)"))
- .groupby("gtype")
- .agg(F.count("geometry"))
-).display()
-
-(sdf_dissolved_ex_sm
- .withColumn("gtype", F.expr("ST_GeometryType(geometry)"))
- .groupby("gtype")
- .agg(F.count("geometry"))
-).display()
-
-# COMMAND ----------
-
-# save combined data to staging
-(sdf_dissolved
- .withColumn("geometry", F.expr("ST_AsBinary(geometry)"))
- .repartition(100)
- .write.format("parquet").mode("overwrite").save(dbfs(sf_output_historic_combined, True))
-)
-
-(sdf_dissolved_ex_sm
- .withColumn("geometry", F.expr("ST_AsBinary(geometry)"))
- .repartition(100)
- .write.format("parquet").mode("overwrite").save(dbfs(sf_output_historic_excl_scheduled_monuments, True))
-)

@@ -1,6 +1,6 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC # Intersect historic and arcahaeological features with parcels 
+# MAGIC # Intersect historic and archaaeological features with parcels 
 # MAGIC
 # MAGIC This notebook loads the outputs of `01_combine_histori_datasets` and intersects these with parcels.
 # MAGIC
@@ -36,7 +36,7 @@ register()
 # COMMAND ----------
 
 parcels_names = sorted([f"{parcels.source}/{parcels.name}/{v.name}" for v in parcels.versions])
-dbutils.widgets.dropdown("parcels", parcels_names[-1], parcels_names)
+dbutils.widgets.dropdown("parcels", "rpa/parcels/2021_11_16_adas", parcels_names)
 _, pname, pversion = dbutils.widgets.get("parcels").split("/")
 [print("name", parcels.name, sep=":\t"), 
  print("version", next(v for v in parcels.versions if v.name == pversion), sep = ":\t"),
@@ -50,11 +50,9 @@ he_combined_dataset_ex_sch_monuments = next(d for d in datasets if d.name == "hi
 
 sf_combined_sites = next(v for v in he_combined_dataset.versions if v.name==version).path_read
 sf_scheduled_monuments = next(v for v in he_scheduled_monuments_dataset.versions if v.name==version).path_read
-sf_combined_sites_ex_sch_monuments = next(v for v in he_combined_dataset_ex_sch_monuments.versions if v.name==version).path_read
-print(f"\n\nHistoric features paths:\n{sf_combined_sites}\n{sf_scheduled_monuments}\n{sf_combined_sites_ex_sch_monuments}")
+print(f"\n\nHistoric features paths:\n{sf_combined_sites}\n{sf_scheduled_monuments}")
 
 target_epsg = 27700
-n_partitions = 200
 simplify_tolerence: float = 0.5  # metres
 max_vertices: int = 256  # per polygon (row)
 
@@ -80,53 +78,72 @@ df_parcels.display()
 # load each of the historic england datasets
 sdf_combined_sites = (spark.read.format("parquet").load(dbfs(sf_combined_sites, True))
                       .withColumn("geometry", load_geometry("geometry"))
-                      .select("geometry")
-                      .repartition(1_000)
 )
 sdf_combined_sites.display()
 
 sdf_scheduled_monuments = (spark.read.format("parquet").load(dbfs(sf_scheduled_monuments, True))
                            .withColumn("geometry", load_geometry("geometry"))
-                           .select("geometry")
-                           .repartition(100)
+                           .withColumn("dataset", F.lit("Scheduled_Monuments"))
+                           .withColumnRenamed("ListEntries", "ListEntry")
 )
 sdf_scheduled_monuments.display()
 
-sdf_combined_ex_sm = (spark.read.format("parquet").load(dbfs(sf_combined_sites_ex_sch_monuments, True))
-                      .withColumn("geometry", load_geometry("geometry"))
-                      .select("geometry")
-                      .repartition(1_000)
-)
-sdf_combined_ex_sm.display()
-
 historic_datasets = {
     "he_combined": sdf_combined_sites,
-    "he_combined_ex_sch_monuments": sdf_combined_ex_sm,
+    "he_combined_ex_sch_monuments": sdf_combined_sites.filter("dataset != 'Scheduled_Monuments'"),
     "scheduled_monuments": sdf_scheduled_monuments
 
 }
 
 # COMMAND ----------
 
+# collect = lambda col: F.array_join(F.array_sort(F.collect_set(col)), "-")
+# df  =(    sjoin(df_parcels, 
+#             sdf_combined_sites.withColumn("geometry", F.expr(f"ST_MakeValid(ST_Buffer(geometry, {0}))")),
+#             )
+#                   .groupBy(["id_parcel", "geometry_left"])
+#             .agg(
+#                 # combine overlapping geometries into single multi geometry and concatenate the datasets and listentry ids
+#                 collect("dataset").alias(f"datasets"),
+#                 F.expr("ST_Union_Aggr(geometry_right) as geometry_right"),
+#             )
+#             .withColumn("geometry_intersection", F.expr("ST_Intersection(geometry_left, geometry_right)"))
+#             .withColumn("area_left", F.expr("ST_Area(geometry_left)"))
+#             .withColumn("area_right", F.expr("ST_Area(geometry_right)"))
+#             .withColumn("area_intersection", F.expr("ST_Area(geometry_intersection)"))
+#             .withColumn("prop_col", F.col("area_intersection") / F.col("area_left"))
+#             #.drop("area_left", "area_intersection", "geometry_left", "geometry_right", "geometry_intersection")
+#         )
+# df.display()
+
+# COMMAND ----------
+
 # join the two datasets and calculate the proportion of the parcel that intersects
 sdf_historic_features = None
+collect = lambda col: F.array_join(F.array_sort(F.collect_set(col)), "-")
 
-for buf in [0,6]:
+for buf in [0, 6]:
     buf_suffix = f"_{buf}m" if buf !=0 else ""
     for name, sdf_feature in historic_datasets.items():
+        print(f"Dataset:{name}\nbuffer:{buf}\n")
         prop_col = f"prop_{name}{buf_suffix}"
         df = (
             sjoin(df_parcels, 
                   sdf_feature.withColumn("geometry", F.expr(f"ST_MakeValid(ST_Buffer(geometry, {buf}))")),
                   )
+            .groupBy(["id_parcel", "geometry_left"])
+            .agg(
+                # combine overlapping geometries into single multi geometry and concatenate the datasets and listentry ids
+                collect("dataset").alias(f"datasets_{name}{buf_suffix}"),
+                F.expr("ST_Union_Aggr(geometry_right) as geometry_right"),
+            )
             .withColumn("geometry_intersection", F.expr("ST_Intersection(geometry_left, geometry_right)"))
             .withColumn("area_left", F.expr("ST_Area(geometry_left)"))
             .withColumn("area_intersection", F.expr("ST_Area(geometry_intersection)"))
             .withColumn(prop_col, F.col("area_intersection") / F.col("area_left"))
             .drop("area_left", "area_intersection", "geometry_left", "geometry_right", "geometry_intersection")
         )
-        # group up the result and sum the proportions in case multiple polygons with
-        # the same attributes intersect with the parcel
+        # group up the result and sum the proportions
         df = (
             df.groupBy(*[col for col in df.columns if col != prop_col])
             .sum(prop_col)
@@ -138,9 +155,10 @@ for buf in [0,6]:
         if sdf_historic_features is None:
             sdf_historic_features = df
         else:
-            sdf_historic_features = sdf_historic_features.join(df, on="id_parcel")
+            sdf_historic_features = sdf_historic_features.join(df, on="id_parcel", how = "outer")
 
-sdf_historic_features.display()
+prop_cols = [i for i in sdf_historic_features.columns if "prop_" in i]
+sdf_historic_features = sdf_historic_features.fillna(0, subset=prop_cols)
 
 # COMMAND ----------
 
@@ -159,38 +177,27 @@ result = spark.read.parquet(dbfs(sf_output_historic_features, True))
 count = result.count()
 LOG.info(f"Rows: {count:,.0f}")
 # check proportion is never > 1 - if it is might mean duplicate features int he dataset
-proportion_over_1 = (result.toPandas().proportion > 1.0).sum()
-if proportion_over_1:
-    LOG.info(f"{proportion_over_1:,.0f} parcels have a feature overlapping by a proportion > 1 ({proportion_over_1/count:%})")
+pandas_df = result.toPandas()
+
+proportion_columns = [i for i in pandas_df.columns if "prop_" in i]
+for pc in proportion_columns:
+    proportion_over_1 = (pandas_df[pc] > 1.0).sum()
+    if proportion_over_1:
+        LOG.info(f"Column {pc}:\n{proportion_over_1:,.0f} parcels have a feature overlapping by a proportion > 1 ({proportion_over_1/count:%})\n\n")
 result.display()
 
 # COMMAND ----------
 
-result.toPandas().proportion.describe()
+pandas_df["datasets_he_combined"].isnull().value_counts()
 
 # COMMAND ----------
 
-# download
-pandas_df = result.toPandas()
-path_parquet = "/dbfs" + dataset.path_output.format(version=version).replace("output", dataset.name)
-
-# convert types
-for col, newtype in dataset.output_coltypes.items():
-    pandas_df[col] = pandas_df[col].astype(newtype)
-
-# output
-pandas_df.to_parquet(path_parquet)
-displayHTML(download_link(path_parquet))
-
-# COMMAND ----------
-
-# check for any issues causing proportion > 1
-pandas_df.sort_values("proportion", ascending=False).head(8)
+displayHTML(download_link(dbfs(sf_output_historic_features, False)))
 
 # COMMAND ----------
 
 import pandas as pd
-df = pd.read_parquet("/dbfs/"+dataset.path_output.format(version=version))
+df = pd.read_parquet(dbfs(sf_output_historic_features, False))
 df
 
 # COMMAND ----------
