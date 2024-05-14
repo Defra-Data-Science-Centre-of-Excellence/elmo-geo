@@ -34,6 +34,7 @@ import h3
 import numpy as np
 import pandas as pd
 from folium import Map
+from geojson.feature import Feature, FeatureCollection
 from pyspark.sql import functions as F
 
 from elmo_geo import register

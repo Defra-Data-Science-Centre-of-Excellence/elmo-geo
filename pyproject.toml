@@ -61,6 +61,7 @@ markers = ["dbr: Requires databricks runtime"]
 [tool.ruff]
 line-length = 160
 unsafe-fixes = false
+builtins = ["spark", "dbutils", "sc", "display", "displayHTML"]
 
 [tool.ruff.lint]
 select = ["F", "E", "I"]
@@ -68,6 +69,6 @@ ignore = ["D203", "D212", "COM812", "ISC001"]  # Conflict
 
 [tool.ruff.lint.per-file-ignores]
 "**/__init__.py" = ["F401"]
-"notebooks/*" = ["F821", "E402", "E501"]
-"notebooks/awest/*" = ["F811", "F841"]  # 17 errors
-"notebooks/boundary/*" = ["F811", "F841"]  # 25 errors
+"notebooks/*" = ["E402", "E501"]
+"notebooks/awest/*" = ["F821", "F811", "F841"]  # 17 errors
+"notebooks/boundary/*" = ["F821", "F811", "F841"]  # 25 errors
