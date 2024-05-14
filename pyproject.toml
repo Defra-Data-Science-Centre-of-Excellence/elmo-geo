@@ -69,5 +69,5 @@ ignore = ["D203", "D212", "COM812", "ISC001"]  # Conflict
 [tool.ruff.lint.per-file-ignores]
 "**/__init__.py" = ["F401"]
 "notebooks/*" = ["F821", "E402", "E501"]
-"notebooks/awest/*" = ["E741", "F811", "F841"]  # 17 errors
-"notebooks/boundary/*" = ["E741", "F811", "F841"]  # 25 errors
+"notebooks/awest/*" = ["F811", "F841"]  # 17 errors
+"notebooks/boundary/*" = ["F811", "F841"]  # 25 errors
