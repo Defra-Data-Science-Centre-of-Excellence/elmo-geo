@@ -69,6 +69,7 @@ ignore = ["D203", "D212", "COM812", "ISC001"]  # Conflict
 
 [tool.ruff.lint.per-file-ignores]
 "**/__init__.py" = ["F401"]
-"notebooks/*" = ["E402", "E501"]
-"notebooks/awest/*" = ["F821", "F811", "F841"]  # 17 errors
-"notebooks/boundary/*" = ["F821", "F811", "F841"]  # 25 errors
+"notebooks/*" = ["E501"]
+"notebooks/awest/GeoParquet Conversion.py" = ["F821", "F811", "F841"]  # 10 errors
+"notebooks/awest/OS Convert2 Water.py" = ["F821", "F811", "F841"]  # 12 errors
+"notebooks/boundary/old/*" = ["E402", "F821", "F811", "F841"]  # 38 errors

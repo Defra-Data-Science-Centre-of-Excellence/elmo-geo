@@ -24,10 +24,10 @@
 
 # COMMAND ----------
 
-import elm_se
+from glob import glob
 
-elm_se.register()
 import contextily as ctx
+import elm_se
 import geopandas as gpd
 import matplotlib.pyplot as plt
 import numpy as np
@@ -36,6 +36,8 @@ import rioxarray as rxr
 import seaborn as sns
 from pyspark.sql import functions as F
 from pyspark.sql import window as W
+
+elm_se.register()
 
 # COMMAND ----------
 
@@ -129,13 +131,6 @@ display(sdf)
 sdf.filter(F.isnan("bare_soil")).count()
 
 # COMMAND ----------
-
-from glob import glob
-
-import geopandas as gpd
-import numpy as np
-import pandas as pd
-import rioxarray as rxr
 
 
 def fn(f, year, threshold):

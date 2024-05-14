@@ -19,15 +19,15 @@
 
 # COMMAND ----------
 
+from math import ceil
+
 from pyspark.sql import functions as F
 
 import elmo_geo
-
-elmo_geo.register(spark)
-from math import ceil
-
 from elmo_geo.st import sjoin
 from elmo_geo.st.geometry import load_missing
+
+elmo_geo.register(spark)
 
 
 def re_part(sdf):

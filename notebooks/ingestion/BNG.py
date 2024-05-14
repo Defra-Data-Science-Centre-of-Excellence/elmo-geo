@@ -1,4 +1,6 @@
 # Databricks notebook source
+from glob import glob
+
 from pyspark.sql import Window
 from pyspark.sql import functions as F
 
@@ -56,7 +58,6 @@ sdf.select("sindex", "sindex_batch").distinct().count()
 
 # COMMAND ----------
 
-from glob import glob
 
 glob("/dbfs/mnt/base/unrestricted/source_*[!bluesky]/**/*.csv", recursive=True)
 

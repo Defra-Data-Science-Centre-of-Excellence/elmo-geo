@@ -17,12 +17,12 @@ import matplotlib.ticker as tick
 import numpy as np
 import pandas as pd
 import seaborn as sns
+from pyspark.sql import functions as F
 
 import elmo_geo
 from elmo_geo.datasets.datasets import datasets
 
 elmo_geo.register()
-from pyspark.sql import functions as F
 
 # COMMAND ----------
 

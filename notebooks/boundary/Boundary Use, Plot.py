@@ -14,16 +14,25 @@
 # MAGIC %pip install -q contextily
 
 # COMMAND ----------
-
 import sys
+from time import perf_counter
 
-sys.path.append("../")
+import contextily as ctx
+import elm_se
+import geopandas as gpd
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import seaborn as sns
+import shapely
+from pyspark.sql import functions as F
 
 import elmo_geo
 
 elmo_geo.register()
-import geopandas as gpd
-from pyspark.sql import functions as F
+
+
+sys.path.append("../")
 
 # COMMAND ----------
 
@@ -57,9 +66,6 @@ gdf
 
 # COMMAND ----------
 
-import geopandas as gpd
-import shapely
-
 
 def to_polygon(x):
     if isinstance(x, shapely.MultiLineString):
@@ -89,13 +95,6 @@ for column, colour in zip(gdf.columns[1:], colours):
 m
 
 # COMMAND ----------
-
-from time import perf_counter
-
-import geopandas as gpd
-import matplotlib.pyplot as plt
-import pandas as pd
-import seaborn as sns
 
 gdf = gpd.read_parquet("/dbfs/tmp/awest/boundaries.parquet").melt("id_parcel", var_name="layer", value_name="geometry").set_geometry("geometry").set_crs(27700)
 gdf.to_parquet("/dbfs/tmp/awest/tmp.parquet")
@@ -154,10 +153,6 @@ None
 
 # COMMAND ----------
 
-import elmo_geo
-
-elmo_geo.register()
-import contextily as ctx
 
 sf_wall = "dbfs:/mnt/lab/unrestricted/elm_data/osm/wall.parquet"
 
@@ -170,17 +165,6 @@ ax.axis("off")
 None
 
 # COMMAND ----------
-
-import contextily as ctx
-import geopandas as gpd
-import matplotlib.pyplot as plt
-import numpy as np
-import pandas as pd
-import shapely
-
-import elmo_geo
-
-elmo_geo.register()
 
 
 def setup_plot():
@@ -289,7 +273,6 @@ sdf.write.format("geoparquet").save(sf_out)
 
 # COMMAND ----------
 
-import geopandas as gpd
 
 f_out = "/dbfs/mnt/lab/unrestricted/elm/elm_se/peatland.parquet"
 

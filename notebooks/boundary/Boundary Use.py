@@ -33,6 +33,7 @@
 
 
 import pandas as pd
+from pyspark.sql import functions as F
 
 import elmo_geo
 from elmo_geo.io import download_link
@@ -40,7 +41,6 @@ from elmo_geo.st import sjoin
 from elmo_geo.st.geometry import load_missing
 
 elmo_geo.register()
-from pyspark.sql import functions as F
 
 # COMMAND ----------
 

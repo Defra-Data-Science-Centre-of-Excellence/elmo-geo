@@ -12,6 +12,7 @@
 
 # COMMAND ----------
 
+import pandas as pd
 from pyspark.sql import functions as F
 
 from elmo_geo import LOG, register
@@ -104,8 +105,6 @@ pandas_df.to_parquet(path_parquet)
 displayHTML(download_link(path_parquet))
 
 # COMMAND ----------
-
-import pandas as pd
 
 df = pd.read_parquet("/dbfs" + sf_heathland_proximity.replace(dataset_name, dataset_name + "_output").replace("dbfs:", ""))
 df

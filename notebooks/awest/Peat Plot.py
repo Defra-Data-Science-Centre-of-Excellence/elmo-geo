@@ -3,12 +3,14 @@
 
 # COMMAND ----------
 
+import contextily as ctx
+import geopandas as gpd
+import matplotlib.pyplot as plt
+from pyspark.sql import functions as F
+
 import elmo_geo
 
 elmo_geo.register()
-import contextily as ctx
-import geopandas as gpd
-from pyspark.sql import functions as F
 
 # COMMAND ----------
 
@@ -43,10 +45,6 @@ gdf_peat = gpd.read_parquet(f_peat)
 
 
 gdf_peat
-
-# COMMAND ----------
-
-import matplotlib.pyplot as plt
 
 # COMMAND ----------
 

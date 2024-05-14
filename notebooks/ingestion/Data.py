@@ -22,7 +22,11 @@
 # COMMAND ----------
 
 # DBTITLE 1,Governed data conversion
+import os
+from glob import glob
+
 import geopandas as gpd
+import osmnx
 
 datasets = [
     [
@@ -47,7 +51,6 @@ for f_in, f_out in datasets:
 # elm_se.register()
 # from elm_se.io import ingest_osm
 
-import osmnx
 
 osmnx.settings.cache_folder = "/databricks/driver/"
 osmnx.settings.timeout = 600
@@ -100,10 +103,7 @@ for dataset in datasets:
 # COMMAND ----------
 
 # DBTITLE 1,OS NGD data ingestation
-import os
-from glob import glob
 
-import geopandas as gpd
 
 # import elm_se
 # elm_se.register(spark)

@@ -1,14 +1,18 @@
 # Databricks notebook source
+
 import os
 from glob import glob
 from math import ceil
 
 import pandas as pd
 import pyogrio
+from cdap_geo.sedona import F, st_fromwkb, st_join, st_register
 from geopandas.io.arrow import _geopandas_to_arrow
 from pyarrow.dataset import write_dataset
 from pyspark.sql import functions as F
 from pyspark.sql import types as T
+
+st_register()
 
 
 def batch_file(f_in, f_out, batch):
@@ -64,16 +68,6 @@ def batch_convert_folder(path_in, ext, path_out, batch=10_000, engine="pyogrio")
 
 # COMMAND ----------
 
-import os
-from glob import glob
-from math import ceil
-
-import pyogrio
-from geopandas.io.arrow import _geopandas_to_arrow
-from pyarrow.dataset import write_dataset
-
-# COMMAND ----------
-
 f_in = "/dbfs/mnt/lab/unrestricted/elm_data/os/mmtopo_gpkg/wtr_fts_water.zip"
 batch = 10_000
 
@@ -96,10 +90,6 @@ for i in range(N):
 # MAGIC %pip install -q git+https://github.com/aw-west-defra/cdap_geo.git
 
 # COMMAND ----------
-
-from cdap_geo.sedona import F, st_fromwkb, st_join, st_register
-
-st_register()
 
 
 sf_parcel = "dbfs:/mnt/lab/unrestricted/elm/buffer_strips/parcels.parquet/"

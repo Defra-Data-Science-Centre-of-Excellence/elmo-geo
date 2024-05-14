@@ -4,8 +4,6 @@
 # MAGIC Comparing different Spatial Eligibilities against one another
 
 # COMMAND ----------
-
-
 import pandas as pd
 
 "boundary,waterbody,drain,hedgerows,wall,urban,parcel_wfm"
@@ -24,7 +22,6 @@ df
 
 # COMMAND ----------
 
-import pandas as pd
 
 f_farm = "/dbfs/mnt/lab/unrestricted/elm/wfm/2023_06_09/wfm_farms.feather"
 f_parcel = "/dbfs/mnt/lab/unrestricted/elm/wfm/2023_06_09/wfm_parcels.feather"

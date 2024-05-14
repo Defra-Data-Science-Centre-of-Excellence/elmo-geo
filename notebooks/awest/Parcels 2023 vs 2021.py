@@ -3,14 +3,14 @@
 
 # COMMAND ----------
 
-from pyspark.sql import functions as F
-from sedona.register import SedonaRegistrator
-
-SedonaRegistrator.registerAll(spark)
 from io import StringIO
 
 import pandas as pd
 from cdap_geo.sedona import st_fromwkb
+from pyspark.sql import functions as F
+from sedona.register import SedonaRegistrator
+
+SedonaRegistrator.registerAll(spark)
 
 # COMMAND ----------
 
