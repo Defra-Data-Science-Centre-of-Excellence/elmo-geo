@@ -61,7 +61,15 @@ markers = ["dbr: Requires databricks runtime"]
 [tool.ruff]
 line-length = 160
 unsafe-fixes = false
-extend-exclude = ["notebooks/*"]  # Issue: #78
+extend-exclude = [
+    # "notebooks/analysis/*",
+    "notebooks/awest/*",
+    "notebooks/baresoil/*",
+    "notebooks/boundary/*",
+    "notebooks/habitats/*",
+    "notebooks/ingestion/*",
+    "notebooks/plots/*",
+]  # Issue: #78
 
 [tool.ruff.lint]
 select = ["F", "E", "I"]
