@@ -2,19 +2,19 @@ import json
 
 from elmo_geo import LOG
 
+FILEPATH_CATALOGUE = "data/catalogue.json"
+
 
 def load_catalogue() -> dict | list:
     """Load the data catalogue"""
-    f = "data/catalogue.json"
-    with open(f, "r") as fp:
+    with open(FILEPATH_CATALOGUE, "r") as fp:
         obj = json.loads(fp.read())
     return obj
 
 
 def save_catalogue(obj: dict | list):
     """Save the data catalogue"""
-    f = "data/catalogue.json"
-    with open(f, "w", encoding="utf-8") as fp:
+    with open(FILEPATH_CATALOGUE, "w", encoding="utf-8") as fp:
         json.dump(obj, fp, ensure_ascii=False, indent=4)
 
 
@@ -36,7 +36,7 @@ def run_task_on_catalogue(task: str, fn: callable):
     """
     catalogue = load_catalogue()
     for i, dataset in enumerate(catalogue):
-        if getattr(dataset["tasks"], task, False) == "todo":
+        if dataset["tasks"].get(task, False) == "todo":
             try:
                 catalogue[i] = fn(dataset)
             except Exception as err:
