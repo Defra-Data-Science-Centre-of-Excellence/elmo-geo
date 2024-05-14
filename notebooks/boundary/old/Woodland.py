@@ -122,7 +122,7 @@ def writer_os(key: str, product: str, bbox: list, path_out: str, name: str) -> i
     result = os_features(key, product, bbox)
     count = len(result["features"])
     if count:
-        df = GeoDataFrame.from_features(df)
+        df = GeoDataFrame.from_features(result)
         df_to_geoparquet(result, path_out, name)
     return count
 
