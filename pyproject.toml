@@ -61,7 +61,6 @@ markers = ["dbr: Requires databricks runtime"]
 [tool.ruff]
 line-length = 160
 unsafe-fixes = false
-extend-exclude = ["notebooks/*"]  # Issue: #78
 
 [tool.ruff.lint]
 select = ["F", "E", "I"]
