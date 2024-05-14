@@ -126,12 +126,14 @@ n_null_ph.name = "Priority Habitat"
 n_null_hm = df_comp.drop_duplicates(subset="id_parcel")["A_pred"].isna().value_counts()
 n_null_hm.name = "Habitat Map"
 
-print(f"""
+print(
+    f"""
     Out of a total {df_comp.drop_duplicates(subset="id_parcel").shape[0]:,.0f}m parcels
 
     {n_null_ph[True]:,.0f} ({n_null_ph[True]/n_null_ph.sum():.0%}) do hot have a Priority Habitat habitat
     {n_null_hm[True]:,.0f} ({n_null_hm[True]/n_null_hm.sum():.0%}) do hot have a Habitat Map habitat
-    """)
+    """
+)
 
 # COMMAND ----------
 
@@ -175,14 +177,16 @@ hm_a_pred_not_mapped = (
 )
 
 nl = "\n - "
-print(f"""
+print(
+    f"""
       
 Priority Habitat habitat types not matched to Habitat Map types:
 \n - {nl.join("{} ({:,})".format(k,v) for k,v in ph_main_habits_not_mapped.items())}
 
 Habitat Map habitat types not matched to Priority Habitat types:
 \n - {nl.join("{} ({:,})".format(k,v) for k,v in hm_a_pred_not_mapped.items())}
-""")
+"""
+)
 
 # COMMAND ----------
 
