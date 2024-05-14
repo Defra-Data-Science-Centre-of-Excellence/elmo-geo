@@ -12,22 +12,19 @@
 
 # COMMAND ----------
 
-import os
-import geopandas as gpd
-from functools import partial
 from pyspark.sql import functions as F
 
 from elmo_geo import LOG, register
 from elmo_geo.io import download_link
-from elmo_geo.st.join import knn
 from elmo_geo.st.geometry import load_geometry
+from elmo_geo.st.join import knn
 
 register()
 
 # COMMAND ----------
 
 sf_parcels = "dbfs:/mnt/lab/restricted/ELM-Project/ods/rpa-parcel-adas.parquet"
-sf_priority_habitat = f"dbfs:/mnt/lab/unrestricted/elm_data/defra/priority_habitat_inventory/unified_2021_03_26.parquet"
+sf_priority_habitat = "dbfs:/mnt/lab/unrestricted/elm_data/defra/priority_habitat_inventory/unified_2021_03_26.parquet"
 
 groupby_variable = "heath_habitat"
 

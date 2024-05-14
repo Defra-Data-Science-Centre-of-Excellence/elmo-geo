@@ -5,19 +5,10 @@
 
 # COMMAND ----------
 
-import geopandas as gpd
-import mapclassify
-import seaborn as sns
-import matplotlib.pyplot as plt
-from matplotlib.ticker import PercentFormatter, FuncFormatter
-import numpy as np
 
-import os
 import geopandas as gpd
-from pyspark.sql import functions as F
 
-from elmo_geo import LOG, register
-from elmo_geo.st import sjoin
+from elmo_geo import register
 from elmo_geo.plot.plotting import plot_choropleth_with_head_and_tail_bars
 
 register()
