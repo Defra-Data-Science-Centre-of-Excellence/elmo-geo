@@ -113,7 +113,7 @@ def calc_bs(data):
         try:
             clipped = da.rio.clip_box(*g.bounds).rio.clip([g])
             return float((threshold < clipped).mean(skipna=True))
-        except:
+        except Exception:
             return -100
 
     return gpd.GeoSeries.from_wkb(data).apply(fn)
@@ -154,7 +154,7 @@ def fn(f, year, threshold):
         try:
             clipped = da.rio.clip_box(*g.bounds).rio.clip([g])
             return float((threshold < clipped).mean(skipna=True))
-        except:
+        except Exception:
             return np.nan
 
     gdf["bare_soil"] = gdf["geometry"].apply(calc_bs, da=da, threshold=0.25)

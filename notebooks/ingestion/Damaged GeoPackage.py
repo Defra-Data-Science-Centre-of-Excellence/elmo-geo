@@ -40,7 +40,7 @@ def test_gpkg_is_damaged(filepath):
         try:
             read_info(filepath)["features"]
             print(filepath)
-        except:
+        except Exception:
             pass
 
 
