@@ -142,15 +142,15 @@ sdf_urban = (
 
 # COMMAND ----------
 
-aggr_geometry_urban_of = (
-    lambda urban_type: f"""
+
+def aggr_geometry_urban_of(urban_type):
+    return f"""
   ST_Union_Aggr(CASE
     WHEN (urban_type=="{urban_type}")
     THEN geometry_urban
     ELSE ST_GeomFromText("Point EMPTY")
   END) AS geometry_urban_{urban_type.lower()}
 """
-)
 
 
 sdf_geom = (

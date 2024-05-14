@@ -187,7 +187,11 @@ wfm2
 import geopandas as gpd
 
 gpd.datasets.available
-get_example = lambda name: gpd.read_file(gpd.datasets.get_path(name)).to_crs("WGS84")
+
+
+def get_example(name):
+    return gpd.read_file(gpd.datasets.get_path(name)).to_crs("WGS84")
+
 
 naturalearth_lowres = get_example("naturalearth_lowres")
 naturalearth_cities = get_example("naturalearth_cities")

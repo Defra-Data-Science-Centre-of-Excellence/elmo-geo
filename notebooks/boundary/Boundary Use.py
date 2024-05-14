@@ -73,8 +73,11 @@ sdf_parcel.display()
 
 # COMMAND ----------
 
+
 # DBTITLE 1,Parcel Adjacency
-simplify = lambda col: F.expr(f"ST_SimplifyPreserveTopology(ST_Force_2D(ST_MakeValid({col})), 1) AS {col}")
+def simplify(col):
+    return F.expr(f"ST_SimplifyPreserveTopology(ST_Force_2D(ST_MakeValid({col})), 1) AS {col}")
+
 
 sdf_parcel = (
     spark.read.format("geoparquet")
@@ -136,10 +139,18 @@ print(f"Number of intersections with unknown business: {count_null_bid:,.0f}")
 
 # COMMAND ----------
 
+
 # DBTITLE 1,Neighbouring Land Use
-cross_compliance = lambda col, buf: F.expr(f"ST_MakeValid(ST_Buffer({col}, {buf}))")
-st_union = lambda col: F.expr(f"ST_MakeValid(ST_Union_Aggr(ST_SimplifyPreserveTopology(ST_PrecisionReduce(ST_Force_2D(ST_MakeValid({col})), 3), 1))) AS {col}")
-boundary = lambda col: F.expr(f"ST_MakeValid(ST_Force_2D(ST_PrecisionReduce(ST_SimplifyPreserveTopology(ST_Boundary({col}), 1), 3))) AS geometry_boundary")
+def cross_compliance(col, buf):
+    return F.expr(f"ST_MakeValid(ST_Buffer({col}, {buf}))")
+
+
+def st_union(col):
+    return F.expr(f"ST_MakeValid(ST_Union_Aggr(ST_SimplifyPreserveTopology(ST_PrecisionReduce(ST_Force_2D(ST_MakeValid({col})), 3), 1))) AS {col}")
+
+
+def boundary(col):
+    return F.expr(f"ST_MakeValid(ST_Force_2D(ST_PrecisionReduce(ST_SimplifyPreserveTopology(ST_Boundary({col}), 1), 3))) AS geometry_boundary")
 
 
 sdf_adj_same = (
@@ -256,25 +267,27 @@ sdf_neighbour.count()
 
 # COMMAND ----------
 
+
 # DBTITLE 1,Boundary Use (geometries)
 # Splitting Usage Method
-boundary_use = lambda sdf, use, buf: (
-    sdf.withColumn("tmp", F.expr(f"ST_Buffer(geometry_{use}, {buf})"))
-    .withColumn(
-        "tmp",
-        F.expr(
-            """EXPLODE(Array(
+def boundary_use(sdf, use, buf):
+    return (
+        sdf.withColumn("tmp", F.expr(f"ST_Buffer(geometry_{use}, {buf})"))
+        .withColumn(
+            "tmp",
+            F.expr(
+                """EXPLODE(Array(
     Array(ST_Intersection(geometry_boundary, tmp), ST_Point(1,1)),
     Array(ST_Difference(geometry_boundary, tmp), ST_Point(0,0))
   ))""",
-        ),
+            ),
+        )
+        .withColumn("geometry_boundary", F.expr("tmp[0]"))
+        .withColumn(f"elg_{use}", F.expr("tmp[1]==ST_Point(1,1)"))
+        .drop(f"geometry_{use}", "tmp")
+        .filter("NOT ST_IsEmpty(geometry_boundary)")
+        .withColumn("geometry_boundary", F.expr("EXPLODE(ST_Dump(geometry_boundary))"))
     )
-    .withColumn("geometry_boundary", F.expr("tmp[0]"))
-    .withColumn(f"elg_{use}", F.expr("tmp[1]==ST_Point(1,1)"))
-    .drop(f"geometry_{use}", "tmp")
-    .filter("NOT ST_IsEmpty(geometry_boundary)")
-    .withColumn("geometry_boundary", F.expr("EXPLODE(ST_Dump(geometry_boundary))"))
-)
 
 
 sdf_boundary = (

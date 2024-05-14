@@ -12,7 +12,10 @@ sf_out = "dbfs:/mnt/lab/unrestricted/elm/buffer_strips/boundary.parquet/"
 
 # COMMAND ----------
 
-buf = lambda x: f"ST_Area(ST_Intersection(ST_MakeValid(ST_Buffer(ST_Boundary(geometry), {x})), geometry))/10000 AS ha_buf{x}"
+
+def buf(x):
+    return f"ST_Area(ST_Intersection(ST_MakeValid(ST_Buffer(ST_Boundary(geometry), {x})), geometry))/10000 AS ha_buf{x}"
+
 
 sdf = (
     spark.read.parquet(sf_parcel)

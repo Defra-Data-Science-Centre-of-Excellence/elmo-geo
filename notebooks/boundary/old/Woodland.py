@@ -76,8 +76,8 @@ def bng(x: int, y: int, *, precision: int = 1) -> str:
     assert 0 <= precision <= 5, f"{precision:d} not within precision range[0, 5]"
     assert BNG_LIMITS[0] <= x < BNG_LIMITS[2], f"{x:_} not within BNG range[{BNG_LIMITS[0]:_}, {BNG_LIMITS[2]:_})"
     assert BNG_LIMITS[1] <= y < BNG_LIMITS[3], f"{y:_} not within BNG range[{BNG_LIMITS[1]:_}, {BNG_LIMITS[3]:_})"
-    L = lambda a: (a // 100_000) * 100_000
-    D = lambda b: f"{int(b)%100_000:05d}"[:precision]
+    L = lambda a: (a // 100_000) * 100_000  # noqa:E731
+    D = lambda b: f"{int(b)%100_000:05d}"[:precision]  # noqa:E731
     return BNG_LOOKUP[L(x), L(y)] + D(x) + D(y)
 
 
@@ -199,7 +199,7 @@ def download_file(url, path, retry_count, retry_delay):
 
 
 def download_files(urls, path, num_retries=3, retry_delay=60):
-    _dl = lambda url: download_file(url, path, num_retries, retry_delay)
+    _dl = lambda url: download_file(url, path, num_retries, retry_delay)  # noqa:E731
     sc.parallelize(urls).map(_dl).collect()
 
 

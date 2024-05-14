@@ -152,7 +152,11 @@ I = avg * elig / total
 uptake = I
 
 cost1, uptake1, elig1 = cost, uptake, elig
-admin_ratio = lambda c, u: (c / u - cost1 / uptake1) / elig1
+
+
+def admin_ratio(c, u):
+    return (c / u - cost1 / uptake1) / elig1
+
 
 df = df.append(
     {
@@ -275,7 +279,11 @@ I = avg * elig / total
 uptake = I
 
 cost1, uptake1, elig1 = cost, uptake, elig
-admin_ratio = lambda c, u: (c / u - cost1 / uptake1) / elig1
+
+
+def admin_ratio(c, u):
+    return (c / u - cost1 / uptake1) / elig1
+
 
 df = df.append(
     {
