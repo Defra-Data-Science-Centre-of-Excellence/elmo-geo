@@ -121,15 +121,15 @@ def ogr_to_geoparquet(f_in, f_out, layer):
 def convert_dataset(f_in, f_out):
     for f0, part, layer in get_to_convert(f_in):
         f1 = f"{f_out}/{part}"
-        LOG.info(f"Converting: {f1}")
         ogr_to_geoparquet(f0, f1, layer)
 
 
 def partition_geoparquet(f_in, f_out, columns):
+    LOG.info(f"Partition: {f_in}, {f_out}")
+    sdf = spark.read.parquet(dbfs(f_in, True)).withColumn("fid", F.monotonically_increasing_id())
+    sdf.write.format("noop").mode("overwrite").save()  # miid bug #
     return (
-        spark.read.parquet(dbfs(f_in, True))
-        .withColumn("fid", F.monotonically_increasing_id())
-        .withColumnsRenamed(columns)
+        sdf.withColumnsRenamed(columns)
         .withColumn("geometry", load_geometry())
         .withColumn("geometry", F.expr("EXPLODE(ST_Dump(geometry))"))
         .transform(sindex, method="BNG", resolution="10km", index_fn="chipped_index")
@@ -140,9 +140,14 @@ def partition_geoparquet(f_in, f_out, columns):
 def convert(dataset):
     name = dataset["name"]
     columns = dataset.get("columns", {})  # rename columns, but don't drop any
+    LOG.info(f"Converting: {name}")
 
-    f_raw = dataset.get("bronze", dataset["uri"])
-    f_tmp = f"/dbfs/tmp/{name}.parquet"
+    if hasattr(dataset, "uri"):
+        dataset["bronze"] = dataset["uri"]
+        dataset.pop("uri")
+
+    f_raw = dataset["bronze"]
+    f_tmp = f"/dbfs/tmp/{name}.parquet" if not f_raw.endswith(".parquet") else f_raw
     f_out = f"{SILVER}/{name}.parquet"
 
     # Download
@@ -150,16 +155,13 @@ def convert(dataset):
         raise TypeError(f"Expecting /dbfs/ dataset: {f_raw}")
 
     # Convert
-    if f_raw.endswith(".parquet"):
-        f_tmp = f_raw
-    else:
+    if not os.path.exists(f_tmp):
         convert_dataset(f_raw, f_tmp)
 
     # Partition
-    LOG.info(f"Partition: {f_tmp}, {f_out}")
-    partition_geoparquet(f_tmp, f_out, columns)
+    if not os.path.exists(f_out):
+        partition_geoparquet(f_tmp, f_out, columns)
 
-    dataset["bronze"] = dataset["uri"]
     dataset["silver"] = f_out
     dataset["tasks"]["convert"] = datetime.today().strftime("%Y_%m_%d")
     return dataset
