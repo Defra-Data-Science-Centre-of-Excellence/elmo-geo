@@ -24,10 +24,10 @@
 
 import geopandas as gpd
 import matplotlib.pyplot as plt
+from matplotlib.animation import FuncAnimation
 from shapely import box, delaunay_triangles, from_wkt
 from shapely.geometry import LineString, MultiPolygon, Polygon
-from shapely.ops import split, clip_by_rect
-from matplotlib.animation import FuncAnimation
+from shapely.ops import clip_by_rect, split
 
 # COMMAND ----------
 
