@@ -26,9 +26,9 @@ manual_datasets = [
         "note": "rpa-parcel-adas is the closest dataset we have to that used by WFM.  It was requested directly from RPA and was shared on SharePoint."
     },
     {
-        "name": "rpa-parcel-adas",
+        "name": "rpa-hedge-adas",
         "uri": "missing sharepoint link",
-        "bronze": "/dbfs/mnt/lab/restricted/ELM-Project/bronze/rpa-parcel-adas.parquet",
+        "bronze": "/dbfs/mnt/lab/restricted/ELM-Project/bronze/rpa-hedge-adas.parquet",
         "columns": {
             "Shape": "geometry"
         },
