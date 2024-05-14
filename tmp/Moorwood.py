@@ -72,9 +72,7 @@ for name, f_in in datasets.items():
 
 # COMMAND ----------
 
-sf_parcels_stg = (
-    "dbfs:/mnt/lab/restricted/ELM-Project/stg/rpa-parcels-2021_03_16-reference_parcels.parquet"
-)
+sf_parcels_stg = "dbfs:/mnt/lab/restricted/ELM-Project/stg/rpa-parcels-2021_03_16-reference_parcels.parquet"
 sf_parcels_ods = "dbfs:/mnt/lab/restricted/ELM-Project/ods/rpa-parcels-2021_03_16.parquet/"
 
 
@@ -93,9 +91,7 @@ sdf_parcels.count()
 
 # COMMAND ----------
 
-sf_moor_stg = (
-    "dbfs:/mnt/lab/restricted/ELM-Project/stg/rpa-moor-2021_03_03-refdata_owner_lfa_polygon.parquet"
-)
+sf_moor_stg = "dbfs:/mnt/lab/restricted/ELM-Project/stg/rpa-moor-2021_03_03-refdata_owner_lfa_polygon.parquet"
 sf_moor_ods = "dbfs:/mnt/lab/restricted/ELM-Project/ods/rpa-moor-2021_03_03.parquet/"
 
 

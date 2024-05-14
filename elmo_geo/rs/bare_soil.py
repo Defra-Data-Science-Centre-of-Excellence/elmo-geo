@@ -67,9 +67,7 @@ def plot_bare_soil_distribution(vals: pd.Series, name: str = "", assumption: flo
     name += " "
     fig.suptitle(f"Distribution of {name} by bare soil cover", x=xpos, y=0.92, ha="left", fontsize="large")
     fig.supxlabel(
-        "Source: Sentinel-2 L2A imagery, November 2021 - February 2022.\n"
-        f"No data for {nulls:,.0f} of {count:,.0f} fields ({nulls/count:.3%}) "
-        "due to cloud cover in the imagery",
+        f"Source: Sentinel-2 L2A imagery, November 2021 - February 2022.\nNo data for {nulls:,.0f} of {count:,.0f} fields ({nulls/count:.3%}) due to cloud cover in the imagery",  # noqa:E501
         x=xpos,
         y=-0.05,
         ha="left",

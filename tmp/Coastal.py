@@ -81,12 +81,8 @@ coastal = [
 ]
 can_be_coastal = ["Coastal and floodplain grazing marsh"]
 
-df_coastal = df[
-    df["id_business"].isin(df[df["Main_Habit"].isin(coastal)]["id_business"])
-]  # Businesses with Coastal Habitat
-df_coastal = df_coastal[
-    df_coastal["Main_Habit"].isin([*coastal, *can_be_coastal])
-]  # Add Floodplain if a business has another coastal habitat
+df_coastal = df[df["id_business"].isin(df[df["Main_Habit"].isin(coastal)]["id_business"])]  # Businesses with Coastal Habitat
+df_coastal = df_coastal[df_coastal["Main_Habit"].isin([*coastal, *can_be_coastal])]  # Add Floodplain if a business has another coastal habitat
 # df_coastal = df_coastal[df_coastal['id_business']!=67612]  # Remove National Trust
 df_coastal = df_coastal.drop(columns=["id_business"])
 df_grouped = df_coastal.groupby(["Main_Habit", "arable_grass"]).agg(["count", "sum", "mean"])

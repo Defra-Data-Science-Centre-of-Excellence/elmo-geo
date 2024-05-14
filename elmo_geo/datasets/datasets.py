@@ -62,9 +62,9 @@ class Dataset:
         if not self.source:
             raise ValueError("`source` must be defined")
         if self.path_polygons is None:
-            self.path_polygons = f"/mnt/lab/unrestricted/elm/{self.source}/{self.name}" + "/{version}/polygons.parquet"
+            self.path_polygons = f"/mnt/lab/unrestricted/elm/{self.source}/{self.name}/{{version}}/polygons.parquet"
         if self.path_output is None:
-            self.path_output = f"/mnt/lab/unrestricted/elm/{self.source}/{self.name}" + "/{version}/output.parquet"
+            self.path_output = f"/mnt/lab/unrestricted/elm/{self.source}/{self.name}/{{version}}/output.parquet"
         if self.keep_cols is None:
             self.keep_cols = []
         if self.rename_cols is None:
@@ -81,23 +81,23 @@ parcels = Dataset(
     versions=[
         Version(
             name="2021_03_16",
-            path_read=("dbfs:/mnt/lab/unrestricted/elm_data/rpa/reference_parcels/2021_03_16.parquet"),
+            path_read="dbfs:/mnt/lab/unrestricted/elm_data/rpa/reference_parcels/2021_03_16.parquet",
         ),
         Version(
             name="2021_11_16_adas",
-            path_read=("dbfs:/mnt/lab/restricted/ELM-Project/ods/rpa-parcel-adas.parquet"),
+            path_read="dbfs:/mnt/lab/restricted/ELM-Project/ods/rpa-parcel-adas.parquet",
         ),
         Version(
             name="2023_02_07",
-            path_read=("dbfs:/mnt/lab/unrestricted/elm_data/rpa/reference_parcels/2023_02_07.parquet"),
+            path_read="dbfs:/mnt/lab/unrestricted/elm_data/rpa/reference_parcels/2023_02_07.parquet",
         ),
         Version(
             name="2023_06_03",
-            path_read=("dbfs:/mnt/lab/unrestricted/elm_data/rpa/reference_parcels/2023_06_03.geoparquet"),
+            path_read="dbfs:/mnt/lab/unrestricted/elm_data/rpa/reference_parcels/2023_06_03.geoparquet",
         ),
         Version(
             name="2023_12_13",
-            path_read=("dbfs:/mnt/lab/restricted/ELM-Project/ods/rpa-parcel-2023_12_13.parquet"),
+            path_read="dbfs:/mnt/lab/restricted/ELM-Project/ods/rpa-parcel-2023_12_13.parquet",
         ),
     ],
 )
@@ -109,7 +109,7 @@ alc = Dataset(
     versions=[
         Version(
             name="unknown",
-            path_read=("/dbfs/mnt/lab/unrestricted/elm_data/defra/alc/" "ALC_BMV_UNION_Merge_3b.shp"),
+            path_read="/dbfs/mnt/lab/unrestricted/elm_data/defra/alc/ALC_BMV_UNION_Merge_3b.shp",
         ),
     ],
     keep_cols=["geometry", "ALC_GRADE"],
@@ -123,19 +123,11 @@ national_park = Dataset(
     versions=[
         Version(
             name="2021_03_15",
-            path_read=(
-                "/dbfs/mnt/base/unrestricted/source_defra_data_services_platform"
-                "/dataset_national_parks/format_SHP_national_parks"
-                "/SNAPSHOT_2021_03_15_national_parks/National_Parks_England.shp"
-            ),
+            path_read="/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_national_parks/format_SHP_national_parks/SNAPSHOT_2021_03_15_national_parks/National_Parks_England.shp",
         ),
         Version(
             name="2023_02_14",
-            path_read=(
-                "/dbfs/mnt/base/unrestricted/source_defra_data_services_platform"
-                "/dataset_national_parks/format_SHP_national_parks"
-                "/SNAPSHOT_2023_02_14_national_parks/National_Parks_England.shp"
-            ),
+            path_read="/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_national_parks/format_SHP_national_parks/SNAPSHOT_2023_02_14_national_parks/National_Parks_England.shp",
         ),
     ],
     keep_cols=["geometry", "name"],
@@ -150,19 +142,11 @@ ramsar = Dataset(
     versions=[
         Version(
             name="2021_03_16",
-            path_read=(
-                "/dbfs/mnt/base/unrestricted/source_defra_data_services_platform"
-                "/dataset_ramsar/format_SHP_ramsar/"
-                "SNAPSHOT_2021_03_16_ramsar/Ramsar_England.shp"
-            ),
+            path_read="/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_ramsar/format_SHP_ramsar/SNAPSHOT_2021_03_16_ramsar/Ramsar_England.shp",
         ),
         Version(
             name="2023_02_14",
-            path_read=(
-                "/dbfs/mnt/base/unrestricted/source_defra_data_services_platform"
-                "/dataset_ramsar/format_SHP_ramsar/"
-                "SNAPSHOT_2023_02_14_ramsar/Ramsar_England.shp"
-            ),
+            path_read="/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_ramsar/format_SHP_ramsar/SNAPSHOT_2023_02_14_ramsar/Ramsar_England.shp",
         ),
     ],
     keep_cols=["geometry", "name"],
@@ -176,11 +160,7 @@ peaty_soils = Dataset(
     versions=[
         Version(
             name="2021_03_24",
-            path_read=(
-                "/dbfs/mnt/base/unrestricted/source_defra_data_services_platform"
-                "/dataset_peaty_soils/format_GPKG_peaty_soils"
-                "/SNAPSHOT_2021_03_24_peaty_soils/refdata_owner.peaty_soils_location.gpkg"
-            ),
+            path_read="/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_peaty_soils/format_GPKG_peaty_soils/SNAPSHOT_2021_03_24_peaty_soils/refdata_owner.peaty_soils_location.gpkg",
         ),
     ],
     keep_cols=["pclassdesc", "geometry"],
@@ -193,12 +173,7 @@ national_character_areas = Dataset(
     versions=[
         Version(
             name="2021_03_29",
-            path_read=(
-                "/dbfs/mnt/base/unrestricted/source_defra_data_services_platform"
-                "/dataset_national_character_areas/format_SHP_national_character_areas"
-                "/SNAPSHOT_2021_03_29_national_character_areas"
-                "/National_Character_Areas___Natural_England.shp"
-            ),
+            path_read="/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_national_character_areas/format_SHP_national_character_areas/SNAPSHOT_2021_03_29_national_character_areas/National_Character_Areas___Natural_England.shp",
         ),
     ],
     keep_cols=["geometry", "NCA_Name"],
@@ -211,23 +186,11 @@ sssi = Dataset(
     versions=[
         Version(
             name="2021_03_17",
-            path_read=(
-                "/dbfs/mnt/base/unrestricted/source_defra_data_services_platform"
-                "/dataset_sites_of_special_scientific_interest"
-                "/format_SHP_sites_of_special_scientific_interest"
-                "/SNAPSHOT_2021_03_17_sites_of_special_scientific_interest"
-                "/Sites_of_Special_Scientific_Interest_England.shp"
-            ),
+            path_read="/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_sites_of_special_scientific_interest/format_SHP_sites_of_special_scientific_interest/SNAPSHOT_2021_03_17_sites_of_special_scientific_interest/Sites_of_Special_Scientific_Interest_England.shp",
         ),
         Version(
             name="2023_02_14",
-            path_read=(
-                "/dbfs/mnt/base/unrestricted/source_defra_data_services_platform"
-                "/dataset_sites_of_special_scientific_interest"
-                "/format_SHP_sites_of_special_scientific_interest"
-                "/SNAPSHOT_2023_02_14_sites_of_special_scientific_interest"
-                "/Sites_of_Special_Scientific_Interest_England.shp"
-            ),
+            path_read="/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_sites_of_special_scientific_interest/format_SHP_sites_of_special_scientific_interest/SNAPSHOT_2023_02_14_sites_of_special_scientific_interest/Sites_of_Special_Scientific_Interest_England.shp",
         ),
     ],
     keep_cols=["geometry", "sssi_name", "status"],
@@ -242,23 +205,11 @@ aonb = Dataset(
     versions=[
         Version(
             name="2021_03_15",
-            path_read=(
-                "/dbfs/mnt/base/unrestricted/source_defra_data_services_platform"
-                "/dataset_areas_of_outstanding_natural_beauty"
-                "/format_SHP_areas_of_outstanding_natural_beauty"
-                "/SNAPSHOT_2021_03_15_areas_of_outstanding_natural_beauty"
-                "/Areas_of_Outstanding_Natural_Beauty_England.shp"
-            ),
+            path_read="/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_areas_of_outstanding_natural_beauty/format_SHP_areas_of_outstanding_natural_beauty/SNAPSHOT_2021_03_15_areas_of_outstanding_natural_beauty/Areas_of_Outstanding_Natural_Beauty_England.shp",
         ),
         Version(
             name="2023_02_14",
-            path_read=(
-                "/dbfs/mnt/base/unrestricted/source_defra_data_services_platform"
-                "/dataset_areas_of_outstanding_natural_beauty"
-                "/format_SHP_areas_of_outstanding_natural_beauty"
-                "/SNAPSHOT_2023_02_14_areas_of_outstanding_natural_beauty"
-                "/Areas_of_Outstanding_Natural_Beauty_England.shp"
-            ),
+            path_read="/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_areas_of_outstanding_natural_beauty/format_SHP_areas_of_outstanding_natural_beauty/SNAPSHOT_2023_02_14_areas_of_outstanding_natural_beauty/Areas_of_Outstanding_Natural_Beauty_England.shp",
         ),
     ],
     keep_cols=["geometry", "name"],
@@ -271,20 +222,11 @@ lfa = Dataset(
     versions=[
         Version(
             name="2021_03_03",
-            path_read=(
-                "/dbfs/mnt/base/unrestricted/source_rpa_spatial_data_mart"
-                "/dataset_lfa_and_moorland_line/format_GPKG_lfa_and_moorland_line"
-                "/SNAPSHOT_2021_03_03_lfa_and_moorland_line/refdata_owner.lfa.gpkg"
-            ),
+            path_read="/dbfs/mnt/base/unrestricted/source_rpa_spatial_data_mart/dataset_lfa_and_moorland_line/format_GPKG_lfa_and_moorland_line/SNAPSHOT_2021_03_03_lfa_and_moorland_line/refdata_owner.lfa.gpkg",
         ),
         Version(
             name="2023_02_07",
-            path_read=(
-                "/dbfs/mnt/base/unrestricted/source_rpa_spatial_data_mart"
-                "/dataset_lfa_and_moorland_line/format_GPKG_lfa_and_moorland_line"
-                "/SNAPSHOT_2023_02_07_lfa_and_moorland_line/refdata_owner.lfa.zip"
-                "/refdata_owner.lfa/refdata_owner.lfa.gpkg"
-            ),
+            path_read="/dbfs/mnt/base/unrestricted/source_rpa_spatial_data_mart/dataset_lfa_and_moorland_line/format_GPKG_lfa_and_moorland_line/SNAPSHOT_2023_02_07_lfa_and_moorland_line/refdata_owner.lfa.zip/refdata_owner.lfa/refdata_owner.lfa.gpkg",
         ),
     ],
     keep_cols=["geometry", "name"],
@@ -299,7 +241,7 @@ region = Dataset(
     versions=[
         Version(
             name="2021_12_01",
-            path_read=("/dbfs/mnt/migrated-landing/Office of National Statistics/Regions__December_2021__EN_BFC.geojson"),
+            path_read="/dbfs/mnt/migrated-landing/Office of National Statistics/Regions__December_2021__EN_BFC.geojson",
         ),
     ],
     keep_cols=["geometry", "RGN21NM"],
@@ -313,22 +255,11 @@ commons = Dataset(
     versions=[
         Version(
             name="2021_03_05",
-            path_read=(
-                "/dbfs/mnt/base/unrestricted/source_rpa_spatial_data_mart"
-                "/dataset_registered_common_land_bps_layer"
-                "/format_GPKG_registered_common_land_bps_layer"
-                "/SNAPSHOT_2021_03_05_registered_common_land_bps_layer/RCL.gpkg"
-            ),
+            path_read="/dbfs/mnt/base/unrestricted/source_rpa_spatial_data_mart/dataset_registered_common_land_bps_layer/format_GPKG_registered_common_land_bps_layer/SNAPSHOT_2021_03_05_registered_common_land_bps_layer/RCL.gpkg",
         ),
         Version(
             name="2023_02_07",
-            path_read=(
-                "/dbfs/mnt/base/unrestricted/source_rpa_spatial_data_mart"
-                "/dataset_registered_common_land_bps_layer"
-                "/format_GPKG_registered_common_land_bps_layer"
-                "/SNAPSHOT_2023_02_07_registered_common_land_bps_layer"
-                "/refdata_owner.rcl.zip/refdata_owner.rcl/refdata_owner.rcl.gpkg"
-            ),
+            path_read="/dbfs/mnt/base/unrestricted/source_rpa_spatial_data_mart/dataset_registered_common_land_bps_layer/format_GPKG_registered_common_land_bps_layer/SNAPSHOT_2023_02_07_registered_common_land_bps_layer/refdata_owner.rcl.zip/refdata_owner.rcl/refdata_owner.rcl.gpkg",
         ),
     ],
     keep_cols=["geometry", "cl_number", "name"],
@@ -341,19 +272,11 @@ flood_risk_areas = Dataset(
     versions=[
         Version(
             name="2023_02_14",
-            path_read=(
-                "/dbfs/mnt/base/unrestricted/source_defra_data_services_platform"
-                "/dataset_flood_risk_areas/format_SHP_flood_risk_areas"
-                "/SNAPSHOT_2023_02_14_flood_risk_areas/Flood_Risk_Areas.shp"
-            ),
+            path_read="/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_flood_risk_areas/format_SHP_flood_risk_areas/SNAPSHOT_2023_02_14_flood_risk_areas/Flood_Risk_Areas.shp",
         ),
         Version(
             name="2021_03_18",
-            path_read=(
-                "/dbfs/mnt/base/unrestricted/source_defra_data_services_platform"
-                "/dataset_flood_risk_areas/format_SHP_flood_risk_areas"
-                "/SNAPSHOT_2021_03_18_flood_risk_areas/Flood_Risk_Areas.shp"
-            ),
+            path_read="/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_flood_risk_areas/format_SHP_flood_risk_areas/SNAPSHOT_2021_03_18_flood_risk_areas/Flood_Risk_Areas.shp",
         ),
     ],
     keep_cols=["geometry", "flood_sour", "fra_name", "fra_id"],
@@ -366,11 +289,7 @@ red_squirrel = Dataset(
     versions=[
         Version(
             name="2022_10_18",
-            path_read=(
-                "/dbfs/mnt/lab/unrestricted/elm_data/ewco/red_squirrel"
-                "/2022_10_18"
-                "/EWCO_Biodiversity___Priority_Species___Red_Squirrel___Woodland_Creation.shp"
-            ),
+            path_read="/dbfs/mnt/lab/unrestricted/elm_data/ewco/red_squirrel/2022_10_18/EWCO_Biodiversity___Priority_Species___Red_Squirrel___Woodland_Creation.shp",
         ),
     ],
     keep_cols=["geometry", "status", "cswcm_pnts", "ewco_val", "sitename", "cat"],
@@ -388,7 +307,7 @@ priority_habitat_network = Dataset(
     versions=[
         Version(
             name="2022_10_06",
-            path_read=("/dbfs/mnt/lab/unrestricted/elm_data/ewco/priority_habitat_network/2022_10_06/EWCO_Biodiversity___Priority_Habitat_Network.shp"),
+            path_read="/dbfs/mnt/lab/unrestricted/elm_data/ewco/priority_habitat_network/2022_10_06/EWCO_Biodiversity___Priority_Habitat_Network.shp",
         ),
     ],
     keep_cols=["geometry", "csht_pnts", "cswcm_pnts", "ewco_val", "cat"],
@@ -405,7 +324,7 @@ nfc_social = Dataset(
     versions=[
         Version(
             name="2022_03_14",
-            path_read=("/dbfs/mnt/lab/unrestricted/elm_data/ewco/nfc_social/2022_03_14/EWCO___NfC_Social.shp"),
+            path_read="/dbfs/mnt/lab/unrestricted/elm_data/ewco/nfc_social/2022_03_14/EWCO___NfC_Social.shp",
         ),
     ],
     keep_cols=["geometry", "status"],
@@ -418,7 +337,7 @@ water_quality = Dataset(
     versions=[
         Version(
             name="2023_02_27",
-            path_read=("/dbfs/mnt/lab/unrestricted/elm_data/ewco/water_quality/2023_02_27/EWCO__E2_80_93_Water_Quality.shp"),
+            path_read="/dbfs/mnt/lab/unrestricted/elm_data/ewco/water_quality/2023_02_27/EWCO__E2_80_93_Water_Quality.shp",
         ),
     ],
     keep_cols=["geometry", "cat"],
@@ -431,7 +350,7 @@ flood_risk_management = Dataset(
     versions=[
         Version(
             name="2023_02_24",
-            path_read=("/dbfs/mnt/lab/unrestricted/elm_data/ewco/flood_risk_management/2023_02_24/EWCO___Flood_Risk_Management.shp"),
+            path_read="/dbfs/mnt/lab/unrestricted/elm_data/ewco/flood_risk_management/2023_02_24/EWCO___Flood_Risk_Management.shp",
         ),
     ],
     keep_cols=["geometry", "LANDSCAPE"],
@@ -445,9 +364,7 @@ keeping_rivers_cool_riparian_buffers = Dataset(
     versions=[
         Version(
             name="2023_03_03",
-            path_read=(
-                "/dbfs/mnt/lab/unrestricted/elm_data/ewco/keeping_rivers_cool_riparian_buffers/2023_03_03/EWCO___Keeping_Rivers_Cool_Riparian_Buffers.shp"
-            ),
+            path_read="/dbfs/mnt/lab/unrestricted/elm_data/ewco/keeping_rivers_cool_riparian_buffers/2023_03_03/EWCO___Keeping_Rivers_Cool_Riparian_Buffers.shp",
         ),
     ],
     keep_cols=["geometry", "OBJECTID"],
@@ -459,9 +376,7 @@ nfc_ammonia_emmissions = Dataset(
     versions=[
         Version(
             name="2022_03_14",
-            path_read=(
-                "/dbfs/mnt/lab/unrestricted/elm_data/ewco/nfc_ammonia_emmissions/2022_03_14/EWCO___NfC_Ammonia_Emissions_Capture_for_SSSI_Protection.shp"
-            ),
+            path_read="/dbfs/mnt/lab/unrestricted/elm_data/ewco/nfc_ammonia_emmissions/2022_03_14/EWCO___NfC_Ammonia_Emissions_Capture_for_SSSI_Protection.shp",
         ),
     ],
     keep_cols=["geometry", "status", "pnts"],
@@ -474,7 +389,7 @@ tiles = Dataset(
     versions=[
         Version(
             name="2023_02_07",
-            path_read=("/dbfs/mnt/lab/unrestricted/elm/elmo/baresoil/tiles.parquet"),
+            path_read="/dbfs/mnt/lab/unrestricted/elm/elmo/baresoil/tiles.parquet",
         ),
     ],
     keep_cols=[
@@ -490,7 +405,7 @@ shine = Dataset(
     versions=[
         Version(
             name="2022_12_30",
-            path_read=("/dbfs/mnt/lab/restricted/ELM-Project/stg/he-shine-2022_12_30.parquet"),
+            path_read="/dbfs/mnt/lab/restricted/ELM-Project/stg/he-shine-2022_12_30.parquet",
         ),
     ],
     keep_cols=[

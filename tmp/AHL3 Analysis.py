@@ -41,32 +41,23 @@ elmo_geo.register()
 # COMMAND ----------
 
 # df_ahl3 = pd.read_csv('/dbfs/FileStore/AHL3_analysis.csv')  # Old
-df_ahl3 = pd.read_csv('/dbfs/FileStore/ecoffey_RITM0799970_2023_11_24.csv')
-df_wfm = pd.read_feather('/dbfs/mnt/lab/restricted/ELM-Project/stg/wfm-field-2023_06_09.feather')
-sdf_parcels = load_sdf('rpa-parcels-adas')
+df_ahl3 = pd.read_csv("/dbfs/FileStore/ecoffey_RITM0799970_2023_11_24.csv")
+df_wfm = pd.read_feather("/dbfs/mnt/lab/restricted/ELM-Project/stg/wfm-field-2023_06_09.feather")
+sdf_parcels = load_sdf("rpa-parcels-adas")
 
 # COMMAND ----------
 
-pdf_ahl3 = (df_ahl3
-    [['APPLICATION_ID', 'PARCELREF']]
-    .rename(columns={'APPLICATION_ID':'id_application', 'PARCELREF':'id_parcel'})
-)
-pdf_wfm = (df_wfm
-    [['id_business', 'id_parcel', 'ha_parcel_geo', 'ha_parcel_uaa']]
-    .rename(columns={'ha_parcel_geo':'ha_geo_wfm', 'ha_parcel_uaa':'ha_uaa_wfm'})
-)
-pdf_parcels = (sdf_parcels
-    .select('id_parcel', F.expr('ST_Area(geometry)/10000 AS ha_geo_rpa'))
-    .toPandas()
-)
+pdf_ahl3 = df_ahl3[["APPLICATION_ID", "PARCELREF"]].rename(columns={"APPLICATION_ID": "id_application", "PARCELREF": "id_parcel"})
+pdf_wfm = df_wfm[["id_business", "id_parcel", "ha_parcel_geo", "ha_parcel_uaa"]].rename(columns={"ha_parcel_geo": "ha_geo_wfm", "ha_parcel_uaa": "ha_uaa_wfm"})
+pdf_parcels = sdf_parcels.select("id_parcel", F.expr("ST_Area(geometry)/10000 AS ha_geo_rpa")).toPandas()
 
 
-df_ha = pdf_wfm.merge(pdf_parcels, on='id_parcel', how='outer')
-cols = [col for col in df_ha.columns if col.startswith('ha_')]
-df_ha[[col+'_business' for col in cols]] = df_ha.groupby('id_business')[cols].transform(sum)
+df_ha = pdf_wfm.merge(pdf_parcels, on="id_parcel", how="outer")
+cols = [col for col in df_ha.columns if col.startswith("ha_")]
+df_ha[[col + "_business" for col in cols]] = df_ha.groupby("id_business")[cols].transform(sum)
 
 
-df = pdf_ahl3.merge(df_ha, on='id_parcel', how='left')
+df = pdf_ahl3.merge(df_ha, on="id_parcel", how="left")
 
 
 display(df)
@@ -74,11 +65,11 @@ display(df)
 # COMMAND ----------
 
 {
-    'rows': df.shape[0],
-    'id_application': df['id_application'].notna().sum(),
-    'id_parcel': df['id_parcel'].notna().sum(),
-    'id_business': df['id_business'].notna().sum(),
-    'wfm': df['ha_geo_wfm'].notna().sum(),
-    'rpa': df['ha_geo_rpa'].notna().sum(),
-    'wfm/rpa': df[['ha_geo_wfm', 'ha_geo_rpa']].notna().assign(x=lambda df: df['ha_geo_wfm'] | df['ha_geo_rpa'])['x'].sum(),
+    "rows": df.shape[0],
+    "id_application": df["id_application"].notna().sum(),
+    "id_parcel": df["id_parcel"].notna().sum(),
+    "id_business": df["id_business"].notna().sum(),
+    "wfm": df["ha_geo_wfm"].notna().sum(),
+    "rpa": df["ha_geo_rpa"].notna().sum(),
+    "wfm/rpa": df[["ha_geo_wfm", "ha_geo_rpa"]].notna().assign(x=lambda df: df["ha_geo_wfm"] | df["ha_geo_rpa"])["x"].sum(),
 }

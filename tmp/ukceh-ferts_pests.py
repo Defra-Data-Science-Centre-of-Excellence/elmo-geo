@@ -15,9 +15,7 @@
 import os
 from io import StringIO
 
-import numpy as np
 import pandas as pd
-import rasterio as rio
 import rioxarray as rxr
 import xarray as xr
 from pyspark.sql import functions as F
@@ -41,8 +39,8 @@ f_wfm_field = FOLDER_STG + "/wfm-field-2023_06_09.feather"
 f_fert = FOLDER_ODS + "/elmo_geo-fertilisers-2023_10_05.parquet"
 f_pest = FOLDER_ODS + "/elmo_geo-pesticides-2023_10_05.parquet"
 
-f_out = FOLDER_ODS + '/awest-wfm_fert_pest-2023_10_17.feather'
-f_sum = FOLDER_ODS + '/awest-wfm_fert_pest_sum-2023_10_26.feather'
+f_out = FOLDER_ODS + "/awest-wfm_fert_pest-2023_10_17.feather"
+f_sum = FOLDER_ODS + "/awest-wfm_fert_pest_sum-2023_10_26.feather"
 
 # COMMAND ----------
 
@@ -103,18 +101,15 @@ display(sdf_parcels)
 
 # Fertilisers
 da_fert = xr.concat(
-    [
-        rxr.open_rasterio(f_ferts + f, masked=True).assign_coords(band=fert_namer(f))
-        for f in os.listdir(f_ferts)
-    ],
+    [rxr.open_rasterio(f_ferts + f, masked=True).assign_coords(band=fert_namer(f)) for f in os.listdir(f_ferts)],
     dim="band",
 ).fillna(0)
 
 
 sdf_fert = sdf_parcels.withColumn("_out", da_clip_mean("geometry", da_fert)).select(
-    "id_parcel", *[F.expr(f"_out[{i}] AS {name}") for i, name in enumerate(da_fert.band.data)]
+    "id_parcel",
+    *[F.expr(f"_out[{i}] AS {name}") for i, name in enumerate(da_fert.band.data)],
 )
-
 
 sdf_fert.write.parquet(dbfs(f_fert, True), mode="overwrite")
 display(sdf_fert)
@@ -123,21 +118,18 @@ display(sdf_fert)
 
 # Pesticides
 da_pest = xr.concat(
-    [
-        rxr.open_rasterio(f_pests + f, masked=True).assign_coords(band=pest_namer(f))
-        for f in os.listdir(f_pests)
-    ],
+    [rxr.open_rasterio(f_pests + f, masked=True).assign_coords(band=pest_namer(f)) for f in os.listdir(f_pests)],
     dim="band",
 ).fillna(0)
 
 
 sdf_pest = sdf_parcels.withColumn("_out", da_clip_mean("geometry", da_pest)).select(
-    "id_parcel", *[F.expr(f"_out[{i}] AS {name}") for i, name in enumerate(da_pest.band.data)]
+    "id_parcel",
+    *[F.expr(f"_out[{i}] AS {name}") for i, name in enumerate(da_pest.band.data)],
 )
 
-
 dbutils.fs.rm(dbfs(f_pest, True), recurse=True)
-sdf_pest.write.parquet(dbfs(f_pest, True))#, mode='overwrite')
+sdf_pest.write.parquet(dbfs(f_pest, True))  # , mode='overwrite')
 display(sdf_pest)
 
 # COMMAND ----------
@@ -150,10 +142,18 @@ df_pest = pd.read_parquet(f_pest)
 
 
 df_wfm = pd.DataFrame.merge(
-  df_wfm_farm[['id_business', 'farm_type']],
-  df_wfm_field[['id_business', 'id_parcel', 'participation_schemes', 'ha_parcel_geo', 'ha_parcel_uaa']],
-  on = 'id_business',
-  how = 'outer',
+    df_wfm_farm[["id_business", "farm_type"]],
+    df_wfm_field[
+        [
+            "id_business",
+            "id_parcel",
+            "participation_schemes",
+            "ha_parcel_geo",
+            "ha_parcel_uaa",
+        ]
+    ],
+    on="id_business",
+    how="outer",
 )
 
 df = df_wfm.merge(df_fert, on="id_parcel", how="outer").merge(df_pest, on="id_parcel", how="outer")
@@ -164,7 +164,7 @@ df
 
 # COMMAND ----------
 
-csv='''Name,chemgroup
+csv = """Name,chemgroup
 1-naphthylacetic acid,Growth regulator
 2-chloroethylphosphonic acid,Growth regulator
 "2,4-D",Herbicide
@@ -432,22 +432,24 @@ Trinexapac-ethyl,Growth regulator
 Triticonazole,Fungicide
 Urea,Fungicide
 Zeta-cypermethrin,Insecticide
-Zoxamide,Fungicide'''
+Zoxamide,Fungicide"""
 
 # COMMAND ----------
 
-lookup = pd.DataFrame({
-  'pest': [pest.replace('.tif', '') for pest in os.listdir(f_pests)],
-}).merge(
-  pd.read_csv(StringIO(csv)).assign(
-    pest = lambda df:  df['Name'].str.lower().str.replace('-', '_').str.replace(',', '_'),
-    chemgroup = lambda df:  df['chemgroup'].str.split(';').str[0].str.lower(),
-  ),
-  on = 'pest',
-  how = 'left',
+lookup = pd.DataFrame(
+    {
+        "pest": [pest.replace(".tif", "") for pest in os.listdir(f_pests)],
+    }
+).merge(
+    pd.read_csv(StringIO(csv)).assign(
+        pest=lambda df: df["Name"].str.lower().str.replace("-", "_").str.replace(",", "_"),
+        chemgroup=lambda df: df["chemgroup"].str.split(";").str[0].str.lower(),
+    ),
+    on="pest",
+    how="left",
 )
 
-lookup.groupby('chemgroup', dropna=False)['chemgroup'].count()
+lookup.groupby("chemgroup", dropna=False)["chemgroup"].count()
 
 # COMMAND ----------
 
@@ -461,18 +463,20 @@ df
 # df = pd.read_feather(f_out)
 
 
-df_sum = df[['id_business', 'id_parcel', 'ha_parcel_geo', 'ha_parcel_uaa']].assign(
-    farm_type = df['farm_type'].fillna(0).astype(int),
-    participation_schemes = df['participation_schemes'].fillna(0).astype(int),
-    tpha_fertiliser_n = df['fertiliser_n_prediction'] / 1e5,
-    tpha_fertiliser_p = df['fertiliser_p_prediction'] / 1e5,
-    tpha_fertiliser_k = df['fertiliser_k_prediction'] / 1e5,
+df_sum = df[["id_business", "id_parcel", "ha_parcel_geo", "ha_parcel_uaa"]].assign(
+    farm_type=df["farm_type"].fillna(0).astype(int),
+    participation_schemes=df["participation_schemes"].fillna(0).astype(int),
+    tpha_fertiliser_n=df["fertiliser_n_prediction"] / 1e5,
+    tpha_fertiliser_p=df["fertiliser_p_prediction"] / 1e5,
+    tpha_fertiliser_k=df["fertiliser_k_prediction"] / 1e5,
     # tpha_fertilisers = df[[col for col in df.columns if col.startswith('fertiliser_') and col.endswith('_prediction')]].sum(axis=1) / 1e5,
     # tpha_pesticides = df[[col for col in df.columns if col.startswith('pesticide_') and col.endswith('_prediction')]].sum(axis=1) / 1e5,
 )
 
 for chems, chemgroup in chemgroups:
-  df_sum[f'tpha_{chemgroup}'] = df[[col for col in df.columns if col.startswith('pesticide_') and col.endswith('prediction') and any(chems in col)]].sum(axis=1) / 1e5
+    df_sum[f"tpha_{chemgroup}"] = (
+        df[[col for col in df.columns if col.startswith("pesticide_") and col.endswith("prediction") and any(chems in col)]].sum(axis=1) / 1e5
+    )
 
 
 df_sum.to_feather(f_sum)
