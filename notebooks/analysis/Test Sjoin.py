@@ -11,11 +11,9 @@
 
 # COMMAND ----------
 
-import os
-import geopandas as gpd
+import pandas as pd
 from pyspark.sql import functions as F
 from shapely.geometry import Point
-import pandas as pd
 
 from elmo_geo import LOG, register
 from elmo_geo.st import sjoin
