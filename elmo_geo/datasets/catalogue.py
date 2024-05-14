@@ -2,7 +2,6 @@ import json
 
 from elmo_geo import LOG
 
-
 FILEPATH_CATALOGUE = "data/catalogue.json"
 
 
