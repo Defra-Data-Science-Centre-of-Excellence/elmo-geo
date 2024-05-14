@@ -18,11 +18,11 @@
 # COMMAND ----------
 
 from elmo_geo import register
-from elmo_geo.datasets.catalogue import find_datasets, run_task_on_catalogue
+from elmo_geo.datasets.catalogue import run_task_on_catalogue
 from elmo_geo.io.convert import convert
 
 register()
 
 # COMMAND ----------
 
-run_task_on_catalogue(convert, 'convert')
+run_task_on_catalogue('convert', convert)
