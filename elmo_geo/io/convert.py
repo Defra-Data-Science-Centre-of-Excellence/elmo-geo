@@ -127,7 +127,7 @@ def convert_dataset(f_in, f_out):
 def partition_geoparquet(f_in, f_out, columns):
     LOG.info(f"Partition: {f_in}, {f_out}")
     sdf = spark.read.parquet(dbfs(f_in, True)).withColumn("fid", F.monotonically_increasing_id())
-    sdf.write.format("noop").mode("overwrite").save()  # miid bug #
+    sdf.write.format("noop").mode("overwrite").save()  # miid bug
     return (
         sdf.withColumnsRenamed(columns)
         .withColumn("geometry", load_geometry())
@@ -139,10 +139,10 @@ def partition_geoparquet(f_in, f_out, columns):
 
 def convert(dataset):
     name = dataset["name"]
-    columns = dataset.get("columns", {})  # rename columns, but don't drop any
+    columns = dataset.get("columns", {})
     LOG.info(f"Converting: {name}")
 
-    if hasattr(dataset, "uri"):
+    if hasattr(dataset, "uri"):  # to remove with new catalogue
         dataset["bronze"] = dataset["uri"]
         dataset.pop("uri")
 
