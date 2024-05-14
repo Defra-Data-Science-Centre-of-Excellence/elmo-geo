@@ -430,7 +430,7 @@ n_null_boundary_categories = (
     )
 ).count()
 
-if (n_null_parcel_ids == n_null_boundary_categories == 0) == False:
+if not (n_null_parcel_ids == n_null_boundary_categories == 0):
     msg = "Unexpected nulls in uptake dataset"
     raise ValueError(msg)
 

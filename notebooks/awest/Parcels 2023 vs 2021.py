@@ -6378,4 +6378,4 @@ df2.dropna()
 
 # COMMAND ----------
 
-df2[(df2["check_total_hedge"] == False) & (df2["ha_diff"] != 0)]["ha_diff"].hist(bins=20)
+df2[(~df2["check_total_hedge"]) & (df2["ha_diff"] != 0)]["ha_diff"].hist(bins=20)
