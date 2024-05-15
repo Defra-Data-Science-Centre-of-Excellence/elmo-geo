@@ -198,7 +198,7 @@ manual_datasets = [
         "tasks": {
             "convert": "todo"
         },
-        "bronze": "dbfs:/mnt/lab/unrestricted/elm_data/natural_england/living_england/2022_09_16.parquet"
+        "bronze": "/dbfs/mnt/lab/unrestricted/elm_data/natural_england/living_england/2022_09_16.parquet"
     }
 ]
 
