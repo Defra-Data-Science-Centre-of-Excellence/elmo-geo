@@ -74,6 +74,7 @@ def to_sdf(
 
 
 def list_layers(f: str) -> list[str]:
+    """List layers using Fiona, but don't fail, instead return an empty list"""
     try:
         layers = listlayers(f)
     except DriverError:
@@ -82,12 +83,15 @@ def list_layers(f: str) -> list[str]:
 
 
 def list_files(f: str) -> list[str]:
+    """List all the files in a directory
+    similar to os.walk, but yielding full paths"""
     for f1 in iglob(f + "**", recursive=True):
         if os.path.isfile(f1):
             yield f1
 
 
 def get_to_convert(f: str) -> list[tuple[str, str, str]]:
+    """Get all the ogr readable files and their layers in a folder"""
     if os.path.isfile(f):
         for layer in list_layers(f):
             name = f"layer={snake_case(layer)}"
@@ -100,7 +104,8 @@ def get_to_convert(f: str) -> list[tuple[str, str, str]]:
                 yield f1, name, layer
 
 
-def ogr_to_geoparquet(f_in, f_out, layer):
+def ogr_to_geoparquet(f_in: str, f_out: str, layer: str):
+    """Convert a vector file's layer into a (Geo)Parquet file using gdal>3.5 ogr2ogr"""
     os.makedirs("/".join(f_out.split("/")[:-1]), exist_ok=True)
     out = subprocess.run(
         f"""
@@ -115,16 +120,17 @@ def ogr_to_geoparquet(f_in, f_out, layer):
         shell=True,
     )
     LOG.info(out.__repr__())
-    return out
 
 
-def convert_dataset(f_in, f_out):
+def convert_dataset(f_in: str, f_out: str):
+    """Convert a folder of vector files and all their layers into a parquet dataset"""
     for f0, part, layer in get_to_convert(f_in):
         f1 = f"{f_out}/{part}"
         ogr_to_geoparquet(f0, f1, layer)
 
 
-def partition_geoparquet(f_in, f_out, columns):
+def partition_geoparquet(f_in: str, f_out: str, columns: dict) -> SparkDataFrame:
+    """Repartition vector dataset in parquet format using the chipping method at 10km"""
     LOG.info(f"Partition: {f_in}, {f_out}")
     sdf = spark.read.parquet(dbfs(f_in, True)).withColumn("fid", F.monotonically_increasing_id())
     sdf.write.format("noop").mode("overwrite").save()  # miid bug
@@ -137,7 +143,12 @@ def partition_geoparquet(f_in, f_out, columns):
     )
 
 
-def convert(dataset):
+def convert(dataset: dict) -> dict:
+    """Convert a bronze vector dataset into silver
+    Will recursively find files in the bronze area, and all their layers, these are columns in a SparkDataFrame.
+    This method also chips the dataset into 10km grid (~3,000 paritions).
+    The resulting parquet will be partitioned by file, layer, and sindex.__annotations__`silver/source-dataset-version.parquet/file={}/layer={}/sindex={}.parquet`
+    """
     name = dataset["name"]
     columns = dataset.get("columns", {})
     LOG.info(f"Converting: {name}")
