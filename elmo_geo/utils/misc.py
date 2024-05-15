@@ -1,3 +1,4 @@
+import os
 import re
 import subprocess
 
@@ -31,7 +32,12 @@ def sh_run(exc: str, **kwargs):
     return out
 
 
-def info_sdf(sdf: SparkDataFrame, col: str = "geometry") -> SparkDataFrame:
+def count_parquet_files(folder):
+    """Get the number of parquet files in a dataset."""
+    return sum(1 for _, _, files in os.walk(folder) for f in files if f.endswith(".parquet"))
+
+
+def info_sdf(sdf: SparkDataFrame, f: str = None, geometry_column: str = "geometry", sindex_column: str = "sindex") -> SparkDataFrame:
     """Get Info about SedonaDataFrame
     Logs the number of partitions, geometry types, number of features, and average number of coordinates.
 
@@ -58,11 +64,10 @@ def info_sdf(sdf: SparkDataFrame, col: str = "geometry") -> SparkDataFrame:
     >>> 6             ST_Polygon   737962         44.8
     ```
     """
-    n = sdf.rdd.getNumPartitions()
     df = (
         sdf.selectExpr(
-            f"ST_GeometryType({col}) AS gtype",
-            f"ST_NPoints({col}) AS n",
+            f"ST_GeometryType({geometry_column}) AS gtype",
+            f"ST_NPoints({geometry_column}) AS n",
         )
         .groupby("gtype")
         .agg(
@@ -71,7 +76,16 @@ def info_sdf(sdf: SparkDataFrame, col: str = "geometry") -> SparkDataFrame:
         )
         .toPandas()
     )
-    LOG.info(f"partitions:  {n}\n{df}")
+    LOG.info(
+        f"""
+        Wrote Parquet: {f}
+        Count: {sdf.count()}
+        sindexes: {sdf.select(sindex_column).distinct().count()}
+        Partitions: {sdf.rdd.getNumPartitions()}
+        Files: {count_parquet_files(f) if f else f}
+        {df}
+    """
+    )
     return df
 
 
@@ -87,7 +101,7 @@ def snake_case(string: str) -> str:
     snake_case('Terrible01 dataset_name%') == 'terrible01_dataset_name'
     ```
     """
-    return re.sub("[^\w\d_]", "", re.sub("[\s-]", "_", string.lower()))
+    return re.sub(r"[^\w\d_]", "", re.sub(r"[\s/-]", "_", string.lower()))
 
 
 def string_to_dict(string: str, pattern: str) -> dict:
