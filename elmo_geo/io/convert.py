@@ -148,7 +148,7 @@ def convert(dataset):
 
     f_raw = dataset["bronze"]
     f_tmp = f"/dbfs/tmp/{name}.parquet" if not f_raw.endswith(".parquet") else f_raw
-    f_out = dataset.get('silver', f"{SILVER}/{name}.parquet")  # for restricted data
+    f_out = dataset.get("silver", f"{SILVER}/{name}.parquet")  # for restricted data
 
     if not os.path.exists(f_tmp):
         convert_dataset(f_raw, f_tmp)
