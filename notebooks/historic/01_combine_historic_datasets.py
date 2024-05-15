@@ -12,6 +12,8 @@
 
 # COMMAND ----------
 
+from pyspark.sql import functions as F
+
 from elmo_geo import register
 from elmo_geo.io.file import to_parquet
 from elmo_geo.st.geometry import load_geometry
@@ -33,39 +35,54 @@ f_shine = "/dbfs/mnt/lab/restricted/ELM-Project/bronze/he-shine-2022_12_30.parqu
 date = "2024_05_03"
 f_output_historic_combined = f"/dbfs/mnt/lab/restricted/ELM-Project/stg/he-combined_sites-{date}.parquet"
 
-filepaths_he = [
-    # f_listed_buildings,  # TODO: #126
-    f_protected_wreck_sites,
-    f_registered_battlefields,
-    f_registered_parks_and_gardens,
-    f_scheduled_monuments,
-    f_world_heritage_sites,
-]
+filepaths_he = {
+    #"listed_building": f_listed_buildings,  # TODO: #126
+    "protected_wreck_sites":f_protected_wreck_sites,
+    "registered_battlefields":f_registered_battlefields,
+    "registered_parks_and_gardens":f_registered_parks_and_gardens,
+    "scheduled_monuments":f_scheduled_monuments,
+    "world_heritage_sites":f_world_heritage_sites,
+}
 
 # COMMAND ----------
 
-sdf_historical_sites = spark.read.parquet(dbfs(sf_shine, True)).selectExpr(
+sdf_historical_sites = spark.read.parquet(dbfs(f_shine, True)).selectExpr(
     "'SHINE' AS dataset",
     "shine_uid AS ListEntry",
     "shine_name AS Name",
     "geom AS geometry",
 )
 
-for p in filepaths_he:
+for dataset, p in filepaths_he.items():
     sdf_historical_sites = sdf_historical_sites.unionByName(
         spark.read.parquet(dbfs(p, True)).selectExpr(
-            "layer AS dataset",
+            f"'{dataset}' AS dataset",
             "ListEntry",
             "Name",
             "geometry",
-        )
+        ),
         allowMissingColumns=False
     )
 
 sdf_historical_sites = (sdf_historical_sites
     .withColumn("geometry", load_geometry("geometry"))
     .withColumn("geometry", F.expr("EXPLODE(ST_Dump(geometry))"))
-    .transform(to_parquet, f_output_historic_combined)
 )
 
-sdf_historical_sites.groupby("dataset").count("ListEntry").display()
+(
+    sdf_historical_sites
+    .withColumn("geometry", F.expr(f"ST_AsBinary(geometry)"))
+    .write.mode("overwrite").parquet(dbfs(f_output_historic_combined, True))
+ )
+
+# COMMAND ----------
+
+sdf_historical_sites.groupBy("dataset").agg(F.count("ListEntry")).display()
+
+# COMMAND ----------
+
+(sdf_historical_sites
+ .withColumn("gtype", F.expr("ST_GeometryType(geometry)"))
+ .groupby("gtype")
+ .agg(F.count("geometry"))
+).display()
