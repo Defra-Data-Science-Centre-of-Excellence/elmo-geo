@@ -239,25 +239,6 @@
         "silver": "/dbfs/mnt/lab/restricted/ELM-Project/silver/os-wtr_ntwk-2023_12_16.parquet"
     },
     {
-        "name": "he-shine-2022_12_30",
-        "columns": {
-            "Name": "tile",
-            "shine_uid": "shine_uid",
-            "shine_name": "shine_name",
-            "shine_form": "shine_form",
-            "significan": "significance",
-            "web_url": "web_url",
-            "last_edit": "last_edit",
-            "priority": "priority",
-            "geom": "geometry"
-        },
-        "tasks": {
-            "convert": "2024_05_14"
-        },
-        "bronze": "/dbfs/mnt/lab/restricted/ELM-Project/bronze/he-shine-2022_12_30.parquet",
-        "silver": "/dbfs/mnt/lab/restricted/ELM-Project/silver/he-shine-2022_12_30.parquet"
-    },
-    {
         "name": "ewco-priority_habitat_network-2022_10_06",
         "columns": {
             "csht_pnts": "csht_pnts",
@@ -361,6 +342,25 @@
         },
         "bronze": "/dbfs/mnt/lab/unrestricted/elm/elmo/baresoil/tiles.parquet",
         "silver": "/dbfs/mnt/lab/restricted/ELM-Project/silver/sentinel-tiles-2023_02_07.parquet"
+    },
+    {
+        "name": "he-shine-2022_12_30",
+        "columns": {
+            "Name": "tile",
+            "shine_uid": "shine_uid",
+            "shine_name": "shine_name",
+            "shine_form": "shine_form",
+            "significan": "significance",
+            "web_url": "web_url",
+            "last_edit": "last_edit",
+            "priority": "priority",
+            "geom": "geometry"
+        },
+        "tasks": {
+            "convert": "2024_05_14"
+        },
+        "bronze": "/dbfs/mnt/lab/restricted/ELM-Project/bronze/he-shine-2022_12_30.parquet",
+        "silver": "/dbfs/mnt/lab/restricted/ELM-Project/silver/he-shine-2022_12_30.parquet"
     },
     {
         "name": "defra-priority_habitat_inventory-2021_03_26",
