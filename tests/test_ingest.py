@@ -31,5 +31,5 @@ def test_convert():
         ]
     )
     dataset["silver"] = "/dbfs/tmp/test.parquet"
-    rmtree(dataset["silver"])
+    rmtree(dataset["silver"], ignore_errors=True)
     convert(dataset)
