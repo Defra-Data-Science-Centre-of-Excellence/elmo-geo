@@ -25,8 +25,8 @@ register()
 
 # COMMAND ----------
 
-
 # DBTITLE 1,Define Test Function
+
 def test_self_sjoin(sdf):
     """Tests intersecting a spark data frame with itself.
 
@@ -94,7 +94,7 @@ LOG.info(f"Test passes: {test_self_sjoin(sdf)}")
 
 # COMMAND ----------
 
-# fails with cache, even though this is the same as line 6 above
+# passes with cache not transformed
 sdf = spark.createDataFrame(df).withColumn("geometry", F.expr("ST_GeomFromText(geometry)")).withColumn("id2", F.monotonically_increasing_id())
 
 sdf = cache(sdf)
