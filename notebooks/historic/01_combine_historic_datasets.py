@@ -12,19 +12,10 @@
 
 # COMMAND ----------
 
-import os
-import re
-import geopandas as gpd
-from pyspark.sql import functions as F
-
-from elmo_geo import LOG, register
-from elmo_geo.datasets.datasets import datasets, parcels
-from elmo_geo.io import download_link
-from elmo_geo.io.preprocessing import geometry_to_wkb, make_geometry_valid, transform_crs
-from elmo_geo.st import sjoin
+from elmo_geo import register
+from elmo_geo.io.file import to_parquet
 from elmo_geo.st.geometry import load_geometry
-from elmo_geo.st.udf import st_union
-from elmo_geo.utils.misc import dbfs, info_sdf
+from elmo_geo.utils.misc import dbfs
 
 register()
 
@@ -53,7 +44,7 @@ filepaths_he = [
 
 # COMMAND ----------
 
-sdf_historical_sites = spark.read.format("parquet").load(dbfs(sf_shine, True)).selectExpr(
+sdf_historical_sites = spark.read.parquet(dbfs(sf_shine, True)).selectExpr(
     "'SHINE' AS dataset",
     "shine_uid AS ListEntry",
     "shine_name AS Name",
