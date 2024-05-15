@@ -147,7 +147,8 @@ def convert(dataset: dict) -> dict:
     """Convert a bronze vector dataset into silver
     Will recursively find files in the bronze area, and all their layers, these are columns in a SparkDataFrame.
     This method also chips the dataset into 10km grid (~3,000 paritions).
-    The resulting parquet will be partitioned by file, layer, and sindex.__annotations__`silver/source-dataset-version.parquet/file={}/layer={}/sindex={}.parquet`
+    The resulting parquet will be partitioned by file, layer, and sindex.
+    `silver/source-dataset-version.parquet/file={}/layer={}/sindex={}.parquet`
     """
     name = dataset["name"]
     columns = dataset.get("columns", {})
