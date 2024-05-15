@@ -59,8 +59,8 @@ simplify_tolerence: float = 0.5  # metres
 max_vertices: int = 256  # per polygon (row)
 
 date = "2024_05_03"
-file_name = f"he-historic_features-{date}.parquet"
-sf_output_historic_features = f"dbfs:/mnt/lab/restricted/ELM-Project/out/{file_name}"
+file_name = f"he-historic_features-{date}"
+sf_output_historic_features = f"dbfs:/mnt/lab/restricted/ELM-Project/out/{file_name}.parquet"
 
 # COMMAND ----------
 
@@ -92,10 +92,9 @@ sdf_scheduled_monuments = (spark.read.format("parquet").load(dbfs(sf_scheduled_m
 sdf_scheduled_monuments.display()
 
 historic_datasets = {
-    "he_combined": sdf_combined_sites,
-    "he_combined_ex_sch_monuments": sdf_combined_sites.filter("dataset != 'Scheduled_Monuments'"),
-    "scheduled_monuments": sdf_scheduled_monuments
-
+    "hist_arch": sdf_combined_sites,
+    "scheduled_monuments": sdf_scheduled_monuments,
+    "hist_arch_ex_sched_monuments": sdf_combined_sites.filter("dataset != 'Scheduled_Monuments'"),
 }
 
 # COMMAND ----------
@@ -170,7 +169,7 @@ result.display()
 
 # COMMAND ----------
 
-download_path = f"/dbfs/FileStore/{file_name}"
+download_path = f"/dbfs/FileStore/{file_name}.parquet"
 pandas_df.to_parquet(download_path)
 displayHTML(download_link(dbfs(download_path, False), name = "download.parquet"))
 
