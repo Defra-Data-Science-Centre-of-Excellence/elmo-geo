@@ -1,6 +1,8 @@
 BATCHSIZE: int = 10_000
 
 FILEPATH_CATALOGUE: str = "data/catalogue.json"
+BRONZE: str = "/dbfs/mnt/lab/restricted/ELM-Project/bronze"
+SILVER: str = "/dbfs/mnt/lab/restricted/ELM-Project/silver"
 
 FOLDER_CONDA: str = "/databricks/miniconda/bin"  # for installing rogue tools like ogr2ogr>3.7
 FOLDER_STG: str = "/dbfs/mnt/lab/restricted/ELM-Project/stg"  # data staging - lake

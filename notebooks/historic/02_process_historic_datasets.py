@@ -86,7 +86,7 @@ sdf_combined_sites.display()
 
 sdf_scheduled_monuments = (spark.read.format("parquet").load(dbfs(sf_scheduled_monuments, True))
                            .withColumn("geometry", load_geometry("geometry"))
-                           .withColumn("dataset", F.lit("Scheduled_Monuments"))
+                           .withColumn("dataset", F.lit("scheduled_monuments"))
                            .withColumnRenamed("ListEntries", "ListEntry")
 )
 sdf_scheduled_monuments.display()
@@ -94,7 +94,7 @@ sdf_scheduled_monuments.display()
 historic_datasets = {
     "hist_arch": sdf_combined_sites,
     "scheduled_monuments": sdf_scheduled_monuments,
-    "hist_arch_ex_sched_monuments": sdf_combined_sites.filter("dataset != 'Scheduled_Monuments'"),
+    "hist_arch_ex_sched_monuments": sdf_combined_sites.filter("dataset != 'scheduled_monuments'"),
 }
 
 # COMMAND ----------
