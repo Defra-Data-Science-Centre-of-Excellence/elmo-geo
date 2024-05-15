@@ -187,18 +187,6 @@ manual_datasets = [
             "convert": "todo"
         },
         "bronze": "/dbfs/mnt/lab/unrestricted/elm_data/defra/priority_habitat_inventory/unified_2021_03_26.parquet"
-    },
-    {
-        "name": "living_england-habitat_map-2022_10_20",
-        "columns": {
-            "A_pred":"A_pred",
-            "A_prob":"A_prob",
-            "geometry":"geometry"
-        },
-        "tasks": {
-            "convert": "todo"
-        },
-        "bronze": "/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_living_england_habitat_map_phase_4/format_GEOPARQUET_living_england_habitat_map_phase_4/SNAPSHOT_2022_10_20_living_england_habitat_map_phase_4"
     }
 ]
 
