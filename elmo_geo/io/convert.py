@@ -142,16 +142,15 @@ def convert(dataset):
     columns = dataset.get("columns", {})
     LOG.info(f"Converting: {name}")
 
-    if "uri" in dataset:  # to remove with new catalogue
-        dataset["bronze"] = dataset["uri"]
-        dataset.pop("uri")
-
     f_raw = dataset["bronze"]
     f_tmp = f"/dbfs/tmp/{name}.parquet" if not f_raw.endswith(".parquet") else f_raw
-    f_out = dataset.get("silver", f"{SILVER}/{name}.parquet")  # for restricted data
+    f_out = f"{SILVER}/{name}.parquet"
 
+    # Convert
     if not os.path.exists(f_tmp):
         convert_dataset(f_raw, f_tmp)
+
+    # Partition
     if not os.path.exists(f_out):
         partition_geoparquet(f_tmp, f_out, columns)
 
