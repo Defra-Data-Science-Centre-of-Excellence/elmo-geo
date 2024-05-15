@@ -364,7 +364,6 @@
     },
     {
         "name": "defra-priority_habitat_inventory-2021_03_26",
-        "uri": "/dbfs/mnt/lab/unrestricted/elm_data/defra/priority_habitat_inventory/unified_2021_03_26.parquet",
         "columns": {
             "Main_Habit": "Main_Habit",
             "Confidence": "Confidence",
@@ -379,11 +378,11 @@
         },
         "tasks": {
             "convert": "todo"
-        }
+        },
+        "bronze": "/dbfs/mnt/lab/unrestricted/elm_data/defra/priority_habitat_inventory/unified_2021_03_26.parquet"
     },
     {
         "name": "living_england-habitat_map-2022_09_16",
-        "uri": "dbfs:/mnt/lab/unrestricted/elm_data/natural_england/living_england/2022_09_16.parquet",
         "columns": {
             "A_pred":"A_pred",
             "A_prob":"A_prob",
@@ -391,6 +390,7 @@
         },
         "tasks": {
             "convert": "todo"
-        }
+        },
+        "bronze": "dbfs:/mnt/lab/unrestricted/elm_data/natural_england/living_england/2022_09_16.parquet"
     }
 ]
