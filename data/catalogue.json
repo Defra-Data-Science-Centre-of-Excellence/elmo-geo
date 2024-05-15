@@ -367,14 +367,14 @@
         "columns": {
             "Main_Habit": "Main_Habit",
             "Confidence": "Confidence",
-            "Source1":"Source1",
-            "Source2":"Source2",
-            "S2Habclass":"S2Habclass",
-            "S2HabType":"S2HabType",
-            "Source3":"Source3",
-            "S3Habclass":"S3Habclass",
-            "S3HabType":"S3HabType",
-            "geometry":"geometry"
+            "Source1": "Source1",
+            "Source2": "Source2",
+            "S2Habclass": "S2Habclass",
+            "S2HabType": "S2HabType",
+            "Source3": "Source3",
+            "S3Habclass": "S3Habclass",
+            "S3HabType": "S3HabType",
+            "geometry": "geometry"
         },
         "tasks": {
             "convert": "todo"
@@ -384,13 +384,37 @@
     {
         "name": "living_england-habitat_map-2022_09_16",
         "columns": {
-            "A_pred":"A_pred",
-            "A_prob":"A_prob",
-            "geometry":"geometry"
+            "A_pred": "A_pred",
+            "A_prob": "A_prob",
+            "geometry": "geometry"
         },
         "tasks": {
             "convert": "todo"
         },
         "bronze": "dbfs:/mnt/lab/unrestricted/elm_data/natural_england/living_england/2022_09_16.parquet"
+    },
+    {
+        "name": "rpa-parcel-adas",
+        "columns": {
+            "Shape": "geometry"
+        },
+        "tasks": {
+            "convert": "todo"
+        },
+        "note": "rpa-parcel-adas is the dataset used by EVAST (UKCEH), it is similar to WFM but not identical (noted 2024-05-15).  Access from UKCEH SharePoint (Defra Restricted Area).",
+        "link": "https://cehacuk.sharepoint.com/sites/EVAST/DEFRA Data Share/",
+        "bronze": "/dbfs/mnt/lab/restricted/ELM-Project/bronze/rpa-parcel-adas.parquet"
+    },
+    {
+        "name": "rpa-hedge-adas",
+        "columns": {
+            "geom": "geometry"
+        },
+        "tasks": {
+            "convert": "todo"
+        },
+        "note": "rpa-hedge-adas is RPA's control layer for hedgerows at a similar time as rpa-parcel-adas (Nov 2021).  Access from Defra SharePoint (ELM-RPA Restricted area).",
+        "link": "https://defra.sharepoint.com/teams/Team1645/Restricted_ELM_RPA_data_sharing/",
+        "bronze": "/dbfs/mnt/lab/restricted/ELM-Project/bronze/rpa-hedge-adas.parquet"
     }
 ]
