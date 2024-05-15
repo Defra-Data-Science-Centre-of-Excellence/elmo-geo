@@ -168,25 +168,6 @@ manual_datasets = [
         },
         "bronze": "/dbfs/mnt/lab/restricted/ELM-Project/bronze/he-shine-2022_12_30.parquet",
         "silver": "/dbfs/mnt/lab/restricted/ELM-Project/silver/he-shine-2022_12_30.parquet"
-    },
-    {
-        "name": "defra-priority_habitat_inventory-2021_03_26",
-        "columns": {
-            "Main_Habit": "Main_Habit",
-            "Confidence": "Confidence",
-            "Source1":"Source1",
-            "Source2":"Source2",
-            "S2Habclass":"S2Habclass",
-            "S2HabType":"S2HabType",
-            "Source3":"Source3",
-            "S3Habclass":"S3Habclass",
-            "S3HabType":"S3HabType",
-            "geometry":"geometry"
-        },
-        "tasks": {
-            "convert": "todo"
-        },
-        "bronze": "/dbfs/mnt/lab/unrestricted/elm_data/defra/priority_habitat_inventory/unified_2021_03_26.parquet"
     }
 ]
 

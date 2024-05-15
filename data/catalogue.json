@@ -363,29 +363,24 @@
         "silver": "/dbfs/mnt/lab/restricted/ELM-Project/silver/he-shine-2022_12_30.parquet"
     },
     {
-        "name": "defra-priority_habitat_inventory-2021_03_26",
+        "name": "defra-priority_habitat_inventory-2024_03_06",
         "columns": {
-            "Main_Habit": "Main_Habit",
-            "Confidence": "Confidence",
-            "Source1": "Source1",
-            "Source2": "Source2",
-            "S2Habclass": "S2Habclass",
-            "S2HabType": "S2HabType",
-            "Source3": "Source3",
-            "S3Habclass": "S3Habclass",
-            "S3HabType": "S3HabType",
+            "mainhabs": "Main_Habit",
+            "primsource": "Source1",
             "geometry": "geometry"
         },
         "tasks": {
             "convert": "todo"
         },
-        "bronze": "/dbfs/mnt/lab/unrestricted/elm_data/defra/priority_habitat_inventory/unified_2021_03_26.parquet"
+        "bronze": "/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_priority_habitats_inventory_eng/format_GEOPARQUET_priority_habitats_inventory_eng/SNAPSHOT_2024_03_06_priority_habitats_inventory_eng/"
     },
     {
         "name": "living_england-habitat_map-2022_10_20",
         "columns": {
             "A_pred": "A_pred",
             "A_prob": "A_prob",
+            "B_pred": "B_pred",
+            "B_prob": "B_prob",
             "geometry": "geometry"
         },
         "tasks": {
