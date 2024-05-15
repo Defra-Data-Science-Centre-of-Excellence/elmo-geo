@@ -167,6 +167,10 @@ hm_frequency = (df_hm
 
 # COMMAND ----------
 
+df_ph["Main_Habit"].drop_duplicates().shape
+
+# COMMAND ----------
+
 ph_main_habits_not_mapped = df_comp.loc[ (df_comp["A_pred_from_Main_Habit"].isnull() & df_comp["Main_Habit"].notna())].groupby("Main_Habit")["id_parcel"].apply(lambda s: s.nunique()).sort_values().to_dict()
 
 hm_a_pred_not_mapped = df_comp.loc[ (df_comp["Main_Habit_from_A_pred"].isnull() & df_comp["A_pred"].notna())].groupby("A_pred")["id_parcel"].apply(lambda s: s.nunique()).sort_values().to_dict()
@@ -310,11 +314,24 @@ ax4.set_title("5. Comparison habitat classification", fontsize = title_size, y =
 
 # add data labels
 for i, v1 in enumerate(b1.datavalues):
-    s = f"{v1:.0f}%"
-    ax4.text(v1+1, i-0.1, s, c = dary_grey, transform=ax4.transData)
+    nparcels = count_match.iloc[i, [0,1]].fillna(0).sum()
+    s = f"{v1:.0f}% ({nparcels:,.0f} parcels)"
+
+    if v1 < 70:
+        ax4.text(v1+1, i-0.1, s, c = dary_grey, transform=ax4.transData)
+    else:
+        ax4.text(v1-2*len(s) - 2, i-0.1, s, c = dary_grey, transform=ax4.transData)
 
 for ax in [ax1, ax2, ax3]:
     ax.grid( which = "major", axis="x")
+
+# COMMAND ----------
+
+count_match
+
+# COMMAND ----------
+
+count_match.iloc[12, [0,1]].sum()
 
 # COMMAND ----------
 
