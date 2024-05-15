@@ -127,7 +127,7 @@ def convert_dataset(f_in, f_out):
 def partition_geoparquet(f_in, f_out, columns):
     LOG.info(f"Partition: {f_in}, {f_out}")
     sdf = spark.read.parquet(dbfs(f_in, True)).withColumn("fid", F.monotonically_increasing_id())
-    sdf.write.format("noop").mode("overwrite").save()  # miid bug
+    sdf.write.format("noop").mode("overwrite").save()  # miid bug #
     return (
         sdf.withColumnsRenamed(columns)
         .withColumn("geometry", load_geometry())
@@ -139,19 +139,26 @@ def partition_geoparquet(f_in, f_out, columns):
 
 def convert(dataset):
     name = dataset["name"]
-    columns = dataset.get("columns", {})
+    columns = dataset.get("columns", {})  # rename columns, but don't drop any
     LOG.info(f"Converting: {name}")
 
-    if "uri" in dataset:  # to remove with new catalogue
+    if hasattr(dataset, "uri"):
         dataset["bronze"] = dataset["uri"]
         dataset.pop("uri")
 
     f_raw = dataset["bronze"]
     f_tmp = f"/dbfs/tmp/{name}.parquet" if not f_raw.endswith(".parquet") else f_raw
-    f_out = dataset.get("silver", f"{SILVER}/{name}.parquet")  # for restricted data
+    f_out = f"{SILVER}/{name}.parquet"
 
+    # Download
+    if not f_raw.startswith("/dbfs/"):
+        raise TypeError(f"Expecting /dbfs/ dataset: {f_raw}")
+
+    # Convert
     if not os.path.exists(f_tmp):
         convert_dataset(f_raw, f_tmp)
+
+    # Partition
     if not os.path.exists(f_out):
         partition_geoparquet(f_tmp, f_out, columns)
 
