@@ -142,17 +142,9 @@ def convert(dataset):
     columns = dataset.get("columns", {})
     LOG.info(f"Converting: {name}")
 
-    if hasattr(dataset, "uri"):  # to remove with new catalogue
-        dataset["bronze"] = dataset["uri"]
-        dataset.pop("uri")
-
     f_raw = dataset["bronze"]
     f_tmp = f"/dbfs/tmp/{name}.parquet" if not f_raw.endswith(".parquet") else f_raw
     f_out = f"{SILVER}/{name}.parquet"
-
-    # Download
-    if not f_raw.startswith("/dbfs/"):
-        raise TypeError(f"Expecting /dbfs/ dataset: {f_raw}")
 
     # Convert
     if not os.path.exists(f_tmp):
