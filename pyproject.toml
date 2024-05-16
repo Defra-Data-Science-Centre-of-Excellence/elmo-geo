@@ -62,7 +62,6 @@ markers = ["dbr: Requires databricks runtime"]
 line-length = 160
 unsafe-fixes = false
 extend-exclude = [  # Issue: #78
-    "notebooks/*",
     "notebooks/awest/subdivide.py",
 ]
 builtins = ["spark", "dbutils", "sc", "display", "displayHTML"]
