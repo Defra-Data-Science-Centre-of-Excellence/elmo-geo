@@ -4,7 +4,8 @@
 # COMMAND ----------
 
 import pandas as pd
-from cdap_geo import buffer, pointify, st_join, st_register, unary_union
+from cdap_geo import buffer, pointify, st_join, st_register
+from cdap_geo.utils import wkb
 from pyspark.sql import functions as F
 from pyspark.sql import types as T
 
@@ -207,8 +208,6 @@ display(df)
 
 # COMMAND ----------
 
-from cdap_geo.utils import wkb
-
 
 @F.udf(returnType=T.BinaryType())
 def unary_union(geoms):
@@ -238,7 +237,6 @@ distro - farm_type, farm_size
 
 # COMMAND ----------
 
-import pandas as pd
 
 df = pd.read_parquet("/dbfs/mnt/lab/unrestricted/DSMT/LEEP/whole_farm_model/2022_10_25.parquet")
 df

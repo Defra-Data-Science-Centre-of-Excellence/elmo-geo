@@ -1,14 +1,23 @@
 # Databricks notebook source
+# MAGIC %pip install -q git+https://github.com/aw-west-defra/cdap_geo.git
+
+# COMMAND ----------
+
 import os
 from glob import glob
 from math import ceil
 
 import pandas as pd
 import pyogrio
+from cdap_geo.sedona import st_fromwkb, st_join, st_register
 from geopandas.io.arrow import _geopandas_to_arrow
 from pyarrow.dataset import write_dataset
 from pyspark.sql import functions as F
 from pyspark.sql import types as T
+
+st_register()
+
+# COMMAND ----------
 
 
 def batch_file(f_in, f_out, batch):
@@ -48,7 +57,6 @@ def convert():
 
 def batch_status(path_out):
     f_status = path_out + "status.parquet"
-    sf_status = f_status.replace("/dbfs/", "dbfs:/")
     if not os.path.exists(f_status):
         sdf = batch_folder(path_in, ext, path_out, batch)
         sdf.toPandas().to_parquet(f_status)
@@ -58,19 +66,9 @@ def batch_status(path_out):
 def batch_convert_folder(path_in, ext, path_out, batch=10_000, engine="pyogrio"):
     f_status = batch_status(path_out)
     df = pd.read_parquet(f_status).pipe(spark.createDataFrame).repartition(sdf.count()).withColumn("status", convert()).toPandas()
-    sdf.to_parquet(f_status)
-    display(sdf)
+    df.to_parquet(f_status)
+    display(df)
 
-
-# COMMAND ----------
-
-import os
-from glob import glob
-from math import ceil
-
-import pyogrio
-from geopandas.io.arrow import _geopandas_to_arrow
-from pyarrow.dataset import write_dataset
 
 # COMMAND ----------
 
@@ -92,14 +90,6 @@ for i in range(N):
 # MAGIC %md # Waterbodies Join
 
 # COMMAND ----------
-
-# MAGIC %pip install -q git+https://github.com/aw-west-defra/cdap_geo.git
-
-# COMMAND ----------
-
-from cdap_geo.sedona import F, st_fromwkb, st_join, st_register
-
-st_register()
 
 
 sf_parcel = "dbfs:/mnt/lab/unrestricted/elm/buffer_strips/parcels.parquet/"
@@ -129,7 +119,9 @@ sdf_geom.write.parquet(sf_geom)
 display(sdf_geom)
 
 
-buf = lambda x: f"ST_Area(ST_Intersection(ST_MakeValid(ST_Buffer(geometry_water, {x})), geometry_parcel))/10000 AS ha_buf{x}"
+def buf(x):
+    return f"ST_Area(ST_Intersection(ST_MakeValid(ST_Buffer(geometry_water, {x})), geometry_parcel))/10000 AS ha_buf{x}"
+
 
 sdf = (
     spark.read.parquet(sf_geom)

@@ -4,8 +4,20 @@
 # COMMAND ----------
 
 import os
+from os import mkdir
+from os.path import join
+from shutil import rmtree
+from time import sleep
+from urllib.error import URLError
+from urllib.request import urlopen
 
 import geopandas as gpd
+from geopandas import GeoDataFrame
+from geopandas.io.arrow import _geopandas_to_arrow
+from osdatahub import Extent, FeaturesAPI
+from pandas import DataFrame as PandasDataFrame
+from pyarrow.dataset import write_dataset
+from tqdm import tqdm
 
 key = "WxgUdETn6cy58WZkfwZ7wdMVLlt5eDsX"
 
@@ -76,8 +88,8 @@ def bng(x: int, y: int, *, precision: int = 1) -> str:
     assert 0 <= precision <= 5, f"{precision:d} not within precision range[0, 5]"
     assert BNG_LIMITS[0] <= x < BNG_LIMITS[2], f"{x:_} not within BNG range[{BNG_LIMITS[0]:_}, {BNG_LIMITS[2]:_})"
     assert BNG_LIMITS[1] <= y < BNG_LIMITS[3], f"{y:_} not within BNG range[{BNG_LIMITS[1]:_}, {BNG_LIMITS[3]:_})"
-    L = lambda a: (a // 100_000) * 100_000
-    D = lambda b: f"{int(b)%100_000:05d}"[:precision]
+    L = lambda a: (a // 100_000) * 100_000  # noqa:E731
+    D = lambda b: f"{int(b)%100_000:05d}"[:precision]  # noqa:E731
     return BNG_LOOKUP[L(x), L(y)] + D(x) + D(y)
 
 
@@ -86,13 +98,6 @@ print(bng(100_000, 1_299_000))
 # print(bng(100_000, 1_300_000))
 
 # COMMAND ----------
-
-from geopandas import GeoDataFrame
-from geopandas.io.arrow import _geopandas_to_arrow
-from osdatahub import Extent, FeaturesAPI
-from pandas import DataFrame as PandasDataFrame
-from pyarrow.dataset import write_dataset
-from tqdm import tqdm
 
 
 def log(x: float, b: float) -> float:
@@ -122,8 +127,8 @@ def writer_os(key: str, product: str, bbox: list, path_out: str, name: str) -> i
     result = os_features(key, product, bbox)
     count = len(result["features"])
     if count:
-        df = GeoDataFrame.from_features(df)
-        df_to_geoparquet(result, path_out, name)
+        df = GeoDataFrame.from_features(result)
+        df_to_geoparquet(df, path_out, name)
     return count
 
 
@@ -176,16 +181,6 @@ help(sc.parallelize)
 
 # COMMAND ----------
 
-from os.path import join
-from time import sleep
-from urllib.error import URLError
-from urllib.request import urlopen
-
-from pyspark.sql import SparkSession
-
-spark = SparkSession.getActiveSession()
-sc = spark.sparkContext
-
 
 def download_file(url, path, retry_count, retry_delay):
     try:
@@ -199,12 +194,10 @@ def download_file(url, path, retry_count, retry_delay):
 
 
 def download_files(urls, path, num_retries=3, retry_delay=60):
-    _dl = lambda url: download_file(url, path, num_retries, retry_delay)
+    def _dl(url):
+        return download_file(url, path, num_retries, retry_delay)
+
     sc.parallelize(urls).map(_dl).collect()
-
-
-from os import mkdir
-from shutil import rmtree
 
 
 def test_download_files():

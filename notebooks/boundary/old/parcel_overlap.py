@@ -3,15 +3,20 @@
 
 # COMMAND ----------
 
-import sedona
-from pyspark.sql import functions as F
-
-sedona.register.SedonaRegistrator.registerAll(spark)
+import warnings
 
 import geopandas as gpd
 import matplotlib.pyplot as plt
 import pandas as pd
-from cdap_geo import area, st_join, to_gdf
+import sedona
+from cdap_geo import area, geohash, st_join, to_gdf
+from pandas import concat, merge
+from pyspark.sql import functions as F
+
+warnings.simplefilter(action="ignore", category=FutureWarning)
+
+
+sedona.register.SedonaRegistrator.registerAll(spark)
 
 # COMMAND ----------
 
@@ -98,10 +103,6 @@ gdf
 
 # COMMAND ----------
 
-import warnings
-
-warnings.simplefilter(action="ignore", category=FutureWarning)
-
 i, d = 0, dict()
 for g in gdf.geometry:
     j = gdf[gdf.intersects(g)]["id_parcel"]
@@ -132,10 +133,6 @@ wfm_gdf = gdf.merge(wfm[["id_business", "id_parcel"]])
 wfm_gdf
 
 # COMMAND ----------
-
-import warnings
-
-warnings.simplefilter(action="ignore", category=FutureWarning)
 
 d = dict()
 for g in wfm_gdf.geometry:
@@ -184,10 +181,12 @@ wfm2
 
 # COMMAND ----------
 
-import geopandas as gpd
-
 gpd.datasets.available
-get_example = lambda name: gpd.read_file(gpd.datasets.get_path(name)).to_crs("WGS84")
+
+
+def get_example(name):
+    return gpd.read_file(gpd.datasets.get_path(name)).to_crs("WGS84")
+
 
 naturalearth_lowres = get_example("naturalearth_lowres")
 naturalearth_cities = get_example("naturalearth_cities")
@@ -202,9 +201,6 @@ df_right = naturalearth_lowres.copy().rename(columns={"name": "country"})[["coun
 df_left.plot(ax=df_right.plot(color="C0"), color="C1")
 
 # COMMAND ----------
-
-from cdap_geo import geohash
-from pandas import concat, merge
 
 
 def geohash_join(left, right):
@@ -244,7 +240,6 @@ df.sort_values(["index", "distance"]).groupby("index").head(1)
 
 # COMMAND ----------
 
-import pandas as pd
 
 f = "/dbfs/mnt/lab/unrestricted/DSMT/LEEP/whole_farm_model/2022_10_25.feather"
 df = pd.read_feather(f)

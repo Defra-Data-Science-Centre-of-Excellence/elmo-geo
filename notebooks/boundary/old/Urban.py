@@ -17,20 +17,24 @@
 # COMMAND ----------
 
 # MAGIC
-# MAGIC %pip install -q xyzservices osdatahub
-
-# COMMAND ----------
-
-import geopandas as gpd
-import osdatahub
-
-key = "WxgUdETn6cy58WZkfwZ7wdMVLlt5eDsX"
+# MAGIC %pip install -q xyzservices osdatahub git+https://github.com/aw-west-defra/cdap_geo.git
 
 # COMMAND ----------
 
 from datetime import datetime
 
+import geopandas as gpd
+import osdatahub
+import pandas as pd
+import seaborn as sns
+from cdap_geo.sedona import st_join, st_load, st_register
+from pyspark.sql import functions as F
 from xyzservices import TileProvider
+
+st_register()
+key = "WxgUdETn6cy58WZkfwZ7wdMVLlt5eDsX"
+
+# COMMAND ----------
 
 # MapAPI
 AvailableLayers = [
@@ -110,17 +114,6 @@ df.assign(geometry=df.geometry.simplify(10)).explore()
 
 # COMMAND ----------
 
-# MAGIC %pip install -q git+https://github.com/aw-west-defra/cdap_geo.git
-
-# COMMAND ----------
-
-from cdap_geo.sedona import st_join, st_load, st_register
-from pyspark.sql import functions as F
-
-st_register()
-
-# COMMAND ----------
-
 sf_parcel = "dbfs:/mnt/lab/unrestricted/elm/buffer_strips/parcels.parquet/"
 sf_urban = "dbfs:/mnt/lab/unrestricted/elm_data/os/Zoomstack_UrbanAreas.parquet"
 
@@ -142,15 +135,15 @@ sdf_urban = (
 
 # COMMAND ----------
 
-aggr_geometry_urban_of = (
-    lambda urban_type: f"""
+
+def aggr_geometry_urban_of(urban_type):
+    return f"""
   ST_Union_Aggr(CASE
     WHEN (urban_type=="{urban_type}")
     THEN geometry_urban
     ELSE ST_GeomFromText("Point EMPTY")
   END) AS geometry_urban_{urban_type.lower()}
 """
-)
 
 
 sdf_geom = (
@@ -183,10 +176,6 @@ display(df)
 
 # COMMAND ----------
 
-import seaborn as sns
-
-# COMMAND ----------
-
 pdf = df.toPandas()
 
 # COMMAND ----------
@@ -205,8 +194,6 @@ ax.set(
 ax.grid("on")
 
 # COMMAND ----------
-
-import pandas as pd
 
 f = "/dbfs/mnt/lab/unrestricted/elm/buffer_strips/urban.parquet/"
 pdf = pd.read_parquet(f)

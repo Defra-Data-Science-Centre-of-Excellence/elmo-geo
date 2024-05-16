@@ -19,15 +19,15 @@
 
 # COMMAND ----------
 
+from math import ceil
+
 from pyspark.sql import functions as F
 
 import elmo_geo
-
-elmo_geo.register(spark)
-from math import ceil
-
 from elmo_geo.st import sjoin
 from elmo_geo.st.geometry import load_missing
+
+elmo_geo.register(spark)
 
 
 def re_part(sdf):
@@ -153,32 +153,38 @@ sdf_geom = spark.read.parquet(sf_geom).withColumn(
     F.expr("ST_MakeValid(ST_Buffer(geometry_water, 0.001))"),
 )  # LineStrings into Polygons for ST_Union_Aggr
 
-ha_water = lambda buf: F.expr(
-    f"""
+
+def ha_water(buf):
+    return F.expr(
+        f"""
   ST_Area(ST_MakeValid(ST_Intersection(
     ST_MakeValid(ST_Buffer(geometry_water, {buf})),
     ST_MakeValid(geometry_parcel)
   )))/10000 AS ha_water_buf{buf}
-""",
-)  # Area of buffered water in a parcel (ha not sqm)
-m_boundary = lambda buf: F.expr(
-    f"""
+"""
+    )  # Area of buffered water in a parcel (ha not sqm)
+
+
+def m_boundary(buf):
+    return F.expr(
+        f"""
   ST_Length(ST_MakeValid(ST_Intersection(
     ST_MakeValid(ST_Buffer(geometry_water, {buf})),
     ST_MakeValid(ST_Boundary(geometry_parcel))
   ))) AS m_boundary_buf{buf}
-""",
-)  # Length of parcel boundary in the above area
-m_water = (
-    lambda buf: F.expr(
+"""
+    )  # Length of parcel boundary in the above area
+
+
+def m_water(buf):
+    return F.expr(
         f"""
   ST_Length(ST_MakeValid(ST_Intersection(
     ST_MakeValid(ST_Boundary(geometry_water)),
     ST_MakeValid(ST_Buffer(geometry_parcel, {buf}))
   ))) AS m_water_buf{buf}
-""",
-    )
-)  # Length of water-line beside and inside a parcel (all waterbody geometries are polygons, this may be double for water-lines inside or very close to a parcel)
+"""
+    )  # Length of water-line beside and inside a parcel (all waterbody geometries are polygons, this may be double for water-lines inside or very close to a parcel)
 
 
 # COMMAND ----------

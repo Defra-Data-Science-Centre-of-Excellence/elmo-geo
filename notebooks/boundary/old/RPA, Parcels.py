@@ -35,13 +35,16 @@
 
 # COMMAND ----------
 
+import mosaic
+from cdap_geo.read import read_gpkg
+from cdap_geo.sedona import st_load
 from pyspark.sql import functions as F
 from sedona.register import SedonaRegistrator
 
-SedonaRegistrator.registerAll(spark)
+mosaic.enable_mosaic(spark, dbutils)
+mosaic.enable_gdal(spark)
 
-from cdap_geo.read import read_gpkg
-from cdap_geo.sedona import st_load
+SedonaRegistrator.registerAll(spark)
 
 # COMMAND ----------
 
@@ -63,12 +66,6 @@ display(sdf_rpa_parcels)
 
 # COMMAND ----------
 
-import mosaic
-
-mosaic.enable_mosaic(spark, dbutils)
-mosaic.enable_gdal(spark)
-
-# COMMAND ----------
 
 df = spark.read.format("binaryFile").load("dbfs:/tmp/RPA_LandCover.gpkg")
 display(df)

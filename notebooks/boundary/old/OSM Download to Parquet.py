@@ -16,11 +16,10 @@
 # COMMAND ----------
 
 import osmnx as ox
-
-ox.settings.cache_folder = "/dbfs/tmp/"
-
 from pyspark.sql import functions as F
 from sedona.register import SedonaRegistrator
+
+ox.settings.cache_folder = "/dbfs/tmp/"
 
 SedonaRegistrator.registerAll(spark)
 
