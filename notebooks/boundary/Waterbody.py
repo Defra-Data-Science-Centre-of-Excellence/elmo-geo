@@ -26,8 +26,8 @@ import elmo_geo
 elmo_geo.register(spark)
 from math import ceil
 
-from elmo_geo.st.geometry import load_missing
 from elmo_geo.st import sjoin
+from elmo_geo.st.geometry import load_missing
 
 
 def re_part(sdf):

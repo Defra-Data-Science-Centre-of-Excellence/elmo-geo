@@ -26,26 +26,17 @@
 
 # COMMAND ----------
 
-import os
-import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib as mpl
-import pandas as pd
+
+import folium
 import geopandas as gpd
-from shapely.geometry import Polygon, LineString, Point
-from shapely import from_wkt, from_wkb
-import folium 
-import seaborn as sns
-from functools import partial
-from typing import Callable
 import h3
-
+import numpy as np
+import pandas as pd
 from pyspark.sql import functions as F
-from pyspark.sql.types import DecimalType, DoubleType, FloatType, IntegerType, LongType
 
-from elmo_geo import LOG, register
+from elmo_geo import register
+from elmo_geo.datasets.datasets import datasets
 from elmo_geo.io import download_link
-from elmo_geo.datasets.datasets import datasets, parcels
 
 register()
 
@@ -70,46 +61,38 @@ print(f"\nH3 resolution:\t{res}")
 
 # COMMAND ----------
 
-sdf_geo_data = (spark.read.parquet(dataset.versions[0].path_read)
-                .withColumn("geometry", F.expr("ST_GeomFromWKB(geometry)"))
-                .withColumn("area", F.expr("ST_Area(geometry)"))
+sdf_geo_data = (
+    spark.read.parquet(dataset.versions[0].path_read).withColumn("geometry", F.expr("ST_GeomFromWKB(geometry)")).withColumn("area", F.expr("ST_Area(geometry)"))
 )
-sdf_geo_data.display()    
+sdf_geo_data.display()
 
 # COMMAND ----------
 
-def geo_to_h3_udf(col, res = 15):
+
+def geo_to_h3_udf(col, res=15):
     @F.pandas_udf("binary")
     def udf(s: pd.Series) -> pd.Series:
-        return gpd.GeoSeries.from_wkb(s, crs=27700).to_crs(4326).map(lambda p: h3.geo_to_h3(lat = p.centroid.y,lng = p.centroid.x, resolution = res))
+        return gpd.GeoSeries.from_wkb(s, crs=27700).to_crs(4326).map(lambda p: h3.geo_to_h3(lat=p.centroid.y, lng=p.centroid.x, resolution=res))
+
     return udf(col)
 
-sdf_h3_data = (sdf_geo_data
-                 .withColumn("geometry", F.expr("ST_AsBinary(geometry)"))
-                 .select("*",
-                         *[geo_to_h3_udf('geometry', res=r).alias(f"h3_{r}") for r in resolutions]
-                         )
+
+sdf_h3_data = sdf_geo_data.withColumn("geometry", F.expr("ST_AsBinary(geometry)")).select(
+    "*", *[geo_to_h3_udf("geometry", res=r).alias(f"h3_{r}") for r in resolutions]
 )
 sdf_h3_data.display()
 
 # COMMAND ----------
 
 value_field = "area"
-df_agged = (sdf_h3_data.
-            groupby(f"h3_{res}")
-            .agg(
-                F.expr(f"sum(coalesce({value_field}, 0)) as {value_field}"),
-            )
+df_agged = (
+    sdf_h3_data.groupby(f"h3_{res}").agg(
+        F.expr(f"sum(coalesce({value_field}, 0)) as {value_field}"),
+    )
 ).toPandas()
 
 df_agged[f"h3_{res}"] = df_agged[f"h3_{res}"].map(lambda x: x.decode("utf-8"))
-df_agged['h3_geo'] = df_agged[f"h3_{res}"].apply(
-                                        lambda x: {"type": "Polygon",
-                                                   "coordinates":
-                                                   [h3.h3_to_geo_boundary(
-                                                       h=x, geo_json=True)]
-                                                   }
-                                         )
+df_agged["h3_geo"] = df_agged[f"h3_{res}"].apply(lambda x: {"type": "Polygon", "coordinates": [h3.h3_to_geo_boundary(h=x, geo_json=True)]})
 
 # COMMAND ----------
 
@@ -117,46 +100,35 @@ df_agged.head()
 
 # COMMAND ----------
 
-from folium import Map, Marker, GeoJson
-from folium.plugins import MarkerCluster
-import branca.colormap as cm
-from branca.colormap import linear
-import folium
-
-import seaborn as sns
-
-import matplotlib as mpl
-import matplotlib.pyplot as plt
-from matplotlib.pyplot import imshow
-import matplotlib.gridspec as gridspec
-
 import json
+
+import folium
+from folium import Map
 from geojson.feature import *
 
-def base_empty_map(centre = (52.133236898161755, -1.2970901724513781)):
+
+def base_empty_map(centre=(52.133236898161755, -1.2970901724513781)):
     """Prepares a folium map centered in a central GPS point of Toulouse"""
-    m = Map(location = centre,
-            zoom_start = 7,
-            tiles = "cartodbpositron",
-            attr = '''© <a href="http://www.openstreetmap.org/copyright">
+    m = Map(
+        location=centre,
+        zoom_start=7,
+        tiles="cartodbpositron",
+        attr="""© <a href="http://www.openstreetmap.org/copyright">
                       OpenStreetMap</a>contributors ©
                       <a href="http://cartodb.com/attributions#basemaps">
-                      CartoDB</a>'''
-            )
+                      CartoDB</a>""",
+    )
     return m
 
-def hexagons_dataframe_to_geojson(df_hex, hex_id_field,
-                                  geometry_field, value_fields,
-                                  file_output = None):
+
+def hexagons_dataframe_to_geojson(df_hex, hex_id_field, geometry_field, value_fields, file_output=None):
     """Produce the GeoJSON representation containing all geometries in a dataframe
-     based on a column in geojson format (geometry_field)"""
+    based on a column in geojson format (geometry_field)"""
 
     list_features = []
 
     for i, row in df_hex.iterrows():
-        feature = Feature(geometry = row[geometry_field],
-                          id = row[hex_id_field],
-                          properties = {k:str(np.round(row[k], 2)) for k in value_fields})
+        feature = Feature(geometry=row[geometry_field], id=row[hex_id_field], properties={k: str(np.round(row[k], 2)) for k in value_fields})
         list_features.append(feature)
 
     feat_collection = FeatureCollection(list_features)
@@ -170,37 +142,37 @@ def hexagons_dataframe_to_geojson(df_hex, hex_id_field,
 
     return geojson_result
 
-def h3_foilium_map(df_agged, join_col, geo_col, variable, label, variable_name, title = "", nan_value = None, **kwargs):
-    
+
+def h3_foilium_map(df_agged, join_col, geo_col, variable, label, variable_name, title="", nan_value=None, **kwargs):
     m = base_empty_map()
 
     geo_data = hexagons_dataframe_to_geojson(df_agged, join_col, geo_col, [variable])
-    df_data = df_agged.rename(columns = {join_col:'id'})
+    df_data = df_agged.rename(columns={join_col: "id"})
 
-    df_data[variable] = df_data[variable].replace({nan_value:np.nan})
+    df_data[variable] = df_data[variable].replace({nan_value: np.nan})
 
     cp = folium.Choropleth(
-        geo_data = geo_data,                  #json
-        name ='choropleth',                  
-        data = df_data,                     
-        columns = ['id', variable], #columns to work on
-        key_on =f'feature.id',
-        bins = 5,
-        fill_opacity = 0.7,
-        nan_fill_opacity = 0.0,
-        line_opacity = 0.1,
+        geo_data=geo_data,  # json
+        name="choropleth",
+        data=df_data,
+        columns=["id", variable],  # columns to work on
+        key_on="feature.id",
+        bins=5,
+        fill_opacity=0.7,
+        nan_fill_opacity=0.0,
+        line_opacity=0.1,
         line_weight=0.2,
         control=True,
         **kwargs,
-    legend_name = label
+        legend_name=label,
     ).add_to(m)
 
     # Add title
-    title_html = f'''<h3 align="center" style="font-size:22px; color: #333333;"><b>{title}</b></h3>'''
+    title_html = f"""<h3 align="center" style="font-size:22px; color: #333333;"><b>{title}</b></h3>"""
     m.get_root().html.add_child(folium.Element(title_html))
 
     # Add tooltip
-    '''
+    """
     # creating a state indexed version of the dataframe so we can lookup values
     df_data_indexed = df_data.set_index('id')
     
@@ -208,24 +180,18 @@ def h3_foilium_map(df_agged, join_col, geo_col, variable, label, variable_name, 
     # and assigning a value from our dataframe
     for s in cp.geojson.data['features']:
         s['properties']['profit_count'] = df_data_indexed.loc[s['id'], 'profit_count']
-    '''
-    folium.GeoJsonTooltip(fields = [variable], aliases = [variable_name]).add_to(cp.geojson)
+    """
+    folium.GeoJsonTooltip(fields=[variable], aliases=[variable_name]).add_to(cp.geojson)
 
     return m, cp
+
 
 # COMMAND ----------
 
 variable = "area"
-m, cp = h3_foilium_map(df_agged, 
-                       f"h3_{res}", 
-                       "h3_geo", 
-                       variable, 
-                       variable_name, 
-                       variable_name, 
-                       variable_name, 
-                       nan_value=None, 
-                       use_jenks = True, 
-                       fill_color ='YlOrRd')
+m, cp = h3_foilium_map(
+    df_agged, f"h3_{res}", "h3_geo", variable, variable_name, variable_name, variable_name, nan_value=None, use_jenks=True, fill_color="YlOrRd"
+)
 m
 
 # COMMAND ----------
