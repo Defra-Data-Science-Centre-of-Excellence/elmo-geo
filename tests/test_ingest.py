@@ -3,12 +3,15 @@ from shutil import rmtree
 
 import pytest
 
+from elmo_geo.utils.register import register
 from elmo_geo.datasets.catalogue import find_datasets
 from elmo_geo.io.convert import convert
 
 
 @pytest.mark.dbr
 def test_convert():
+    register()
+
     dataset_parcel = {
         "name": "rpa-parcel-adas",
         "columns": {"RLR_RW_REFERENCE_PARCELS_DEC_21_LPIS_REF": "id_parcel", "Shape": "geometry"},
