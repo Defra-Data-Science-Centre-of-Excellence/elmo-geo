@@ -587,6 +587,7 @@ historic_archaeological = Dataset(
     source="historic_england",
     versions=[
         Version(
+            # produced by the /notebooks/historic/01_combine_historic_datasets notebook
             name="2024_04_29",
             path_read=("/dbfs/mnt/lab/restricted/ELM-Project/stg/he-combined_sites-2024_05_03.parquet"),
         ),

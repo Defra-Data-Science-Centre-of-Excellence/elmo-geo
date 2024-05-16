@@ -48,19 +48,16 @@ path_parcels = next(v.path_read for v in parcels.versions if v.name == pversion)
 
 version = "2024_04_29"
 he_combined_dataset = next(d for d in datasets if d.name == "historic_archaeological")
-he_scheduled_monuments_dataset = next(d for d in datasets if d.name == "scheduled_monuments")
-
-sf_combined_sites = next(v for v in he_combined_dataset.versions if v.name==version).path_read
-sf_scheduled_monuments = next(v for v in he_scheduled_monuments_dataset.versions if v.name==version).path_read
-print(f"\n\nHistoric features paths:\n{sf_combined_sites}\n{sf_scheduled_monuments}")
+f_combined_sites = next(v for v in he_combined_dataset.versions if v.name==version).path_read
+print(f"\n\nHistoric features paths:\n{f_combined_sites}")
 
 target_epsg = 27700
 simplify_tolerence: float = 0.5  # metres
 max_vertices: int = 256  # per polygon (row)
 
-date = "2024_05_03"
+date = "2024_05_16"
 file_name = f"he-historic_features-{date}"
-sf_output_historic_features = f"dbfs:/mnt/lab/restricted/ELM-Project/out/{file_name}.parquet"
+f_output_historic_features = f"dbfs:/mnt/lab/restricted/ELM-Project/out/{file_name}.parquet"
 
 # COMMAND ----------
 
@@ -79,21 +76,14 @@ df_parcels.display()
 # COMMAND ----------
 
 # load each of the historic england datasets
-sdf_combined_sites = (spark.read.format("parquet").load(dbfs(sf_combined_sites, True))
+sdf_combined_sites = (spark.read.format("parquet").load(dbfs(f_combined_sites, True))
                       .withColumn("geometry", load_geometry("geometry"))
 )
 sdf_combined_sites.display()
 
-sdf_scheduled_monuments = (spark.read.format("parquet").load(dbfs(sf_scheduled_monuments, True))
-                           .withColumn("geometry", load_geometry("geometry"))
-                           .withColumn("dataset", F.lit("scheduled_monuments"))
-                           .withColumnRenamed("ListEntries", "ListEntry")
-)
-sdf_scheduled_monuments.display()
-
 historic_datasets = {
     "hist_arch": sdf_combined_sites,
-    "scheduled_monuments": sdf_scheduled_monuments,
+    "scheduled_monuments": sdf_combined_sites.filter("dataset == 'scheduled_monuments'"),
     "hist_arch_ex_sched_monuments": sdf_combined_sites.filter("dataset != 'scheduled_monuments'"),
 }
 
@@ -102,6 +92,10 @@ historic_datasets = {
 # join the two datasets and calculate the proportion of the parcel that intersects
 sdf_historic_features = None
 collect = lambda col: F.array_join(F.array_sort(F.collect_set(col)), "-")
+
+def st_proportional_overlap(l: str = "geometry_left", r: str = "geometry_right") -> callable:
+    """Calculate the proportional overlap of the right geometry over the left geometry"""
+    return F.expr(f"ST_Area(ST_Intersection({l}, {r})) / ST_Area({l})")
 
 for buf in [0, 6]:
     buf_suffix = f"_{buf}m" if buf !=0 else ""
@@ -112,25 +106,17 @@ for buf in [0, 6]:
             sjoin(df_parcels, 
                   sdf_feature.withColumn("geometry", F.expr(f"ST_MakeValid(ST_Buffer(geometry, {buf}))")),
                   )
-            .groupBy(["id_parcel", "geometry_left"])
+            .groupBy(["id_parcel"])
             .agg(
                 # combine overlapping geometries into single multi geometry and concatenate the datasets and listentry ids
+                F.first("geometry_left").alias("geometry_left"),
                 collect("dataset").alias(f"sources_{name}{buf_suffix}"),
                 F.expr("ST_Union_Aggr(geometry_right) as geometry_right"),
             )
-            .withColumn("geometry_intersection", F.expr("ST_Intersection(geometry_left, geometry_right)"))
-            .withColumn("area_left", F.expr("ST_Area(geometry_left)"))
-            .withColumn("area_intersection", F.expr("ST_Area(geometry_intersection)"))
-            .withColumn(prop_col, F.col("area_intersection") / F.col("area_left"))
-            .drop("area_left", "area_intersection", "geometry_left", "geometry_right", "geometry_intersection")
-        )
-        # group up the result and sum the proportions
-        df = (
-            df.groupBy(*[col for col in df.columns if col != prop_col])
-            .sum(prop_col)
-            .withColumn(prop_col, F.round(f"sum({prop_col})", 6))
+            .withColumn(prop_col, st_proportional_overlap("geometry_left", "geometry_right"))
+            .withColumn(prop_col, F.round(f"{prop_col}", 6))
             .where(f"{prop_col} > 0")
-            .drop(f"sum({prop_col})")
+            .drop("geometry_left", "geometry_right")
         )
 
         if sdf_historic_features is None:
@@ -144,17 +130,12 @@ sdf_historic_features = sdf_historic_features.fillna(0, subset=prop_cols)
 # COMMAND ----------
 
 # save the data
-(   
-    sdf_historic_features
-    .write.format("parquet")
-    .mode("overwrite")
-    .save(dbfs(sf_output_historic_features, True))
-)
+sdf_historic_features.write.parquet(dbfs(f_output_historic_features, True), mode="overwrite")
 
 # COMMAND ----------
 
 # show results
-result = spark.read.parquet(dbfs(sf_output_historic_features, True))
+result = spark.read.parquet(dbfs(f_output_historic_features, True))
 count = result.count()
 LOG.info(f"Rows: {count:,.0f}")
 # check proportion is never > 1 - if it is might mean duplicate features int he dataset
