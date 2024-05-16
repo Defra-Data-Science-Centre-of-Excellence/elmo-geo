@@ -12,15 +12,16 @@
 # COMMAND ----------
 
 import os
-import geopandas as gpd
 from functools import partial
+
+import geopandas as gpd
 from pyspark.sql import functions as F
 
 from elmo_geo import LOG, register
 from elmo_geo.datasets.datasets import datasets, parcels
 from elmo_geo.io import download_link
-from elmo_geo.io.preprocessing import geometry_to_wkb, make_geometry_valid, transform_crs
-from elmo_geo.st import sjoin 
+from elmo_geo.io.preprocessing import make_geometry_valid
+from elmo_geo.st import sjoin
 from elmo_geo.utils.misc import dbfs
 
 register()
@@ -36,9 +37,10 @@ dataset = next(d for d in datasets if d.name == name)
 parcels_names = sorted([f"{parcels.source}/{parcels.name}/{v.name}" for v in parcels.versions])
 dbutils.widgets.dropdown("parcels", parcels_names[-1], parcels_names)
 _, pname, pversion = dbutils.widgets.get("parcels").split("/")
-[print("\n\nname", parcels.name, sep=":\t"), 
- print("version", next(v for v in parcels.versions if v.name == pversion), sep = ":\t"),
- ]
+[
+    print("\n\nname", parcels.name, sep=":\t"),
+    print("version", next(v for v in parcels.versions if v.name == pversion), sep=":\t"),
+]
 
 target_epsg = 27700
 n_partitions = 200
@@ -53,34 +55,28 @@ path_parcels = next(v.path_read for v in parcels.versions if v.name == pversion)
 if os.path.splitext(path_read)[1] == ".parquet":
     spark.read.parquet(dbfs(path_read, True)).display()
 else:
-    gpd_read = partial(gpd.read_file, engine = "pyogrio")
+    gpd_read = partial(gpd.read_file, engine="pyogrio")
     print(gpd_read(path_read, rows=8))
 
 # COMMAND ----------
 
 # pre-process data
 if os.path.splitext(path_read)[1] == ".parquet":
-
     # load file with spark, filter and rename columns
-    mapping = dataset.rename_cols | {c:c for c in dataset.keep_cols if c not in dataset.rename_cols.keys()}
-    sdf = (spark.read.parquet(dbfs(path_read, True))
-          .select(
-              [F.col(c).alias(mapping.get(c, c)) for c in dataset.keep_cols]
-              )
-    )
+    mapping = dataset.rename_cols | {c: c for c in dataset.keep_cols if c not in dataset.rename_cols.keys()}
+    sdf = spark.read.parquet(dbfs(path_read, True)).select([F.col(c).alias(mapping.get(c, c)) for c in dataset.keep_cols])
 
 else:
+    gpd_read = partial(gpd.read_file, engine="pyogrio")
 
-    gpd_read = partial(gpd.read_file, engine = "pyogrio")
+    dissolveby = list(set(dataset.keep_cols) - {"geometry"}) or None
 
-    dissolveby = list(set(dataset.keep_cols)-{"geometry"}) or None
-    
     df = (
         gpd_read(dbfs(path_read, False))
-        .dissolve(by=dissolveby) # union rows where we don't care about the differences in category
-        .explode(index_parts=False) # explode multi-geometries to enable better pararallelisation
-        .set_crs("epsg:27700") # assume CRS
-        #.pipe(transform_crs, target_epsg=27700)
+        .dissolve(by=dissolveby)  # union rows where we don't care about the differences in category
+        .explode(index_parts=False)  # explode multi-geometries to enable better pararallelisation
+        .set_crs("epsg:27700")  # assume CRS
+        # .pipe(transform_crs, target_epsg=27700)
         .filter(dataset.keep_cols, axis="columns")
         .rename(columns=dataset.rename_cols)
         .pipe(make_geometry_valid)
@@ -100,7 +96,8 @@ sdf.display()
 # process the parcels dataset to ensure validity, simplify the vertices to a tolerence,
 # and subdivide large geometries
 df_parcels = (
-    spark.read.format("geoparquet").load(path_parcels)
+    spark.read.format("geoparquet")
+    .load(path_parcels)
     .withColumn("geometry", F.expr("ST_MakeValid(geometry)"))
     .withColumn("geometry", F.expr(f"ST_SimplifyPreserveTopology(geometry, {simplify_tolerence})"))
     .withColumn("geometry", F.expr("ST_Force_2D(geometry)"))
@@ -121,7 +118,6 @@ df_feature = (
     .withColumn("geometry", F.expr("ST_Force_2D(geometry)"))
     .withColumn("geometry", F.expr("ST_MakeValid(geometry)"))
     .withColumn("geometry", F.expr(f"ST_SubdivideExplode(geometry, {max_vertices})"))
-    
 )
 df_feature.display()
 
@@ -147,11 +143,7 @@ df = (
 )
 
 # intersect the two datasets
-(   
-    df
-    .write.format("parquet")
-    .save(dataset.path_output.format(version=version), mode="overwrite")
-)
+(df.write.format("parquet").save(dataset.path_output.format(version=version), mode="overwrite"))
 
 # COMMAND ----------
 
@@ -197,7 +189,8 @@ pandas_df.sort_values("proportion", ascending=False).head(8)
 # COMMAND ----------
 
 import pandas as pd
-df = pd.read_parquet("/dbfs/"+dataset.path_output.format(version=version))
+
+df = pd.read_parquet("/dbfs/" + dataset.path_output.format(version=version))
 df
 
 # COMMAND ----------

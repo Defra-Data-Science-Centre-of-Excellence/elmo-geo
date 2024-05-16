@@ -21,15 +21,11 @@
 
 # COMMAND ----------
 
-import os
-import geopandas as gpd
-from functools import partial
 from pyspark.sql import functions as F
 
 from elmo_geo import LOG, register
 from elmo_geo.datasets.datasets import datasets, parcels
 from elmo_geo.io import download_link
-from elmo_geo.io.preprocessing import geometry_to_wkb, make_geometry_valid, transform_crs
 from elmo_geo.st import sjoin
 from elmo_geo.st.geometry import load_geometry
 from elmo_geo.utils.misc import dbfs
