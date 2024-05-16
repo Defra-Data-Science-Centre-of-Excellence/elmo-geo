@@ -83,6 +83,7 @@ def info_sdf(sdf: SparkDataFrame, f: str = None, geometry_column: str = "geometr
         sindexes: {sdf.select(sindex_column).distinct().count()}
         Partitions: {sdf.rdd.getNumPartitions()}
         Files: {count_parquet_files(f) if f else f}
+        fid count: {sdf.select('fid').distinct().count() if "fid" in sdf.columns else None}
         {df}
     """
     )

@@ -61,15 +61,11 @@ markers = ["dbr: Requires databricks runtime"]
 [tool.ruff]
 line-length = 160
 unsafe-fixes = false
-extend-exclude = [
-    # "notebooks/analysis/*",
-    "notebooks/awest/*",
-    "notebooks/baresoil/*",
-    "notebooks/boundary/*",
-    "notebooks/habitats/*",
-    "notebooks/ingestion/*",
-    "notebooks/plots/*",
-]  # Issue: #78
+extend-exclude = [  # Issue: #78
+    "notebooks/*",
+    "notebooks/awest/subdivide.py",
+]
+builtins = ["spark", "dbutils", "sc", "display", "displayHTML"]
 
 [tool.ruff.lint]
 select = ["F", "E", "I"]
@@ -77,4 +73,11 @@ ignore = ["D203", "D212", "COM812", "ISC001"]  # Conflict
 
 [tool.ruff.lint.per-file-ignores]
 "**/__init__.py" = ["F401"]
-"notebooks/*" = ["F821", "E402", "ALL"]  # Issue: #78
+# Issue: #78
+"notebooks/analysis/*" = ["E402", "E501"]
+"notebooks/awest/*" = ["E402", "E712", "E722", "E731", "E741", "F811", "F821", "F841"]
+"notebooks/baresoil/*" = ["E402"]
+"notebooks/boundary/*" = ["E402", "E501", "E712", "E731", "E741", "F811", "F821", "F823", "F841"]
+"notebooks/habitats/*" = ["E402", "E501"]
+"notebooks/ingestion/*" = ["E402", "E501"]
+"notebooks/plots/*" = ["E402", "E501", "F403", "F405", "F811"]
