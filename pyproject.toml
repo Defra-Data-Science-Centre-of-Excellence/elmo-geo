@@ -68,7 +68,7 @@ extend-exclude = [
     "notebooks/boundary/*",
     "notebooks/habitats/*",
     "notebooks/ingestion/*",
-    "notebooks/plots/*",
+    # "notebooks/plots/*",
 ]  # Issue: #78
 
 [tool.ruff.lint]
@@ -77,4 +77,12 @@ ignore = ["D203", "D212", "COM812", "ISC001"]  # Conflict
 
 [tool.ruff.lint.per-file-ignores]
 "**/__init__.py" = ["F401"]
-"notebooks/*" = ["F821", "E402", "ALL"]  # Issue: #78
+"notebooks/*" = ["F821", "E402"]  # Issue: #78
+"notebooks/analysis/*" = ["ALL"]
+"notebooks/awest/*" = ["ALL"]
+"notebooks/baresoil/*" = ["ALL"]
+"notebooks/boundary/*" = ["ALL"]
+"notebooks/habitats/*" = ["ALL"]
+"notebooks/historic/*" = ["ALL"]
+"notebooks/ingestion/*" = ["ALL"]
+"notebooks/plots/*" = ["ALL"]
