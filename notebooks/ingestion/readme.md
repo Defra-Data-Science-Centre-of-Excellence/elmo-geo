@@ -1,10 +1,6 @@
 # Ingest
-
-## Method
-- (link py file) `01_identify`, Identify datasets, manually adding the "dataset" to `data/catalogue.json`.
 - `02_convert`, Convert datasets to be easily access by spark, partitioning large datasets approriately.
 - (work in progress) `03_lookup`, Spatially join with parcels, using distance, KNN, and metrics if declared in dataset, saving just lookup tables.
-- (work in progress) `00_data_listing`, is a tool used to see potential datasets available.
 
 ## Data Sources
 A list of places that have been used to identify datasets.
@@ -22,3 +18,19 @@ UKCEH | https://eidc.ac.uk/<br>https://catalogue.ceh.ac.uk/eidc/documents
 Defra DSP | https://environment.data.gov.uk/
 OpenStreetMap | https://osm.org, http://tagfinder.osm.ch/
 Ordnance Survey | https://osdatahub.os.uk
+
+## Manual Collected Datasets
+dataset | link
+--- | ---
+rpa-parcel-adas | https://cehacuk.sharepoint.com/sites/EVAST/DEFRA%20Data%20Share/
+rpa-hedge-adas | https://defra.sharepoint.com/teams/Team1645/Restricted_ELM_RPA_data_sharing/
+he-shine-2022_12_30 | https://defra.sharepoint.com/teams/Team1645/Restricted_ELM_RPA_data_sharing/
+sentinel-tiles-2023_02_07 | to replace with `dbfs:/mnt/eods`
+ewco-priority_habitat_network-2022_10_06
+ewco-nfc_social-2022_03_14
+ewco-water_quality-2023_02_27
+ewco-flood_risk_management-2023_02_24
+ewco-keeping_rivers_cool_riparian_buffers-2023_03_03
+ewco-nfc_ammonia_emmissions-2022_03_14
+ewco-red_squirrel-2022_10_18
+
