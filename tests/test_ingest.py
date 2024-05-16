@@ -3,9 +3,9 @@ from shutil import rmtree
 
 import pytest
 
-from elmo_geo.utils.register import register
 from elmo_geo.datasets.catalogue import find_datasets
 from elmo_geo.io.convert import convert
+from elmo_geo.utils.register import register
 
 
 @pytest.mark.dbr
