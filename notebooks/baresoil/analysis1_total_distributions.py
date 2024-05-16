@@ -16,7 +16,7 @@
 
 from elmo_geo.plot import plot_bare_soil_dist
 from elmo_geo.rs.sentinel import sentinel_years
-from elmo_geo.utils.dbr import spark, dbutils
+from elmo_geo.utils.dbr import dbutils, spark
 
 # from helpers import get_cols, get_cols_wfm
 
@@ -32,10 +32,7 @@ path = f"/mnt/lab/unrestricted/elm/elmo/baresoil/output-{year}.parquet"
 df = spark.read.parquet(path).toPandas()
 fig, ax = plot_bare_soil_dist(
     data=df.bare_soil_percent,
-    title=(
-        "Distribution of parcels in England by bare soil cover "
-        f"November {year-1} - February {year}"
-    ),
+    title=("Distribution of parcels in England by bare soil cover " f"November {year-1} - February {year}"),
 )
 fig.show()
 
@@ -72,10 +69,7 @@ predicate = lambda col: col.startswith("ha_arable_")
 wfm["arable"] = wfm[filter(predicate, wfm.columns)].sum(axis=1) > 0
 fig, ax = plot_bare_soil_dist(
     data=wfm.loc[wfm.arable, "bare_soil_percent"],
-    title=(
-        "Distribution of arable parcels in England by bare soil cover "
-        f"November {year-1} - February {year}"
-    ),
+    title=("Distribution of arable parcels in England by bare soil cover " f"November {year-1} - February {year}"),
 )
 fig.show()
 
@@ -91,10 +85,7 @@ predicate = lambda col: col in [
 wfm["improved_grassland"] = wfm[filter(predicate, wfm.columns)].sum(axis=1) > 0
 fig, ax = plot_bare_soil_dist(
     data=wfm.loc[wfm.improved_grassland, "bare_soil_percent"],
-    title=(
-        "Distribution of improved grassland parcels in England by bare soil "
-        f"cover November {year-1} - February {year}"
-    ),
+    title=("Distribution of improved grassland parcels in England by bare soil " f"cover November {year-1} - February {year}"),
 )
 fig.show()
 

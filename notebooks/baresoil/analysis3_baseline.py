@@ -10,18 +10,16 @@
 
 # COMMAND ----------
 
-import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
-import seaborn as sns
-from pyspark.sql.functions import lit
-import matplotlib.ticker as mtick
-
 # from matplotlib.ticker import PercentFormatter
 import matplotlib.dates as mdates
+import matplotlib.pyplot as plt
+import matplotlib.ticker as mtick
+import numpy as np
+import pandas as pd
+import seaborn as sns
+from pyspark.sql.functions import lit
 
 # from matplotlib.dates import DateFormatter
-
 from elmo_geo.rs.sentinel import sentinel_years
 from elmo_geo.utils.dbr import spark
 
@@ -175,9 +173,7 @@ def mean_trends(df1, df2, df3):
     ax.set_xlabel("Winter")
     ax.set_xlim(years[0] + pd.DateOffset(months=-2), years[2] + pd.DateOffset(months=2))
     ax.xaxis.set_major_locator(mdates.YearLocator())
-    ax.xaxis.set_major_formatter(
-        mtick.FuncFormatter(lambda x, _: format_winter(mdates.num2date(x)))
-    )
+    ax.xaxis.set_major_formatter(mtick.FuncFormatter(lambda x, _: format_winter(mdates.num2date(x))))
     ax.set_ylim(0, 0.2)
     ax.set_ylabel("Bare soil percentage")
     ax.yaxis.set_major_formatter(mtick.PercentFormatter(1))
@@ -241,9 +237,7 @@ for j, df in enumerate([df3, df1, df2]):
     axs[0, j].grid(visible=False, which="both", axis="x")
     axs[0, j].set_xlabel("Winter")
     axs[0, j].xaxis.set_major_locator(mdates.YearLocator())
-    axs[0, j].xaxis.set_major_formatter(
-        mtick.FuncFormatter(lambda x, _: format_winter(mdates.num2date(x)))
-    )
+    axs[0, j].xaxis.set_major_formatter(mtick.FuncFormatter(lambda x, _: format_winter(mdates.num2date(x))))
 
 
 axs[0, 0].set_ylim(0, 0.37)
@@ -335,9 +329,7 @@ def yearly_average_wrt_baselines(df1, df2, df3, arable_dict, grass_dict):
 axs[0, 0].grid(visible=False, which="both", axis="x")
 axs[0, 0].set_xlabel("Winter")
 axs[0, 0].xaxis.set_major_locator(mdates.YearLocator())
-axs[0, 0].xaxis.set_major_formatter(
-    mtick.FuncFormatter(lambda x, _: format_winter(mdates.num2date(x)))
-)
+axs[0, 0].xaxis.set_major_formatter(mtick.FuncFormatter(lambda x, _: format_winter(mdates.num2date(x))))
 
 axs[0, 1].grid(visible=False, which="both", axis="x")
 axs[0, 1].set_title("Arable & horticultural fields")
@@ -355,9 +347,7 @@ axs[0, 1].set_xlabel(
     "Winter",
 )
 axs[0, 1].xaxis.set_major_locator(mdates.YearLocator())
-axs[0, 1].xaxis.set_major_formatter(
-    mtick.FuncFormatter(lambda x, _: format_winter(mdates.num2date(x)))
-)
+axs[0, 1].xaxis.set_major_formatter(mtick.FuncFormatter(lambda x, _: format_winter(mdates.num2date(x))))
 
 axs[0, 2].grid(visible=False, which="both", axis="x")
 axs[0, 2].axhline(0.23, linewidth=1.0, color="#00A33B", linestyle="--")
@@ -373,9 +363,7 @@ axs[0, 2].annotate(
 axs[0, 2].set_title("Improved grassland")
 axs[0, 2].set_xlabel("Winter")
 axs[0, 2].xaxis.set_major_locator(mdates.YearLocator())
-axs[0, 2].xaxis.set_major_formatter(
-    mtick.FuncFormatter(lambda x, _: format_winter(mdates.num2date(x)))
-)
+axs[0, 2].xaxis.set_major_formatter(mtick.FuncFormatter(lambda x, _: format_winter(mdates.num2date(x))))
 
 title = "Mean bare soil over winter in fields across England"
 fig.suptitle(title, x=0.075, ha="left", fontsize="x-large")

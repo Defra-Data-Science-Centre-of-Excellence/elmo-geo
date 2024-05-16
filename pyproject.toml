@@ -75,7 +75,7 @@ ignore = ["D203", "D212", "COM812", "ISC001"]  # Conflict
 # Issue: #78
 "notebooks/analysis/*" = ["E402", "E501"]
 "notebooks/awest/*" = ["E402", "E712", "E722", "E731", "E741", "F811", "F821", "F841"]
-"notebooks/baresoil/*" = ["E402"]
+"notebooks/baresoil/*" = ["E402", "E501", "E731"]
 "notebooks/boundary/*" = ["E402", "E501", "E712", "E731", "E741", "F811", "F821", "F823", "F841"]
 "notebooks/habitats/*" = ["E402", "E501"]
 "notebooks/historic/*" = ["E402", "E501", "E731", "E741"]
