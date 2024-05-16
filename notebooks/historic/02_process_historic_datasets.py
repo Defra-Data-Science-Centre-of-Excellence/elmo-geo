@@ -21,6 +21,7 @@
 
 # COMMAND ----------
 
+import pandas as pd
 from pyspark.sql import functions as F
 
 from elmo_geo import LOG, register
@@ -87,10 +88,13 @@ historic_datasets = {
 
 # join the two datasets and calculate the proportion of the parcel that intersects
 sdf_historic_features = None
-collect = lambda col: F.array_join(F.array_sort(F.collect_set(col)), "-")
 
 
-def st_proportional_overlap(l: str = "geometry_left", r: str = "geometry_right") -> callable:
+def collect(col):
+    return F.array_join(F.array_sort(F.collect_set(col)), "-")
+
+
+def st_proportional_overlap(l: str = "geometry_left", r: str = "geometry_right") -> callable:  # noqa:E741
     """Calculate the proportional overlap of the right geometry over the left geometry"""
     return F.expr(f"ST_Area(ST_Intersection({l}, {r})) / ST_Area({l})")
 
@@ -154,8 +158,6 @@ pandas_df.to_parquet(download_path)
 displayHTML(download_link(dbfs(download_path, False), name="download.parquet"))
 
 # COMMAND ----------
-
-import pandas as pd
 
 df = pd.read_parquet(dbfs(download_path, False))
 df
