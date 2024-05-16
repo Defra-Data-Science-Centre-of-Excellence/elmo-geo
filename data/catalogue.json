@@ -371,9 +371,10 @@
             "geometry": "geometry"
         },
         "tasks": {
-            "convert": "todo"
+            "convert": "2024_05_16"
         },
-        "bronze": "/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_priority_habitats_inventory_eng/format_GEOPARQUET_priority_habitats_inventory_eng/SNAPSHOT_2024_03_06_priority_habitats_inventory_eng/"
+        "bronze": "/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_priority_habitats_inventory_eng/format_GEOPARQUET_priority_habitats_inventory_eng/SNAPSHOT_2024_03_06_priority_habitats_inventory_eng/",
+        "silver": "/dbfs/mnt/lab/restricted/ELM-Project/silver/defra-priority_habitat_inventory-2024_03_06.parquet"
     },
     {
         "name": "living_england-habitat_map-2022_10_20",
@@ -385,9 +386,10 @@
             "geometry": "geometry"
         },
         "tasks": {
-            "convert": "todo"
+            "convert": "2024_05_16"
         },
-        "bronze": "/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_living_england_habitat_map_phase_4/format_GEOPARQUET_living_england_habitat_map_phase_4/SNAPSHOT_2022_10_20_living_england_habitat_map_phase_4"
+        "bronze": "/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_living_england_habitat_map_phase_4/format_GEOPARQUET_living_england_habitat_map_phase_4/SNAPSHOT_2022_10_20_living_england_habitat_map_phase_4",
+        "silver": "/dbfs/mnt/lab/restricted/ELM-Project/silver/living_england-habitat_map-2022_10_20.parquet"
     },
     {
         "name": "rpa-parcel-adas",
