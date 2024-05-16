@@ -27,6 +27,7 @@ register()
 
 # DBTITLE 1,Define Test Function
 
+
 def test_self_sjoin(sdf):
     """Tests intersecting a spark data frame with itself.
 
