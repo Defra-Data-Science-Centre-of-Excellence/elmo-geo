@@ -143,12 +143,12 @@ def convert(dataset):
     LOG.info(f"Converting: {name}")
 
     f_raw = dataset["bronze"]
-    f_tmp = f"/dbfs/tmp/{name}.parquet" if not f_raw.endswith(".parquet") else f_raw
-    f_out = dataset.get("silver", f"{SILVER}/{name}.parquet")  # for restricted data
+    f_tmp = f"/dbfs/tmp/{name}.parquet" if (not f_raw.endswith(".parquet") and "/format_GEOPARQUET_" not in f_raw) else f_raw
+    f_out = dataset.get("silver", f"{SILVER}/{name}.parquet")  # pre-existing silver is to be used for restricted data
 
-    if not os.path.exists(f_tmp):
-        convert_dataset(f_raw, f_tmp)
     if not os.path.exists(f_out):
+        if not os.path.exists(f_tmp):
+            convert_dataset(f_raw, f_tmp)
         partition_geoparquet(f_tmp, f_out, columns)
 
     dataset["silver"] = f_out
