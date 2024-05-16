@@ -7,7 +7,8 @@
 # MAGIC
 # MAGIC **Date:** 08/04/2024
 # MAGIC
-# MAGIC This notebook produces an interactive, html based choropleth map of a spatial dataset aggregated to H3 tiles. This allows granular spatial data to be mapped at national scale.
+# MAGIC This notebook produces an interactive, html based choropleth map of a spatial dataset aggregated to H3 tiles. This allows granular spatial data to be
+# MAGIC mapped at national scale.
 # MAGIC
 # MAGIC How to use this notebook:
 # MAGIC
@@ -27,11 +28,15 @@
 # COMMAND ----------
 
 
+import json
+
 import folium
 import geopandas as gpd
 import h3
 import numpy as np
 import pandas as pd
+from folium import Map
+from geojson.feature import Feature, FeatureCollection
 from pyspark.sql import functions as F
 
 from elmo_geo import register
@@ -99,12 +104,6 @@ df_agged["h3_geo"] = df_agged[f"h3_{res}"].apply(lambda x: {"type": "Polygon", "
 df_agged.head()
 
 # COMMAND ----------
-
-import json
-
-import folium
-from folium import Map
-from geojson.feature import *
 
 
 def base_empty_map(centre=(52.133236898161755, -1.2970901724513781)):
