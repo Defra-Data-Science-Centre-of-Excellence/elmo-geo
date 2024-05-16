@@ -16,7 +16,9 @@ jobs:
           python-version: "3.10"
           architecture: x64
       - run: make install
-      - uses: pre-commit/action@v3.0.1
-        with:
-          extra_args: make fmt
+      - run: |
+          make fmt
+          git add .
+          git diff-index --quiet HEAD || git commit -m "make fmt"
       - run: make verify_gh
+a
