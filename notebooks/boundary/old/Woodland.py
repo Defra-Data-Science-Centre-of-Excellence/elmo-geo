@@ -12,6 +12,7 @@ from urllib.error import URLError
 from urllib.request import urlopen
 
 import geopandas as gpd
+import pandas as pd
 from geopandas import GeoDataFrame
 from geopandas.io.arrow import _geopandas_to_arrow
 from osdatahub import Extent, FeaturesAPI
@@ -20,6 +21,7 @@ from pyarrow.dataset import write_dataset
 from tqdm import tqdm
 
 key = "WxgUdETn6cy58WZkfwZ7wdMVLlt5eDsX"
+product = 4143
 
 # COMMAND ----------
 
@@ -61,7 +63,7 @@ for i in range(-1, precision):
     x, y = x - dx, y - dy
     step //= N
     print(x, y, i, j)
-    result += letters_split5[i][j]
+    result += letters_split[i][j]
 result
 
 # COMMAND ----------

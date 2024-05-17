@@ -28,8 +28,8 @@ SedonaRegistrator.registerAll(spark)
 
 def st_fromwkb(col: str = "geometry", from_crs: int = None):
     return F.expr(
-        f'ST_SimplifyPreserveTopology(ST_PrecisionReduce(ST_Transform(ST_FlipCoordinates(ST_Force_2D(CASE WHEN ({col} IS NULL) THEN ST_GeomFromText("Point EMPTY") ELSE ST_MakeValid(ST_GeomFromWKB({col})) END)), "EPSG:{from_crs}", "EPSG:27700"), 3), 0)',
-    )
+        f'ST_SimplifyPreserveTopology(ST_PrecisionReduce(ST_Transform(ST_FlipCoordinates(ST_Force_2D(CASE WHEN ({col} IS NULL) THEN ST_GeomFromText("Point EMPTY") ELSE ST_MakeValid(ST_GeomFromWKB({col})) END)), "EPSG:{from_crs}", "EPSG:27700"), 3), 0)'
+    )  # noqa:E501
 
 
 def osm2sdf(place, tags):

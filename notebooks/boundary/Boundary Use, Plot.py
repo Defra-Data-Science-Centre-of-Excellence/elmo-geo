@@ -19,6 +19,7 @@
 from time import perf_counter
 
 import contextily as ctx
+import elm_se
 import geopandas as gpd
 import matplotlib.pyplot as plt
 import numpy as np
@@ -29,7 +30,6 @@ from pyspark.sql import functions as F
 
 from elmo_geo import register
 
-register()
 register()
 
 # COMMAND ----------

@@ -48,7 +48,7 @@ SedonaRegistrator.registerAll(spark)
 
 # COMMAND ----------
 
-f_rpa_parcels = "/dbfs/mnt/base/unrestricted/source_rpa_spatial_data_mart/dataset_rpa_reference_parcels/format_GPKG_rpa_reference_parcels/SNAPSHOT_2023_02_07_rpa_reference_parcels/reference_parcels.zip/reference_parcels.gpkg"
+f_rpa_parcels = "/dbfs/mnt/base/unrestricted/source_rpa_spatial_data_mart/dataset_rpa_reference_parcels/format_GPKG_rpa_reference_parcels/SNAPSHOT_2023_02_07_rpa_reference_parcels/reference_parcels.zip/reference_parcels.gpkg"  # noqa:E501
 f_parcels = "dbfs:/mnt/lab/unrestricted/elm_data/rpa/parcels/2023_02_07.parquet"
 
 # COMMAND ----------

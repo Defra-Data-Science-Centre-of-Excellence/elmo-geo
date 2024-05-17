@@ -184,7 +184,7 @@ def m_water(buf):
     ST_MakeValid(ST_Buffer(geometry_parcel, {buf}))
   ))) AS m_water_buf{buf}
 """
-    )  # Length of water-line beside and inside a parcel (all waterbody geometries are polygons, this may be double for water-lines inside or very close to a parcel)
+    )  # Length of water-line beside and inside a parcel (all waterbody geometries are polygons, this may be double for water-lines inside or very close to a parcel)  # noqa:E501
 
 
 # COMMAND ----------

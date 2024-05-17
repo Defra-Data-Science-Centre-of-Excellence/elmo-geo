@@ -18,6 +18,7 @@
 import contextily as ctx
 import geopandas as gpd
 import osmnx as ox
+import shapely
 import urllib3
 from cdap_geo.sedona import st_join, st_register
 from pyspark.sql import functions as F

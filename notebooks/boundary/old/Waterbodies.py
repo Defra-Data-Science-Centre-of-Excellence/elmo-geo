@@ -57,14 +57,8 @@ cx.add_basemap(ax=ax, crs=crs, source=cx.providers.OpenTopoMap, alpha=0.3)
 
 # COMMAND ----------
 
-# place, tags = 'Northumberland', {'water':True,'waterway':True}
-# gdf = (ox.geometries_from_place(place, tags)
-#   .reset_index()
-#   .assign(gtype = lambda df: df.geom_type)
-#   [['osmid', *tags.keys(), 'gtype', 'geometry']]
-#   .to_crs(crs)
-# )
-
+place, tags = "Northumberland", {"water": True, "waterway": True}
+gdf = ox.geometries_from_place(place, tags).reset_index().assign(gtype=lambda df: df.geom_type)[["osmid", *tags.keys(), "gtype", "geometry"]].to_crs(crs)
 
 display(gdf)
 

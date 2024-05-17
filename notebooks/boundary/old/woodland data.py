@@ -3,8 +3,9 @@
 
 # COMMAND ----------
 
+import cdap_geo
 import pandas as pd
-from cdap_geo import buffer, pointify, st_join, st_register
+from cdap_geo import buffer, pointify, st_join, st_register, write_geoparquet
 from cdap_geo.utils import wkb
 from pyspark.sql import functions as F
 from pyspark.sql import types as T
@@ -227,13 +228,14 @@ display(df2)
 
 # COMMAND ----------
 
+"""
 business, parcel, commercial_woodland_area, amenity_woodland_area
 
 stats
 distro - business
 distro - parcel
 distro - farm_type, farm_size
-
+"""
 
 # COMMAND ----------
 

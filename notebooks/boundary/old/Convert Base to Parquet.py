@@ -16,15 +16,15 @@ from pyspark_vector_files.gpkg import read_gpkg
 
 # COMMAND ----------
 
-f_rpa_ref_parcels = "/dbfs/mnt/base/unrestricted/source_rpa_spatial_data_mart/dataset_rpa_reference_parcels/format_GPKG_rpa_reference_parcels/SNAPSHOT_2023_02_07_rpa_reference_parcels/reference_parcels.zip/reference_parcels.gpkg"
+f_rpa_ref_parcels = "/dbfs/mnt/base/unrestricted/source_rpa_spatial_data_mart/dataset_rpa_reference_parcels/format_GPKG_rpa_reference_parcels/SNAPSHOT_2023_02_07_rpa_reference_parcels/reference_parcels.zip/reference_parcels.gpkg"  # noqa:E501
 f_parcels = "/dbfs/mnt/lab/unrestricted/elm_data/rpa/reference_parcels/2023_02_07.parquet"
 
 
-f_rpa_efa_hedges = "/dbfs/mnt/base/unrestricted/source_rpa_spatial_data_mart/dataset_efa_control_layer/format_GPKG_efa_control_layer/SNAPSHOT_2023_02_07_efa_control_layer/LF_CONTROL_MV.zip/LF_CONTROL_MV.gpkg"
+f_rpa_efa_hedges = "/dbfs/mnt/base/unrestricted/source_rpa_spatial_data_mart/dataset_efa_control_layer/format_GPKG_efa_control_layer/SNAPSHOT_2023_02_07_efa_control_layer/LF_CONTROL_MV.zip/LF_CONTROL_MV.gpkg"  # noqa:E501
 f_hedges = "/dbfs/mnt/lab/unrestricted/elm_data/rpa/efa_hedges/2023_02_07.parquet"
 
 
-f_rpa_landcover = "/dbfs/mnt/base/unrestricted/source_rpa_spatial_data_mart/dataset_rpa_land_cover/format_GPKG_rpa_land_cover/SNAPSHOT_2023_02_07_rpa_land_cover/land_cover.zip/land_cover.gpkg"
+f_rpa_landcover = "/dbfs/mnt/base/unrestricted/source_rpa_spatial_data_mart/dataset_rpa_land_cover/format_GPKG_rpa_land_cover/SNAPSHOT_2023_02_07_rpa_land_cover/land_cover.zip/land_cover.gpkg"  # noqa:E501
 f_landcover = "/dbfs/mnt/lab/unrestricted/elm_data/rpa/land_cover/2023_02_07.parquet"
 
 
@@ -56,7 +56,7 @@ woodland = [
 # COMMAND ----------
 
 
-f_rpa_efa_hedges = "/dbfs/mnt/base/unrestricted/source_rpa_spatial_data_mart/dataset_efa_control_layer/format_GPKG_efa_control_layer/SNAPSHOT_2023_02_07_efa_control_layer/LF_CONTROL_MV.zip/LF_CONTROL_MV.gpkg"
+f_rpa_efa_hedges = "/dbfs/mnt/base/unrestricted/source_rpa_spatial_data_mart/dataset_efa_control_layer/format_GPKG_efa_control_layer/SNAPSHOT_2023_02_07_efa_control_layer/LF_CONTROL_MV.zip/LF_CONTROL_MV.gpkg"  # noqa:E501
 f_hedges = "/dbfs/mnt/lab/unrestricted/elm_data/rpa/efa_hedges/2023_02_07.parquet"
 
 

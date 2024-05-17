@@ -9,10 +9,9 @@
 
 # COMMAND ----------
 
+import matplotlib.pyplot as plt
 import numpy as np
-
-# import pandas as pd
-# import matplotlib.pyplot as plt
+import pandas as pd
 import seaborn as sns
 
 sf = "dbfs:/mnt/lab/unrestricted/DSMT/gis/buffer_strips/2022-08-23.parquet"

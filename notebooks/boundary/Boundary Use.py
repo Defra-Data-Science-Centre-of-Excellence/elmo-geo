@@ -7,7 +7,8 @@
 # MAGIC
 # MAGIC **Updated April 2024:** Obi Thompson Sargoni
 # MAGIC
-# MAGIC This notebook produces multiple datasets that detail what features intersect parcel boundaries. This information can be used to inform what actions parcels are eligible for, and the amount of parcel boundaries eligible for those actions.
+# MAGIC This notebook produces multiple datasets that detail what features intersect parcel boundaries. This information can be used to inform what actions
+# MAGIC parcels are eligible for, and the amount of parcel boundaries eligible for those actions.
 # MAGIC
 # MAGIC ### Data
 # MAGIC - Parcels - November 2021 (ADAS) - Elm-Project
@@ -21,13 +22,21 @@
 # MAGIC - Wetland, linked to parcels by 'process_dataset' notebook
 # MAGIC
 # MAGIC ### Methodology
-# MAGIC This notebook implements a 'splitting' method to classify sections of parcel boundaries based on the features they intersect. This method is implemented in Cell 10.
+# MAGIC This notebook implements a 'splitting' method to classify sections of parcel boundaries based on the features they intersect. This method is implemented
+# MAGIC in Cell 10.
 # MAGIC
-# MAGIC The splitting method repeatedly intersects parcel boundaries with different features. The intersection between the boundary and the feature is returned as one set of geometries that are tagged as overlapping with this feature type. The non-intersecting sections of the boundary are tagged as not intersecting the features. By repeating this process the initial boundary geometry is split into different components that intersect different combinations of natural features (e.g. a section that intersects a wall and a hedge, a section that intersects just a waterbody).
+# MAGIC The splitting method repeatedly intersects parcel boundaries with different features. The intersection between the boundary and the feature is returned
+# MAGIC as one set of geometries that are tagged as overlapping with this feature type. The non-intersecting sections of the boundary are tagged as not
+# MAGIC intersecting the features. By repeating this process the initial boundary geometry is split into different components that intersect different
+# MAGIC combinations of natural features (e.g. a section that intersects a wall and a hedge, a section that intersects just a waterbody).
 # MAGIC
-# MAGIC The intersections are based on a 2m ([Source](https://townsendcharteredsurveyors.co.uk/sustainable-farming-incentive-pilot-starting-2021-water-body-buffering-standard/)) buffer of the feature geometries which is why some boundary sections can intersect multiple features (we typically expect section of a boundary to be either intersected by a wall or hedge or waterbody).
+# MAGIC The intersections are based on a 2m
+# MAGIC ([Source](https://townsendcharteredsurveyors.co.uk/sustainable-farming-incentive-pilot-starting-2021-water-body-buffering-standard/)) buffer of the
+# MAGIC feature geometries which is why some boundary sections can intersect multiple features (we typically expect section of a boundary to be either
+# MAGIC intersected by a wall or hedge or waterbody).
 # MAGIC
-# MAGIC The notebook cells leading up to cell 10 preprocess features datasets to ensure geometries are cleaned, grouped into a single geometry per parcel ID, and joined together into a single spark dataframe.
+# MAGIC The notebook cells leading up to cell 10 preprocess features datasets to ensure geometries are cleaned, grouped into a single geometry per parcel ID,
+# MAGIC and joined together into a single spark dataframe.
 
 # COMMAND ----------
 
@@ -434,10 +443,15 @@ sdf_uptake.count()
 sdf_uptake = spark.read.parquet(sf_uptake)
 
 n_null_parcel_ids = (sdf_uptake.filter("(id_parcel is null)")).count()
-n_null_boundary_categories = (
-    sdf_uptake.filter(
-        "(id_parcel is not null) and ((elg_adj_diff_bus is null) or (elg_adj_same_bus is null) or (elg_water is null) or (elg_ditch is null) or (elg_wall is null) or (elg_hedge is null))"
-    )
+n_null_boundary_categories = sdf_uptake.filter(
+    """
+    (id_parcel is not null) and ((elg_adj_diff_bus is null)
+    or (elg_adj_same_bus is null)
+    or (elg_water is null)
+    or (elg_ditch is null)
+    or (elg_wall is null)
+    or (elg_hedge is null))
+"""
 ).count()
 
 if not (n_null_parcel_ids == n_null_boundary_categories == 0):

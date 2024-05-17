@@ -9,7 +9,7 @@ import geopandas as gpd
 import matplotlib.pyplot as plt
 import pandas as pd
 import sedona
-from cdap_geo import area, geohash, st_join, to_gdf
+from cdap_geo import area, geohash, intersection, st_join, to_gdf
 from pandas import concat, merge
 from pyspark.sql import functions as F
 
@@ -93,6 +93,7 @@ ids1 = df.query(".99<prop").pipe(lambda df: set(df["id_left"]).union(df["id_righ
 
 # COMMAND ----------
 
+ids = ids0
 gdf = to_gdf(df_parcels.filter(F.col("id_parcel").isin(ids)), crs=27700).merge(df2[["id_left", "prop"]].rename(columns={"id_left": "id_parcel"}))
 
 f = "/dbfs/mnt/lab/unrestricted/DSMT/gis/parcels_that_overlap/2022-11-15.parquet"
@@ -152,12 +153,13 @@ wfm_ids
 
 # COMMAND ----------
 
+# x = [1, 3, 4, 10, 12, 27, 36, 43, 44, 45, 53, 73, 80, 90, 116, 118, 123, 147, 148, 151, 153, 167, 170, 171, 178, 186, 192, 197, 202, 203, 215, 221, 237, 246, 254]  # noqa:E501
+x = [2, 4, 5, 14, 16, 17, 19, 20, 22]  # wfm_ids
+
 [j for i, j in enumerate(wfm_ids) if i in x]
 
 # COMMAND ----------
 
-# x = [1, 3, 4, 10, 12, 27, 36, 43, 44, 45, 53, 73, 80, 90, 116, 118, 123, 147, 148, 151, 153, 167, 170, 171, 178, 186, 192, 197, 202, 203, 215, 221, 237, 246, 254]  # ids
-x = [2, 4, 5, 14, 16, 17, 19, 20, 22]  # wfm_ids
 
 fig, axs = plt.subplots(3, 3, figsize=(16, 9))
 axs = [ax for axx in axs for ax in axx]
