@@ -55,7 +55,7 @@ def convert():
     return udf_convert("f_in", "f_out", "i", "batch", "status")
 
 
-def batch_status(path_out):
+def batch_status(path_in, ext, path_out):
     f_status = path_out + "status.parquet"
     if not os.path.exists(f_status):
         sdf = batch_folder(path_in, ext, path_out, batch)
@@ -64,7 +64,7 @@ def batch_status(path_out):
 
 
 def batch_convert_folder(path_in, ext, path_out, batch=10_000, engine="pyogrio"):
-    f_status = batch_status(path_out)
+    f_status = batch_status(path_in, ext, path_out)
     df = pd.read_parquet(f_status).pipe(spark.createDataFrame).repartition(sdf.count()).withColumn("status", convert()).toPandas()
     df.to_parquet(f_status)
     display(df)
@@ -75,7 +75,7 @@ def batch_convert_folder(path_in, ext, path_out, batch=10_000, engine="pyogrio")
 f_in = "/dbfs/mnt/lab/unrestricted/elm_data/os/mmtopo_gpkg/wtr_fts_water.zip"
 batch = 10_000
 
-n = pyogrio.read_info(f)["features"]
+n = pyogrio.read_info(f_in)["features"]
 N = ceil(n / batch)
 for i in range(N):
     print(f"\r{i}/{N}", end="")
