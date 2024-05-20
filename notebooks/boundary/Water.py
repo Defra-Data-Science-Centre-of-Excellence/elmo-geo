@@ -8,15 +8,22 @@
 # MAGIC osm-united_kingdom | `tagname` contains "water" | all
 # MAGIC os-wtr_fts | `file` does not contain "catchment" | all
 # MAGIC os-wtr_ntwk | | `watercourse`
+# MAGIC
+# MAGIC
+# MAGIC
+# MAGIC 1. identify osm tags
+# MAGIC
 
 # COMMAND ----------
 
-# MAGIC %sh find /dbfs/mnt/base/ -mindepth 3 -maxdepth 3 | grep water\|river\|lake
+# MAGIC %sh find /dbfs/mnt/base/ -mindepth 3 -maxdepth 3 | grep "water\|river\|lake\|openstreetmap"
 
 # COMMAND ----------
 
 from pyspark.sql import functions as F
 from datetime import datetime
+import pandas as pd
+import geopandas as gpd
 
 from elmo_geo import register
 from elmo_geo.datasets.catalogue import find_datasets, add_to_catalogue
@@ -42,6 +49,7 @@ dataset_water = {
     "tasks": {
         "lookup_parcel": "todo"
     },
+    "distance": 24,
     "silver": f"{SILVER}/{name}.parquet"
 }
 
@@ -118,9 +126,10 @@ sdf_os_water = (
 
 sdf_water = (
     sdf_os_water.union(sdf_osm_water)
-    .transform(st_union, ["source", "class", "sindex"])
+    .withColumn("geometry", F.expr("ST_Buffer(geometry, 0)"))
+    .groupby("source", "class", "sindex").agg(F.expr("ST_Union_Aggr(geometry)").alias("geometry"))
     .withColumn("geometry", load_geometry(encoding_fn=""))
-    # .withColumn("geometry", F.expr("EXPLODE(ST_Dump(geometry))"))
+    .withColumn("geometry", F.expr("ST_SubDivideExplode(geometry, 256)"))
     .select(F.monotonically_increasing_id().alias("fid"), "*")
     .transform(to_parquet, dataset_water["silver"])
 )
@@ -128,3 +137,12 @@ sdf_water = (
 
 add_to_catalogue([dataset_water])
 display(sdf_water)
+
+# COMMAND ----------
+
+f = '/dbfs/mnt/lab/restricted/ELM-Project/silver/elmo_geo-water-2024_05_17.parquet/sindex=NU13'
+df = pd.read_parquet(f)
+df = gpd.GeoDataFrame(df, geometry=gpd.GeoSeries.from_wkb(df["geometry"]), crs="EPSG:27700")
+
+df.explore(column="fid", legend=True)
+df
