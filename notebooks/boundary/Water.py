@@ -137,12 +137,3 @@ sdf_water = (
 
 add_to_catalogue([dataset_water])
 display(sdf_water)
-
-# COMMAND ----------
-
-f = '/dbfs/mnt/lab/restricted/ELM-Project/silver/elmo_geo-water-2024_05_17.parquet/sindex=NU13'
-df = pd.read_parquet(f)
-df = gpd.GeoDataFrame(df, geometry=gpd.GeoSeries.from_wkb(df["geometry"]), crs="EPSG:27700")
-
-df.explore(column="fid", legend=True)
-df

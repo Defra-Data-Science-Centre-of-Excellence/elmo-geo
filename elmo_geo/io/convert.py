@@ -41,18 +41,14 @@ def to_gdf(
                 x = x.withColumn(c.name, F.expr(f"ST_AsBinary({c.name})"))
         gdf = to_gdf(x.toPandas(), column, crs)
     elif isinstance(x, PandasDataFrame):
-        gdf = GeoDataFrame(
-            x,
-            geometry=GeoSeries.from_wkb(x[column], crs=crs),
-            crs=crs,
-        )
+        gdf = GeoDataFrame(x, geometry=GeoSeries.from_wkb(x[column]))
     elif isinstance(x, GeoSeries):
-        gdf = GeoDataFrame(geometry=x, crs=crs)
+        gdf = x.to_frame()
     elif isinstance(x, BaseGeometry):
-        gdf = GeoDataFrame(geometry=GeoSeries(x), crs=crs)
+        gdf = GeoSeries(x).to_frame()
     else:
         raise TypeError(f"Unknown type: {type(x)}")
-    return gdf
+    return gdf.set_crs(crs)
 
 
 def to_sdf(
