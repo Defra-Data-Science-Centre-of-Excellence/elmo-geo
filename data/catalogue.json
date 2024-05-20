@@ -422,6 +422,7 @@
         "tasks": {
             "lookup_parcel": "todo"
         },
+        "distance": 24,
         "silver": "/dbfs/mnt/lab/restricted/ELM-Project/silver/elmo_geo-water-2024_05_17.parquet"
     }
 ]
