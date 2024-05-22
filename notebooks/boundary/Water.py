@@ -37,7 +37,7 @@ from elmo_geo.utils.settings import SILVER
 register()
 
 
-def load_sdf(f):
+def load_sdf(f: str) -> SparkDataFrame:
     return spark.read.parquet(dbfs(f, True)).withColumn("geometry", F.expr("ST_SetSRID(ST_GeomFromWKB(geometry), 27700)"))
 
 

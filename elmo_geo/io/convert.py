@@ -5,7 +5,7 @@ from glob import iglob
 
 from fiona import listlayers
 from fiona.errors import DriverError
-from pyspark.sql import functions as F
+from pyspark.sql import functions as F, types as T
 
 from elmo_geo import LOG
 from elmo_geo.io.file import to_parquet
@@ -125,6 +125,22 @@ def convert_dataset(f_in: str, f_out: str):
         ogr_to_geoparquet(f0, f1, layer)
 
 
+def merge_data_type(column):
+    """Cast data types to a more flexible alternative
+    Data Types: https://spark.apache.org/docs/latest/api/python/reference/pyspark.sql/data_types.html
+    Casting DecimalType to DoubleType as decimal is not considered a numeric value in Pandas.
+    """
+    dtype_map = {
+        T.DecimalType: T.DoubleType(),
+    }
+    dtype = dtype_map.get(type(column.dataType), column.dataType)
+    return F.col(column.name).cast(dtype).alias(column.name)
+
+
+def merge_data_types(sdf: SparkDataFrame) -> SparkDataFrame:
+    return sdf.select([merge_data_type(column) for column in sdf.schema])
+
+
 def partition_geoparquet(f_in: str, f_out: str, columns: dict) -> SparkDataFrame:
     """Repartition vector dataset in parquet format using the chipping method at 10km"""
     LOG.info(f"Partition: {f_in}, {f_out}")
@@ -132,6 +148,7 @@ def partition_geoparquet(f_in: str, f_out: str, columns: dict) -> SparkDataFrame
     sdf.write.format("noop").mode("overwrite").save()  # miid bug
     return (
         sdf.withColumnsRenamed(columns)
+        .transform(merge_data_types)
         .withColumn("geometry", load_geometry())
         .withColumn("geometry", F.expr("EXPLODE(ST_Dump(geometry))"))
         .transform(sindex, method="BNG", resolution="10km", index_fn="chipped_index")

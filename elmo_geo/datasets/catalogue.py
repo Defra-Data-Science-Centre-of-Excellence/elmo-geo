@@ -18,7 +18,7 @@ def save_catalogue(obj: dict | list):
         json.dump(obj, fp, ensure_ascii=False, indent=4)
 
 
-def run_task_on_catalogue(task: str, fn: callable):
+def run_task_on_catalogue(task: str, fn: callable, force: bool = False):
     """Run a task on all datasets with that task set to "todo".
     ```py
     def lookup_parcel(dataset):
@@ -36,7 +36,7 @@ def run_task_on_catalogue(task: str, fn: callable):
     """
     catalogue = load_catalogue()
     for i, dataset in enumerate(catalogue):
-        if dataset["tasks"].get(task, False) == "todo":
+        if force or dataset["tasks"].get(task, False) == "todo":
             try:
                 catalogue[i] = fn(dataset)
             except Exception as err:
