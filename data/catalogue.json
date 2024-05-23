@@ -394,6 +394,7 @@
     {
         "name": "rpa-parcel-adas",
         "columns": {
+            "RLR_RW_REFERENCE_PARCELS_DEC_21_LPIS_REF": "id_parcel",
             "Shape": "geometry"
         },
         "tasks": {
@@ -423,6 +424,16 @@
             "lookup_parcel": "todo"
         },
         "distance": 24,
-        "silver": "/dbfs/mnt/lab/restricted/ELM-Project/silver/elmo_geo-water-2024_05_17.parquet"
+        "silver": "/dbfs/mnt/lab/restricted/ELM-Project/silver/elmo_geo-water-2024_05_17.parquet",
+        "lookup_parcel": "/dbfs/mnt/lab/restricted/ELM-Project/silver/lookup_parcel-water-2024_05_17.parquet"
+    },
+    {
+        "name": "elmo_geo-water-2024_05_22",
+        "tasks": {
+            "lookup_parcel": "todo"
+        },
+        "distance": 24,
+        "silver": "/dbfs/mnt/lab/restricted/ELM-Project/silver/elmo_geo-water-2024_05_22.parquet",
+        "lookup_parcel": "/dbfs/mnt/lab/restricted/ELM-Project/silver/lookup_parcel-water-2024_05_22.parquet"
     }
 ]
