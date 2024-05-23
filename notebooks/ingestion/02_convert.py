@@ -24,4 +24,4 @@ register()
 
 # COMMAND ----------
 
-run_task_on_catalogue("convert", convert, force=True)
+run_task_on_catalogue("convert", convert)
