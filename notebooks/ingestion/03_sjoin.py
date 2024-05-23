@@ -23,11 +23,12 @@
 
 # COMMAND ----------
 
+import os.path
 from datetime import datetime
 from pyspark.sql import functions as F
 
 from elmo_geo import LOG, register
-from elmo_geo.datasets.catalogue import find_datasets
+from elmo_geo.datasets.catalogue import find_datasets, run_task_on_catalogue
 from elmo_geo.utils.misc import dbfs
 from elmo_geo.utils.types import SparkDataFrame
 
@@ -87,18 +88,24 @@ def lookup_parcel(dataset: dict) -> dict:
     LOG.info(f"Spatially Joining: {dataset_parcel['name']} with {dataset['name']} at {distance=}m\nOutput: {dataset['lookup_parcel']}")
     sdf_parcel = load_sdf(dataset_parcel["silver"])
     sdf_other = load_sdf(dataset["silver"])
-    sdf = sjoin(
-        sdf_parcel.select("id_parcel", "geometry"),
-        sdf_other.select("fid", "geometry"),
-        distance = distance, knn = knn,
-    ).select("id_parcel", "fid").drop_duplicates()
-    sdf.write.parquet(dbfs(dataset["lookup_parcel"], True))
+    if not os.path.exists(dataset["lookup_parcel"]):
+        sdf = sjoin(
+            sdf_parcel.selectExpr("id_parcel", "geometry"),
+            sdf_other.select("fid", "geometry"),
+            distance = distance, knn = knn,
+        ).select("id_parcel", "fid").drop_duplicates()
+        sdf.write.parquet(dbfs(dataset["lookup_parcel"], True))
     dataset["tasks"]["lookup_parcel"] = datetime.today().strftime("%Y_%m_%d")
     return dataset
 
 # COMMAND ----------
 
-run_task_on_catalogue("lookup_parcel", lookup_parcel, force=True)
+dataset = find_datasets("elmo_geo-water")[-1]
+lookup_parcel(dataset)
+
+# COMMAND ----------
+
+run_task_on_catalogue("lookup_parcel", lookup_parcel)
 
 # COMMAND ----------
 
