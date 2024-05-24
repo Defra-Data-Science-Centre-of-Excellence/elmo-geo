@@ -18,3 +18,4 @@ def plot_gdf(gdf: GeoDataFrame, figsize: tuple[float, float] = (9, 9), **kwargs)
         crs=gdf.crs or "EPSG:27700",
         source=os_provider if os_key else None,
     )
+    return ax
