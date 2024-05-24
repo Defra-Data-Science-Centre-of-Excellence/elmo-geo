@@ -8,25 +8,27 @@
 # COMMAND ----------
 
 import pandas as pd
+
 from elmo_geo import register
-from elmo_geo.datasets.catalogue import find_datasets
-from elmo_geo.utils.misc import dbfs
 
 register()
 
 # COMMAND ----------
 
+
 def extract_php_keys(iterator):
-    pattern = r'\"?([\w:]+)\"?(?=\s*=>)'
+    pattern = r"\"?([\w:]+)\"?(?=\s*=>)"
     for pdf in iterator:
-        yield pd.DataFrame({"key": pdf['tags'].str.extractall(pattern)[0]})
+        yield pd.DataFrame({"key": pdf["tags"].str.extractall(pattern)[0]})
+
 
 # sf = dbfs(find_datasets("osm-united_kingdom")[-1]["silver"])
 sf = "dbfs:/tmp/osm-united_kingdom-2024_04_25.parquet"
 
 df = (
     spark.read.parquet(sf)
-    .selectExpr("""SUBSTRING(CONCAT(
+    .selectExpr(
+        """SUBSTRING(CONCAT(
         NVL(CONCAT(",highway=>", highway), ""),
         NVL(CONCAT(",waterway=>", waterway), ""),
         NVL(CONCAT(",aerialway=>", aerialway), ""),
@@ -34,9 +36,11 @@ df = (
         NVL(CONCAT(",man_made=>", man_made), ""),
         NVL(CONCAT(",railway=>", railway), ""),
         NVL(CONCAT(",", other_tags), "")
-    ), 2) AS tags""")
+    ), 2) AS tags"""
+    )
     .mapInPandas(extract_php_keys, "key string")
-    .groupby("key").count()
+    .groupby("key")
+    .count()
     .toPandas()
     .sort_values("count", ascending=False)
 )

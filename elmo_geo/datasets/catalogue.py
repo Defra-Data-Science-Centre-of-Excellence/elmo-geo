@@ -39,7 +39,7 @@ def run_task_on_catalogue(task: str, fn: callable, force: bool = False):
     catalogue = load_catalogue()
     for i, dataset in enumerate(catalogue):
         status = dataset["tasks"].get(task, False)
-        if status == "todo" or (force and status != False):
+        if status == "todo" or (force and status is not False):
             try:
                 catalogue[i] = fn(dataset)
             except Exception as err:

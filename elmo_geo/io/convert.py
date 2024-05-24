@@ -5,7 +5,8 @@ from glob import iglob
 
 from fiona import listlayers
 from fiona.errors import DriverError
-from pyspark.sql import functions as F, types as T
+from pyspark.sql import functions as F
+from pyspark.sql import types as T
 
 from elmo_geo import LOG
 from elmo_geo.io.file import to_parquet

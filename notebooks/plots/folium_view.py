@@ -1,29 +1,22 @@
 # Databricks notebook source
-from decimal import Decimal
 import os
-import pandas as pd
+
 import folium
-import geopandas as gpd
-from elmo_geo.io import to_gdf
-from elmo_geo.io.download import download_link
-from elmo_geo.utils.misc import dbfs
-from pyspark.sql import functions as F, types as T
-from elmo_geo.utils.types import SparkDataFrame
-
-
 import numpy as np
+import pandas as pd
 from matplotlib import colormaps
 from matplotlib.colors import to_hex
+
+from elmo_geo.io import to_gdf
+from elmo_geo.io.download import download_link
+
 
 def get_n_colours(n: int, cmap="viridis") -> list[str]:
     cmap = colormaps[cmap].resampled(n)
     if hasattr(cmap, "colors"):
         colours = cmap.colors
     else:
-        colours = np.array([colour
-            for colours in cmap._segmentdata.values()
-            for colour in colours
-        ])
+        colours = np.array([colour for colours in cmap._segmentdata.values() for colour in colours])
     colours = np.apply_along_axis(to_hex, axis=1, arr=colours).tolist()
     while len(colours) < n:
         colours.extend(colours)
