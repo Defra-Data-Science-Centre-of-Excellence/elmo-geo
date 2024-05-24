@@ -42,14 +42,14 @@ def load_sdf(f):
 def sjoin(
     sdf_left: SparkDataFrame,
     sdf_right: SparkDataFrame,
-    how: str = 'outer', on: str = 'geometry',
+    how: str = 'inner', on: str = 'geometry',
     lsuffix: str = '_left', rsuffix: str = '_right',
     distance: float = 0, knn: int = 0,
 ) -> SparkDataFrame:
     """Spatial Join using SQL
     """
-    if how != "outer":
-        raise NotImplementedError("sjoin: outer spatial join only")
+    if how != "inner":
+        raise NotImplementedError("sjoin: inner spatial join only")
     if on != "geometry":
         raise NotImplementedError("sjoin: geometry_column must be named geometry")
     # Add to SQL, without name conflicts
@@ -60,13 +60,13 @@ def sjoin(
     if distance == 0:
         sdf = spark.sql(f"""
             SELECT left.*, right.*
-            FROM left FULL OUTER JOIN right
+            FROM left JOIN right
             ON ST_Intersects(left.geometry{lsuffix}, right.geometry{rsuffix})
         """)
     else:
         sdf = spark.sql(f"""
             SELECT left.*, right.*
-            FROM left FULL OUTER JOIN right
+            FROM left JOIN right
             ON ST_Distance(left.geometry{lsuffix}, right.geometry{rsuffix}) <= {distance}
         """)
     if 0 < knn:
@@ -81,14 +81,15 @@ def lookup_parcel(dataset: dict) -> dict:
     Uses the same parcels as EVAST, rpa-parcel-adas
     Outputs a lookup table between
     """
+    LOG.info(f"loookup_parcel: {dataset['name']}")
     dataset_parcel = find_datasets("rpa-parcel-adas")[-1]
     source, name, version = dataset["name"].split('-')
     dataset["lookup_parcel"] = dataset["silver"].replace(dataset["name"], f"lookup_parcel-{name}-{version}")
     distance, knn = dataset.get("distance", 0), dataset.get("knn", 0)
-    LOG.info(f"Spatially Joining: {dataset_parcel['name']} with {dataset['name']} at {distance=}m\nOutput: {dataset['lookup_parcel']}")
     sdf_parcel = load_sdf(dataset_parcel["silver"])
     sdf_other = load_sdf(dataset["silver"])
     if not os.path.exists(dataset["lookup_parcel"]):
+        LOG.info(f"Spatially Joining: {dataset_parcel['name']} with {dataset['name']} at {distance=}m\nOutput: {dataset['lookup_parcel']}")
         sdf = sjoin(
             sdf_parcel.selectExpr("id_parcel", "geometry"),
             sdf_other.select("fid", "geometry"),
@@ -100,14 +101,4 @@ def lookup_parcel(dataset: dict) -> dict:
 
 # COMMAND ----------
 
-dataset = find_datasets("elmo_geo-water")[-1]
-lookup_parcel(dataset)
-
-# COMMAND ----------
-
 run_task_on_catalogue("lookup_parcel", lookup_parcel)
-
-# COMMAND ----------
-
-# dataset = find_datasets('elmo_geo-water')[-1]
-# lookup_parcel(dataset)
