@@ -13,9 +13,9 @@
 # MAGIC ### Water Tags
 # MAGIC
 # MAGIC ##### Water Features
-# MAGIC There is one specified key, "waterway", considered relevant.  
-# MAGIC When filtering keys containing the word "water" there is 100s of other keys, those with >1,000 count are included in the table.  
-# MAGIC Other words like "stream", "lake", and "river" were considered, those with >10,000 count have been included in the table.  
+# MAGIC There is one specified key, "waterway", considered relevant.
+# MAGIC When filtering keys containing the word "water" there is 100s of other keys, those with >1,000 count are included in the table.
+# MAGIC Other words like "stream", "lake", and "river" were considered, those with >10,000 count have been included in the table.
 # MAGIC Few features have high counts, I will just keep "water" assuming they are "waterbody" features.
 # MAGIC
 # MAGIC ##### Peatland Features
