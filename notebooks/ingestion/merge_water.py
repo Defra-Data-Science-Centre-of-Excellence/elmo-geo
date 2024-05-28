@@ -9,10 +9,6 @@
 # MAGIC os-wtr_fts | `file` does not contain "catchment" | all
 # MAGIC os-wtr_ntwk | | `watercourse`
 # MAGIC
-# MAGIC
-# MAGIC
-# MAGIC 1. identify osm tags
-# MAGIC
 
 # COMMAND ----------
 
@@ -73,22 +69,18 @@ sdf_osm_water = (
         "geometry",
         "sindex",
     )
-    .filter("tags LIKE '%\"water%\"=>%'")
     .selectExpr(
         "source",
         """CASE
-            WHEN (
-                tags LIKE '%drain%'
-                OR tags LIKE '%ditch%'
-            ) THEN "ditch"
-            WHEN (
-                tags LIKE '%"%waterway%"=>%'
-            ) THEN "watercourse"
-            ELSE "waterbody"
+            WHEN (FALSE) THEN "ditch"
+            WHEN (tags LIKE '%"waterway"=>%') THEN "watercourse"
+            WHEN (tags LIKE '%"water"=>%') THEN "waterbody"
+            ELSE NULL
         END AS class""",
         "geometry",
         "sindex",
     )
+    .filter("class IS NOT NULL")
 )
 
 
