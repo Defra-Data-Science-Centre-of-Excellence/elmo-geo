@@ -1,6 +1,16 @@
 # elmo-geo
 Part of [ELMO][elmo], separated to work on [DASH][dash] for large scale geospatial analysis.  Primarily aimed at filling the missing [eligibility criteria][elig] for ELMO.
 
+| Status | Project | Description |
+| ------ | ------- | ----------- |
+| :gear: | Ingestion | [readme](notebooks/ingestion/readme.md)
+| :gear: | Sylvan |
+| :gear: | Boundary |
+| :gear: | Bare Soils |
+
+Table of Projects: :negative_squared_cross_mark: Planned, :gear: Ongoing, :ballot_box_with_check: Complete.
+
+
 
 ## Getting Started
 Use DASH's [onbording guide][dash_onboarding] to get access, it requires you to submit a MyIT ticket.  For elmo-geo you will need extra permissions.
@@ -12,10 +22,30 @@ User Group | UC_DASH_ELM_Users
 Seek help from FCP Business Admins; Amy Cairns, Ed Burrows, Andrew West.
 
 
-## Workflow
-Use the [DASH Playbook][dash_playbook] as a guide on how to use Databricks.  Hopefully topics like clusters and environments are managed by your Business Admins.
+### Workflow
+Use the [DASH Playbook][dash_playbook] as a guide on how to use Databricks.  
 
-You will be using Databricks Notebooks, rather than RStudio or Spyder, similar to Jupyter.
+You will be using Databricks Notebooks, similar to Jupyter, rather than RStudio or Spyder.
+
+
+#### Clusters and Environments
+These are managed by your Business Admins, please contact them if you need support.
+If you want to test a package in a Databricks Notebook run `%pip install <package>`.
+For more perminance create a PR adding the package to `./pyproject.toml`.
+
+
+#### Testing and Contributing
+To contribute your work will be validated using Ruff and pytest.
+- Please add unit tests, in `./tests` to ensure your work is doing as you expect.
+- Use a shell cell to `%sh make verify` in databricks.  
+  _I recommend creating a notebook `./.test` which isn't commited to github and is in the root directory._  
+  _You can also run `%sh make fmt` on modules, or `%sh make clean` from here._  
+![test_notebook](https://github.com/Defra-Data-Science-Centre-of-Excellence/elmo-geo/assets/81236667/3277e5a3-d632-4fc5-a758-e929dffc4be2)
+- Before a PR lint your work, open a GitHub codespace, change to your branch, run `make verify_gh` to format+lint+verify your contributions.  
+  _`pytest.marks.dbr` are avoided by `make verify_gh`, as they can only be run on Databricks, e.g. those that require spark or data._
+  ~_For more information on using pytest with Databricks see https://docs.databricks.com/en/notebooks/testing.html_
+![codespaces](https://github.com/Defra-Data-Science-Centre-of-Excellence/elmo-geo/assets/81236667/9e8493e8-3712-4236-b2ad-f1bce0156837)
+
 
 ### Medallion Architecture
 [Medallion Architecture][databricks_medallion] uses Bronze/Silver/Gold to organise datasets that are; Bronze have come from a data provider ("as is"), Silver have been modified for easier analysis ("ready to use"), Gold are analysis outputs suitable for stakeholders ("ready to output").
@@ -27,120 +57,6 @@ gold | ready to output | `dbfs:/mnt/lab/restricted/ELM-Project/gold`<br>~`/Volum
 
 Unity Catalog (`/Volumes/`) is in testing.
 
-### Testing
-
-
-## Projects
-| Status | Project | Description |
-| ------ | ------- | ----------- |
-| | Ingestion |
-| | Parcel Join]() |
-| | Sylvan]() |
-| | Boundary Use]() |
-| | [Bare Soils]() |
-| | [Others]() | Business Info, Segementation,
-
-
-
-<details><summary><h2>Setup</h2></summary>
-
-### Install requirements
-
-On your local development machine...
-
-Clone the repo:
-
-```{bash}
-git clone git@github.com:Defra-Data-Science-Centre-of-Excellence/elmo-geo.git
-```
-
-Install azure cli:
-
-```{bash}
-curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
-```
-
-Install databricks and dbx in your python virtual environment:
-
-```{bash}
-pip install dbx
-```
-
-### Authenticating to databricks with Azure CLI
-
-Login to Azure CLI:
-
-```{bash}
-az login --tenant bce3d7d1-cbbd-481e-8c81-eaecfc38b551 --use-device-code --allow-no-subscriptions
-```
-
-Login to databricks by authenticating with ADD:
-
-```{bash}
-DATABRICKS_AAD_TOKEN=$(az account get-access-token --resource 2ff814a6-3304-4ab8-85cb-cd0e6f879c1d | jq -r .accessToken) \
-DATABRICKS_HOST=https://adb-7393756451346106.6.azuredatabricks.net/ \
-databricks configure --jobs-api-version 2.1 --host $DATABRICKS_HOST --aad-token
-```
-
-Check it worked by listing the clusters:
-
-```{bash}
-databricks clusters list
-```
-
-### Using _dbx sync_
-
-Note: Databricks have a VS Code extension that would replace the need for dbx.
-This is in preview and does not currently support authentication via ADD and so cannot be used without the ability to generate a Databricks auth token.
-
-Add a repo/folder on databricks to sync to:
-
-Open [databricks](https://adb-7393756451346106.6.azuredatabricks.net/) in a web browser.
-Navigate to Repos in the side panel, within you're user directory right click and add repo.
-Uncheck _Add repo by cloning a git repository_ and instead enter a name for your repo e.g. _elmo-geo-dev_. The _-dev_ here is to differentiate from _elmo-geo_ which you might have cloned directly from github.
-
-Sync your local files to the destination you just created:
-
-```{bash}
-dbx sync repo -d elmo-geo-dev
-```
-
-You should now be able to make edits to a file and see the changes sync to databricks!
-
-Add the following lines to the top of your entry notebook to enable hot reloading
-
-```{bash}
-%load_ext autoreload
-%autoreload 2
-```
-
-When you startup your machine again you will need to rerun the databricks authentication steps. These tasks been added to the makefile to simplify things. Just run `make dbx`!
-
-## Installing dependencies
-
-To install the package and all required development dependencies:
-
-```{bash}
-pip install -e .[dev]
-```
-
-</details>
-
-<details><summary><h2>Testing</h2></summary>
-
-There are currently two ways to run the tests located in the ./tests/ directory.
-
-1. Running the "./tests/Run Tests" notebook.
-
-Because the notebook can be connected to a Databricks compute resource (i.e. a cluster) this notebook runs all tests, including those that require access to an active spark session and dbutils.
-
-2. Runing "make verify" or "make test" from the command line.
-
-This only runs tests that have been marked as "without_cluster" as when running from the command line some features of Databricks comute resources are not available. If these features can be effectively mocked the "without_cluster" marker may not be required. Separating out these tests enables some test to be run as part of a continuous integration process.
-
-For more information on using pytest with Databricks see https://docs.databricks.com/en/notebooks/testing.html
-
-</details>
 
 
 [elmo]: https://github.com/Defra-Data-Science-Centre-of-Excellence/elm_modelling_strategy/
