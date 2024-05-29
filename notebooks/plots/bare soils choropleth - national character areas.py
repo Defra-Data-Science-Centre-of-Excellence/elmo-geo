@@ -18,7 +18,7 @@ register()
 year = 2023
 path = f"/mnt/lab/unrestricted/elm/elmo/baresoil/output-{year}.parquet"
 path_nca = "dbfs:/mnt/lab/unrestricted/elm/elmo/national_character_areas/output.parquet"
-path_nca_poly = "/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_national_character_areas/format_SHP_national_character_areas/LATEST_national_character_areas/National_Character_Areas___Natural_England.shp"
+path_nca_poly = "/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_national_character_areas/format_SHP_national_character_areas/LATEST_national_character_areas/National_Character_Areas___Natural_England.shp"  # noqa:E501
 
 
 # COMMAND ----------

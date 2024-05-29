@@ -6,7 +6,8 @@
 # MAGIC
 # MAGIC Defra's Priority Habitas data and Living England's Habitat Map provide similar information.
 # MAGIC
-# MAGIC Both these datasets have been linked to WFM parcels (ADAS, November 2021). This notebook performs joins and mapping to compare theee sources of information on habitats.
+# MAGIC Both these datasets have been linked to WFM parcels (ADAS, November 2021). This notebook performs joins and mapping to compare theee sources of
+# MAGIC information on habitats.
 
 # COMMAND ----------
 
@@ -17,12 +18,12 @@ import matplotlib.ticker as tick
 import numpy as np
 import pandas as pd
 import seaborn as sns
+from pyspark.sql import functions as F
 
-import elmo_geo
+from elmo_geo import register
 from elmo_geo.datasets.datasets import datasets
 
-elmo_geo.register()
-from pyspark.sql import functions as F
+register()
 
 # COMMAND ----------
 
@@ -374,7 +375,7 @@ The results show good agreement in the classification of woodland and saltmarsh 
 The level of disagreement is sensitive to the mapping between the two sets of habitat classes. Broader groupings (e.g. into grassland, woodland, scrub, bog, other) might be more suitable.
 
 Sources: Defra Priority Habitats, Living England Habitat Map, RPA Parcels November 2021.
-""",
+""",  # noqa:E501
     fontsize=20,
     color=dary_grey,
 )

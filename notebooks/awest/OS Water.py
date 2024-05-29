@@ -19,8 +19,11 @@
 import json
 import os
 import sys
+from glob import glob
 
+from geopandas import read_file
 from osdatahub import NGD
+from pandas import DataFrame
 
 key = "WxgUdETn6cy58WZkfwZ7wdMVLlt5eDsX"
 collection = "wtr-fts-water"
@@ -74,11 +77,6 @@ def ngd_dl(key, collection, path):
 ngd_dl(key, collection, path)
 
 # COMMAND ----------
-
-from glob import glob
-
-from geopandas import read_file
-from pandas import DataFrame
 
 
 def spark_read_geojsons(path, subset=[]):

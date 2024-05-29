@@ -35,17 +35,20 @@
 
 # COMMAND ----------
 
+import mosaic
+from cdap_geo.read import read_gpkg
+from cdap_geo.sedona import st_load
 from pyspark.sql import functions as F
 from sedona.register import SedonaRegistrator
 
-SedonaRegistrator.registerAll(spark)
+mosaic.enable_mosaic(spark, dbutils)
+mosaic.enable_gdal(spark)
 
-from cdap_geo.read import read_gpkg
-from cdap_geo.sedona import st_load
+SedonaRegistrator.registerAll(spark)
 
 # COMMAND ----------
 
-f_rpa_parcels = "/dbfs/mnt/base/unrestricted/source_rpa_spatial_data_mart/dataset_rpa_reference_parcels/format_GPKG_rpa_reference_parcels/SNAPSHOT_2023_02_07_rpa_reference_parcels/reference_parcels.zip/reference_parcels.gpkg"
+f_rpa_parcels = "/dbfs/mnt/base/unrestricted/source_rpa_spatial_data_mart/dataset_rpa_reference_parcels/format_GPKG_rpa_reference_parcels/SNAPSHOT_2023_02_07_rpa_reference_parcels/reference_parcels.zip/reference_parcels.gpkg"  # noqa:E501
 f_parcels = "dbfs:/mnt/lab/unrestricted/elm_data/rpa/parcels/2023_02_07.parquet"
 
 # COMMAND ----------
@@ -63,12 +66,6 @@ display(sdf_rpa_parcels)
 
 # COMMAND ----------
 
-import mosaic
-
-mosaic.enable_mosaic(spark, dbutils)
-mosaic.enable_gdal(spark)
-
-# COMMAND ----------
 
 df = spark.read.format("binaryFile").load("dbfs:/tmp/RPA_LandCover.gpkg")
 display(df)
