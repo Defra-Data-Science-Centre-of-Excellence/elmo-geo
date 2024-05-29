@@ -75,12 +75,12 @@ def info_sdf(sdf: SparkDataFrame, f: str = None, geometry_column: str = "geometr
             F.round(F.mean("n"), 1).alias("mean_coords"),
         )
         .toPandas()
-    )
+    ) if geometry_column else None
     LOG.info(
         f"""
         Wrote Parquet: {f}
         Count: {sdf.count()}
-        sindexes: {sdf.select(sindex_column).distinct().count()}
+        sindexes: {sdf.select(sindex_column).distinct().count() if sindex_column else None}
         Partitions: {sdf.rdd.getNumPartitions()}
         Files: {count_parquet_files(f) if f else f}
         fid count: {sdf.select('fid').distinct().count() if "fid" in sdf.columns else None}

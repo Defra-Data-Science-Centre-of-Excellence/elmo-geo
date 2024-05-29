@@ -436,9 +436,23 @@
     {
         "name": "elmo_geo-water-2024_05_22",
         "tasks": {
-            "lookup_parcel": "2024_05_23"
+            "lookup_parcel": "2024_05_23",
+            "overlap": "todo"
         },
         "distance": 24,
+        "classes": {
+            "": [
+                "class"
+            ]
+        },
+        "buffers": [
+            0,
+            2,
+            6,
+            10,
+            12,
+            24
+        ],
         "silver": "/dbfs/mnt/lab/restricted/ELM-Project/silver/elmo_geo-water-2024_05_22.parquet",
         "lookup_parcel": "/dbfs/mnt/lab/restricted/ELM-Project/silver/lookup_parcel-water-2024_05_22.parquet"
     }
