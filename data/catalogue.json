@@ -394,6 +394,7 @@
     {
         "name": "rpa-parcel-adas",
         "columns": {
+            "RLR_RW_REFERENCE_PARCELS_DEC_21_LPIS_REF": "id_parcel",
             "Shape": "geometry"
         },
         "tasks": {
@@ -416,5 +417,13 @@
         "link": "https://defra.sharepoint.com/teams/Team1645/Restricted_ELM_RPA_data_sharing/",
         "bronze": "/dbfs/mnt/lab/restricted/ELM-Project/bronze/rpa-hedge-adas.parquet",
         "silver": "/dbfs/mnt/lab/restricted/ELM-Project/silver/rpa-hedge-adas.parquet"
+    },
+    {
+        "name": "elmo_geo-water-2024_05_22",
+        "tasks": {
+            "lookup_parcel": "todo"
+        },
+        "distance": 24,
+        "silver": "/dbfs/mnt/lab/restricted/ELM-Project/silver/elmo_geo-water-2024_05_22.parquet"
     }
 ]

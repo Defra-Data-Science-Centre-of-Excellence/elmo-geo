@@ -18,8 +18,14 @@ def save_catalogue(obj: dict | list):
         json.dump(obj, fp, ensure_ascii=False, indent=4)
 
 
-def run_task_on_catalogue(task: str, fn: callable):
+def run_task_on_catalogue(task: str, fn: callable, force: bool = False):
     """Run a task on all datasets with that task set to "todo".
+    With `force=True` most tasks still won't save a new version if the dataset exists.
+    Compatibility with Pandas requires deleting instead of using `mode="overwrite"`.
+    Params:
+        task: name of the task to be completed
+        fn: fn of the task
+        force: ignore when the task was last completed and retry
     ```py
     def lookup_parcel(dataset):
         f = "{}/elmo_geo-lookup_{}.parquet".format(SILVER, dataset["name"].split("-")[1])
@@ -36,7 +42,8 @@ def run_task_on_catalogue(task: str, fn: callable):
     """
     catalogue = load_catalogue()
     for i, dataset in enumerate(catalogue):
-        if dataset["tasks"].get(task, False) == "todo":
+        status = dataset["tasks"].get(task, False)
+        if status == "todo" or (force and status is not False):
             try:
                 catalogue[i] = fn(dataset)
             except Exception as err:
