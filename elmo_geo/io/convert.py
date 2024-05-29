@@ -126,10 +126,10 @@ def convert_dataset(f_in: str, f_out: str):
         ogr_to_geoparquet(f0, f1, layer)
 
 
-def merge_data_type(column):
-    """Cast data types to a more flexible alternative
+def cast_to_project_data_type(column):
+    """Cast certain data types for compatibility across project operations.
     Data Types: https://spark.apache.org/docs/latest/api/python/reference/pyspark.sql/data_types.html
-    Casting DecimalType to DoubleType as decimal is not considered a numeric value in Pandas.
+    Casting DecimalType to DoubleType because DecimalType is not considered a numeric value in Pandas.
     """
     dtype_map = {
         T.DecimalType: T.DoubleType(),
@@ -138,8 +138,8 @@ def merge_data_type(column):
     return F.col(column.name).cast(dtype).alias(column.name)
 
 
-def merge_data_types(sdf: SparkDataFrame) -> SparkDataFrame:
-    return sdf.select([merge_data_type(column) for column in sdf.schema])
+def cast_to_project_data_types(sdf: SparkDataFrame) -> SparkDataFrame:
+    return sdf.select([cast_to_project_data_type(column) for column in sdf.schema])
 
 
 def partition_geoparquet(f_in: str, f_out: str, columns: dict) -> SparkDataFrame:
@@ -149,7 +149,7 @@ def partition_geoparquet(f_in: str, f_out: str, columns: dict) -> SparkDataFrame
     sdf.write.format("noop").mode("overwrite").save()  # miid bug
     return (
         sdf.withColumnsRenamed(columns)
-        .transform(merge_data_types)
+        .transform(cast_to_project_data_types)
         .withColumn("geometry", load_geometry())
         .withColumn("geometry", F.expr("EXPLODE(ST_Dump(geometry))"))
         .transform(sindex, method="BNG", resolution="10km", index_fn="chipped_index")

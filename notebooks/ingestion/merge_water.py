@@ -5,7 +5,7 @@
 # MAGIC
 # MAGIC dataset|filter|classes
 # MAGIC ---|---|---
-# MAGIC osm-united_kingdom | `tagname` contains "water" | all
+# MAGIC osm-united_kingdom | [OSM Tags](notebooks/analysis/osm_tags.py) | all
 # MAGIC os-wtr_fts | `file` does not contain "catchment" | all
 # MAGIC os-wtr_ntwk | | `watercourse`
 # MAGIC
@@ -73,8 +73,8 @@ sdf_osm_water = (
         "source",
         """CASE
             WHEN (FALSE) THEN "ditch"
-            WHEN (tags LIKE '%"waterway"=>%') THEN "watercourse"
-            WHEN (tags LIKE '%"water"=>%') THEN "waterbody"
+            WHEN (tags LIKE '%waterway=>%') THEN "watercourse"
+            WHEN (tags LIKE '%water=>%') THEN "waterbody"
             ELSE NULL
         END AS class""",
         "geometry",
