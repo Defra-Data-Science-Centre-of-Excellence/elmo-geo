@@ -5,6 +5,7 @@
 
 import osdatahub
 import pandas as pd
+from cdap_geo.os import dl_packages_tidied
 
 key = "WxgUdETn6cy58WZkfwZ7wdMVLlt5eDsX"
 
@@ -14,7 +15,6 @@ pd.DataFrame(osdatahub.OpenDataDownload.all_products())
 
 # COMMAND ----------
 
-from cdap_geo.os import dl_packages_tidied
 
 dl_packages_tidied(key)
 

@@ -4,11 +4,13 @@
 # COMMAND ----------
 
 import geopandas as gpd
+from cdap_geo import read_gpkg
 from fiona import listlayers
+from pyspark.sql import functions as F
 
 # COMMAND ----------
 
-f_parcels_base = "/dbfs/mnt/base/unrestricted/source_rpa_spatial_data_mart/dataset_rpa_reference_parcels/format_GPKG_rpa_reference_parcels/SNAPSHOT_2023_02_07_rpa_reference_parcels/reference_parcels.zip/reference_parcels.gpkg"
+f_parcels_base = "/dbfs/mnt/base/unrestricted/source_rpa_spatial_data_mart/dataset_rpa_reference_parcels/format_GPKG_rpa_reference_parcels/SNAPSHOT_2023_02_07_rpa_reference_parcels/reference_parcels.zip/reference_parcels.gpkg"  # noqa:E501
 sf_parcels_pq = "dbfs:/mnt/lab/unrestricted/elm_data/rpa/reference_parcels/2023_02_07.parquet"
 sf_parcels = "dbfs:/mnt/lab/unrestricted/elm/parcels.parquet"
 sf_wfm = "dbfs:/mnt/lab/unrestricted/elm/wfm/v3.parquet"

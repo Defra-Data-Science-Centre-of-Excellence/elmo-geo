@@ -15,6 +15,7 @@ import os
 from functools import partial
 
 import geopandas as gpd
+import pandas as pd
 from pyspark.sql import functions as F
 
 from elmo_geo import LOG, register
@@ -187,8 +188,6 @@ displayHTML(download_link(path_csv))
 pandas_df.sort_values("proportion", ascending=False).head(8)
 
 # COMMAND ----------
-
-import pandas as pd
 
 df = pd.read_parquet("/dbfs/" + dataset.path_output.format(version=version))
 df
