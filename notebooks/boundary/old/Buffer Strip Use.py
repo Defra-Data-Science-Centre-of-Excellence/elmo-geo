@@ -5,6 +5,7 @@
 
 # DBTITLE 1,Import
 from datetime import datetime
+from pprint import pprint
 
 import geopandas as gpd
 import matplotlib.pyplot as plt
@@ -129,7 +130,6 @@ display(sdf1)
 # COMMAND ----------
 
 # DBTITLE 1,Statistics
-from pprint import pprint
 
 df = spark.read.parquet(sf).groupBy().sum().toPandas()
 p, h, w = df["sum(m_parcel)"].sum(), df["sum(m_hedge)"].sum(), df["sum(m_water)"].sum()

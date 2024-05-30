@@ -7,7 +7,8 @@
 # MAGIC
 # MAGIC **Updated April 2024:** Obi Thompson Sargoni
 # MAGIC
-# MAGIC This notebook produces multiple datasets that detail what features intersect parcel boundaries. This information can be used to inform what actions parcels are eligible for, and the amount of parcel boundaries eligible for those actions.
+# MAGIC This notebook produces multiple datasets that detail what features intersect parcel boundaries. This information can be used to inform what actions
+# MAGIC parcels are eligible for, and the amount of parcel boundaries eligible for those actions.
 # MAGIC
 # MAGIC ### Data
 # MAGIC - Parcels - November 2021 (ADAS) - Elm-Project
@@ -21,18 +22,27 @@
 # MAGIC - Wetland, linked to parcels by 'process_dataset' notebook
 # MAGIC
 # MAGIC ### Methodology
-# MAGIC This notebook implements a 'splitting' method to classify sections of parcel boundaries based on the features they intersect. This method is implemented in Cell 10.
+# MAGIC This notebook implements a 'splitting' method to classify sections of parcel boundaries based on the features they intersect. This method is implemented
+# MAGIC in Cell 10.
 # MAGIC
-# MAGIC The splitting method repeatedly intersects parcel boundaries with different features. The intersection between the boundary and the feature is returned as one set of geometries that are tagged as overlapping with this feature type. The non-intersecting sections of the boundary are tagged as not intersecting the features. By repeating this process the initial boundary geometry is split into different components that intersect different combinations of natural features (e.g. a section that intersects a wall and a hedge, a section that intersects just a waterbody).
+# MAGIC The splitting method repeatedly intersects parcel boundaries with different features. The intersection between the boundary and the feature is returned
+# MAGIC as one set of geometries that are tagged as overlapping with this feature type. The non-intersecting sections of the boundary are tagged as not
+# MAGIC intersecting the features. By repeating this process the initial boundary geometry is split into different components that intersect different
+# MAGIC combinations of natural features (e.g. a section that intersects a wall and a hedge, a section that intersects just a waterbody).
 # MAGIC
-# MAGIC The intersections are based on a 2m ([Source](https://townsendcharteredsurveyors.co.uk/sustainable-farming-incentive-pilot-starting-2021-water-body-buffering-standard/)) buffer of the feature geometries which is why some boundary sections can intersect multiple features (we typically expect section of a boundary to be either intersected by a wall or hedge or waterbody).
+# MAGIC The intersections are based on a 2m
+# MAGIC ([Source](https://townsendcharteredsurveyors.co.uk/sustainable-farming-incentive-pilot-starting-2021-water-body-buffering-standard/)) buffer of the
+# MAGIC feature geometries which is why some boundary sections can intersect multiple features (we typically expect section of a boundary to be either
+# MAGIC intersected by a wall or hedge or waterbody).
 # MAGIC
-# MAGIC The notebook cells leading up to cell 10 preprocess features datasets to ensure geometries are cleaned, grouped into a single geometry per parcel ID, and joined together into a single spark dataframe.
+# MAGIC The notebook cells leading up to cell 10 preprocess features datasets to ensure geometries are cleaned, grouped into a single geometry per parcel ID,
+# MAGIC and joined together into a single spark dataframe.
 
 # COMMAND ----------
 
 
 import pandas as pd
+from pyspark.sql import functions as F
 
 import elmo_geo
 from elmo_geo.io import download_link
@@ -40,7 +50,6 @@ from elmo_geo.st import sjoin
 from elmo_geo.st.geometry import load_missing
 
 elmo_geo.register()
-from pyspark.sql import functions as F
 
 # COMMAND ----------
 
@@ -73,8 +82,11 @@ sdf_parcel.display()
 
 # COMMAND ----------
 
+
 # DBTITLE 1,Parcel Adjacency
-simplify = lambda col: F.expr(f"ST_SimplifyPreserveTopology(ST_Force_2D(ST_MakeValid({col})), 1) AS {col}")
+def simplify(col):
+    return F.expr(f"ST_SimplifyPreserveTopology(ST_Force_2D(ST_MakeValid({col})), 1) AS {col}")
+
 
 sdf_parcel = (
     spark.read.format("geoparquet")
@@ -136,10 +148,18 @@ print(f"Number of intersections with unknown business: {count_null_bid:,.0f}")
 
 # COMMAND ----------
 
+
 # DBTITLE 1,Neighbouring Land Use
-cross_compliance = lambda col, buf: F.expr(f"ST_MakeValid(ST_Buffer({col}, {buf}))")
-st_union = lambda col: F.expr(f"ST_MakeValid(ST_Union_Aggr(ST_SimplifyPreserveTopology(ST_PrecisionReduce(ST_Force_2D(ST_MakeValid({col})), 3), 1))) AS {col}")
-boundary = lambda col: F.expr(f"ST_MakeValid(ST_Force_2D(ST_PrecisionReduce(ST_SimplifyPreserveTopology(ST_Boundary({col}), 1), 3))) AS geometry_boundary")
+def cross_compliance(col, buf):
+    return F.expr(f"ST_MakeValid(ST_Buffer({col}, {buf}))")
+
+
+def st_union(col):
+    return F.expr(f"ST_MakeValid(ST_Union_Aggr(ST_SimplifyPreserveTopology(ST_PrecisionReduce(ST_Force_2D(ST_MakeValid({col})), 3), 1))) AS {col}")
+
+
+def boundary(col):
+    return F.expr(f"ST_MakeValid(ST_Force_2D(ST_PrecisionReduce(ST_SimplifyPreserveTopology(ST_Boundary({col}), 1), 3))) AS geometry_boundary")
 
 
 sdf_adj_same = (
@@ -256,25 +276,24 @@ sdf_neighbour.count()
 
 # COMMAND ----------
 
+
 # DBTITLE 1,Boundary Use (geometries)
 # Splitting Usage Method
-boundary_use = lambda sdf, use, buf: (
-    sdf.withColumn("tmp", F.expr(f"ST_Buffer(geometry_{use}, {buf})"))
-    .withColumn(
-        "tmp",
-        F.expr(
-            """EXPLODE(Array(
-    Array(ST_Intersection(geometry_boundary, tmp), ST_Point(1,1)),
-    Array(ST_Difference(geometry_boundary, tmp), ST_Point(0,0))
-  ))""",
-        ),
+def boundary_use(sdf, use, buf):
+    return (
+        sdf.withColumn("tmp", F.expr(f"ST_Buffer(geometry_{use}, {buf})"))
+        .withColumn(
+            "tmp",
+            F.expr(
+                """EXPLODE(Array(Array(ST_Intersection(geometry_boundary, tmp), ST_Point(1,1)), Array(ST_Difference(geometry_boundary, tmp), ST_Point(0,0))))"""
+            ),
+        )
+        .withColumn("geometry_boundary", F.expr("tmp[0]"))
+        .withColumn(f"elg_{use}", F.expr("tmp[1]==ST_Point(1,1)"))
+        .drop(f"geometry_{use}", "tmp")
+        .filter("NOT ST_IsEmpty(geometry_boundary)")
+        .withColumn("geometry_boundary", F.expr("EXPLODE(ST_Dump(geometry_boundary))"))
     )
-    .withColumn("geometry_boundary", F.expr("tmp[0]"))
-    .withColumn(f"elg_{use}", F.expr("tmp[1]==ST_Point(1,1)"))
-    .drop(f"geometry_{use}", "tmp")
-    .filter("NOT ST_IsEmpty(geometry_boundary)")
-    .withColumn("geometry_boundary", F.expr("EXPLODE(ST_Dump(geometry_boundary))"))
-)
 
 
 sdf_boundary = (
@@ -424,13 +443,18 @@ sdf_uptake.count()
 sdf_uptake = spark.read.parquet(sf_uptake)
 
 n_null_parcel_ids = (sdf_uptake.filter("(id_parcel is null)")).count()
-n_null_boundary_categories = (
-    sdf_uptake.filter(
-        "(id_parcel is not null) and ((elg_adj_diff_bus is null) or (elg_adj_same_bus is null) or (elg_water is null) or (elg_ditch is null) or (elg_wall is null) or (elg_hedge is null))"
-    )
+n_null_boundary_categories = sdf_uptake.filter(
+    """
+    (id_parcel is not null) and ((elg_adj_diff_bus is null)
+    or (elg_adj_same_bus is null)
+    or (elg_water is null)
+    or (elg_ditch is null)
+    or (elg_wall is null)
+    or (elg_hedge is null))
+"""
 ).count()
 
-if (n_null_parcel_ids == n_null_boundary_categories == 0) == False:
+if not (n_null_parcel_ids == n_null_boundary_categories == 0):
     msg = "Unexpected nulls in uptake dataset"
     raise ValueError(msg)
 

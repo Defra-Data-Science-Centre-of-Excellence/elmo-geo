@@ -3,15 +3,16 @@
 
 # COMMAND ----------
 
+import contextily as ctx
+import geopandas as gpd
 import matplotlib.pyplot as plt
-from pyspark.sql import functions as F
-from sedona.register import SedonaRegistrator
-
-SedonaRegistrator.registerAll(spark)
-
 import shapely
 from cdap_geo.sedona import st_fromwkb, st_join, st_valid
+from pyspark.sql import functions as F
+from sedona.register import SedonaRegistrator
 from sedona.sql.types import GeometryType
+
+SedonaRegistrator.registerAll(spark)
 
 
 def st_buffer_udf(g, res, **kwargs):
@@ -170,10 +171,6 @@ display(
 # MAGIC %md ## Plot
 
 # COMMAND ----------
-
-import contextily as ctx
-import geopandas as gpd
-import matplotlib.pyplot as plt
 
 
 def add_basemap(ax=None, basemap="Light", crs=27700, key="WxgUdETn6cy58WZkfwZ7wdMVLlt5eDsX", **kwargs):

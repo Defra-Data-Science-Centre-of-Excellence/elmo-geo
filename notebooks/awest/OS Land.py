@@ -6,8 +6,15 @@
 import json
 import os
 import sys
+from glob import glob
 
+from geopandas import read_file
 from osdatahub import NGD
+from pandas import DataFrame
+from pyspark.sql import functions as F
+from sedona.register import SedonaRegistrator
+
+SedonaRegistrator.registerAll(spark)
 
 key = "WxgUdETn6cy58WZkfwZ7wdMVLlt5eDsX"
 collection = "lnd-fts-land"
@@ -62,11 +69,6 @@ ngd_dl(key, collection, path)
 
 # COMMAND ----------
 
-from glob import glob
-
-from geopandas import read_file
-from pandas import DataFrame
-
 
 def spark_read_geojsons(path, subset=[]):
     def read(filepath):
@@ -100,13 +102,6 @@ sdf.count()
 # COMMAND ----------
 
 sdf.write.parquet("dbfs:/mnt/lab/unrestricted/elm_data/os/lnd-fts-land.parquet/", mode="overwrite")
-
-# COMMAND ----------
-
-from pyspark.sql import functions as F
-from sedona.register import SedonaRegistrator
-
-SedonaRegistrator.registerAll(spark)
 
 # COMMAND ----------
 

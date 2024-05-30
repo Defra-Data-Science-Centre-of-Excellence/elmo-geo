@@ -2,16 +2,19 @@
 # MAGIC %md
 # MAGIC # Priority Habitat - Heathland Proximity
 # MAGIC
-# MAGIC This notebook filters the Priority Habitat dataset to contain only priority habitat healthland data. It then calculates the minimum distance from each parcel
+# MAGIC This notebook filters the Priority Habitat dataset to contain only priority habitat healthland data.
+# MAGIC It then calculates the minimum distance from each parcel
 # MAGIC
 # MAGIC **Author:** Obi Thompson Sargoni
 # MAGIC
 # MAGIC **Date:** 16/04/2024
 # MAGIC
-# MAGIC This notebook produces a parcel level dataset which gives the minimum distance from each parcel to features in the input features datasets, upto a maximum threshold distance.
+# MAGIC This notebook produces a parcel level dataset which gives the minimum distance from each parcel to features in the input features datasets,
+# MAGIC upto a maximum threshold distance.
 
 # COMMAND ----------
 
+import pandas as pd
 from pyspark.sql import functions as F
 
 from elmo_geo import LOG, register
@@ -104,8 +107,6 @@ pandas_df.to_parquet(path_parquet)
 displayHTML(download_link(path_parquet))
 
 # COMMAND ----------
-
-import pandas as pd
 
 df = pd.read_parquet("/dbfs" + sf_heathland_proximity.replace(dataset_name, dataset_name + "_output").replace("dbfs:", ""))
 df

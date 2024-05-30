@@ -44,6 +44,7 @@ from datetime import datetime
 import geopandas as gpd
 import matplotlib.pyplot as plt
 import pandas as pd
+from cdap_geo import to_gdf
 from cdap_geo.sedona import st_join, st_load, st_register
 from pyspark.sql import functions as F
 
@@ -247,8 +248,6 @@ display(spark.read.parquet(sf))
 # COMMAND ----------
 
 # DBTITLE 1,Plot dodgy buffers
-import matplotlib.pyplot as plt
-from cdap_geo import to_gdf
 
 df = spark.read.parquet(sf_geo).filter(F.col("id_parcel").isin(["SE12659143", "TL73394704", "SE92216981", "ST18041438"]))
 

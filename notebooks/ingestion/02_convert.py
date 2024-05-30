@@ -4,9 +4,12 @@
 # MAGIC Create vector datasets that can be easily loaded in spark, and such easily analyse large data.
 # MAGIC
 # MAGIC ## Format
-# MAGIC (Geo)Parquet is the best option, however we must be cautious to save with encoding=WKB as Sedona's `sdf.write.format('geoparquet')` seems unstable between versions, potentially saving as a UDT rather than WKB+metadata as defined in (Geo)Parquet's specification: https://geoparquet.org/.
+# MAGIC (Geo)Parquet is the best option, however we must be cautious to save with encoding=WKB as Sedona's `sdf.write.format('geoparquet')` seems unstable
+# MAGIC between versions, potentially saving as a UDT rather than WKB+metadata as defined in (Geo)Parquet's specification: https://geoparquet.org/.
 # MAGIC Unfortunately, with Sedona we will need the extra steps of, ST_GeomFromWKB and ST_AsBinary, for loading and writing datasets.
-# MAGIC We use [BNG](https://www.ordnancesurvey.co.uk/documents/resources/guide-to-nationalgrid.pdf) ([map](https://britishnationalgrid.uk/)) instead of [GeoHash](https://geohash.softeng.co/gc), [H3](https://h3geo.org/), or [S2](https://s2geometry.io/), because most data comes in this form and 1 unit = 1 meter.
+# MAGIC We use [BNG](https://www.ordnancesurvey.co.uk/documents/resources/guide-to-nationalgrid.pdf) ([map](https://britishnationalgrid.uk/))
+# MAGIC instead of [GeoHash](https://geohash.softeng.co/gc), [H3](https://h3geo.org/), or [S2](https://s2geometry.io/), because most data comes in this form
+# MAGIC and 1 unit = 1 meter.
 # MAGIC
 # MAGIC ## Method
 # MAGIC 1.  Convert any vector format to (Geo)Parquet with `ogr2ogr`.

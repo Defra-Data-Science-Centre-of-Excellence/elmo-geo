@@ -5,13 +5,9 @@
 # MAGIC
 # MAGIC dataset|filter|classes
 # MAGIC ---|---|---
-# MAGIC osm-united_kingdom | `tagname` contains "water" | all
+# MAGIC osm-united_kingdom | [OSM Tags](notebooks/analysis/osm_tags.py) | all
 # MAGIC os-wtr_fts | `file` does not contain "catchment" | all
 # MAGIC os-wtr_ntwk | | `watercourse`
-# MAGIC
-# MAGIC
-# MAGIC
-# MAGIC 1. identify osm tags
 # MAGIC
 
 # COMMAND ----------
@@ -20,19 +16,18 @@
 
 # COMMAND ----------
 
-from pyspark.sql import functions as F
+
 from datetime import datetime
-import pandas as pd
-import geopandas as gpd
+
+from pyspark.sql import functions as F
 
 from elmo_geo import register
-from elmo_geo.datasets.catalogue import find_datasets, add_to_catalogue
-from elmo_geo.utils.misc import dbfs
-from elmo_geo.utils.types import SparkDataFrame
+from elmo_geo.datasets.catalogue import add_to_catalogue, find_datasets
 from elmo_geo.io.file import to_parquet
-from elmo_geo.st.udf import st_union
 from elmo_geo.st.geometry import load_geometry
+from elmo_geo.utils.misc import dbfs
 from elmo_geo.utils.settings import SILVER
+from elmo_geo.utils.types import SparkDataFrame
 
 register()
 
@@ -44,14 +39,7 @@ def load_sdf(f: str) -> SparkDataFrame:
 # COMMAND ----------
 
 name = f"elmo_geo-water-{datetime.today().strftime('%Y_%m_%d')}"
-dataset_water = {
-    "name": name,
-    "tasks": {
-        "lookup_parcel": "todo"
-    },
-    "distance": 24,
-    "silver": f"{SILVER}/{name}.parquet"
-}
+dataset_water = {"name": name, "tasks": {"lookup_parcel": "todo"}, "distance": 24, "silver": f"{SILVER}/{name}.parquet"}
 
 dataset_water
 
@@ -68,8 +56,7 @@ sdf_os_wtr_ntwk = load_sdf(dataset_os_wtr_ntwk["silver"]).withColumn("source", F
 # COMMAND ----------
 
 sdf_osm_water = (
-    sdf_osm
-    .selectExpr(
+    sdf_osm.selectExpr(
         "source",
         """SUBSTRING(CONCAT(
             NVL(CONCAT(",highway=>", highway), ""),
@@ -83,22 +70,18 @@ sdf_osm_water = (
         "geometry",
         "sindex",
     )
-    .filter("tags LIKE '%\"water%\"=>%'")
     .selectExpr(
         "source",
         """CASE
-            WHEN (
-                tags LIKE '%drain%'
-                OR tags LIKE '%ditch%'
-            ) THEN "ditch"
-            WHEN (
-                tags LIKE '%"%waterway%"=>%'
-            ) THEN "watercourse"
-            ELSE "waterbody"
+            WHEN (FALSE) THEN "ditch"
+            WHEN (tags LIKE '%waterway=>%') THEN "watercourse"
+            WHEN (tags LIKE '%water=>%') THEN "waterbody"
+            ELSE NULL
         END AS class""",
         "geometry",
         "sindex",
     )
+    .filter("class IS NOT NULL")
 )
 
 
@@ -127,7 +110,8 @@ sdf_os_water = (
 sdf_water = (
     sdf_os_water.union(sdf_osm_water)
     .withColumn("geometry", F.expr("ST_Buffer(geometry, 0)"))
-    .groupby("source", "class", "sindex").agg(F.expr("ST_Union_Aggr(geometry)").alias("geometry"))
+    .groupby("source", "class", "sindex")
+    .agg(F.expr("ST_Union_Aggr(geometry)").alias("geometry"))
     .withColumn("geometry", load_geometry(encoding_fn=""))
     .withColumn("geometry", F.expr("ST_SubDivideExplode(geometry, 256)"))
     .select(F.monotonically_increasing_id().alias("fid"), "*")
