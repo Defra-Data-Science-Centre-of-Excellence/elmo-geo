@@ -65,17 +65,21 @@ def info_sdf(sdf: SparkDataFrame, f: str = None, geometry_column: str = "geometr
     ```
     """
     df = (
-        sdf.selectExpr(
-            f"ST_GeometryType({geometry_column}) AS gtype",
-            f"ST_NPoints({geometry_column}) AS n",
+        (
+            sdf.selectExpr(
+                f"ST_GeometryType({geometry_column}) AS gtype",
+                f"ST_NPoints({geometry_column}) AS n",
+            )
+            .groupby("gtype")
+            .agg(
+                F.count("gtype").alias("count"),
+                F.round(F.mean("n"), 1).alias("mean_coords"),
+            )
+            .toPandas()
         )
-        .groupby("gtype")
-        .agg(
-            F.count("gtype").alias("count"),
-            F.round(F.mean("n"), 1).alias("mean_coords"),
-        )
-        .toPandas()
-    ) if geometry_column else None
+        if geometry_column
+        else None
+    )
     LOG.info(
         f"""
         Wrote Parquet: {f}
