@@ -71,7 +71,7 @@ def sjoin(
 
 
 def lookup_parcel(dataset: dict) -> dict:
-    """Spaitally Join Parcels with another dataset
+    """Spaitally join .arcels with another dataset.
     Uses the same parcels as EVAST, rpa-parcel-adas
     Outputs a lookup table between
     """
