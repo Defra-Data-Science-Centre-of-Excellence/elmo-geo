@@ -98,6 +98,7 @@ def lookup_parcel(dataset: dict) -> dict:
     dataset["tasks"]["lookup_parcel"] = datetime.today().strftime("%Y_%m_%d")
     return dataset
 
+
 # COMMAND ----------
 
 run_task_on_catalogue("lookup_parcel", lookup_parcel)
