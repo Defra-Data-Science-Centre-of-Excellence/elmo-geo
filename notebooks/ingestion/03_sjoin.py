@@ -1,25 +1,8 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC # Spatial Join between Parcels and datasets.
-# MAGIC
-# MAGIC ### notes
-# MAGIC - [ ] 02_splitting_method snapping to a segmented boundary
-# MAGIC - [ ] 03_metrics should contain the output table
-# MAGIC - [ ] move Business Info to another place
-# MAGIC - [ ] load_sdf
-# MAGIC - [ ] delete copied bits from aw-notebooks once merged
-# MAGIC - QA
-# MAGIC   - [x] check the overlaps of rpa-parcel-adas
-# MAGIC   - [ ] ensure buffer totals are less than parcel total area
-# MAGIC   - [ ] ensure meter total is reasonable
-# MAGIC   - [ ] boundary segmentation method
-# MAGIC   - [ ] review my OSM and OS-NGD filters
-# MAGIC
-# MAGIC ### todo
-# MAGIC - [ ] Review: 02_historic
-# MAGIC - [ ] Merge: water
-# MAGIC - [ ] sjoin proportion
-# MAGIC
+# MAGIC # Processing vector data and calculating intersections with land parcels
+# MAGIC This notebook is used to clean up vector datasets, and to join them with the land parcels
+# MAGIC dataset to get the proportion of the land parcel intersecting with each feature
 
 # COMMAND ----------
 
@@ -36,9 +19,11 @@ import pandas as pd
 from pyspark.sql import functions as F
 
 from elmo_geo import LOG, register
-from elmo_geo.datasets.catalogue import find_datasets, run_task_on_catalogue
+from elmo_geo.datasets.datasets import datasets, parcels
+from elmo_geo.io import download_link
+from elmo_geo.io.preprocessing import make_geometry_valid
+from elmo_geo.st import sjoin
 from elmo_geo.utils.misc import dbfs
-from elmo_geo.utils.types import SparkDataFrame
 
 register()
 
@@ -209,4 +194,4 @@ df
 
 # COMMAND ----------
 
-run_task_on_catalogue("lookup_parcel", lookup_parcel)
+df["id_parcel"].nunique()

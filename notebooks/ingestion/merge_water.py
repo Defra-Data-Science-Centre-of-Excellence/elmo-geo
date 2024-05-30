@@ -16,7 +16,6 @@
 
 # COMMAND ----------
 
-
 from datetime import datetime
 
 from pyspark.sql import functions as F

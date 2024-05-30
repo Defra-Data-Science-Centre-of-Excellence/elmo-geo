@@ -17,13 +17,14 @@
 # COMMAND ----------
 
 import os.path
+
 from pyspark.sql import functions as F
 
-from elmo_geo import register, LOG
+from elmo_geo import LOG, register
 from elmo_geo.datasets.catalogue import find_datasets, run_task_on_catalogue
+from elmo_geo.st.udf import st_union
 from elmo_geo.utils.misc import dbfs, info_sdf
 from elmo_geo.utils.types import SparkDataFrame
-from elmo_geo.st.udf import st_union
 
 register()
 
