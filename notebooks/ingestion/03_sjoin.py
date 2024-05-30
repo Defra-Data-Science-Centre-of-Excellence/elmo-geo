@@ -75,7 +75,7 @@ def lookup_parcel(dataset: dict) -> dict:
     Uses the same parcels as EVAST, rpa-parcel-adas
     Outputs a lookup table between
     """
-    LOG.info(f"loookup_parcel: {dataset['name']}")
+    LOG.info(f"lookup_parcel: {dataset['name']}")
     dataset_parcel = find_datasets("rpa-parcel-adas")[-1]
     source, name, version = dataset["name"].split("-")
     dataset["lookup_parcel"] = dataset["silver"].replace(dataset["name"], f"lookup_parcel-{name}-{version}")
