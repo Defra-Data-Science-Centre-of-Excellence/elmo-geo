@@ -91,11 +91,20 @@
         },
         "tasks": {
             "convert": "2024_05_14",
-            "lookup_parcel": "2024_05_23"
+            "lookup_parcel": "2024_05_23",
+            "overlap": "2024_05_31"
+        },
+        "classes": {
+            "": [
+                "np_name"
+            ]
         },
         "bronze": "/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_national_parks/format_SHP_national_parks/SNAPSHOT_2024_01_30_national_parks/National_Parks_England.shp",
         "silver": "/dbfs/mnt/lab/restricted/ELM-Project/silver/defra-national_park-2024_01_30.parquet",
-        "lookup_parcel": "/dbfs/mnt/lab/restricted/ELM-Project/silver/lookup_parcel-national_park-2024_01_30.parquet"
+        "lookup_parcel": "/dbfs/mnt/lab/restricted/ELM-Project/silver/lookup_parcel-national_park-2024_01_30.parquet",
+        "overlap": [
+            "/dbfs/mnt/lab/restricted/ELM-Project/silver/overlap-national_park-2024_01_30.parquet"
+        ]
     },
     {
         "name": "defra-ramsar-2024_02_15",
@@ -148,11 +157,21 @@
         },
         "tasks": {
             "convert": "2024_05_14",
-            "lookup_parcel": "2024_05_23"
+            "lookup_parcel": "2024_05_23",
+            "overlap": "2024_05_31"
+        },
+        "classes": {
+            "": [
+                "sssi_name",
+                "sssi_status"
+            ]
         },
         "bronze": "/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_sites_of_special_scientific_interest_units/format_SHP_sites_of_special_scientific_interest_units/SNAPSHOT_2024_03_07_sites_of_special_scientific_interest_units/Sites_of_Special_Scientific_Interest_Units_England.shp",
         "silver": "/dbfs/mnt/lab/restricted/ELM-Project/silver/defra-sssi_units-2024_03_07.parquet",
-        "lookup_parcel": "/dbfs/mnt/lab/restricted/ELM-Project/silver/lookup_parcel-sssi_units-2024_03_07.parquet"
+        "lookup_parcel": "/dbfs/mnt/lab/restricted/ELM-Project/silver/lookup_parcel-sssi_units-2024_03_07.parquet",
+        "overlap": [
+            "/dbfs/mnt/lab/restricted/ELM-Project/silver/overlap-sssi_units-2024_03_07.parquet"
+        ]
     },
     {
         "name": "defra-national_landscapes-2023_02_14",
@@ -437,11 +456,13 @@
         "name": "elmo_geo-water-2024_05_22",
         "tasks": {
             "lookup_parcel": "2024_05_23",
-            "overlap": "todo"
+            "overlap": "2024_06_03"
         },
         "distance": 24,
         "classes": {
-            "": [
+            "": [],
+            "class_": [
+                "source",
                 "class"
             ]
         },
@@ -454,6 +475,12 @@
             24
         ],
         "silver": "/dbfs/mnt/lab/restricted/ELM-Project/silver/elmo_geo-water-2024_05_22.parquet",
-        "lookup_parcel": "/dbfs/mnt/lab/restricted/ELM-Project/silver/lookup_parcel-water-2024_05_22.parquet"
+        "lookup_parcel": "/dbfs/mnt/lab/restricted/ELM-Project/silver/lookup_parcel-water-2024_05_22.parquet",
+        "overlap": [
+            "/dbfs/mnt/lab/restricted/ELM-Project/silver/overlap-water-2024_05_22.parquet",
+            "/dbfs/mnt/lab/restricted/ELM-Project/silver/overlap-water-2024_05_22.parquet",
+            "/dbfs/mnt/lab/restricted/ELM-Project/silver/overlap-water-2024_05_22.parquet",
+            "/dbfs/mnt/lab/restricted/ELM-Project/silver/overlap-class_water-2024_05_22.parquet"
+        ]
     }
 ]
