@@ -78,9 +78,7 @@ def lookup_parcel(dataset: dict) -> dict:
     LOG.info(f"lookup_parcel: {dataset['name']}")
     dataset_parcel = find_datasets("rpa-parcel-adas")[-1]
     source, name, version = dataset["name"].split("-")
-    dataset["lookup_parcel"] = dataset.get("lookup_parcel",
-        dataset["silver"].replace(dataset["name"], f"lookup_parcel-{name}-{version}")
-    )
+    dataset["lookup_parcel"] = dataset.get("lookup_parcel", dataset["silver"].replace(dataset["name"], f"lookup_parcel-{name}-{version}"))
     distance, knn = dataset.get("distance", 0), dataset.get("knn", 0)
     sdf_parcel = load_sdf(dataset_parcel["silver"])
     sdf_other = load_sdf(dataset["silver"])
