@@ -7,19 +7,19 @@
 # COMMAND ----------
 
 import os.path
-
 from datetime import datetime
+
 from pyspark.sql import functions as F
 
 from elmo_geo import LOG, register
 from elmo_geo.datasets.catalogue import find_datasets, run_task_on_catalogue
-from elmo_geo.st.udf import st_union
 from elmo_geo.utils.misc import dbfs, info_sdf
-from elmo_geo.utils.types import SparkDataFrame, PandasDataFrame
+from elmo_geo.utils.types import PandasDataFrame, SparkDataFrame
 
 register()
 
 # COMMAND ----------
+
 
 def load_sdf(f: str) -> SparkDataFrame:
     sdf = spark.read.parquet(dbfs(f, True))
@@ -37,12 +37,12 @@ def load_sdf_parcel_lookup(dataset: dict) -> SparkDataFrame:
     return (
         load_sdf(dataset["lookup_parcel"])
         .join(
-            load_sdf(dataset_parcel["silver"]).transform(st_union, "id_parcel").withColumnRenamed("geometry", "geometry_parcel"),
+            load_sdf(dataset_parcel["silver"]).withColumnRenamed("geometry", "geometry_parcel"),
             on="id_parcel",
             how="inner",
         )
         .join(
-            load_sdf(dataset["silver"]).transform(st_union, ["fid", *classes]).withColumnRenamed("geometry", "geometry_right"),
+            load_sdf(dataset["silver"]).withColumnRenamed("geometry", "geometry_right"),
             on="fid",
             how="inner",
         )
@@ -53,8 +53,7 @@ def calc_overlap(sdf: SparkDataFrame, classes: list[str], buffers: list[float]) 
     """todo"""
     l, r = "geometry_parcel", "geometry_right"  # noqa:E741
     return (
-        sdf
-        .withColumn(l, F.expr(f"ST_Buffer({l}, 0.001)"))
+        sdf.withColumn(l, F.expr(f"ST_Buffer({l}, 0.001)"))
         .withColumn(r, F.expr(f"ST_Buffer({r}, 0.001)"))
         .groupby("id_parcel", *classes)
         .agg(
@@ -66,6 +65,7 @@ def calc_overlap(sdf: SparkDataFrame, classes: list[str], buffers: list[float]) 
         )
     )
 
+
 def overlap_info(df: PandasDataFrame, f: str):
     """todo"""
     col = [col for col in df.columns if col.startswith("proportion")][0]
@@ -73,6 +73,7 @@ def overlap_info(df: PandasDataFrame, f: str):
     LOG.info(f"Proportion > 1 (1+1e-9): {(1+1e-9 < df[col]).mean():.3%}")
     LOG.info(df.sort_values(col))
     LOG.info(df[col].describe())
+
 
 def overlap(dataset: dict) -> dict:
     """todo"""
@@ -94,4 +95,6 @@ def overlap(dataset: dict) -> dict:
 
 # COMMAND ----------
 
-run_task_on_catalogue("overlap", overlap)
+jls_extract_var = run_task_on_catalogue
+jls_extract_var("overlap", overlap)
+

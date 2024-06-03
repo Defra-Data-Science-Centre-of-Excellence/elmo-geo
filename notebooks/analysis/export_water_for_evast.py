@@ -10,14 +10,12 @@
 
 # COMMAND ----------
 
-import geopandas as gpd
 
 from pyspark.sql import functions as F
 
 from elmo_geo import register
-from elmo_geo.io import to_gdf, download_link
+from elmo_geo.io import download_link, to_gdf
 from elmo_geo.plot.base_map import plot_gdf
-
 
 register()
 
@@ -27,17 +25,8 @@ sdf_water = spark.read.parquet("dbfs:/mnt/lab/restricted/ELM-Project/silver/elmo
 sdf_lookup = spark.read.parquet("dbfs:/mnt/lab/restricted/ELM-Project/silver/lookup_parcel-water-2024_05_22.parquet")
 
 
-gdf = (
-    to_gdf(
-        sdf_water
-        .join(
-            sdf_lookup
-                .groupby("fid")
-                .agg(F.collect_set("id_parcel").alias("id_parcel")),
-            on="fid"
-        )
-    )
-    .assign(id_parcel = lambda df: df["id_parcel"].str.join(","))
+gdf = to_gdf(sdf_water.join(sdf_lookup.groupby("fid").agg(F.collect_set("id_parcel").alias("id_parcel")), on="fid")).assign(
+    id_parcel=lambda df: df["id_parcel"].str.join(",")
 )
 
 
@@ -65,8 +54,8 @@ plot_gdf(gdf)
 
 # COMMAND ----------
 
-spark.read.parquet('dbfs:/mnt/lab/restricted/ELM-Project/silver/overlap-water-2024_05_22.parquet').display()
+spark.read.parquet("dbfs:/mnt/lab/restricted/ELM-Project/silver/overlap-water-2024_05_22.parquet").display()
 
 # COMMAND ----------
 
-spark.read.parquet('dbfs:/mnt/lab/restricted/ELM-Project/silver/overlap-class_water-2024_05_22.parquet').display()
+spark.read.parquet("dbfs:/mnt/lab/restricted/ELM-Project/silver/overlap-class_water-2024_05_22.parquet").display()
