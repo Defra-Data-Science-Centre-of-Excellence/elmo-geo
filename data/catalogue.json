@@ -425,5 +425,15 @@
         },
         "distance": 24,
         "silver": "/dbfs/mnt/lab/restricted/ELM-Project/silver/elmo_geo-water-2024_05_22.parquet"
+    },
+    {
+        "name": "wfm-farm-2024_01_26",
+        "tasks": {},
+        "bronze": "/dbfs/mnt/lab/restricted/ELM-Project/bronze/wfm-farm-2024_01_26.parquet"
+    },
+    {
+        "name": "wfm-field-2024_01_26",
+        "tasks": {},
+        "bronze": "/dbfs/mnt/lab/restricted/ELM-Project/bronze/wfm-field-2024_01_26.parquet"
     }
 ]

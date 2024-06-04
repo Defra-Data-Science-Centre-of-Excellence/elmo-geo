@@ -32,6 +32,13 @@ def sh_run(exc: str, **kwargs):
     return out
 
 
+def load_sdf(f: str) -> SparkDataFrame:
+    sdf = spark.read.parquet(dbfs(f, True))
+    if "geometry" in sdf.columns:
+        sdf = sdf.withColumn("geometry", F.expr("ST_SetSRID(ST_GeomFromWKB(geometry), 27700)"))
+    return sdf
+
+
 def count_parquet_files(folder):
     """Get the number of parquet files in a dataset."""
     return sum(1 for _, _, files in os.walk(folder) for f in files if f.endswith(".parquet"))
