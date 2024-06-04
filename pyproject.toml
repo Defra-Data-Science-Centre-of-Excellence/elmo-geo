@@ -25,16 +25,16 @@ exclude = ["tests"]
 
 [project.optional-dependencies]
 dev = [
-    "ruff<0.2",
     "pip-tools",
     "pytest",
+    "ruff<0.2",
 ]
 old = [
     "beautifulsoup4",
-    "pyogrio",
-    "sentinelsat",
     "osmnx",
     "osdatahub",
+    "pyogrio",
+    "sentinelsat",
     "statsmodels",
 ]
 
