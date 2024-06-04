@@ -270,6 +270,74 @@ display(sdf_hedge)
 
 # COMMAND ----------
 
+# Water
+sdf_rpa_parcel = load_sdf("rpa-parcel-adas").select("id_parcel", "geometry")
+
+
+sdf_os_water = (
+    spark.read.format("parquet")
+    .schema("layer string, theme string, description string, width double, geometry binary")
+    .load("dbfs:/mnt/lab/restricted/ELM-Project/stg/os-ngd-2022.parquet")
+    .repartition(200)
+    .join(
+        spark.read.parquet("dbfs:/mnt/lab/restricted/ELM-Project/stg/awest-os_water_lookup-2024_01_26.parquet"),
+        on="description",
+        how="inner",
+    )
+    .selectExpr(
+        '"os-ngd-2022" AS source',
+        'CONCAT("water-", watertype) AS class',
+        "ST_SetSRID(ST_GeomFromWKB(geometry), 27700) AS geometry",
+    )
+)
+
+sdf_osm_water = (
+    spark.read.format("parquet")
+    .load("dbfs:/mnt/lab/restricted/ELM-Project/stg/osm-britain_and_ireland-2023_10_12.parquet")
+    .repartition(200)
+    .selectExpr(
+        '"osm-britain_and_ireland-2023_12_13" AS source',
+        """SUBSTRING(CONCAT(
+            NVL(CONCAT(",highway=>", highway), ""),
+            NVL(CONCAT(",waterway=>", waterway), ""),
+            NVL(CONCAT(",aerialway=>", aerialway), ""),
+            NVL(CONCAT(",barrier=>", barrier), ""),
+            NVL(CONCAT(",man_made=>", man_made), ""),
+            NVL(CONCAT(",railway=>", railway), ""),
+            NVL(CONCAT(",", other_tags), "")
+        ), 2) AS tags""",
+        "ST_SetSRID(ST_GeomFromWKB(geometry), 27700) AS geometry",
+    )
+    .filter("tags LIKE '%\"water%\"=>%'")
+    .selectExpr(
+        "source",
+        """CASE
+            WHEN (tags LIKE '%drain%' OR tags LIKE '%ditch%') THEN "water-ditch"
+            WHEN (tags LIKE '%"%waterway%"=>%') THEN "water-watercourse"
+            ELSE "water-waterbody"
+        END AS class""",
+        "geometry",
+    )
+)
+
+
+sdf_water = (
+    sdf_os_water.union(sdf_osm_water)
+    .withColumn("geometry", st_simplify())
+    .withColumn("geometry", F.expr("ST_SubDivideExplode(geometry, 256)"))
+    .transform(lambda sdf: sjoin(sdf_rpa_parcel, sdf, rsuffix="", distance=12))
+    .transform(st_union, ["source", "id_parcel", "class"], "geometry")
+    .transform(
+        to_gpq,
+        "dbfs:/mnt/lab/restricted/ELM-Project/ods/elmo_geo-water-2024_01_26.parquet",
+    )
+)
+
+
+display(sdf_water)
+
+# COMMAND ----------
+
 # Wall
 sdf_rpa_parcel = load_sdf("rpa-parcel-adas").select("id_parcel", "geometry")
 
