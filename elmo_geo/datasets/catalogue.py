@@ -1,23 +1,31 @@
 import json
 
+from elmo_geo import LOG
+
+FILEPATH_CATALOGUE = "data/catalogue.json"
+
 
 def load_catalogue() -> dict | list:
     """Load the data catalogue"""
-    f = "data/catalogue.json"
-    with open(f, "r") as fp:
+    with open(FILEPATH_CATALOGUE, "r") as fp:
         obj = json.loads(fp.read())
     return obj
 
 
 def save_catalogue(obj: dict | list):
     """Save the data catalogue"""
-    f = "data/catalogue.json"
-    with open(f, "w", encoding="utf-8") as fp:
+    with open(FILEPATH_CATALOGUE, "w", encoding="utf-8") as fp:
         json.dump(obj, fp, ensure_ascii=False, indent=4)
 
 
-def run_task_on_catalogue(task: str, fn: callable):
+def run_task_on_catalogue(task: str, fn: callable, force: bool = False):
     """Run a task on all datasets with that task set to "todo".
+    With `force=True` most tasks still won't save a new version if the dataset exists.
+    Compatibility with Pandas requires deleting instead of using `mode="overwrite"`.
+    Params:
+        task: name of the task to be completed
+        fn: fn of the task
+        force: ignore when the task was last completed and retry
     ```py
     def lookup_parcel(dataset):
         f = "{}/elmo_geo-lookup_{}.parquet".format(SILVER, dataset["name"].split("-")[1])
@@ -34,8 +42,12 @@ def run_task_on_catalogue(task: str, fn: callable):
     """
     catalogue = load_catalogue()
     for i, dataset in enumerate(catalogue):
-        if getattr(dataset["tasks"], task, False) == "todo":
-            catalogue[i] = fn(dataset)
+        status = dataset["tasks"].get(task, False)
+        if status == "todo" or (force and status is not False):
+            try:
+                catalogue[i] = fn(dataset)
+            except Exception as err:
+                LOG.warning(f"Failed {task}\n{dataset}\n{err}")
     save_catalogue(catalogue)
 
 
@@ -47,10 +59,19 @@ def find_datasets(string: str) -> list[dict]:
         sdf_parcel = spark.read.parquet(parcel['uri'])
         ```
     """
+    return [dataset for dataset in load_catalogue() if string in dataset["name"]]
 
-    def fn():
-        for dataset in load_catalogue():
-            if string in dataset["name"]:
-                yield dataset
 
-    return list(fn())
+def add_to_catalogue(datasets: list[dict]):
+    """Add a new dataset to the catalogue
+    By replacing the same name or appending.
+    """
+    catalogue = load_catalogue()
+    for dataset_new in datasets:
+        for i, dataset_catalogue in enumerate(catalogue):
+            if dataset_new["name"] == dataset_catalogue["name"]:
+                catalogue[i] = dataset_new
+                break
+        else:
+            catalogue.append(dataset_new)
+    save_catalogue(catalogue)

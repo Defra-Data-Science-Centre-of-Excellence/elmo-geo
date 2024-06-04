@@ -3,11 +3,12 @@ import shutil
 import zipfile
 
 from elmo_geo.utils.dbr import displayHTML, spark
+from elmo_geo.utils.misc import dbfs
 
 
 def zip_folder(path_in, path_out):
     with zipfile.ZipFile(path_out, "w", zipfile.ZIP_DEFLATED) as zipf:
-        for root, dirs, files in os.walk(path_in):
+        for root, _, files in os.walk(path_in):
             for file in files:
                 filepath = os.path.join(root, file)
                 arcname = os.path.relpath(filepath, path_in)
@@ -20,17 +21,25 @@ def download_link(filepath: str, name: str = None, return_over_display: bool = F
     Folders are zipped and saved to dbfs/FileStore
 
     example: `download_link(f)`
+
+    TODO: fix if file is already in FileStore
     """
+    filepath = dbfs(filepath, False)
+    filestore = "/dbfs/FileStore"
     if name is None:
         name = filepath.split("/")[-1]
-    if os.path.isdir(filepath):
-        name = f"{name}.zip"
-        zip_folder(filepath, f"/dbfs/FileStore/{name}")
+    if filepath.startswith(filestore):
+        path = filepath.replace(f"{filestore}/", "")
     else:
-        shutil.copy(filepath, f"/dbfs/FileStore/{name}")
+        if os.path.isdir(filepath):
+            path = f"downloads/{name}.zip"
+            zip_folder(filepath, f"{filestore}/{path}")
+        else:
+            path = f"downloads/{name}"
+            shutil.copy(filepath, f"{filestore}/{path}")
     workspace = spark.conf.get("spark.databricks.workspaceUrl")
     org = spark.conf.get("spark.databricks.clusterUsageTags.orgId")
-    url = f"https://{workspace}/files/{name}?o={org}"
+    url = f"https://{workspace}/files/{path}?o={org}"
     if not return_over_display:
         displayHTML(f"Download: <a href={url} target='_blank'>{name}</a>")
     else:

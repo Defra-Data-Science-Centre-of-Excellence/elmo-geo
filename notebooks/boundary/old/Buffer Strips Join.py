@@ -9,10 +9,9 @@
 
 # COMMAND ----------
 
+import matplotlib.pyplot as plt
 import numpy as np
-
-# import pandas as pd
-# import matplotlib.pyplot as plt
+import pandas as pd
 import seaborn as sns
 
 sf = "dbfs:/mnt/lab/unrestricted/DSMT/gis/buffer_strips/2022-08-23.parquet"
@@ -133,7 +132,7 @@ fig.tight_layout()
 
 # Scenario Setup
 pay = 21
-l = 100
+l = 100  # noqa:E741
 
 df_parcel_hedge = df_parcel[df_parcel["hedge_length"].notna()]
 df_business_hedge = df_business[df_business["hedge_length"].notna()]
@@ -148,11 +147,12 @@ avg = l
 total = lengths.sum()
 
 cost = avg * elig * pay / l
-I = avg * elig / total
-uptake = I
+uptake = avg * elig / total
 
-cost1, uptake1, elig1 = cost, uptake, elig
-admin_ratio = lambda c, u: (c / u - cost1 / uptake1) / elig1
+
+def admin_ratio(c, u):
+    return (c / u - cost / uptake) / elig
+
 
 df = df.append(
     {
@@ -256,7 +256,7 @@ display(df)
 
 # Scenario Setup
 pay = 29
-l = 100
+l = 100  # noqa:E741
 
 df_parcel_water = df_parcel[df_parcel["water_length"].notna()]
 df_business_water = df_business[df_business["water_length"].notna()]
@@ -271,11 +271,12 @@ avg = l
 total = lengths.sum()
 
 cost = avg * elig * pay / l
-I = avg * elig / total
-uptake = I
+uptake = avg * elig / total
 
-cost1, uptake1, elig1 = cost, uptake, elig
-admin_ratio = lambda c, u: (c / u - cost1 / uptake1) / elig1
+
+def admin_ratio(c, u):
+    return (c / u - cost / uptake) / elig
+
 
 df = df.append(
     {

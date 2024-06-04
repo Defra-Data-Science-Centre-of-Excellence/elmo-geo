@@ -14,12 +14,12 @@ except Exception:
     register_sedona = SedonaRegistrator.registerAll
 
 
-def register_dir(dir: str):
+def register_dir(path: str):
     """Move up the current working directory to <dir>.
     This is useful for notebooks in subfolders, as they _sometimes_ can't read local modules.
     """
     cwd = os.getcwd()
-    nwd = cwd.split(dir)[0] + dir
+    nwd = cwd.split(path)[0] + path
     if cwd != nwd:
         os.chdir(nwd)
         LOG.info(f"Changed Directory: {cwd} => {nwd}")

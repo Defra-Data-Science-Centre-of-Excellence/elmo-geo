@@ -40,7 +40,9 @@ sdf_geom.write.parquet(sf_geom)
 display(sdf_geom)
 
 
-buf = lambda x: f"ST_Area(ST_Intersection(ST_MakeValid(ST_Buffer(geometry_water, {x})), geometry_parcel))/10000 AS ha_buf{x}"
+def buf(x):
+    return f"ST_Area(ST_Intersection(ST_MakeValid(ST_Buffer(geometry_water, {x})), geometry_parcel))/10000 AS ha_buf{x}"
+
 
 sdf = (
     spark.read.parquet(sf_geom)

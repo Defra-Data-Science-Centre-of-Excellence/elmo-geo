@@ -5,19 +5,10 @@
 
 # COMMAND ----------
 
-import geopandas as gpd
-import mapclassify
-import seaborn as sns
-import matplotlib.pyplot as plt
-from matplotlib.ticker import PercentFormatter, FuncFormatter
-import numpy as np
 
-import os
 import geopandas as gpd
-from pyspark.sql import functions as F
 
-from elmo_geo import LOG, register
-from elmo_geo.st import sjoin
+from elmo_geo import register
 from elmo_geo.plot.plotting import plot_choropleth_with_head_and_tail_bars
 
 register()
@@ -27,7 +18,7 @@ register()
 year = 2023
 path = f"/mnt/lab/unrestricted/elm/elmo/baresoil/output-{year}.parquet"
 path_nca = "dbfs:/mnt/lab/unrestricted/elm/elmo/national_character_areas/output.parquet"
-path_nca_poly = "/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_national_character_areas/format_SHP_national_character_areas/LATEST_national_character_areas/National_Character_Areas___Natural_England.shp"
+path_nca_poly = "/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_national_character_areas/format_SHP_national_character_areas/LATEST_national_character_areas/National_Character_Areas___Natural_England.shp"  # noqa:E501
 
 
 # COMMAND ----------

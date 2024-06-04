@@ -197,7 +197,36 @@ sssi = Dataset(
     rename_cols={"status": "sssi_status"},
     output_coltypes={"sssi_status": "category"},
 )
+"""Proportional overlap with Sites of Special Scientific Interest (SSSI) with SSSI name. SSSIs can overlap so proportions may sum to >1."""
 
+sssi_mask = Dataset(
+    name="sssi_mask",
+    source="defra",
+    versions=[
+        Version(
+            name="2021_03_17",
+            path_read=(
+                "/dbfs/mnt/base/unrestricted/source_defra_data_services_platform"
+                "/dataset_sites_of_special_scientific_interest"
+                "/format_SHP_sites_of_special_scientific_interest"
+                "/SNAPSHOT_2021_03_17_sites_of_special_scientific_interest"
+                "/Sites_of_Special_Scientific_Interest_England.shp"
+            ),
+        ),
+        Version(
+            name="2023_02_14",
+            path_read=(
+                "/dbfs/mnt/base/unrestricted/source_defra_data_services_platform"
+                "/dataset_sites_of_special_scientific_interest"
+                "/format_SHP_sites_of_special_scientific_interest"
+                "/SNAPSHOT_2023_02_14_sites_of_special_scientific_interest"
+                "/Sites_of_Special_Scientific_Interest_England.shp"
+            ),
+        ),
+    ],
+    keep_cols=["geometry"],
+)
+"""Proportional overlap with any Sites of Special Scientific Interest (SSSI), no names."""
 
 aonb = Dataset(
     name="aonb",
@@ -318,6 +347,41 @@ priority_habitat_network = Dataset(
     },
 )
 
+
+priority_habitat_inventory = Dataset(
+    name="priority_habitat_inventory",
+    source="defra",
+    versions=[
+        Version(
+            name="2021_03_26",
+            path_read=("/dbfs/mnt/lab/unrestricted/elm_data/defra/priority_habitat_inventory/unified_2021_03_26.parquet"),
+        ),
+    ],
+    keep_cols=["Main_Habit", "Confidence", "geometry"],
+    output_coltypes={
+        "Main_Habit": "category",
+        "Confidence": "category",
+        "proportion": "float",
+    },
+)
+
+habitat_map = Dataset(
+    name="habitat_map",
+    source="living_england",
+    versions=[
+        Version(
+            name="2022_09_16",
+            path_read=("dbfs:/mnt/lab/unrestricted/elm_data/natural_england/living_england/2022_09_16.parquet"),
+        ),
+    ],
+    keep_cols=["A_pred", "A_prob", "geometry"],
+    output_coltypes={
+        "proportion": "float",
+        "A_pred": "category",
+        "A_prob": "float",
+    },
+)
+
 nfc_social = Dataset(
     name="nfc_social",
     source="ewco",
@@ -415,6 +479,40 @@ shine = Dataset(
     rename_cols={"geom": "geometry"},
 )
 
+scheduled_monuments = Dataset(
+    name="scheduled_monuments",
+    source="historic_england",
+    versions=[
+        Version(
+            name="2024_04_29",
+            path_read=(
+                "/dbfs/mnt/base/unrestricted/source_historic_england_open_data_site/dataset_scheduled_monuments/format_GEOPARQUET_scheduled_monuments/SNAPSHOT_2024_04_29_scheduled_monuments/layer=Scheduled_Monuments.snappy.parquet"
+            ),
+        ),
+    ],
+    keep_cols=[
+        "geometry",
+        "datasets",
+    ],
+    rename_cols={"geom": "geometry"},
+)
+
+historic_archaeological = Dataset(
+    name="historic_archaeological",
+    source="historic_england",
+    versions=[
+        Version(
+            # produced by the /notebooks/historic/01_combine_historic_datasets notebook
+            name="2024_04_29",
+            path_read=("/dbfs/mnt/lab/restricted/ELM-Project/stg/he-combined_sites-2024_05_03.parquet"),
+        ),
+    ],
+    keep_cols=[
+        "geometry",
+        "datasets",
+    ],
+    rename_cols={"geom": "geometry"},
+)
 
 datasets = [
     alc,
@@ -423,6 +521,7 @@ datasets = [
     peaty_soils,
     national_character_areas,
     sssi,
+    sssi_mask,
     aonb,
     lfa,
     region,
@@ -430,6 +529,8 @@ datasets = [
     flood_risk_areas,
     red_squirrel,
     priority_habitat_network,
+    priority_habitat_inventory,
+    habitat_map,
     nfc_social,
     water_quality,
     flood_risk_management,
@@ -437,5 +538,7 @@ datasets = [
     nfc_ammonia_emmissions,
     tiles,
     shine,
+    scheduled_monuments,
+    historic_archaeological,
 ]
 """A list of all defined datasets"""

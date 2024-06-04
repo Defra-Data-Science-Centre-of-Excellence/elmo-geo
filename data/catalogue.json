@@ -1,195 +1,204 @@
 [
     {
-        "name": "ons-country-2023_12",
-        "uri": "https://services1.arcgis.com/ESMARspQHYMw9BZ9/ArcGIS/rest/services/Countries_December_2023_Boundaries_UK_BFE/FeatureServer/0",
+        "name": "ons-country-2023_07_03",
         "columns": {
             "CTRY23NM": "country",
             "geometry": "geometry"
         },
         "tasks": {
-            "esri": "todo",
-            "convert": "todo",
+            "convert": "2024_05_14",
             "lookup_parcel": "todo"
-        }
+        },
+        "bronze": "/dbfs/mnt/base/unrestricted/source_ons_open_geography_portal/dataset_countries_bdy_uk_bfe/format_SHP_countries_bdy_uk_bfe/SNAPSHOT_2023_07_03_countries_bdy_uk_bfe/countries_bdy_uk_bfe.shp",
+        "silver": "/dbfs/mnt/lab/restricted/ELM-Project/silver/ons-country-2023_07_03.parquet"
     },
     {
-        "name": "ons-region-2023_12",
-        "uri": "https://services1.arcgis.com/ESMARspQHYMw9BZ9/ArcGIS/rest/services/Regions_December_2023_Boundaries_EN_BFC/FeatureServer/0",
+        "name": "ons-region-2023_07_03",
         "columns": {
             "RGN23NM": "region",
             "geometry": "geometry"
         },
         "tasks": {
-            "esri": "todo",
-            "convert": "todo",
+            "convert": "2024_05_14",
             "lookup_parcel": "todo"
-        }
+        },
+        "bronze": "/dbfs/mnt/base/unrestricted/source_ons_open_geography_portal/dataset_regions_bdy_en_bfe/format_SHP_regions_bdy_en_bfe/SNAPSHOT_2023_07_03_regions_bdy_en_bfe/regions_bdy_en_bfe.shp",
+        "silver": "/dbfs/mnt/lab/restricted/ELM-Project/silver/ons-region-2023_07_03.parquet"
     },
     {
-        "name": "ons-county-2023_12",
-        "uri": "https://services1.arcgis.com/ESMARspQHYMw9BZ9/ArcGIS/rest/services/Counties_and_Unitary_Authorities_December_2023_Boundaries_UK_BFC/FeatureServer/0",
+        "name": "ons-county-2023_07_03",
         "columns": {
             "CTYUA23NM": "county",
             "geometry": "geometry"
         },
         "tasks": {
-            "esri": "todo",
-            "convert": "todo",
+            "convert": "2024_05_14",
             "lookup_parcel": "todo"
-        }
+        },
+        "bronze": "/dbfs/mnt/base/unrestricted/source_ons_open_geography_portal/dataset_counties_uni_authorities_bdy_uk_bfe/format_SHP_counties_uni_authorities_bdy_uk_bfe/SNAPSHOT_2023_07_03_counties_uni_authorities_bdy_uk_bfe/counties_uni_authorities_bdy_uk_bfe.shp",
+        "silver": "/dbfs/mnt/lab/restricted/ELM-Project/silver/ons-county-2023_07_03.parquet"
     },
     {
-        "name": "ons-district-2023_12",
-        "uri": "https://services1.arcgis.com/ESMARspQHYMw9BZ9/ArcGIS/rest/services/Local_Authority_Districts_December_2023_Boundaries_UK_BFC/FeatureServer/0",
+        "name": "ons-district-2023_07_03",
         "columns": {
             "LAD23NM": "district",
             "geometry": "geometry"
         },
         "tasks": {
-            "esri": "todo",
-            "convert": "todo",
+            "convert": "2024_05_14",
             "lookup_parcel": "todo"
-        }
+        },
+        "bronze": "/dbfs/mnt/base/unrestricted/source_ons_open_geography_portal/dataset_local_authority_districts_bdy_uk_bfe/format_SHP_local_authority_districts_bdy_uk_bfe/SNAPSHOT_2023_07_03_local_authority_districts_bdy_uk_bfe/local_auth_dist_bdy_uk_bfe.shp",
+        "silver": "/dbfs/mnt/lab/restricted/ELM-Project/silver/ons-district-2023_07_03.parquet"
     },
     {
         "name": "ons-ward-2023_12",
-        "uri": "https://services1.arcgis.com/ESMARspQHYMw9BZ9/ArcGIS/rest/services/Wards_December_2023_Boundaries_UK_BFC/FeatureServer/0",
         "columns": {
             "WD23NM": "ward",
             "geometry": "geometry"
         },
         "tasks": {
-            "esri": "todo",
-            "convert": "todo",
+            "convert": "2024_05_14",
             "lookup_parcel": "todo"
-        }
+        },
+        "bronze": "/dbfs/mnt/base/unrestricted/source_ons_open_geography_portal/dataset_wards_bdy_uk_bfe/format_SHP_wards_bdy_uk_bfe/SNAPSHOT_2023_07_03_wards_bdy_uk_bfe/wards_bdy_uk_bfe.shp",
+        "silver": "/dbfs/mnt/lab/restricted/ELM-Project/silver/ons-ward-2023_12.parquet"
     },
     {
         "name": "defra-alc-2021_03_16",
-        "uri": "/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_provisional_agricultural_land_classification_alc/format_GEOJSON_provisional_agricultural_land_classification_alc/SNAPSHOT_2021_03_16_provisional_agricultural_land_classification_alc/Agricultural_Land_Classification_Provisional_England.json",
         "columns": {
             "ALC_GRADE": "alc",
             "geometry": "geometry"
         },
         "tasks": {
-            "convert": "todo",
+            "convert": "2024_05_14",
             "lookup_parcel": "todo"
-        }
+        },
+        "bronze": "/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_provisional_agricultural_land_classification_alc/format_GEOJSON_provisional_agricultural_land_classification_alc/SNAPSHOT_2021_03_16_provisional_agricultural_land_classification_alc/Agricultural_Land_Classification_Provisional_England.json",
+        "silver": "/dbfs/mnt/lab/restricted/ELM-Project/silver/defra-alc-2021_03_16.parquet"
     },
     {
         "name": "defra-national_park-2024_01_30",
-        "uri": "/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_national_parks/format_SHP_national_parks/SNAPSHOT_2024_01_30_national_parks/National_Parks_England.shp",
         "columns": {
             "name": "np_name",
             "geometry": "geometry"
         },
         "tasks": {
-            "convert": "todo",
+            "convert": "2024_05_14",
             "lookup_parcel": "todo"
-        }
+        },
+        "bronze": "/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_national_parks/format_SHP_national_parks/SNAPSHOT_2024_01_30_national_parks/National_Parks_England.shp",
+        "silver": "/dbfs/mnt/lab/restricted/ELM-Project/silver/defra-national_park-2024_01_30.parquet"
     },
     {
         "name": "defra-ramsar-2024_02_15",
-        "uri": "/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_ramsar/format_SHP_ramsar/SNAPSHOT_2024_02_15_ramsar/Ramsar_England.shp",
         "columns": {
             "NAME": "ramsar_name",
             "geometry": "geometry"
         },
         "tasks": {
-            "convert": "todo",
+            "convert": "2024_05_14",
             "lookup_parcel": "todo"
-        }
+        },
+        "bronze": "/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_ramsar/format_SHP_ramsar/SNAPSHOT_2024_02_15_ramsar/Ramsar_England.shp",
+        "silver": "/dbfs/mnt/lab/restricted/ELM-Project/silver/defra-ramsar-2024_02_15.parquet"
     },
     {
         "name": "defra-peaty_soils-2021_03_24",
-        "uri": "/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_peaty_soils/format_GPKG_peaty_soils/SNAPSHOT_2021_03_24_peaty_soils/refdata_owner.peaty_soils_location.gpkg",
         "columns": {
             "pclassdesc": "class",
-            "geometry": "geometry"
+            "geom": "geometry"
         },
         "tasks": {
-            "convert": "todo",
+            "convert": "2024_05_14",
             "lookup_parcel": "todo"
-        }
+        },
+        "bronze": "/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_peaty_soils/format_GPKG_peaty_soils/SNAPSHOT_2021_03_24_peaty_soils/refdata_owner.peaty_soils_location.gpkg",
+        "silver": "/dbfs/mnt/lab/restricted/ELM-Project/silver/defra-peaty_soils-2021_03_24.parquet"
     },
     {
         "name": "defra-national_character_areas-2023_05_12",
-        "uri": "/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_national_character_areas/format_SHP_national_character_areas/SNAPSHOT_2023_05_12_national_character_areas/National_Character_Areas___Natural_England.shp",
         "columns": {
             "NCA_Name": "nca_name",
             "geometry": "geometry"
         },
         "tasks": {
-            "convert": "todo",
+            "convert": "2024_05_14",
             "lookup_parcel": "todo"
-        }
+        },
+        "bronze": "/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_national_character_areas/format_SHP_national_character_areas/SNAPSHOT_2023_05_12_national_character_areas/National_Character_Areas___Natural_England.shp",
+        "silver": "/dbfs/mnt/lab/restricted/ELM-Project/silver/defra-national_character_areas-2023_05_12.parquet"
     },
     {
         "name": "defra-sssi_units-2024_03_07",
-        "uri": "/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_sites_of_special_scientific_interest_units/format_SHP_sites_of_special_scientific_interest_units/SNAPSHOT_2024_03_07_sites_of_special_scientific_interest_units/Sites_of_Special_Scientific_Interest_Units_England.shp",
         "columns": {
             "sssi_name": "sssi_name",
             "status": "sssi_status",
             "geometry": "geometry"
         },
         "tasks": {
-            "convert": "todo",
+            "convert": "2024_05_14",
             "lookup_parcel": "todo"
-        }
+        },
+        "bronze": "/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_sites_of_special_scientific_interest_units/format_SHP_sites_of_special_scientific_interest_units/SNAPSHOT_2024_03_07_sites_of_special_scientific_interest_units/Sites_of_Special_Scientific_Interest_Units_England.shp",
+        "silver": "/dbfs/mnt/lab/restricted/ELM-Project/silver/defra-sssi_units-2024_03_07.parquet"
     },
     {
         "name": "defra-national_landscapes-2023_02_14",
-        "uri": "/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_areas_of_outstanding_natural_beauty/format_SHP_areas_of_outstanding_natural_beauty/SNAPSHOT_2023_02_14_areas_of_outstanding_natural_beauty/Areas_of_Outstanding_Natural_Beauty_England.shp",
         "columns": {
             "name": "aonb_name",
             "geometry": "geometry"
         },
         "tasks": {
-            "convert": "todo",
+            "convert": "2024_05_14",
             "lookup_parcel": "todo"
-        }
+        },
+        "bronze": "/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_areas_of_outstanding_natural_beauty/format_SHP_areas_of_outstanding_natural_beauty/SNAPSHOT_2023_02_14_areas_of_outstanding_natural_beauty/Areas_of_Outstanding_Natural_Beauty_England.shp",
+        "silver": "/dbfs/mnt/lab/restricted/ELM-Project/silver/defra-national_landscapes-2023_02_14.parquet"
     },
     {
         "name": "rpa-moorline-2023_10_05",
-        "uri": "/dbfs/mnt/base/unrestricted/source_rpa_spatial_data_mart/dataset_lfa_and_moorland_line/format_GPKG_lfa_and_moorland_line/SNAPSHOT_2023_10_05_lfa_and_moorland_line/lfa.gpkg",
         "columns": {
             "name": "moorline_name",
-            "geometry": "geometry"
+            "geom": "geometry"
         },
         "tasks": {
-            "convert": "todo",
+            "convert": "2024_05_14",
             "lookup_parcel": "todo"
-        }
+        },
+        "bronze": "/dbfs/mnt/base/unrestricted/source_rpa_spatial_data_mart/dataset_lfa_and_moorland_line/format_GPKG_lfa_and_moorland_line/SNAPSHOT_2023_10_05_lfa_and_moorland_line/lfa.gpkg",
+        "silver": "/dbfs/mnt/lab/restricted/ELM-Project/silver/rpa-moorline-2023_10_05.parquet"
     },
     {
         "name": "rpa-common_land_amalgamation-2023_06_03",
-        "uri": "/dbfs/mnt/base/unrestricted/source_rpa_spatial_data_mart/dataset_common_land_amalgamation/format_GPKG_common_land_amalgamation/SNAPSHOT_2023_06_03_common_land_amalgamation/refdata_owner.common_land_amalgamation.zip/refdata_owner.common_land_amalgamation/refdata_owner.common_land_amalgamation.gpkg",
         "columns": {
             "cl_number": "common_number",
             "name": "common_name",
-            "geometry": "geometry"
+            "geom": "geometry"
         },
         "tasks": {
-            "convert": "todo",
+            "convert": "2024_05_14",
             "lookup_parcel": "todo"
-        }
+        },
+        "bronze": "/dbfs/mnt/base/unrestricted/source_rpa_spatial_data_mart/dataset_common_land_amalgamation/format_GPKG_common_land_amalgamation/SNAPSHOT_2023_06_03_common_land_amalgamation/refdata_owner.common_land_amalgamation.zip/refdata_owner.common_land_amalgamation/refdata_owner.common_land_amalgamation.gpkg",
+        "silver": "/dbfs/mnt/lab/restricted/ELM-Project/silver/rpa-common_land_amalgamation-2023_06_03.parquet"
     },
     {
         "name": "rpa-common_land-2023_10_05",
-        "uri": "/dbfs/mnt/base/unrestricted/source_rpa_spatial_data_mart/dataset_registered_common_land_bps_layer/format_GPKG_registered_common_land_bps_layer/SNAPSHOT_2023_10_05_registered_common_land_bps_layer/rcl.gpkg",
         "columns": {
             "cl_number": "common_number",
             "name": "common_name",
-            "geometry": "geometry"
+            "geom": "geometry"
         },
         "tasks": {
-            "convert": "todo",
+            "convert": "2024_05_14",
             "lookup_parcel": "todo"
-        }
+        },
+        "bronze": "/dbfs/mnt/base/unrestricted/source_rpa_spatial_data_mart/dataset_registered_common_land_bps_layer/format_GPKG_registered_common_land_bps_layer/SNAPSHOT_2023_10_05_registered_common_land_bps_layer/rcl.gpkg",
+        "silver": "/dbfs/mnt/lab/restricted/ELM-Project/silver/rpa-common_land-2023_10_05.parquet"
     },
     {
         "name": "defra-flood_risk_areas-2023_02_14",
-        "uri": "/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_flood_risk_areas/format_SHP_flood_risk_areas/SNAPSHOT_2023_02_14_flood_risk_areas/Flood_Risk_Areas.shp",
         "columns": {
             "flood_sour": "flood_sour",
             "fra_name": "fra_name",
@@ -197,12 +206,40 @@
             "geometry": "geometry"
         },
         "tasks": {
-            "convert": "todo"
-        }
+            "convert": "2024_05_14"
+        },
+        "bronze": "/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_flood_risk_areas/format_SHP_flood_risk_areas/SNAPSHOT_2023_02_14_flood_risk_areas/Flood_Risk_Areas.shp",
+        "silver": "/dbfs/mnt/lab/restricted/ELM-Project/silver/defra-flood_risk_areas-2023_02_14.parquet"
+    },
+    {
+        "name": "osm-united_kingdom-2024_04_25",
+        "columns": {},
+        "tasks": {
+            "convert": "2024_05_14"
+        },
+        "bronze": "/dbfs/mnt/base/unrestricted/source_openstreetmap/dataset_united_kingdom/format_PBF_united_kingdom/SNAPSHOT_2024_04_25_united_kingdom/united-kingdom-latest.osm.pbf",
+        "silver": "/dbfs/mnt/lab/restricted/ELM-Project/silver/osm-united_kingdom-2024_04_25.parquet"
+    },
+    {
+        "name": "os-wtr_fts-2023_12_16",
+        "bronze": "/dbfs/mnt/base/restricted/source_ordnance_survey_data_hub/dataset_ngd_water_features/format_GPKG_ngd_water_features/SNAPSHOT_2023_12_16_ngd_water_features",
+        "columns": {},
+        "tasks": {
+            "convert": "2024_05_14"
+        },
+        "silver": "/dbfs/mnt/lab/restricted/ELM-Project/silver/os-wtr_fts-2023_12_16.parquet"
+    },
+    {
+        "name": "os-wtr_ntwk-2023_12_16",
+        "bronze": "/dbfs/mnt/base/restricted/source_ordnance_survey_data_hub/dataset_ngd_water_network/format_GPKG_ngd_water_network/SNAPSHOT_2023_12_16_ngd_water_network",
+        "columns": {},
+        "tasks": {
+            "convert": "2024_05_14"
+        },
+        "silver": "/dbfs/mnt/lab/restricted/ELM-Project/silver/os-wtr_ntwk-2023_12_16.parquet"
     },
     {
         "name": "ewco-priority_habitat_network-2022_10_06",
-        "uri": "/dbfs/mnt/lab/unrestricted/elm_data/ewco/priority_habitat_network/2022_10_06/EWCO_Biodiversity___Priority_Habitat_Network.shp",
         "columns": {
             "csht_pnts": "csht_pnts",
             "cswcm_pnts": "cswcm_pnts",
@@ -211,69 +248,75 @@
             "geometry": "geometry"
         },
         "tasks": {
-            "convert": "todo",
+            "convert": "2024_05_14",
             "lookup_knn_parcel": "todo"
-        }
+        },
+        "bronze": "/dbfs/mnt/lab/unrestricted/elm_data/ewco/priority_habitat_network/2022_10_06/EWCO_Biodiversity___Priority_Habitat_Network.shp",
+        "silver": "/dbfs/mnt/lab/restricted/ELM-Project/silver/ewco-priority_habitat_network-2022_10_06.parquet"
     },
     {
         "name": "ewco-nfc_social-2022_03_14",
-        "uri": "/dbfs/mnt/lab/unrestricted/elm_data/ewco/nfc_social/2022_03_14/EWCO___NfC_Social.shp",
         "columns": {
             "status": "status",
             "geometry": "geometry"
         },
         "tasks": {
-            "convert": "todo"
-        }
+            "convert": "2024_05_14"
+        },
+        "bronze": "/dbfs/mnt/lab/unrestricted/elm_data/ewco/nfc_social/2022_03_14/EWCO___NfC_Social.shp",
+        "silver": "/dbfs/mnt/lab/restricted/ELM-Project/silver/ewco-nfc_social-2022_03_14.parquet"
     },
     {
         "name": "ewco-water_quality-2023_02_27",
-        "uri": "/dbfs/mnt/lab/unrestricted/elm_data/ewco/water_quality/2023_02_27/EWCO__E2_80_93_Water_Quality.shp",
         "columns": {
             "cat": "cat",
             "geometry": "geometry"
         },
         "tasks": {
-            "convert": "todo"
-        }
+            "convert": "2024_05_14"
+        },
+        "bronze": "/dbfs/mnt/lab/unrestricted/elm_data/ewco/water_quality/2023_02_27/EWCO__E2_80_93_Water_Quality.shp",
+        "silver": "/dbfs/mnt/lab/restricted/ELM-Project/silver/ewco-water_quality-2023_02_27.parquet"
     },
     {
         "name": "ewco-flood_risk_management-2023_02_24",
-        "uri": "/dbfs/mnt/lab/unrestricted/elm_data/ewco/flood_risk_management/2023_02_24/EWCO___Flood_Risk_Management.shp",
         "columns": {
             "LANDSCAPE": "landscape",
             "geometry": "geometry"
         },
         "tasks": {
-            "convert": "todo"
-        }
+            "convert": "2024_05_14"
+        },
+        "bronze": "/dbfs/mnt/lab/unrestricted/elm_data/ewco/flood_risk_management/2023_02_24/EWCO___Flood_Risk_Management.shp",
+        "silver": "/dbfs/mnt/lab/restricted/ELM-Project/silver/ewco-flood_risk_management-2023_02_24.parquet"
     },
     {
         "name": "ewco-keeping_rivers_cool_riparian_buffers-2023_03_03",
-        "uri": "/dbfs/mnt/lab/unrestricted/elm_data/ewco/keeping_rivers_cool_riparian_buffers/2023_03_03/EWCO___Keeping_Rivers_Cool_Riparian_Buffers.shp",
         "columns": {
             "OBJECTID": "OBJECTID",
             "geometry": "geometry"
         },
         "tasks": {
-            "convert": "todo"
-        }
+            "convert": "2024_05_14"
+        },
+        "bronze": "/dbfs/mnt/lab/unrestricted/elm_data/ewco/keeping_rivers_cool_riparian_buffers/2023_03_03/EWCO___Keeping_Rivers_Cool_Riparian_Buffers.shp",
+        "silver": "/dbfs/mnt/lab/restricted/ELM-Project/silver/ewco-keeping_rivers_cool_riparian_buffers-2023_03_03.parquet"
     },
     {
         "name": "ewco-nfc_ammonia_emmissions-2022_03_14",
-        "uri": "/dbfs/mnt/lab/unrestricted/elm_data/ewco/nfc_ammonia_emmissions/2022_03_14/EWCO___NfC_Ammonia_Emissions_Capture_for_SSSI_Protection.shp",
         "columns": {
             "status": "status",
             "pnts": "pnts",
             "geometry": "geometry"
         },
         "tasks": {
-            "convert": "todo"
-        }
+            "convert": "2024_05_14"
+        },
+        "bronze": "/dbfs/mnt/lab/unrestricted/elm_data/ewco/nfc_ammonia_emmissions/2022_03_14/EWCO___NfC_Ammonia_Emissions_Capture_for_SSSI_Protection.shp",
+        "silver": "/dbfs/mnt/lab/restricted/ELM-Project/silver/ewco-nfc_ammonia_emmissions-2022_03_14.parquet"
     },
     {
         "name": "ewco-red_squirrel-2022_10_18",
-        "uri": "/dbfs/mnt/lab/unrestricted/elm_data/ewco/red_squirrel/2022_10_18/EWCO_Biodiversity___Priority_Species___Red_Squirrel___Woodland_Creation.shp",
         "columns": {
             "status": "status",
             "cswcm_pnts": "cswcm_pnts",
@@ -283,43 +326,25 @@
             "geometry": "geometry"
         },
         "tasks": {
-            "convert": "todo"
-        }
-    },
-    {
-        "name": "os-ngd-2024_03_01",
-        "uri": "https://api.os.uk/downloads/v1/dataPackages/4143/versions/26940?key=WxgUdETn6cy58WZkfwZ7wdMVLlt5eDsX",
-        "product_id": 4143,
-        "version_id": 26940,
-        "columns": {},
-        "tasks": {
-            "os": "todo",
-            "convert": "todo"
-        }
-    },
-    {
-        "name": "osm-uk-2024",
-        "uri": "https://download.geofabrik.de/europe/united-kingdom-latest.osm.pbf",
-        "tasks": {
-            "osm_pbf": "todo",
-            "convert": "todo"
-        }
+            "convert": "2024_05_14"
+        },
+        "bronze": "/dbfs/mnt/lab/unrestricted/elm_data/ewco/red_squirrel/2022_10_18/EWCO_Biodiversity___Priority_Species___Red_Squirrel___Woodland_Creation.shp",
+        "silver": "/dbfs/mnt/lab/restricted/ELM-Project/silver/ewco-red_squirrel-2022_10_18.parquet"
     },
     {
         "name": "sentinel-tiles-2023_02_07",
-        "uri": "/dbfs/mnt/lab/unrestricted/elm/elmo/baresoil/tiles.parquet",
         "columns": {
             "Name": "tile",
             "geometry": "geometry"
         },
         "tasks": {
-            "eods": "todo",
-            "convert": "todo"
-        }
+            "convert": "2024_05_14"
+        },
+        "bronze": "/dbfs/mnt/lab/unrestricted/elm/elmo/baresoil/tiles.parquet",
+        "silver": "/dbfs/mnt/lab/restricted/ELM-Project/silver/sentinel-tiles-2023_02_07.parquet"
     },
     {
         "name": "he-shine-2022_12_30",
-        "uri": "/dbfs/mnt/lab/restricted/ELM-Project/stg/he-shine-2022_12_30.parquet",
         "columns": {
             "Name": "tile",
             "shine_uid": "shine_uid",
@@ -331,6 +356,74 @@
             "priority": "priority",
             "geom": "geometry"
         },
-        "tasks": {}
+        "tasks": {
+            "convert": "2024_05_14"
+        },
+        "link": "https://defra.sharepoint.com/teams/Team1645/Restricted_ELM_RPA_data_sharing/",
+        "bronze": "/dbfs/mnt/lab/restricted/ELM-Project/bronze/he-shine-2022_12_30.parquet",
+        "silver": "/dbfs/mnt/lab/restricted/ELM-Project/silver/he-shine-2022_12_30.parquet"
+    },
+    {
+        "name": "defra-priority_habitat_inventory-2024_03_06",
+        "columns": {
+            "mainhabs": "Main_Habit",
+            "primsource": "Source1",
+            "geometry": "geometry"
+        },
+        "tasks": {
+            "convert": "2024_05_16"
+        },
+        "bronze": "/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_priority_habitats_inventory_eng/format_GEOPARQUET_priority_habitats_inventory_eng/SNAPSHOT_2024_03_06_priority_habitats_inventory_eng/",
+        "silver": "/dbfs/mnt/lab/restricted/ELM-Project/silver/defra-priority_habitat_inventory-2024_03_06.parquet"
+    },
+    {
+        "name": "living_england-habitat_map-2022_10_20",
+        "columns": {
+            "A_pred": "A_pred",
+            "A_prob": "A_prob",
+            "B_pred": "B_pred",
+            "B_prob": "B_prob",
+            "geometry": "geometry"
+        },
+        "tasks": {
+            "convert": "2024_05_16"
+        },
+        "bronze": "/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_living_england_habitat_map_phase_4/format_GEOPARQUET_living_england_habitat_map_phase_4/SNAPSHOT_2022_10_20_living_england_habitat_map_phase_4",
+        "silver": "/dbfs/mnt/lab/restricted/ELM-Project/silver/living_england-habitat_map-2022_10_20.parquet"
+    },
+    {
+        "name": "rpa-parcel-adas",
+        "columns": {
+            "RLR_RW_REFERENCE_PARCELS_DEC_21_LPIS_REF": "id_parcel",
+            "Shape": "geometry"
+        },
+        "tasks": {
+            "convert": "2024_05_15"
+        },
+        "note": "rpa-parcel-adas is the dataset used by EVAST (UKCEH), it is similar to WFM but not identical (noted 2024-05-15).  Access from UKCEH SharePoint (Defra Restricted Area).",
+        "link": "https://cehacuk.sharepoint.com/sites/EVAST/DEFRA%20Data%20Share/",
+        "bronze": "/dbfs/mnt/lab/restricted/ELM-Project/bronze/rpa-parcel-adas.parquet",
+        "silver": "/dbfs/mnt/lab/restricted/ELM-Project/silver/rpa-parcel-adas.parquet"
+    },
+    {
+        "name": "rpa-hedge-adas",
+        "columns": {
+            "geom": "geometry"
+        },
+        "tasks": {
+            "convert": "2024_05_15"
+        },
+        "note": "rpa-hedge-adas is RPA's control layer for hedgerows at a similar time as rpa-parcel-adas (Nov 2021).  Access from Defra SharePoint (ELM-RPA Restricted area).",
+        "link": "https://defra.sharepoint.com/teams/Team1645/Restricted_ELM_RPA_data_sharing/",
+        "bronze": "/dbfs/mnt/lab/restricted/ELM-Project/bronze/rpa-hedge-adas.parquet",
+        "silver": "/dbfs/mnt/lab/restricted/ELM-Project/silver/rpa-hedge-adas.parquet"
+    },
+    {
+        "name": "elmo_geo-water-2024_05_22",
+        "tasks": {
+            "lookup_parcel": "todo"
+        },
+        "distance": 24,
+        "silver": "/dbfs/mnt/lab/restricted/ELM-Project/silver/elmo_geo-water-2024_05_22.parquet"
     }
 ]

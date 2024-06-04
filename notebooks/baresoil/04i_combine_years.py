@@ -13,6 +13,11 @@
 
 # COMMAND ----------
 
+import matplotlib.pyplot as plt
+import pandas as pd
+import seaborn as sns
+from matplotlib.ticker import PercentFormatter
+
 from elmo_geo import LOG
 from elmo_geo.io import download_link
 from elmo_geo.rs.sentinel import sentinel_years
@@ -89,10 +94,7 @@ displayHTML(download_link(spark, path_csv))
 # COMMAND ----------
 
 # plot the bare soil distributions over time
-import matplotlib.pyplot as plt
-import seaborn as sns
-from matplotlib.ticker import PercentFormatter
-import pandas as pd
+
 
 df = pd.read_parquet(f"/dbfs{path_out}.parquet").drop(columns=["id_parcel", "tile"])
 sns.set_theme(context="talk", style="white")

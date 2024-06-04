@@ -1,82 +1,18 @@
 # Databricks notebook source
-# MAGIC %md
-# MAGIC # Hedgerows
-# MAGIC This notebooks defines the hedgerow lengths and buffer areas to be added to the ELM population simulation.
-# MAGIC Here I join hedgerows to parcels and businesses, clip to bounds, and calculate the length, and buffers.
-# MAGIC
-# MAGIC EFA Hedge attaches the original OS data to parcels, but splits boundary hedges to each parcel, recording the as **adjacent**.
-# MAGIC This means adjacent parcels are double counted.
-# MAGIC I adjust for this as effectively half the hedgerow length.
-# MAGIC
-# MAGIC Buffers are calculated for each hedgerow at [4, 6, 8, 10, 12] meters and clipped to the parcel, and unclipped buffer is also provided for the largest buffer.
-# MAGIC
-# MAGIC
-# MAGIC ### Data
-# MAGIC - ELM Parcels `dbfs:/mnt/lab/unrestricted/elm/buffer_strips/parcels.parquet`
-# MAGIC - EFA Hedge `dbfs:/mnt/lab/unrestricted/elm_data/rpa/efa_control/2023_02_07.parquet`
-# MAGIC - OSM Hedgerows `dbfs:/mnt/lab/unrestricted/elm_data/osm/hedgerows.parquet`
-# MAGIC - **Output:** ELM Hedgerows `dbfs:/mnt/lab/unrestricted/elm/buffer_strips/hedgerows.parquet`
-# MAGIC
-# MAGIC
-# MAGIC ### Table
-# MAGIC > |      | Total Length (m) | Explanation
-# MAGIC > | :--- | ---------------: | :---
-# MAGIC > | 1984 |      572,670,000 | Managed hedgerow in 1984, [EIP 2023](https://assets.publishing.service.gov.uk/government/uploads/system/uploads/attachment_data/file/1133967/environmental-improvement-plan-2023.pdf)
-# MAGIC > | 2007 |      477,000,000 | Managed hedgerows in 2007, [CS 2007](https://www.ceh.ac.uk/sites/default/files/Countryside%20Survey%202007%20UK%20Headline%20Messages_Part2.pdf) *in Great Britain*
-# MAGIC > | EFA  |      640,341,286 | EFA hedgerows
-# MAGIC > | Adj  |  **419,882,012** | EFA hedgerows adjusted for adjacent hedges
-# MAGIC > | Elg  |      220,459,274 | EFA hedgerows adjusted for both adjacency and EFA eligibility
-# MAGIC > | OSM  |      102,408,028 | OSM hedgerows
-# MAGIC > | OSMp |       73,510,661 | OSM hedgerows within parcels
-# MAGIC > | 110% |      630,000,000 | A target of 110% of managed hedgerow in 1984 by 2050
-# MAGIC > |  +75 |      494,000,000 | A target of +75e6m of hedgerow, defined using Adj, by 2050
-# MAGIC > |  +45 |      464,000,000 | A intermediate target of +45e6m of hedgerow by 2037
-# MAGIC >
-# MAGIC > Table of Hedgerow datasets and their total lengths.  (for England except "2007")
-# MAGIC
-# MAGIC ##### EFA Adjacency
-# MAGIC "Adj" is the most appropriate measurement for total amount of hedgerow in England.
-# MAGIC This data is sourced from RPA's EFA Hedge, which is derived from OS data, along with some additions from ES.
-# MAGIC The alternative source OSM has much less data, and doesn't require further consideration.
-# MAGIC
-# MAGIC ##### EFA Eligibility
-# MAGIC The sources do not come with a managed status for the hedgerows, and such we cannot tell whether or not they are relict.
-# MAGIC EFA eligibility is not a good analogous, as it was determined from length and adjacent arable land cover.
-# MAGIC However EFA calculations for BPS stopped in 2018.
-# MAGIC
-# MAGIC ##### Targets
-# MAGIC > |      | Target      | Year | Increase | Annual Increase |
-# MAGIC > | ---: | ----------: | ---: | -------: | --------------: |
-# MAGIC > |  Adj | 419,882,012 | 2022 |          |                 |
-# MAGIC > | 110% | 630,000,000 | 2050 |    50.0% |            1.8% |
-# MAGIC > |  +75 | 494,000,000 | 2050 |    17.9% |            0.6% |
-# MAGIC > |  +45 | 464,000,000 | 2037 |    10.7% |            0.7% |
-# MAGIC >
-# MAGIC > Table of Targets for Hedgerow increases
-# MAGIC
-# MAGIC
-# MAGIC ##### Managed Hedgerow
-# MAGIC The managed status of all datasets' hedgerows is uncertain.
-# MAGIC
-# MAGIC > ![Relict Hedgerow](https://www.teagasc.ie/media/website/news/daily/environment-photos/Relict-Hedgerows---too-valuable-for-rejuvenation.jpg)
-# MAGIC >
-# MAGIC > [Teagasc on hedgerows](https://www.teagasc.ie/news--events/daily/environment/hedges-for-rejuvenation.php)
-
-# COMMAND ----------
-
 # MAGIC %pip install -qU contextily git+https://github.com/aw-west-defra/cdap_geo.git
 
 # COMMAND ----------
 
+import contextily as ctx
+import geopandas as gpd
 import matplotlib.pyplot as plt
-from pyspark.sql import functions as F
-from sedona.register import SedonaRegistrator
-
-SedonaRegistrator.registerAll(spark)
-
 import shapely
 from cdap_geo.sedona import st_fromwkb, st_join, st_valid
+from pyspark.sql import functions as F
+from sedona.register import SedonaRegistrator
 from sedona.sql.types import GeometryType
+
+SedonaRegistrator.registerAll(spark)
 
 
 def st_buffer_udf(g, res, **kwargs):
@@ -235,10 +171,6 @@ display(
 # MAGIC %md ## Plot
 
 # COMMAND ----------
-
-import contextily as ctx
-import geopandas as gpd
-import matplotlib.pyplot as plt
 
 
 def add_basemap(ax=None, basemap="Light", crs=27700, key="WxgUdETn6cy58WZkfwZ7wdMVLlt5eDsX", **kwargs):

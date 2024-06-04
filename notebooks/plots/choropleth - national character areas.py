@@ -7,7 +7,8 @@
 # MAGIC
 # MAGIC **Date:** 03/04/2024
 # MAGIC
-# MAGIC This notebook produces a choropleth plot from a processed dataset - a dataset which has values linked to parcel IDs. The chosen numeric variable of the processed dataset is aggregated to National Charater Area polygons, which are used to plot the variable at national scale.
+# MAGIC This notebook produces a choropleth plot from a processed dataset - a dataset which has values linked to parcel IDs. The chosen numeric variable of the
+# MAGIC processed dataset is aggregated to National Charater Area polygons, which are used to plot the variable at national scale.
 # MAGIC
 # MAGIC Parcel IDs are used to link the chosen datasets with the NCA polygons. Therefore, the input dataset must contain an 'id_parcel' field.
 # MAGIC
@@ -21,7 +22,8 @@
 # MAGIC 1. The plot variable is aggregated to give a single value per parcel. It is aggregated by summing values for each parcel id.
 # MAGIC 2. Then the plot variable is aggregated to National Character Areas (NCAs) by calculating the mean across all parcels within each NCA
 # MAGIC
-# MAGIC The defaults for this notebook produce a choropleth plot of the proportion of parcels intersected by SHINE geometries (non-designated historic features).
+# MAGIC The defaults for this notebook produce a choropleth plot of the proportion of parcels intersected by SHINE geometries
+# MAGIC (non-designated historic features).
 
 # COMMAND ----------
 
@@ -30,22 +32,13 @@
 
 # COMMAND ----------
 
-import geopandas as gpd
-import mapclassify
-import seaborn as sns
-import matplotlib.pyplot as plt
-from matplotlib.ticker import PercentFormatter, FuncFormatter
-import numpy as np
 
-import os
 import geopandas as gpd
-from functools import partial
 from pyspark.sql import functions as F
 from pyspark.sql.types import DecimalType, DoubleType, FloatType, IntegerType, LongType
 
-from elmo_geo import LOG, register
+from elmo_geo import register
 from elmo_geo.datasets.datasets import datasets, parcels
-from elmo_geo.st import sjoin
 from elmo_geo.plot.plotting import plot_choropleth_with_head_and_tail_bars
 
 register()

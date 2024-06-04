@@ -1,123 +1,141 @@
-# ELM SE
-Environmental Land Management (ELM) Spatial Eligibility (SE) parcel level data creation.
-This project aims to add geospatial data to the information known about parcel to feed into ELM's population model.
+# This is a work in progress and does not reflect the current state of code.
+|   |   |
+|---|---|
+| **Authors** | Andrew West, Obi Thompson Sargoni, [elmo-geo](https://github.com/Defra-Data-Science-Centre-of-Excellence/elmo-geo) |
+| **Updated** | 2024-04-18 |
+| **Objective** | Determine parcel boundary uses |
 
-### To Do
-- move notebooks across
-- create and link notebooks (I think each notebook can be a tree that links to more analysis)
-- continue with all known relevent datasets
-- add source data links
-- bng index function
+# Boundary Use
+This project produces multiple datasets that detail what features intersect parcel boundaries. This information can be used to inform option edibility. Relevant ELM Options are those that include the management (potentially with a buffer strip) or creation of boundaries.
 
+## Methodology
+1. [Segment](../segment.py): first the boundaries of parcels are split into segments, each with an id_boundary, which can be used to identify which combination of features overlap it.
+2. [Sylvan](../sylvan/readme.md): next boundary segments are assigned woody feature classifications, be that hedgerow, woodland, or relict hedges.  This uses the prioritisation method.  If it's hedgerow the boundary segment is not woodland or relict hedge (hedge>wood>relict).
+3. [Boundary Use](boundary_use.py): All boundary segments are assigned to each additional feature; [adjacency](adjacency.py), sylvan, [water](water.py), [wall](wall.py), and [hefer](hefer.py).
+    1. Feature geometries are buffered 12m to attach to nearby segments.  Linear features are considered 2m wide for cross compliance.
+    2. If the proportion of the segment inside the (buffered) feature type is above a threshold, then it is "assigned" that feature type.
+    3. A segment can be used by multiple feature types, otherwise it's considered "available".  This means it's suitable for options like hedgerow creation. As part of assessing adjacency we differentiate between parcels managed by the same or different farm business.
 
-### Source Data
+## Data
+These following datasets are used as part of this project.
 | Category | Dataset | Link | Description |
 |---|---|---|---|
-| Parcel | RPA, Reference Parcels | ... | ... (include origin e.g. `dbfs:/base/rpa/parcel/version.gpkg`) |
-| Hedgerow | RPA, EFA Control Layer (hedges) | ... | ... |
+| Segment | [elmo_geo-business_info](../business_info.py) |
+| Segment | [elmo_geo-segment](../segment.py) |
+| Sylvan | [elmo_geo-sylvan](../sylvan/readme.md) |
+| Water | OS, NGD | ... | ... |
+| Wall | OSM, Heritage Wall | ... | ... |
+| HEFER | RPA, HEFER | ... | ... |
+
+## Output
+These following outputs are created from this project.
+Note: [class] = hedgerow, woodland, relict_hedge, waterway, waterbody, ditch, wall, hefer
+
+### elmo_geo-boundary_use  
+This dataset describes the assignment of features to each boundary segment.
+
+Schema: `id_business:int, id_parcel:str, id_boundary:int, m:float, is_[class]:bool`
+
+### elmo_geo-buffer_strips
+This dataset merges the boundary segments, and describes the area of buffer strips in a parcel.  It removed over estimation  by calculating unary union of buffered boundaries.
+
+Schema: `id_business:int, id_parcel:str, m_[class], ha_[class]_buf[2,4,8,12]`
+
+### Intermediate Outputs
+_Some of these tables will be displayed here, some will become schemas, some removed_
+
+> Table 1 - Parcel Adjacency. Outpath - 'sf_adj'  
+> This table is produced by performing a distance base spatial join between the parcels dataset and itself, with a 12m distance threshold. This provides a lookup from each parcel to its nearby parcels.
+> |id_parcel|id_business|id_parcel_adj|id_business_adj|
+> |---|---|---|---|
+> |   |   |   |   |
+
+> Table 2 - Neighbouring Land Use. Outpath - 'sf_neighbour'  
+> This table has the nearby geometries for each parcel.  These are geometries joined to parcels with a distance of 12m, they are unioned according to their land use.
+> |id_parcel |    geometry_boundary | geometry_adj_diff_bus|  geometry_adj_same_bus|  geometry_water| geometry_ditch| geometry_wall|  geometry_hedge|
+> |---|---|---|---|---|---|---|--|
+> |   |   |   |   |   |   |   |  |
+
+> Table 3 - Boundary Section Use. Outpath - 'sf_boundary'  
+> This table is the output from the boundary splitting methods. Each row is a section of the parcel boundary with boolean tags indicating which features this section intersects. elg_adj_diff_bus and elg_adj_same_bus differentiate between sections that boarder parcels belonging to the same business or not.
+> |id_parcel| geometry_boundary|  elg_adj_diff_bus    |elg_adj_same_bus   |elg_water| elg_ditch|  elg_wall|   elg_hedge|
+> |---|---|---|---|---|---|---|---|
+> |   |   |   |   |   |   |   |   |
+
+> Table 4 - Uptake. Outpath - 'sf_update'  
+> This table is the Table 3 with additional parcel level classifications joined in. These classifications indicate whether a parcel has joined a woodland scheme (from EVAST data) or is in a wetland or peat area. It also calculates the total area and boundary length of the parcel.
+> |id_business|   id_parcel|  farm_type|  priority_habitat|   elg_adj_diff_bus|   elg_adj_same_bus|   elg_water|  elg_ditch   |elg_wall|  elg_hedge   |woodland   |peatland|  wetland|    ha| m|
+> |---|---|---|---|---|---|---|---|--|--|--|--|--|--|--|
+> |   |   |   |   |   |   |   |   |  |  |  |  |  |  |  |
+
+
+### Final Outputs
+
+> Table 5 - Boundary Lengths. Outpath - 'sf_boundary_lengths'  
+> This table sums the length of sections of parcel boundaries to produce total lengths of boundary sections per parcel. These lengths are used to inform parcel eligibility for ELMS actions.
+> |id_parcel|m_boundary_unadj|m_boundary |m_water|   m_ditch|    m_wall| m_hedge|    m_available|m_available_same_business|  m_hedge_only|   m_hedge_on_ewco|    m_ditch_on_peatland|
+> |---|---|---|---|---|---|---|---|---|---|---|---|
+> |   |   |   |   |   |   |   |   |   |   |   |   |
+
+> Table 6 - Total Feature Lengths.
+> This table sums the lengths of source dataset features if they are linear geometries.  Polygons will not be considered.
+> |class|m_england|m_inside_parcels|m_segments|
+> |---|---|---|---|
+> |hedgerow|   |   |   |
+> |woodland|   |   |   |
+> |relict hedgerow|   |   |   |
+> |waterway|   |   |   |
+> |waterbody|n/a|n/a|n/a|
+> |ditch|   |   |   |
+> |wall|   |   |   |
+> |hefer|   |   |   |
+> |available|   |   |   |
+
+
+
+[references]: .
+[townsend_water_buffer]: https://townsendcharteredsurveyors.co.uk/sustainable-farming-incentive-pilot-starting-2021-water-body-buffering-standard/
+[hedgelink]: https://hedgelink.org.uk/
+[Countryside Survey pt1]: https://www.ceh.ac.uk/sites/default/files/Countryside%20Survey%202007%20UK%20Headline%20Messages_Part1.pdf
+[Countryside Survey pt2]: https://www.ceh.ac.uk/sites/default/files/Countryside%20Survey%202007%20UK%20Headline%20Messages_Part2.pdf
+[Environmental Improvement Plan pg44-4]: https://assets.publishing.service.gov.uk/government/uploads/system/uploads/attachment_data/file/1133967/environmental-improvement-plan-2023.pdf
+
+<!--
+# TODO
+- Add adjacency
+- Consider splitting up the boundary for each land use
+- Consider recording if the boundary is adjacent to another (and such land use will be shared)
+- Woodland Uptake, EVAST
+- Priority Habitats, linked to parcels by 'process_dataset' notebook
+- Peatland, linked to parcels by 'process_dataset' notebook
+- Wetland, linked to parcels by 'process_dataset' notebook
+- Urban
+
+# Segment Data
+| Category | Dataset | Link | Description |
+|---|---|---|---|
+| Boundary | RPA, Reference Parcels | ... | ... |
+| Boundary | RPA, Land Cover | ... | ... |
+
+# Sylvan Data
+| Category | Dataset | Link | Description |
+|---|---|---|---|
+| Hedgerow | RPA, EFA Control Layer (Hedges) | ... | ... |
 | Hedgerow | OSM, Hedgerows | ... | ... |
 | Hedgerow, Woodland | EA, LiDAR VOM | ... | ... |
 | Hedgerow, Woodland | FR, Trees Outside Woodland | ... | trees canopy and crown, linear/group/single | 
 | Waterbody, Woodland | OS, NGD | ... | [https://osdatahub.os.uk/downloads/packages/2010]()
-| Heritage Wall | OSM, Heritage Wall |
-| Country | ONS, Country |
-| Urban | OS |
-| Urban | Defra |
 
+# OSM Tags
+[tag finder](https://tagfinder.osm.ch/)
+Hedgerows = barrier:[hedge,hedge_bank],landcover:hedge
+Water = water:true,waterway:true
+Wall = wall:dry_stone
 
-
-### Intermidiate Data
-| Status | Dataset | Link | Schema | Description |
-| --- | --- | --- | --- | --- |
-| ❌ | Parcel | ... | id_business, id_parcel, geometry | converted |
-| ❌ | OSM_Heritage_Wall | ... | id_parcel, id, type, geometry | converted, and joined |
-| ❌ | OS_Waterbody | ... | ^ | converted, and joined |
-| ❌ | OSM_Waterbody | ... | ^ | converted, and joined |
-| ❌ | ?_Woodland | ... | ^ | ... |
-| ❌ | RPA_Hedgerow | ... | ^ | converted, and joined |
-| ❌ | OSM_Hedgerow | ... | ^ | converted, and joined |
-| ❌ | Relict_Hedgerow | ... | ^ | ea/fr lidar used to identify relict hedgerows |
-| ❌ | Boundary | ... | id_parcel, id, group, type, geometry | unified boundary data |
-| ❌ | ONS_Country | ... | ... | ... |
-| ❌ | OS_Urban | ... | ... | urban geometries, converted and joined |
-| ❌ | Defra_Urban | ... | ... | ^ |
-
-
-*type is mainly relavent for Boundary, but for os data it would be something like description, which for waterbody would include drain.*
-
-
-### Output Data
-| Status | Dataset | Link | Schema | Description |
-| --- | --- | --- | --- | --- |
-| ❌ | Heritage Wall Statistics | ... | ... | ... |
-| ❌ | Waterbody Statistics | ... | ... | ... |
-| ❌ | Hedgerow Statistics | ... | ... | ... |
-| ❌ | Woodland Statistics | ... | ... | ... |
-| ❌ | Boundary Statistics | ... | id_parcel, group, type, /stats/ | unified, statistics at each buffer |
-| ❌ | Urban | ... | id_parcel, urban | urban status |
-
-
-### Notebooks
-| Status | Notebook | Task |
-|---|---|---|
-| ❌ | [Data](https://adb-7393756451346106.6.azuredatabricks.net/?o=7393756451346106#notebook/4426024615916685/) | Methodology for the preparation all source data, including downloading [OSM]() and [OS]() data. |
-| ❌ | [Heritage Wall](https://adb-7393756451346106.6.azuredatabricks.net/?o=7393756451346106#notebook/1370439409529193/) | Easiest task: summary, dl OSM & convert, analysis. Summary: Table comparing Data Sources, Table of Summary Statistics, data decision.  Types: Dry Stone, Cornish |
-| ❌ | [Waterbody](https://adb-7393756451346106.6.azuredatabricks.net/?o=7393756451346106#notebook/1370439409529195/) | Medium task: summary, also OS data, same analysis. Includes drains.  Types: Waterbody, Drain |
-| ❌ | [Woodland](https://adb-7393756451346106.6.azuredatabricks.net/?o=7393756451346106#notebook/1370439409529197/) | Very Hard Task: requires LiDAR data, but also comparing with other validated datasources.  Including LiDAR conversion.  Types: Commercial, Ammenity, Native, Ancient |
-| ❌ | [Hedgerow](https://adb-7393756451346106.6.azuredatabricks.net/?o=7393756451346106#notebook/2356646032716084/) | Hard task: summary, also RPA and LiDAR data, relict hedgerows requires extra analysis.  Types: EFA, Relict |
-| ❌ | [Boundary?]() | Medium task: requires unifying all the previous datasets as "group", and calculating the summary statistics for different buffers. |
-| ❌ | [Country borders Hedgerow]() | ... |
-| ❌ | [Urban]() | ... |
-
-
-### Library
-[elm_sp](https://adb-7393756451346106.6.azuredatabricks.net/?o=7393756451346106#files/2356646032716142),
-[types](https://adb-7393756451346106.6.azuredatabricks.net/?o=7393756451346106#files/2356646032716161),
-[io](https://adb-7393756451346106.6.azuredatabricks.net/?o=7393756451346106#files/2356646032716140),
-[st](https://adb-7393756451346106.6.azuredatabricks.net/?o=7393756451346106#files/2356646032716153),
-[r](https://adb-7393756451346106.6.azuredatabricks.net/?o=7393756451346106#files/2356646032716159),
-[stats](https://adb-7393756451346106.6.azuredatabricks.net/?o=7393756451346106#files/2356646032716170)
-A minimal library that contains reused functions, such as:
-
-**`elm_se.F`**
-
-**`elm_se.io`**:
-`to_sdf`, `to_gdf`,
-`read_arcgis`, `read_osm`, `download_os`, `read_file`,
-`bng`?, `optimise`, `save_parquet`,
-
-**`elm_se.st`**:
-`join`
-`union`
-
-**`elm_se.r`**:
-
-**`elm_se.stats`**:
-
-
-### Methology
-
-##### Join methodology
-![Figure of Buffered Parcel Join]()
-
-
-##### Statistics Methodology
-
-
-### Extras
-
-##### Tips
-[TagFinder](tagfinder.osm.ch)
-Check out my repo [cdap_geo](https://github.com/aw-west-defra/cdap_geo) for UDF, Sedona and general GIS on DASH help.  
-I recommend Sedona on Clusters: 3_GeoVector, 3a_GeoHC. [api](https://sedona.apache.org/latest-snapshot/api/sql/Function/), [tips](https://github.com/aw-west-defra/cdap_geo/blob/main/cdap_geo/sedona.py)  
-
-##### Found Bugs
+# Tips
 Use `ST_ReducePrecision(g, 0.001)` (1mm grid) - [gis#50399](https://gis.stackexchange.com/q/50399)  
 Use `ST_Buffer(ST_Buffer(g, 0.001), buf)` (1mm pre-buffer) - [jts#876](https://github.com/locationtech/jts/issues/876)  
-OSMnx doc issue - [osmnx#931](https://github.com/gboeing/osmnx/issues/931)  
-`SedonaDF.toPandas` only works for `id+geometry` not more columns.  
-OSMnx requires tmp folder if in a repo: `ox.settings.cache_folder = '/dbfs/tmp/'`  
-`SparkSession` requires to be called from a notebook, `databricks.sdk.runtime` will only be available in DBR 13+
 
-##### Status
+# Status
 ✔️⚙️❌
+-->

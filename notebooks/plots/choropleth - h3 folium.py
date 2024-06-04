@@ -7,7 +7,8 @@
 # MAGIC
 # MAGIC **Date:** 08/04/2024
 # MAGIC
-# MAGIC This notebook produces an interactive, html based choropleth map of a spatial dataset aggregated to H3 tiles. This allows granular spatial data to be mapped at national scale.
+# MAGIC This notebook produces an interactive, html based choropleth map of a spatial dataset aggregated to H3 tiles. This allows granular spatial data to be
+# MAGIC mapped at national scale.
 # MAGIC
 # MAGIC How to use this notebook:
 # MAGIC
@@ -26,26 +27,21 @@
 
 # COMMAND ----------
 
-import os
-import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib as mpl
-import pandas as pd
-import geopandas as gpd
-from shapely.geometry import Polygon, LineString, Point
-from shapely import from_wkt, from_wkb
+
+import json
+
 import folium
-import seaborn as sns
-from functools import partial
-from typing import Callable
+import geopandas as gpd
 import h3
-
+import numpy as np
+import pandas as pd
+from folium import Map
+from geojson.feature import Feature, FeatureCollection
 from pyspark.sql import functions as F
-from pyspark.sql.types import DecimalType, DoubleType, FloatType, IntegerType, LongType
 
-from elmo_geo import LOG, register
+from elmo_geo import register
+from elmo_geo.datasets.datasets import datasets
 from elmo_geo.io import download_link
-from elmo_geo.datasets.datasets import datasets, parcels
 
 register()
 
@@ -109,22 +105,6 @@ df_agged.head()
 
 # COMMAND ----------
 
-from folium import Map, Marker, GeoJson
-from folium.plugins import MarkerCluster
-import branca.colormap as cm
-from branca.colormap import linear
-import folium
-
-import seaborn as sns
-
-import matplotlib as mpl
-import matplotlib.pyplot as plt
-from matplotlib.pyplot import imshow
-import matplotlib.gridspec as gridspec
-
-import json
-from geojson.feature import *
-
 
 def base_empty_map(centre=(52.133236898161755, -1.2970901724513781)):
     """Prepares a folium map centered in a central GPS point of Toulouse"""
@@ -175,7 +155,7 @@ def h3_foilium_map(df_agged, join_col, geo_col, variable, label, variable_name, 
         name="choropleth",
         data=df_data,
         columns=["id", variable],  # columns to work on
-        key_on=f"feature.id",
+        key_on="feature.id",
         bins=5,
         fill_opacity=0.7,
         nan_fill_opacity=0.0,
