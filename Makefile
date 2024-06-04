@@ -11,8 +11,8 @@ clean:
 
 install:
 	python -m pip install --upgrade pip setuptools wheel
+	pipx install "ruff<0.2" pip-tools
 	pip install -r requirements.txt
-	pipx install "ruff<0.2"
 
 fmt:
 	ruff check . --fix
@@ -29,5 +29,4 @@ verify_gh:
 verify:
 	ruff check .
 	ruff format . --check
-	pip-compile -q --all-extras
 	PYTHONDONTWRITEBYTECODE=1 pytest .

@@ -5,29 +5,18 @@ description = "Environmental Land Management Geospatial Analysis"
 readme = "README.md"
 dependencies = [
     "apache-sedona==1.4.1",
-    "beautifulsoup4",
     "contextily",
-    "databricks-cli",
-    "databricks-sdk",
-    "python-dotenv",
-    "esridump",
+    "databricks-sdk<0.21",
+    "folium",
     "geopandas",
     "mapclassify",
-    "numpy",
-    "osdatahub",
-    "osmnx",
-    "pandas<=1.5.3",
+    "pandas<2",
     "pyarrow",
-    "pydantic",
-    "pyogrio",
     "pyspark==3.3.2",
+    "python-dotenv",
     "rich",
-    "rasterio",
     "rioxarray",
     "seaborn",
-    "sentinelsat",
-    "shapely",
-    "xarray",
 ]
 requires-python = ">=3.10"
 
@@ -36,13 +25,17 @@ exclude = ["tests"]
 
 [project.optional-dependencies]
 dev = [
-    "ruff<=0.1.15",
+    "ruff<0.2",
     "pip-tools",
     "pytest",
-    "dbx",
-    "ipykernel",
-    "ipython",
-    "ipywidgets",
+]
+old = [
+    "beautifulsoup4",
+    "pyogrio",
+    "sentinelsat",
+    "osmnx",
+    "osdatahub",
+    "statsmodels",
 ]
 
 [project.urls]
