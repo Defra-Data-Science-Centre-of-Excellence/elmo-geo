@@ -13,7 +13,6 @@ install:
 	python -m pip install --upgrade pip setuptools wheel
 	pip install -r requirements.txt
 	pipx install "ruff<0.2"
-	pipx install pip-tools
 
 fmt:
 	ruff check . --fix

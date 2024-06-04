@@ -169,12 +169,7 @@ def plot_parcel_bare_soil(parcel_id: str, geometry: gpd.GeoSeries, ds: xr.Datase
 
 
 def plot_choropleth_with_head_and_tail_bars(
-    gdf: gpd.GeoDataFrame,
-    variable_column: str,
-    variable_name: str,
-    variable_source: str,
-    plot_title: str,
-    fmt: str = ".1%",
+    gdf: gpd.GeoDataFrame, variable_column: str, variable_name: str, variable_source: str, plot_title: str, fmt: str = ".1%"
 ) -> plt.Figure:
     """Creates a plot with three components: a choropleth and two horizontal bar charts.
 

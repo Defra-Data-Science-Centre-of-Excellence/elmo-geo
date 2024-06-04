@@ -7,17 +7,27 @@ dependencies = [
     "apache-sedona==1.4.1",
     "beautifulsoup4",
     "contextily",
-    "databricks-sdk<0.21",
-    "folium",
+    "databricks-cli",
+    "databricks-sdk",
+    "python-dotenv",
+    "esridump",
     "geopandas",
     "mapclassify",
-    "pandas<2",
+    "numpy",
+    "osdatahub",
+    "osmnx",
+    "pandas<=1.5.3",
     "pyarrow",
+    "pydantic",
+    "pyogrio",
     "pyspark==3.3.2",
-    "python-dotenv",
     "rich",
+    "rasterio",
     "rioxarray",
     "seaborn",
+    "sentinelsat",
+    "shapely",
+    "xarray",
 ]
 requires-python = ">=3.10"
 
@@ -26,16 +36,13 @@ exclude = ["tests"]
 
 [project.optional-dependencies]
 dev = [
-    "ruff<0.2",
+    "ruff<=0.1.15",
     "pip-tools",
     "pytest",
-]
-old = [
-    "pyogrio",
-    "sentinelsat",
-    "osmnx",
-    "osdatahub",
-    "statsmodels",
+    "dbx",
+    "ipykernel",
+    "ipython",
+    "ipywidgets",
 ]
 
 [project.urls]
