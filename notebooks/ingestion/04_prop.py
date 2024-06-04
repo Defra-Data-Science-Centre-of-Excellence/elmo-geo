@@ -48,7 +48,6 @@ def load_sdf_parcel_lookup(dataset: dict) -> SparkDataFrame:
     return columns: id_parcel, *classes, geometry_parcel, geometry_right
     """
     dataset_parcel = find_datasets("rpa-parcel-adas")[-1]
-    classes = {col for cols in dataset.get("classes", {}).values() for col in cols}
     return (
         load_sdf(dataset["lookup_parcel"])
         .join(
