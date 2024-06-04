@@ -27,10 +27,10 @@ print_searchers("moor", "national_forest", "parcel", "peat")
 # COMMAND ----------
 
 datasets = {
-    "rpa-moor-2021_03_03": "/dbfs/mnt/base/unrestricted/source_rpa_spatial_data_mart/dataset_lfa_and_moorland_line/format_GPKG_lfa_and_moorland_line/SNAPSHOT_2021_03_03_lfa_and_moorland_line/refdata_owner.lfa.gpkg",
-    "fc-nfi-2020": "/dbfs/mnt/base/unrestricted/source_forestry_commission_open_data/dataset_national_forest_inventory_woodland_england_2020/format_SHP_national_forest_inventory_woodland_england_2020/SNAPSHOT_2022_10_19_national_forest_inventory_woodland_england_2020/National_Forest_Inventory_Woodland_England_2020.shp",
-    # 'rpa-parcels-2023_09_07': '/dbfs/mnt/base/unrestricted/source_rpa_spatial_data_mart/dataset_rpa_reference_parcels/format_GPKG_rpa_reference_parcels/SNAPSHOT_2023_09_07_rpa_reference_parcels/reference_parcels.zip/reference_parcels.gpkg',  # Damaged
-    "defra-nitrate_vulnerable_zones-2021_03_03": "/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_nitrate_vulnerable_zones_2017/format_GPKG_nitrate_vulnerable_zones_2017/SNAPSHOT_2021_03_03_nitrate_vulnerable_zones_2017/refdata_owner.nvz_2017.gpkg",
+    "rpa-moor-2021_03_03": "/dbfs/mnt/base/unrestricted/source_rpa_spatial_data_mart/dataset_lfa_and_moorland_line/format_GPKG_lfa_and_moorland_line/SNAPSHOT_201021_03_03_lfa_and_moorland_line/refdata_owner.lfa.gpkg",  # noqa:E501
+    "fc-nfi-2020": "/dbfs/mnt/base/unrestricted/source_forestry_commission_open_data/dataset_national_forest_inventory_woodland_england_2020/format_SHP_national_forest_inventory_woodland_england_2020/SNAPSHOT_2022_10_19_national_forest_inventory_woodland_england_2020/National_Forest_Inventory_Woodland_England_2020.shp",  # noqa:E501
+    # 'rpa-parcels-2023_09_07': '/dbfs/mnt/base/unrestricted/source_rpa_spatial_data_mart/dataset_rpa_reference_parcels/format_GPKG_rpa_reference_parcels/SNAPSHOT_2023_09_07_rpa_reference_parcels/reference_parcels.zip/reference_parcels.gpkg',  # noqa:E501 - Damaged
+    "defra-nitrate_vulnerable_zones-2021_03_03": "/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_nitrate_vulnerable_zones_2017/format_GPKG_nitrate_vulnerable_zones_2017/SNAPSHOT_2021_03_03_nitrate_vulnerable_zones_2017/refdata_owner.nvz_2017.gpkg",  # noqa:E501
 }
 
 # COMMAND ----------
@@ -53,7 +53,7 @@ for name, f_in in datasets.items():
 # COMMAND ----------
 
 # MAGIC %sh
-# MAGIC IN='/dbfs/mnt/base/unrestricted/source_rpa_spatial_data_mart/dataset_rpa_reference_parcels/format_GPKG_rpa_reference_parcels/SNAPSHOT_2021_03_16_rpa_reference_parcels/reference_parcels.gpkg'
+# MAGIC IN='/dbfs/mnt/base/unrestricted/source_rpa_spatial_data_mart/dataset_rpa_reference_parcels/format_GPKG_rpa_reference_parcels/SNAPSHOT_2021_03_16_rpa_reference_parcels/reference_parcels.gpkg'  # noqa:E501
 # MAGIC TMP='/databricks/driver/tmp.gpkg'
 # MAGIC OUT='/dbfs/mnt/lab/restricted/ELM-Project/stg/rpa-parcels-2021_03_16-reference_parcels.parquet'
 # MAGIC LAYER='reference_parcels'

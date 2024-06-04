@@ -1,5 +1,7 @@
 # Databricks notebook source
 import os
+import shutil
+import tempfile
 
 import geopandas as gpd
 import matplotlib.pyplot as plt
@@ -35,9 +37,6 @@ gdf = (
 gdf
 
 # COMMAND ----------
-
-import shutil
-import tempfile
 
 
 def write_raster(data, filename, **kwargs):

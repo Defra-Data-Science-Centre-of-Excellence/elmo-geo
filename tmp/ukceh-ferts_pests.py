@@ -473,7 +473,7 @@ df_sum = df[["id_business", "id_parcel", "ha_parcel_geo", "ha_parcel_uaa"]].assi
     # tpha_pesticides = df[[col for col in df.columns if col.startswith('pesticide_') and col.endswith('_prediction')]].sum(axis=1) / 1e5,
 )
 
-for chems, chemgroup in chemgroups:
+for chems, chemgroup in lookup["chemgroups"].unique():
     df_sum[f"tpha_{chemgroup}"] = (
         df[[col for col in df.columns if col.startswith("pesticide_") and col.endswith("prediction") and any(chems in col)]].sum(axis=1) / 1e5
     )
