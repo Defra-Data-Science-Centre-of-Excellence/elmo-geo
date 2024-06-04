@@ -2,7 +2,22 @@
 # MAGIC %md
 # MAGIC # Overlap
 # MAGIC Calculate the overlaps between features and parcels.
-# MAGIC [OSM Tags](notebooks/analysis/osm_tags)
+# MAGIC
+# MAGIC Each set of columns (classes) is saved separately, with all the buffers in the save.
+# MAGIC Default is no classes `"classes":{"":[]}`, and 1 buffer at zero `"buffers":[0]`.
+# MAGIC
+# MAGIC Example output schema,
+# MAGIC `id_parcel:str,class:Any,proportion_0m:float,proportion_24m:float`,
+# MAGIC where `"classes":{"class":["class"]}` and `"buffers":[0, 24]`.
+# MAGIC
+# MAGIC ### Method
+# MAGIC 1. Rejoins dataset with parcel using the precalculated lookup.
+# MAGIC 2. For each set of classes
+# MAGIC     3. Buffers geometries (by 1mm) to convert them to polygons.
+# MAGIC     4. Groups by id_parcel and classes, union aggregates geometry_parcel and geometry_right
+# MAGIC     5. Calculates the proportion of overlap for each buffer.
+# MAGIC     6. Saves dataframe and logs verifiers
+# MAGIC
 
 # COMMAND ----------
 
@@ -50,7 +65,10 @@ def load_sdf_parcel_lookup(dataset: dict) -> SparkDataFrame:
 
 
 def calc_overlap(sdf: SparkDataFrame, classes: list[str], buffers: list[float]) -> SparkDataFrame:
-    """todo"""
+    """Group by the classes, union the geometries, and calculate the overlap.
+    Overlap is the proportion of overlap between geometries, with parcel as the denominator.
+    All geometries are converted to polygons using a 1mm buffer (0 buffer causes TopologyError no dirEdge).
+    """
     l, r = "geometry_parcel", "geometry_right"  # noqa:E741
     return (
         sdf.withColumn(l, F.expr(f"ST_Buffer({l}, 0.001)"))
@@ -67,16 +85,24 @@ def calc_overlap(sdf: SparkDataFrame, classes: list[str], buffers: list[float]) 
 
 
 def overlap_info(df: PandasDataFrame, f: str):
-    """todo"""
+    """Log valid checks for the overlap task.
+    Checks the percentage of proportion greater than 1, this should always be 0.  (Added a tolerance for floating point errors.)
+    Also displaying the DataFrame, and describing the proportion.
+    The first proportion column is selected, usually "proportion_0m".
+    """
     col = [col for col in df.columns if col.startswith("proportion")][0]
     info_sdf(spark.createDataFrame(df), f, None, None)
-    LOG.info(f"Proportion > 1 (1+1e-9): {(1+1e-9 < df[col]).mean():.3%}")
+    LOG.info(f"Proportion > 1: {(1+1e-9 < df[col]).mean():.3%}")
     LOG.info(df.sort_values(col))
     LOG.info(df[col].describe())
 
 
 def overlap(dataset: dict) -> dict:
-    """todo"""
+    """This task calculates a proportional overlap between a feature dataset and parcels.
+    It requires lookup_parcel to be calculated first.
+    Outputs: id_parcel,proportion_*m  (where * is buffers defined in the dataset).
+    Saves: silver/overlap-*name-version.parquet  (where * is classes keys defined in the dataset).
+    """
     f_template = dataset["lookup_parcel"].replace("/lookup_parcel-", "/overlap-{}")
     buffers, class_dict = dataset.get("buffers", [0]), dataset.get("classes", {"": []})
     sdf = load_sdf_parcel_lookup(dataset)
@@ -95,6 +121,4 @@ def overlap(dataset: dict) -> dict:
 
 # COMMAND ----------
 
-jls_extract_var = run_task_on_catalogue
-jls_extract_var("overlap", overlap)
-
+run_task_on_catalogue("overlap", overlap)
