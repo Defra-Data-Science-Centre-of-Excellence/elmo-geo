@@ -20,27 +20,19 @@ from scipy.stats import ttest_rel
 
 def test_equal(df):
     """95% confidence ttest"""
-    return ttest_rel(df['proportion'], df['proportion_0m'])[1]
+    return ttest_rel(df["proportion"], df["proportion_0m"])[1]
 
 
 # COMMAND ----------
 
 f_sssi_old = "/dbfs/mnt/lab/unrestricted/elm/elmo/sssi/sssi.feather"
 f_sssi_new = "/dbfs/mnt/lab/restricted/ELM-Project/silver/overlap-sssi_units-2024_03_07.parquet"
-df_sssi = (
-    pd.read_feather(f_sssi_old)
-    .merge(pd.read_parquet(f_sssi_new), on="id_parcel")
-    .assign(diff = lambda df: df["proportion"] - df["proportion_0m"])
-)
+df_sssi = pd.read_feather(f_sssi_old).merge(pd.read_parquet(f_sssi_new), on="id_parcel").assign(diff=lambda df: df["proportion"] - df["proportion_0m"])
 
 
 f_np_old = "/dbfs/mnt/lab/unrestricted/elm/elmo/national_park/national_park.feather"
 f_np_new = "/dbfs/mnt/lab/restricted/ELM-Project/silver/overlap-national_park-2024_01_30.parquet"
-df_np = (
-    pd.read_feather(f_np_old)
-    .merge(pd.read_parquet(f_np_new), on="id_parcel")
-    .assign(diff = lambda df: df["proportion"] - df["proportion_0m"])
-)
+df_np = pd.read_feather(f_np_old).merge(pd.read_parquet(f_np_new), on="id_parcel").assign(diff=lambda df: df["proportion"] - df["proportion_0m"])
 
 
 # COMMAND ----------
