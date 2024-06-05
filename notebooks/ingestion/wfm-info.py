@@ -11,7 +11,7 @@
 from pyspark.sql import functions as F
 
 from elmo_geo import register
-from elmo_geo.datasets.catalogue import find_datasets, add_to_catalogue
+from elmo_geo.datasets.catalogue import add_to_catalogue, find_datasets
 from elmo_geo.utils.misc import load_sdf
 
 register()
@@ -64,7 +64,7 @@ sdf = (
     sdf_wfm.fillna(0)
     .join(
         sdf_parcel.select("id_parcel", "geometry"),
-        on = "id_parcel",
+        on="id_parcel",
     )
     .selectExpr(
         "id_business",
@@ -106,15 +106,20 @@ dataset = {
 }
 
 
-df = sdf.groupby("id_business").agg(
-    F.expr("SUM(ha_arable) AS ha_arable"),
-    F.expr("SUM(ha_grassland) AS ha_grassland"),
-    F.expr("ST_Union_Aggr(geometry) AS geometry"),
-).selectExpr(
-    "* EXCEPT(geometry)",
-    "ROUND(ST_X(ST_Centroid(geometry))) AS x",
-    "ROUND(ST_Y(ST_Centroid(geometry))) AS y",
-).toPandas()
+df = (
+    sdf.groupby("id_business")
+    .agg(
+        F.expr("SUM(ha_arable) AS ha_arable"),
+        F.expr("SUM(ha_grassland) AS ha_grassland"),
+        F.expr("ST_Union_Aggr(geometry) AS geometry"),
+    )
+    .selectExpr(
+        "* EXCEPT(geometry)",
+        "ROUND(ST_X(ST_Centroid(geometry))) AS x",
+        "ROUND(ST_Y(ST_Centroid(geometry))) AS y",
+    )
+    .toPandas()
+)
 
 
 df.to_parquet(dataset["silver"])

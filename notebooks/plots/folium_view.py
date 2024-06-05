@@ -1,11 +1,10 @@
 # Databricks notebook source
 import os
+from datetime import datetime
 
 import folium
 import numpy as np
 import pandas as pd
-
-from datetime import datetime
 from matplotlib import colormaps
 from matplotlib.colors import to_hex
 
@@ -24,10 +23,12 @@ def get_n_colours(n: int, cmap="viridis") -> list[str]:
         colours.extend(colours)
     return colours[:n]
 
+
 def convert_datetime_to_string(x):
     if isinstance(x, (datetime, pd.Timestamp, np.datetime64)):
         return str(x)
     return x
+
 
 # COMMAND ----------
 
