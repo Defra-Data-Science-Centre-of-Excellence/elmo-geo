@@ -6,6 +6,7 @@ from pyspark.sql import functions as F
 
 from elmo_geo.utils.log import LOG
 from elmo_geo.utils.types import SparkDataFrame
+from elmo_geo.utils.dbr import spark
 
 
 def dbfs(f: str, spark_api: bool):

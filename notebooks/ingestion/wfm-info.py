@@ -1,16 +1,30 @@
 # Databricks notebook source
+# MAGIC %md
+# MAGIC # WFM Info
+# MAGIC Calculate regularly used features from WFM, at both parcel and business level.
+# MAGIC - ha_arable: the area used for arable farming
+# MAGIC - ha_grassland: the area used for grazing
+# MAGIC - x,y: centroid values for the parcel or business
+
+# COMMAND ----------
+
 from pyspark.sql import functions as F
 
 from elmo_geo import register
-from elmo_geo.datasets.catalogue import find_datasets
+from elmo_geo.datasets.catalogue import find_datasets, add_to_catalogue
 from elmo_geo.utils.misc import load_sdf
 
 register()
 
 # COMMAND ----------
 
-sdf_parcel = load_sdf(find_datasets("rpa-parcel")[-1]["silver"])
-sdf_wfm_field = load_sdf(find_datasets("wfm-field")[-1]["bronze"])
+parcel = find_datasets("rpa-parcel")[-1]
+wfm = find_datasets("wfm-field")[-1]
+version = wfm["name"].split("-")[2]
+path = "/".join(wfm["bronze"].split("/")[:-2]) + "/silver"
+
+sdf_parcel = load_sdf(parcel["silver"])
+sdf_wfm = load_sdf(wfm["bronze"])
 
 # COMMAND ----------
 
@@ -45,8 +59,9 @@ grassland = [
     "ha_fenland",
 ]
 
+
 sdf = (
-    sdf_wfm_field.fillna(0)
+    sdf_wfm.fillna(0)
     .join(
         sdf_parcel.select("id_parcel", "geometry"),
         on = "id_parcel",
@@ -56,7 +71,7 @@ sdf = (
         "id_parcel",
         "+".join(arable) + " AS ha_arable",
         "+".join(grassland) + " AS ha_grassland",
-        "ST_Buffer(geometry, 0.001) AS geometry",  # Buffer for merging
+        "ST_Buffer(geometry, 0.001) AS geometry",  # Buffer for ST_Union_Aggr
     )
 )
 
@@ -65,19 +80,42 @@ sdf.display()
 
 # COMMAND ----------
 
-sdf.selectExpr(
+name = f"wfm-field_info-{version}"
+dataset = {
+    "name": name,
+    "silver": f"{path}/{name}.parquet",
+}
+
+
+df = sdf.selectExpr(
     "* EXCEPT(geometry)",
-    "ST_AsText(ST_Centroid(geometry)) AS centroid",
-).display()
+    "ROUND(ST_X(ST_Centroid(geometry))) AS x",
+    "ROUND(ST_Y(ST_Centroid(geometry))) AS y",
+).toPandas()
+
+
+df.to_parquet(dataset["silver"])
+add_to_catalogue(dataset)
 
 # COMMAND ----------
 
-sdf.groupby("id_business").agg(
+name = f"wfm-farm_info-{version}"
+dataset = {
+    "name": name,
+    "silver": f"{path}/{name}.parquet",
+}
+
+
+df = sdf.groupby("id_business").agg(
     F.expr("SUM(ha_arable) AS ha_arable"),
     F.expr("SUM(ha_grassland) AS ha_grassland"),
     F.expr("ST_Union_Aggr(geometry) AS geometry"),
 ).selectExpr(
     "* EXCEPT(geometry)",
-    "ST_X(ST_Centroid(geometry)) AS x",
-    "ST_Y(ST_Centroid(geometry)) AS y",
-).display()
+    "ROUND(ST_X(ST_Centroid(geometry))) AS x",
+    "ROUND(ST_Y(ST_Centroid(geometry))) AS y",
+).toPandas()
+
+
+df.to_parquet(dataset["silver"])
+add_to_catalogue(dataset)
