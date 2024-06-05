@@ -6,6 +6,8 @@
 #
 affine==2.4.0
     # via rasterio
+annotated-types==0.7.0
+    # via pydantic
 apache-sedona==1.4.1
     # via elmo_geo (pyproject.toml)
 attrs==23.2.0
@@ -178,6 +180,10 @@ pyasn1==0.6.0
     #   rsa
 pyasn1-modules==0.4.0
     # via google-auth
+pydantic==2.7.3
+    # via elmo_geo (pyproject.toml)
+pydantic-core==2.18.4
+    # via pydantic
 pygments==2.18.0
     # via rich
 pyogrio==0.8.0
@@ -196,7 +202,7 @@ pyproject-hooks==1.1.0
     #   pip-tools
 pyspark==3.3.2
     # via elmo_geo (pyproject.toml)
-pytest==8.2.1
+pytest==8.2.2
     # via elmo_geo (pyproject.toml)
 python-dateutil==2.9.0.post0
     # via
@@ -267,6 +273,10 @@ tqdm==4.65.2
     #   sentinelsat
 typeguard==2.13.3
     # via osdatahub
+typing-extensions==4.12.1
+    # via
+    #   pydantic
+    #   pydantic-core
 urllib3==2.2.1
     # via requests
 wheel==0.43.0
