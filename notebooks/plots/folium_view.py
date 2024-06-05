@@ -4,6 +4,8 @@ import os
 import folium
 import numpy as np
 import pandas as pd
+
+from datetime import datetime
 from matplotlib import colormaps
 from matplotlib.colors import to_hex
 
@@ -22,6 +24,10 @@ def get_n_colours(n: int, cmap="viridis") -> list[str]:
         colours.extend(colours)
     return colours[:n]
 
+def convert_datetime_to_string(x):
+    if isinstance(x, (datetime, pd.Timestamp, np.datetime64)):
+        return str(x)
+    return x
 
 # COMMAND ----------
 
@@ -32,7 +38,7 @@ m, filepaths = folium.Map(), os.listdir(path)
 for filepath, colour in zip(filepaths, get_n_colours(len(filepaths), "hsv")):
     f, name = f"{path}/{filepath}/sindex={tile}", filepath.replace(".parquet", "")
     try:
-        df = pd.read_parquet(f).pipe(to_gdf)
+        df = pd.read_parquet(f).pipe(to_gdf).applymap(convert_datetime_to_string)
         df.explode(index_parts=True).explore(m=m, name=name, color=colour, show=False)
         print("+", name, sep="\t")
     except Exception as err:
@@ -41,6 +47,6 @@ folium.LayerControl().add_to(m)
 
 f = f"/dbfs/FileStore/sindex={tile}.html"
 m.save(f)
-download_link(f)
+download_link(f, return_over_display=True)
 
 m
