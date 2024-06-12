@@ -95,7 +95,7 @@ df = sdf.selectExpr(
 
 
 df.to_parquet(dataset["silver"])
-add_to_catalogue(dataset)
+add_to_catalogue([dataset])
 
 # COMMAND ----------
 
@@ -111,7 +111,7 @@ df = (
     .agg(
         F.expr("SUM(ha_arable) AS ha_arable"),
         F.expr("SUM(ha_grassland) AS ha_grassland"),
-        F.expr("ST_Union_Aggr(geometry) AS geometry"),
+        F.expr("ST_Envelope_Aggr(geometry) AS geometry"),  # ST_Union_Aggr didn't complete
     )
     .selectExpr(
         "* EXCEPT(geometry)",
@@ -123,4 +123,4 @@ df = (
 
 
 df.to_parquet(dataset["silver"])
-add_to_catalogue(dataset)
+add_to_catalogue([dataset])

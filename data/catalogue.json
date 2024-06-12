@@ -435,5 +435,9 @@
         "name": "wfm-field-2024_01_26",
         "tasks": {},
         "bronze": "/dbfs/mnt/lab/restricted/ELM-Project/bronze/wfm-field-2024_01_26.parquet"
+    },
+    {
+        "name": "wfm-field_info-2024_01_26",
+        "silver": "/dbfs/mnt/lab/restricted/ELM-Project/silver/wfm-field_info-2024_01_26.parquet"
     }
 ]
