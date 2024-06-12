@@ -25,8 +25,15 @@ def register_dir(path: str):
         LOG.info(f"Changed Directory: {cwd} => {nwd}")
 
 
-def register(spark: SparkSession = spark, dir: str = "/elmo-geo"):
+def register_no_coalesce(no_coalesce: bool):
+    if no_coalesce:
+        spark.conf.set("spark.sql.adaptive.coalescePartitions.enabled", "false")
+        LOG.info("spark.sql.adaptive.coalescePartitions.enabled = false")
+
+
+def register(spark: SparkSession = spark, dir: str = "/elmo-geo", no_coalesce: bool = False):
     register_dir(dir)
+    register_no_coalesce(no_coalesce)
     register_sedona(spark)
     LOG.info("Registered: Sedona")
     return True
