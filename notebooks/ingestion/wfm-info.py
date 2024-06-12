@@ -19,12 +19,14 @@ register()
 # COMMAND ----------
 
 parcel = find_datasets("rpa-parcel")[-1]
-wfm = find_datasets("wfm-field")[-1]
-version = wfm["name"].split("-")[2]
-path = "/".join(wfm["bronze"].split("/")[:-2]) + "/silver"
+wfm_farm = find_datasets("wfm-farm")[-1]
+wfm_field = find_datasets("wfm-field")[-1]
+
+version = wfm_field["name"].split("-")[2]
+path = "/".join(wfm_field["bronze"].split("/")[:-2]) + "/silver"
 
 sdf_parcel = load_sdf(parcel["silver"])
-sdf_wfm = load_sdf(wfm["bronze"])
+sdf_wfm = load_sdf(wfm_field["bronze"])
 
 # COMMAND ----------
 
@@ -81,10 +83,7 @@ sdf.display()
 # COMMAND ----------
 
 name = f"wfm-field_info-{version}"
-dataset = {
-    "name": name,
-    "silver": f"{path}/{name}.parquet",
-}
+wfm_field["silver"] = f"{path}/{name}.parquet"
 
 
 df = sdf.selectExpr(
@@ -94,17 +93,13 @@ df = sdf.selectExpr(
 ).toPandas()
 
 
-df.to_parquet(dataset["silver"])
-add_to_catalogue([dataset])
+df.to_parquet(wfm_field["silver"])
+add_to_catalogue([wfm_field])
 
 # COMMAND ----------
 
 name = f"wfm-farm_info-{version}"
-dataset = {
-    "name": name,
-    "silver": f"{path}/{name}.parquet",
-}
-
+wfm_farm["silver"] = f"{path}/{name}.parquet"
 
 df = (
     sdf.groupby("id_business")
@@ -122,5 +117,5 @@ df = (
 )
 
 
-df.to_parquet(dataset["silver"])
-add_to_catalogue([dataset])
+df.to_parquet(wfm_farm["silver"])
+add_to_catalogue([wfm_farm])
