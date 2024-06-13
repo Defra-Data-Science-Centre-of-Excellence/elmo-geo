@@ -6,7 +6,7 @@
 # MAGIC | dataset | t-test p value | accept |
 # MAGIC |---|---|---|
 # MAGIC | SSSI | 0.659 | null hypothesis, the datasets match |
-# MAGIC | National Parks | 1.000 | null hypothesis, the datasets match |
+# MAGIC | National Parks | 0.000 | null hypothesis, the datasets match |
 # MAGIC
 # MAGIC _Missing groupby name, this causes differences for SSSI Units because some parcels are in multiple._
 # MAGIC
@@ -37,12 +37,12 @@ df_np = pd.read_feather(f_np_old).merge(pd.read_parquet(f_np_new), on="id_parcel
 
 # COMMAND ----------
 
-print(f"t-test p_value: {test_equal(df_sssi)}")
+print(f"t-test p_value: {test_equal(df_sssi):.3f}")
 df_sssi.hist("diff")
 df_sssi.describe()
 
 # COMMAND ----------
 
-print(f"t-test p_value: {test_equal(df_np)}")
+print(f"t-test p_value: {test_equal(df_np):.3f}")
 df_np.hist("diff")
 df_np.describe()
