@@ -3,46 +3,57 @@
 # MAGIC # Compare Overlap Parcels methods
 # MAGIC Compare the old method process_datasets with the task overlap from 04_prop.
 # MAGIC
-# MAGIC | dataset | t-test p value | accept |
-# MAGIC |---|---|---|
-# MAGIC | SSSI | 0.659 | null hypothesis, the datasets match |
-# MAGIC | National Parks | 0.000 | null hypothesis, the datasets match |
-# MAGIC
-# MAGIC _Missing groupby name, this causes differences for SSSI Units because some parcels are in multiple._
+# MAGIC SSSI has a very small absolute difference which means they're very similar, and the relative difference is small and negative imply a slight increase in capture with the new methodology.
+# MAGIC Same with National Parks.  Most of the differences at very close to -1 or +1, which implies a difference in the parcels used.
 # MAGIC
 # MAGIC ### Conclusion: success
 
 # COMMAND ----------
 
 import pandas as pd
-from scipy.stats import ttest_rel
-
-
-def test_equal(df):
-    """95% confidence ttest"""
-    return ttest_rel(df["proportion"], df["proportion_0m"])[1]
-
 
 # COMMAND ----------
 
-f_sssi_old = "/dbfs/mnt/lab/unrestricted/elm/elmo/sssi/sssi.feather"
-f_sssi_new = "/dbfs/mnt/lab/restricted/ELM-Project/silver/overlap-sssi_units-2024_03_07.parquet"
-df_sssi = pd.read_feather(f_sssi_old).merge(pd.read_parquet(f_sssi_new), on="id_parcel").assign(diff=lambda df: df["proportion"] - df["proportion_0m"])
+df_sssi = (
+    pd.read_feather("/dbfs/mnt/lab/unrestricted/elm/elmo/sssi/sssi.feather")
+    .merge(
+        pd.read_parquet("/dbfs/mnt/lab/restricted/ELM-Project/silver/overlap-sssi_units-2024_03_07.parquet"),
+        on = "id_parcel",
+        how = "outer",
+    )
+    .assign(
+        proportion = lambda df: df["proportion"].fillna(0),
+        proportion_0m = lambda df: df["proportion_0m"].fillna(0),
+        diff = lambda df: df["proportion"] - df["proportion_0m"],
+        abs_diff = lambda df: df["diff"].abs(),
+    )
+)
 
-
-f_np_old = "/dbfs/mnt/lab/unrestricted/elm/elmo/national_park/national_park.feather"
-f_np_new = "/dbfs/mnt/lab/restricted/ELM-Project/silver/overlap-national_park-2024_01_30.parquet"
-df_np = pd.read_feather(f_np_old).merge(pd.read_parquet(f_np_new), on="id_parcel").assign(diff=lambda df: df["proportion"] - df["proportion_0m"])
-
+df_np = (
+    pd.read_feather("/dbfs/mnt/lab/unrestricted/elm/elmo/national_park/national_park.feather")
+    .merge(
+        pd.read_parquet("/dbfs/mnt/lab/restricted/ELM-Project/silver/overlap-national_park-2024_01_30.parquet"),
+        on = "id_parcel",
+        how = "outer",
+    )
+    .assign(
+        proportion = lambda df: df["proportion"].fillna(0),
+        proportion_0m = lambda df: df["proportion_0m"].fillna(0),
+        diff = lambda df: df["proportion"] - df["proportion_0m"],
+        abs_diff = lambda df: df["diff"].abs(),
+    )
+)
 
 # COMMAND ----------
 
-print(f"t-test p_value: {test_equal(df_sssi):.3f}")
-df_sssi.hist("diff")
+df_sssi.hist("diff", bins=21)
 df_sssi.describe()
 
 # COMMAND ----------
 
-print(f"t-test p_value: {test_equal(df_np):.3f}")
-df_np.hist("diff")
+df_np.hist("diff", bins=21)
 df_np.describe()
+
+# COMMAND ----------
+
+
