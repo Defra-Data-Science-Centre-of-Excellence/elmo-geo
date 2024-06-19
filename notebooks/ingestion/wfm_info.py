@@ -63,9 +63,17 @@ grassland = [
 
 
 sdf = (
-    sdf_wfm.fillna(0)
+    sdf_parcel
+    .selectExpr(
+        "id_parcel",
+        "ST_CollectionExtract(geometry, 3) AS geometry",  # selecting polygons is better than buffering
+    )
+    .groupby("id_parcel")
+    .agg(
+        F.expr("ST_Union_Aggr(geometry) AS geometry"),
+    )
     .join(
-        sdf_parcel.select("id_parcel", "geometry"),
+        sdf_wfm.fillna(0),
         on="id_parcel",
     )
     .selectExpr(
@@ -73,11 +81,12 @@ sdf = (
         "id_parcel",
         "+".join(arable) + " AS ha_arable",
         "+".join(grassland) + " AS ha_grassland",
-        "ST_Buffer(geometry, 0.001) AS geometry",  # Buffer for ST_Union_Aggr
+        "geometry",
     )
 )
 
 
+sdf.selectExpr("ST_GeometryType(geometry) AS gtype").groupby("gtype").count().display()
 sdf.display()
 
 # COMMAND ----------
@@ -93,6 +102,8 @@ df = sdf.selectExpr(
 ).toPandas()
 
 
+assert df.shape[0] == df["id_parcel"].nunique()
+
 df.to_parquet(wfm_field["silver"])
 add_to_catalogue([wfm_field])
 
@@ -106,7 +117,7 @@ df = (
     .agg(
         F.expr("SUM(ha_arable) AS ha_arable"),
         F.expr("SUM(ha_grassland) AS ha_grassland"),
-        F.expr("ST_Envelope_Aggr(geometry) AS geometry"),  # ST_Union_Aggr didn't complete
+        F.expr("ST_Collect(COLLECT_LIST(geometry)) AS geometry"),  # ST_Union_Aggr but keeps geometry separate
     )
     .selectExpr(
         "* EXCEPT(geometry)",
@@ -116,6 +127,8 @@ df = (
     .toPandas()
 )
 
+
+assert df.shape[0] == df["id_business"].nunique()
 
 df.to_parquet(wfm_farm["silver"])
 add_to_catalogue([wfm_farm])
