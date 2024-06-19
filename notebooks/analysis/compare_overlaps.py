@@ -5,7 +5,7 @@
 # MAGIC
 # MAGIC SSSI has a very small absolute difference which means they're very similar, and the relative difference is small and negative imply a slight increase in
 # MAGIC capture with the new methodology.
-# MAGIC Same with National Parks.  Most of the differences at very close to -1 or +1, which implies a difference in the parcels used.
+# MAGIC Same with National Parks.  Most of the differences are very close to -1 or +1, which implies a difference in the parcels used.
 # MAGIC
 # MAGIC ### Conclusion: success
 
@@ -16,9 +16,9 @@ import pandas as pd
 # COMMAND ----------
 
 df_sssi = (
-    pd.read_feather("/dbfs/mnt/lab/unrestricted/elm/elmo/sssi/sssi.feather")
+    pd.read_feather("/dbfs/mnt/lab/unrestricted/elm/elmo/sssi/sssi.feather") # old
     .merge(
-        pd.read_parquet("/dbfs/mnt/lab/restricted/ELM-Project/silver/overlap-sssi_units-2024_03_07.parquet"),
+        pd.read_parquet("/dbfs/mnt/lab/restricted/ELM-Project/silver/overlap-sssi_units-2024_03_07.parquet"), # new
         on="id_parcel",
         how="outer",
     )
@@ -31,9 +31,9 @@ df_sssi = (
 )
 
 df_np = (
-    pd.read_feather("/dbfs/mnt/lab/unrestricted/elm/elmo/national_park/national_park.feather")
+    pd.read_feather("/dbfs/mnt/lab/unrestricted/elm/elmo/national_park/national_park.feather") # old
     .merge(
-        pd.read_parquet("/dbfs/mnt/lab/restricted/ELM-Project/silver/overlap-national_park-2024_01_30.parquet"),
+        pd.read_parquet("/dbfs/mnt/lab/restricted/ELM-Project/silver/overlap-national_park-2024_01_30.parquet"), # new
         on="id_parcel",
         how="outer",
     )
