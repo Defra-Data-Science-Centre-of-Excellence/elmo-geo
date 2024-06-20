@@ -63,8 +63,7 @@ grassland = [
 
 
 sdf = (
-    sdf_parcel
-    .selectExpr(
+    sdf_parcel.selectExpr(
         "id_parcel",
         "ST_CollectionExtract(geometry, 3) AS geometry",  # selecting polygons is better than buffering
     )
