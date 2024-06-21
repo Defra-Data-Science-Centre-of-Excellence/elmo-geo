@@ -125,7 +125,6 @@ segments_breaks.plot(ax=ax, color="k", markersize=6)
 
 # COMMAND ----------
 
-
 sdf = (
     load_sdf(parcel["silver"])
     # Groupby and collect polygon features to recreate the unchipped Parcel
@@ -140,10 +139,6 @@ sdf = (
 
 
 sdf.display()
-sdf.count()
-
-# COMMAND ----------
-
 to_parquet(sdf, boundary_segment["silver"], sindex_column=None)
 
 add_to_catalogue([boundary_segment])
