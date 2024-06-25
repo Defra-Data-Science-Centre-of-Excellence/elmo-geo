@@ -40,6 +40,8 @@ sf_habitat_map = hm_dataset.path_output.format(version=hm_version)
 
 sf_parcels = "dbfs:/mnt/lab/restricted/ELM-Project/ods/rpa-parcel-adas.parquet"
 
+PROPORTION_THRESHOLD = 0.05 # 5% of parcel must have a certain habitat to be included in analysis
+
 sf_priority_habitat, sf_habitat_map
 
 # COMMAND ----------
@@ -95,6 +97,7 @@ df_ph = (sdf_ph
          .select("id_parcel", "Main_Habit", "proportion")
          .groupby("id_parcel", "Main_Habit")
          .agg(F.sum("proportion").alias("proportion_main_habit"))
+         .filter(F.expr(f"proportion_main_habit>={PROPORTION_THRESHOLD}"))
          .toPandas()
          )
 
@@ -102,6 +105,7 @@ df_hm = (sdf_hm
          .select("id_parcel", "A_pred", "proportion")
          .groupby("id_parcel", "A_pred")
          .agg(F.sum("proportion").alias("proportion_a_pred"))
+         .filter(F.expr(f"proportion_a_pred>={PROPORTION_THRESHOLD}"))
          .toPandas()
          )
 
