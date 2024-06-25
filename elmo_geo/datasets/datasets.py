@@ -564,6 +564,40 @@ shine = Dataset(
     rename_cols={"geom": "geometry"},
 )
 
+scheduled_monuments = Dataset(
+    name="scheduled_monuments",
+    source="historic_england",
+    versions=[
+        Version(
+            name="2024_04_29",
+            path_read=(
+                "/dbfs/mnt/base/unrestricted/source_historic_england_open_data_site/dataset_scheduled_monuments/format_GEOPARQUET_scheduled_monuments/SNAPSHOT_2024_04_29_scheduled_monuments/layer=Scheduled_Monuments.snappy.parquet"
+            ),
+        ),
+    ],
+    keep_cols=[
+        "geometry",
+        "datasets",
+    ],
+    rename_cols={"geom": "geometry"},
+)
+
+historic_archaeological = Dataset(
+    name="historic_archaeological",
+    source="historic_england",
+    versions=[
+        Version(
+            # produced by the /notebooks/historic/01_combine_historic_datasets notebook
+            name="2024_04_29",
+            path_read=("/dbfs/mnt/lab/restricted/ELM-Project/stg/he-combined_sites-2024_05_03.parquet"),
+        ),
+    ],
+    keep_cols=[
+        "geometry",
+        "datasets",
+    ],
+    rename_cols={"geom": "geometry"},
+)
 
 datasets = [
     alc,
@@ -589,5 +623,7 @@ datasets = [
     nfc_ammonia_emmissions,
     tiles,
     shine,
+    scheduled_monuments,
+    historic_archaeological,
 ]
 """A list of all defined datasets"""

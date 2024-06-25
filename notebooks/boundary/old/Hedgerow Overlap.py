@@ -57,7 +57,7 @@ df_gis = (
 )
 
 
-df_g.write.parquet(f_gis, mode="overwrite")
+df_gis.write.parquet(f_gis, mode="overwrite")
 display(df_gis)
 
 # COMMAND ----------

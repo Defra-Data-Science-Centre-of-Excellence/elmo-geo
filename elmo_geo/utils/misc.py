@@ -1,8 +1,10 @@
+import os
 import re
 import subprocess
 
 from pyspark.sql import functions as F
 
+from elmo_geo.utils.dbr import spark
 from elmo_geo.utils.log import LOG
 from elmo_geo.utils.types import SparkDataFrame
 
@@ -31,7 +33,19 @@ def sh_run(exc: str, **kwargs):
     return out
 
 
-def info_sdf(sdf: SparkDataFrame, col: str = "geometry") -> SparkDataFrame:
+def load_sdf(f: str) -> SparkDataFrame:
+    sdf = spark.read.parquet(dbfs(f, True))
+    if "geometry" in sdf.columns:
+        sdf = sdf.withColumn("geometry", F.expr("ST_SetSRID(ST_GeomFromWKB(geometry), 27700)"))
+    return sdf
+
+
+def count_parquet_files(folder):
+    """Get the number of parquet files in a dataset."""
+    return sum(1 for _, _, files in os.walk(folder) for f in files if f.endswith(".parquet"))
+
+
+def info_sdf(sdf: SparkDataFrame, f: str = None, geometry_column: str = "geometry", sindex_column: str = "sindex") -> SparkDataFrame:
     """Get Info about SedonaDataFrame
     Logs the number of partitions, geometry types, number of features, and average number of coordinates.
 
@@ -58,20 +72,33 @@ def info_sdf(sdf: SparkDataFrame, col: str = "geometry") -> SparkDataFrame:
     >>> 6             ST_Polygon   737962         44.8
     ```
     """
-    n = sdf.rdd.getNumPartitions()
     df = (
-        sdf.selectExpr(
-            f"ST_GeometryType({col}) AS gtype",
-            f"ST_NPoints({col}) AS n",
+        (
+            sdf.selectExpr(
+                f"ST_GeometryType({geometry_column}) AS gtype",
+                f"ST_NPoints({geometry_column}) AS n",
+            )
+            .groupby("gtype")
+            .agg(
+                F.count("gtype").alias("count"),
+                F.round(F.mean("n"), 1).alias("mean_coords"),
+            )
+            .toPandas()
         )
-        .groupby("gtype")
-        .agg(
-            F.count("gtype").alias("count"),
-            F.round(F.mean("n"), 1).alias("mean_coords"),
-        )
-        .toPandas()
+        if geometry_column
+        else None
     )
-    LOG.info(f"partitions:  {n}\n{df}")
+    LOG.info(
+        f"""
+        Wrote Parquet: {f}
+        Count: {sdf.count()}
+        sindexes: {sdf.select(sindex_column).distinct().count() if sindex_column else None}
+        Partitions: {sdf.rdd.getNumPartitions()}
+        Files: {count_parquet_files(f) if f else f}
+        fid count: {sdf.select('fid').distinct().count() if "fid" in sdf.columns else None}
+        {df}
+    """
+    )
     return df
 
 
@@ -87,7 +114,7 @@ def snake_case(string: str) -> str:
     snake_case('Terrible01 dataset_name%') == 'terrible01_dataset_name'
     ```
     """
-    return re.sub("[^\w\d_]", "", re.sub("[\s-]", "_", string.lower()))
+    return re.sub(r"[^\w\d_]", "", re.sub(r"[\s/-]", "_", string.lower()))
 
 
 def string_to_dict(string: str, pattern: str) -> dict:
