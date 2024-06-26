@@ -20,10 +20,10 @@ import pandas as pd
 import seaborn as sns
 from pyspark.sql import functions as F
 
-from elmo_geo import register
+import elmo_geo
 from elmo_geo.datasets.datasets import datasets
 
-register()
+elmo_geo.register()
 
 # COMMAND ----------
 
@@ -38,6 +38,8 @@ hm_dataset = next(d for d in datasets if d.name == hm_name)
 sf_habitat_map = hm_dataset.path_output.format(version=hm_version)
 
 sf_parcels = "dbfs:/mnt/lab/restricted/ELM-Project/ods/rpa-parcel-adas.parquet"
+
+PROPORTION_THRESHOLD = 0.05  # 5% of parcel must have a certain habitat to be included in analysis
 
 sf_priority_habitat, sf_habitat_map
 
@@ -88,17 +90,24 @@ habitat_type_lookup = {
     "Coastal and floodplain grazing marsh": "Fen, Marsh and Swamp",
 }
 
-# Only one A_pred can be mapped to a Main_Habit, some Main_Habits will be excluded.
-# This does not affect the analysis.
-habitat_type_reverse_lookup = {v: k for k, v in habitat_type_lookup.items()}
-
 # COMMAND ----------
 
 df_ph = (
-    sdf_ph.select("id_parcel", "Main_Habit", "proportion").groupby("id_parcel", "Main_Habit").agg(F.sum("proportion").alias("proportion_main_habit")).toPandas()
+    sdf_ph.select("id_parcel", "Main_Habit", "proportion")
+    .groupby("id_parcel", "Main_Habit")
+    .agg(F.sum("proportion").alias("proportion_main_habit"))
+    .filter(F.expr(f"proportion_main_habit>={PROPORTION_THRESHOLD}"))
+    .toPandas()
 )
 
-df_hm = sdf_hm.select("id_parcel", "A_pred", "proportion").groupby("id_parcel", "A_pred").agg(F.sum("proportion").alias("proportion_a_pred")).toPandas()
+df_hm = (
+    sdf_hm.select("id_parcel", "A_pred", "proportion")
+    .groupby("id_parcel", "A_pred")
+    .agg(F.sum("proportion").alias("proportion_a_pred"))
+    .filter(F.expr(f"proportion_a_pred>={PROPORTION_THRESHOLD}"))
+    .toPandas()
+)
+
 
 df_comp = sdf_parcels.select("id_parcel").dropDuplicates().toPandas().merge(df_ph, on="id_parcel", how="outer").merge(df_hm, on="id_parcel", how="outer")
 
@@ -108,7 +117,8 @@ df_comp.head(10)
 
 # map from one habitat type to another
 df_comp["A_pred_from_Main_Habit"] = df_comp["Main_Habit"].map(habitat_type_lookup.get)
-df_comp["Main_Habit_from_A_pred"] = df_comp["A_pred"].map(habitat_type_reverse_lookup.get)
+df_comp["Main_Habit_from_A_pred"] = df_comp["A_pred"].map({v: k for k, v in habitat_type_lookup.items()}.get)
+# this mappping systematically excludes some Main Habit classes but that doesn't affect the analysis
 
 # COMMAND ----------
 
@@ -156,6 +166,10 @@ hm_frequency = (
     .reset_index()
     .sort_values(by="parcel_count")
 )
+
+# COMMAND ----------
+
+df_ph["Main_Habit"].drop_duplicates().shape
 
 # COMMAND ----------
 
@@ -321,11 +335,24 @@ ax4.set_title("5. Comparison habitat classification", fontsize=title_size, y=tit
 
 # add data labels
 for i, v1 in enumerate(b1.datavalues):
-    s = f"{v1:.0f}%"
-    ax4.text(v1 + 1, i - 0.1, s, c=dary_grey, transform=ax4.transData)
+    nparcels = count_match.iloc[i, [0, 1]].fillna(0).sum()
+    s = f"{v1:.0f}% ({nparcels:,.0f} parcels)"
+
+    if v1 < 70:
+        ax4.text(v1 + 1, i - 0.1, s, c=dary_grey, transform=ax4.transData)
+    else:
+        ax4.text(v1 - 2 * len(s) - 2, i - 0.1, s, c=dary_grey, transform=ax4.transData)
 
 for ax in [ax1, ax2, ax3]:
     ax.grid(which="major", axis="x")
+
+# COMMAND ----------
+
+count_match
+
+# COMMAND ----------
+
+count_match.iloc[12, [0, 1]].sum()
 
 # COMMAND ----------
 
@@ -335,26 +362,30 @@ fig.text(
     """
 1. Parcels overlapping a habitat geometry
 
-The Living England Habitat Map is exhaustive and mutually exclusive; it covers the whole country with non-overlapping polygons with habitat classifications. Therefore, this dataset overlaps with 
-100% of RPA parcel geometries. Conversely, the Priority Habitats dataset is non-exhaustive. It does not attempt to map every habitat and covers just over a third of parcels.
+The Living England Habitat Map is exhaustive and mutually exclusive; it covers the whole country with non-overlapping polygons with habitat classifications.
+Therefore, this dataset overlaps with 
+100% of RPA parcel geometries. Conversely, the Priority Habitats dataset is non-exhaustive. It does not attempt to map every habitat and covers just over a
+third of parcels.
 
 2. Priority Habitats parcel count
 
-The Priority Habitats dataset has a larger number of more specific habitat types. Due to its non-exhaustive nature. All habitat types apart from deciduous woodland are found in less than 100,000 
-parcels.
+The Priority Habitats dataset has a larger number of more specific habitat types. Due to its non-exhaustive nature. All habitat types apart from deciduous
+woodland are found in less than 100,000 parcels.
 
 3. Habitat Map parcel count
 
-Living England's Habitat Map uses a smaller number of boarder categories. The number of parcels in each category is high, with many parcels overlapping multiple habitat types (for reference there 
-are 2.6m parcels).
+Living England's Habitat Map uses a smaller number of boarder categories. The number of parcels in each category is high, with many parcels overlapping multiple
+habitat types (for reference there are 2.6m parcels).
 
 4. Comparison parcel count
 
-By assigning one of the broader Habitat Map classifications to each of the Priority Habitat classifications we can compare the number of parcels linked to these habitats according to each dataset. This 
-chart shows that the Living England Habitat Map contains a different distribution of habitats, as well as greater overall coverage. For example, 'Broadleaved, Mixed and Yew Woodland' is the most frequent 
-category according to the Priority Habitats data but this is third most frequent according to the Habitat Map.
+By assigning one of the broader Habitat Map classifications to each of the Priority Habitat classifications we can compare the number of parcels linked to these
+habitats according to each dataset. This chart shows that the Living England Habitat Map contains a different distribution of habitats, as well as greater
+overall coverage. For example, 'Broadleaved, Mixed and Yew Woodland' is the most frequent category according to the Priority Habitats data but this is third
+most frequent according to the Habitat Map.
 
-NA annotations indicate habitat categories which do not have an equivalent in the comparison dataset. The following Priority Habitat types have no Habitat Map equivalent:
+NA annotations indicate habitat categories which do not have an equivalent in the comparison dataset. The following Priority Habitat types have no Habitat Map
+equivalent:
  - No main habitat but additional habitats present (94,138 parcels)
  - Maritime cliffs and slopes (5,087 parcels)
 
@@ -366,16 +397,18 @@ The following Habitat Map types have no equivalent in Priority Habitats:
 
 5. Percentage matching habitat type
 
-This chart compares the classifications themselves rather than the volume of classifications. Only parcels with both a Priority Habitat and Habitat Map classification. Furthermore for 
-each category the number of matching classifications is defined as the number of parcels where at least one of its habitats match between the datasets. This is a more permissive definition that 
-aims to control for the Priority Habitat data potentially having overlapping classifications.
+This chart compares the classifications themselves rather than the volume of classifications. Only parcels with both a Priority Habitat and Habitat Map
+classification. Furthermore for each category the number of matching classifications is defined as the number of parcels where at least one of its habitats
+match between the datasets. This is a more permissive definition that aims to control for the Priority Habitat data potentially having overlapping
+classifications.
 
 The results show good agreement in the classification of woodland and saltmarsh but generally poor agreement otherwise.
 
-The level of disagreement is sensitive to the mapping between the two sets of habitat classes. Broader groupings (e.g. into grassland, woodland, scrub, bog, other) might be more suitable.
+The level of disagreement is sensitive to the mapping between the two sets of habitat classes. Broader groupings (e.g. into grassland, woodland, scrub, bog,
+other) might be more suitable.
 
 Sources: Defra Priority Habitats, Living England Habitat Map, RPA Parcels November 2021.
-""",  # noqa:E501
+""",
     fontsize=20,
     color=dary_grey,
 )
