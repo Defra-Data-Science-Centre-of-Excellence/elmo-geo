@@ -10,7 +10,7 @@ dependencies = [
     "folium",
     "geopandas",
     "mapclassify",
-    "pandas<2",
+    "pandas",
     "pyarrow",
     "pydantic",
     "pyspark==3.3.2",
