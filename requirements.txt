@@ -61,8 +61,8 @@ databricks-sdk==0.20.0
 exceptiongroup==1.2.1
     # via pytest
 fiona==1.9.6
-    # via geopandas
-folium==0.16.0
+    # via elmo_geo (pyproject.toml)
+folium==0.17.0
     # via elmo_geo (pyproject.toml)
 fonttools==4.53.0
     # via matplotlib
@@ -74,13 +74,14 @@ geojson==3.0.1
     #   sentinelsat
 geomet==1.1.0
     # via sentinelsat
-geopandas==0.14.4
+geopandas==1.0.1
     # via
     #   elmo_geo (pyproject.toml)
     #   osmnx
+    #   pandera
 geopy==2.4.1
     # via contextily
-google-auth==2.29.0
+google-auth==2.31.0
     # via databricks-sdk
 html2text==2024.2.26
     # via sentinelsat
@@ -112,11 +113,15 @@ mdurl==0.1.2
     # via markdown-it-py
 mercantile==1.2.1
     # via contextily
+multimethod==1.10
+    # via pandera
+mypy-extensions==1.0.0
+    # via typing-inspect
 networkx==3.3
     # via
     #   mapclassify
     #   osmnx
-numpy==1.26.4
+numpy==2.0.0
     # via
     #   contourpy
     #   folium
@@ -125,6 +130,7 @@ numpy==1.26.4
     #   matplotlib
     #   osmnx
     #   pandas
+    #   pandera
     #   patsy
     #   pyarrow
     #   pyogrio
@@ -141,28 +147,32 @@ osdatahub==1.2.10
     # via elmo_geo (pyproject.toml)
 osmnx==1.9.3
     # via elmo_geo (pyproject.toml)
-packaging==24.0
+packaging==24.1
     # via
     #   build
     #   geopandas
     #   matplotlib
+    #   pandera
     #   pyogrio
     #   pytest
     #   rioxarray
     #   statsmodels
     #   xarray
-pandas==1.5.3
+pandas==2.2.2
     # via
     #   elmo_geo (pyproject.toml)
     #   geopandas
     #   mapclassify
     #   osmnx
+    #   pandera
     #   seaborn
     #   statsmodels
     #   xarray
+pandera[geopandas,pyspark]==0.20.1
+    # via elmo_geo (pyproject.toml)
 patsy==0.5.6
     # via statsmodels
-pillow==10.3.0
+pillow==10.4.0
     # via
     #   contextily
     #   matplotlib
@@ -180,14 +190,16 @@ pyasn1==0.6.0
     #   rsa
 pyasn1-modules==0.4.0
     # via google-auth
-pydantic==2.7.3
-    # via elmo_geo (pyproject.toml)
-pydantic-core==2.18.4
+pydantic==2.8.0
+    # via pandera
+pydantic-core==2.20.0
     # via pydantic
 pygments==2.18.0
     # via rich
-pyogrio==0.8.0
-    # via elmo_geo (pyproject.toml)
+pyogrio==0.9.0
+    # via
+    #   elmo_geo (pyproject.toml)
+    #   geopandas
 pyparsing==3.1.2
     # via
     #   matplotlib
@@ -201,7 +213,9 @@ pyproject-hooks==1.1.0
     #   build
     #   pip-tools
 pyspark==3.3.2
-    # via elmo_geo (pyproject.toml)
+    # via
+    #   elmo_geo (pyproject.toml)
+    #   pandera
 pytest==8.2.2
     # via elmo_geo (pyproject.toml)
 python-dateutil==2.9.0.post0
@@ -226,7 +240,7 @@ requests==2.31.0
     #   sentinelsat
 rich==13.7.1
     # via elmo_geo (pyproject.toml)
-rioxarray==0.15.5
+rioxarray==0.15.7
     # via elmo_geo (pyproject.toml)
 rsa==4.9
     # via google-auth
@@ -234,7 +248,7 @@ ruff==0.1.15
     # via elmo_geo (pyproject.toml)
 scikit-learn==1.5.0
     # via mapclassify
-scipy==1.13.1
+scipy==1.14.0
     # via
     #   mapclassify
     #   scikit-learn
@@ -249,6 +263,7 @@ shapely==2.0.4
     #   geopandas
     #   osdatahub
     #   osmnx
+    #   pandera
 six==1.16.0
     # via
     #   fiona
@@ -272,18 +287,27 @@ tqdm==4.65.2
     #   osdatahub
     #   sentinelsat
 typeguard==2.13.3
-    # via osdatahub
-typing-extensions==4.12.1
+    # via
+    #   osdatahub
+    #   pandera
+typing-extensions==4.12.2
     # via
     #   pydantic
     #   pydantic-core
-urllib3==2.2.1
+    #   typing-inspect
+typing-inspect==0.9.0
+    # via pandera
+tzdata==2024.1
+    # via pandas
+urllib3==2.2.2
     # via requests
 wheel==0.43.0
     # via pip-tools
-xarray==2024.3.0
+wrapt==1.16.0
+    # via pandera
+xarray==2024.6.0
     # via rioxarray
-xyzservices==2024.4.0
+xyzservices==2024.6.0
     # via
     #   contextily
     #   folium

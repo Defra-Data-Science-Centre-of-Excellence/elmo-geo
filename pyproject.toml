@@ -10,9 +10,9 @@ dependencies = [
     "folium",
     "geopandas",
     "mapclassify",
-    "pandas<2",
+    "pandas",
+    "pandera[geopandas,pyspark]",
     "pyarrow",
-    "pydantic",
     "pyspark==3.3.2",
     "python-dotenv",
     "rich",
@@ -32,9 +32,9 @@ dev = [
 ]
 old = [
     "beautifulsoup4",
+    "fiona",
     "osmnx",
     "osdatahub",
-    "pyogrio",
     "sentinelsat",
     "statsmodels",
 ]
