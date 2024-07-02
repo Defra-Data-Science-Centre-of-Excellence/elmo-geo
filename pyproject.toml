@@ -11,7 +11,7 @@ dependencies = [
     "geopandas",
     "mapclassify",
     "pandas",
-    "pandera[spark]",
+    "pandera[geopandas,pyspark]",
     "pyarrow",
     "pyspark==3.3.2",
     "python-dotenv",
@@ -32,6 +32,7 @@ dev = [
 ]
 old = [
     "beautifulsoup4",
+    "fiona",
     "osmnx",
     "osdatahub",
     "pyogrio",

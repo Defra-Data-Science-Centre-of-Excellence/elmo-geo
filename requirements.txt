@@ -13,6 +13,7 @@ apache-sedona==1.4.1
 attrs==23.2.0
     # via
     #   apache-sedona
+    #   fiona
     #   rasterio
 beautifulsoup4==4.12.3
     # via elmo_geo (pyproject.toml)
@@ -24,6 +25,7 @@ cachetools==5.3.3
     # via google-auth
 certifi==2024.6.2
     # via
+    #   fiona
     #   pyogrio
     #   pyproj
     #   rasterio
@@ -34,15 +36,20 @@ click==8.1.7
     # via
     #   click-plugins
     #   cligj
+    #   fiona
     #   geomet
     #   mercantile
     #   pip-tools
     #   rasterio
     #   sentinelsat
 click-plugins==1.1.1
-    # via rasterio
+    # via
+    #   fiona
+    #   rasterio
 cligj==0.7.2
-    # via rasterio
+    # via
+    #   fiona
+    #   rasterio
 contextily==1.6.0
     # via elmo_geo (pyproject.toml)
 contourpy==1.2.1
@@ -53,6 +60,8 @@ databricks-sdk==0.20.0
     # via elmo_geo (pyproject.toml)
 exceptiongroup==1.2.1
     # via pytest
+fiona==1.9.6
+    # via elmo_geo (pyproject.toml)
 folium==0.17.0
     # via elmo_geo (pyproject.toml)
 fonttools==4.53.0
@@ -69,6 +78,7 @@ geopandas==1.0.1
     # via
     #   elmo_geo (pyproject.toml)
     #   osmnx
+    #   pandera
 geopy==2.4.1
     # via contextily
 google-auth==2.31.0
@@ -158,7 +168,7 @@ pandas==2.2.2
     #   seaborn
     #   statsmodels
     #   xarray
-pandera[spark]==0.20.1
+pandera[geopandas,pyspark]==0.20.1
     # via elmo_geo (pyproject.toml)
 patsy==0.5.6
     # via statsmodels
@@ -203,7 +213,9 @@ pyproject-hooks==1.1.0
     #   build
     #   pip-tools
 pyspark==3.3.2
-    # via elmo_geo (pyproject.toml)
+    # via
+    #   elmo_geo (pyproject.toml)
+    #   pandera
 pytest==8.2.2
     # via elmo_geo (pyproject.toml)
 python-dateutil==2.9.0.post0
@@ -251,8 +263,10 @@ shapely==2.0.4
     #   geopandas
     #   osdatahub
     #   osmnx
+    #   pandera
 six==1.16.0
     # via
+    #   fiona
     #   patsy
     #   python-dateutil
 snuggs==1.4.7
