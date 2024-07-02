@@ -1,3 +1,6 @@
+import geopandas as gpd
+import pyarrow.parquet as pq
+from geopandas.io.arrow import SUPPORTED_VERSIONS, _geopandas_to_arrow
 from pyspark.sql import functions as F
 
 from elmo_geo.st.index import centroid_index, sindex
@@ -14,12 +17,16 @@ def repartitonBy(sdf: SparkDataFrame, by: str) -> SparkDataFrame:
     return sdf.repartition(n, by)
 
 
-def to_parquet(sdf: SparkDataFrame, f: str, geometry_column: str = "geometry", sindex_column: str = "sindex", **kwargs):
+def to_parquet(sdf: SparkDataFrame, f: str, geometry_column: str = "geometry", sindex_column: str | None = "sindex", **kwargs):
     """SparkDataFrame to Parquet with WKB encoding by without metadata, partitioned by "sindex"
     This assumes a indexing method has been used externally.
     """
-    sdf = sdf.transform(repartitonBy, sindex_column)
-    sdf.withColumn(geometry_column, F.expr(f"ST_AsBinary({geometry_column})")).write.parquet(dbfs(f, True), partitionBy=sindex_column, **kwargs)
+    _sdf = sdf
+    if sindex_column is not None:
+        _sdf = _sdf.transform(repartitonBy, sindex_column)
+    if geometry_column is not None:
+        _sdf = _sdf.withColumn(geometry_column, F.expr(f"ST_AsBinary({geometry_column})"))
+    _sdf.write.parquet(dbfs(f, True), partitionBy=sindex_column, **kwargs)
     info_sdf(sdf, f)
     return sdf
 
@@ -30,6 +37,35 @@ def to_geoparquet_partitioned(sdf: SparkDataFrame, f: str, **kwargs):
     sdf.write.format("geoparquet").save(dbfs(f, True), partitionBy="sindex", **kwargs)
     info_sdf(sdf, f)
     return sdf
+
+
+def gpd_to_partitioned_parquet(
+    gdf: gpd.GeoDataFrame,
+    path: str,
+    index: bool | None = None,
+    geometry_encoding: str = "wkb",
+    write_covering_bbox: bool = False,
+    compression: str = "snappy",
+    partition_cols: list[str] | None = None,
+    **kwargs,
+) -> None:
+    """`geopandas.GeoDataFrame` to partitioned parquet.
+
+    Note:
+        We are using the experimental geoparquet 1.1 here which saves as geoarrow instead of WKB and
+        adds a bounding box column for predicate pushdown. See geopandas sdocs for more info but we
+        have switched the defaults for geometry_encoding and write_covering_bbox.
+        https://geopandas.org/en/stable/docs/reference/api/geopandas.GeoDataFrame.to_parquet.html#geopandas.GeoDataFrame.to_parquet
+    """
+    schema_version = SUPPORTED_VERSIONS[-1]
+    table = _geopandas_to_arrow(gdf, index=index, schema_version=schema_version)
+    pq.write_to_dataset(
+        table,
+        path,
+        compression=compression,
+        partition_cols=partition_cols,
+        **kwargs,
+    )
 
 
 def to_parquet_partitioned(sdf: SparkDataFrame, f: str, **kwargs):
