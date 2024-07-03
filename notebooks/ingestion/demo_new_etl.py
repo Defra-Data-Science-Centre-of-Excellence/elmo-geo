@@ -18,13 +18,7 @@ register()
 
 # example of reading the geodataframe using `.gdf()` with filtering of columns and rows at read.
 # Use `.sdf()` for a spark dataframe and `.df()` for a pandas df.
-(
-    fc_sfi_agroforestry
-    .gdf(
-        columns=["geometry", "sensitivity"],
-        filters=[('fid', 'in', [1, 2, 3])]
-    )
-)
+(fc_sfi_agroforestry.gdf(columns=["geometry", "sensitivity"], filters=[("fid", "in", [1, 2, 3])]))
 
 # COMMAND ----------
 
