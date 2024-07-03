@@ -10,9 +10,7 @@ from elmo_geo.datasets import catalog, fc_sfi_agroforestry_raw, fc_sfi_agrofores
 
 register()
 
-# TODO: Predicate pushdown M
 # TODO: Demo an sjoin M
-
 # TODO: Add support for DAG plot Co
 # TODO: Add support for non-geospatial Co
 # TODO: Add support for changing the data type in the func and model validation Co
@@ -20,7 +18,15 @@ register()
 
 # COMMAND ----------
 
-fc_sfi_agroforestry.gdf
+# example of reading the geodataframe using `.gdf()` with filtering of columns and rows at read.
+# Use `.sdf()` for a spark dataframe and `.df()` for a pandas df.
+(
+    fc_sfi_agroforestry
+    .gdf(
+        columns=["geometry", "sensitivity"],
+        filters=[('fid', 'in', [1, 2, 3])]
+    )
+)
 
 # COMMAND ----------
 

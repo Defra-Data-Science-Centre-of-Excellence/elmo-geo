@@ -66,26 +66,35 @@ class Dataset(ABC):
         """Check whether this dataset needs to be refreshed in the cache."""
         return os.path.exists(self.path)
 
-    @property
-    def gdf(self) -> gpd.GeoDataFrame:
-        """Load the dataset as a `geopandas.GeoDataFrame`"""
-        if not self.is_fresh:
-            self.refresh()
-        return gpd.read_parquet(self.path)
+    def gdf(self, **kwargs) -> gpd.GeoDataFrame:
+        """Load the dataset as a `geopandas.GeoDataFrame`
 
-    @property
-    def df(self) -> pd.DataFrame:
-        """Load the dataset as a `pandas.DataFrame`"""
+        Columns and filters can be applied through `columns` and `filters` arguments, along with other options specified here:
+        https://arrow.apache.org/docs/python/generated/pyarrow.parquet.read_table.html#pyarrow.parquet.read_table
+        """
         if not self.is_fresh:
             self.refresh()
-        return gpd.read_parquet(self.path)
+        return gpd.read_parquet(self.path, **kwargs)
 
-    @property
-    def sdf(self) -> SparkDataFrame:
-        """Load the dataset as a `pyspark.sql.dataframe.DataFrame`"""
+    def df(self, **kwargs) -> pd.DataFrame:
+        """Load the dataset as a `pandas.DataFrame`
+
+        Columns and filters can be applied through `columns` and `filters` arguments, along with other options specified here:
+        https://arrow.apache.org/docs/python/generated/pyarrow.parquet.read_table.html#pyarrow.parquet.read_table
+        """
         if not self.is_fresh:
             self.refresh()
-        return to_sdf(self.gdf)
+        return gpd.read_parquet(self.path, **kwargs)
+
+    def sdf(self, **kwargs) -> SparkDataFrame:
+        """Load the dataset as a `pyspark.sql.dataframe.DataFrame`
+
+        Columns and filters can be applied through `columns` and `filters` arguments, along with other options specified here:
+        https://arrow.apache.org/docs/python/generated/pyarrow.parquet.read_table.html#pyarrow.parquet.read_table
+        """
+        if not self.is_fresh:
+            self.refresh()
+        return to_sdf(self.gdf(**kwargs))
 
     def _validate(self, gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
         if self.model is not None:

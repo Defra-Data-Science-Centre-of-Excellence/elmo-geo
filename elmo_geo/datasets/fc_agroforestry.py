@@ -18,7 +18,7 @@ class FcSfiAgroforestryClean(DataFrameModel):
 
 def _func(ds: Dataset) -> gpd.GeoDataFrame:
     """Only keep the geometry and the sensitivity col, fixing typo in colname."""
-    return ds.gdf.loc[:, ["geometry", "sensitivit"]].rename(columns={"sensitivit": "sensitivity"}).assign(fid=lambda df: range(len(df)))
+    return ds.gdf(columns=["geometry", "sensitivit"]).rename(columns={"sensitivit": "sensitivity"}).assign(fid=lambda df: range(len(df)))
 
 
 fc_sfi_agroforestry_raw = SourceDataset(
