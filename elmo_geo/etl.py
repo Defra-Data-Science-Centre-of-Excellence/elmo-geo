@@ -9,7 +9,9 @@ import time
 from abc import ABC, abstractmethod, abstractproperty
 from collections.abc import Callable
 from dataclasses import dataclass
+from datetime import datetime
 from hashlib import sha256
+import re
 
 import geopandas as gpd
 import pandas as pd
@@ -19,10 +21,13 @@ from pyspark.sql.dataframe import DataFrame as SparkDataFrame
 from elmo_geo.io import gpd_to_partitioned_parquet, to_sdf
 from elmo_geo.utils.log import LOG
 
-HASH_FMT: str = r"%y%m%d%H%M%S"
-PATH_FMT: str = "/dbfs/mnt/lab/{restricted}/ELM-Project/{layer}/{directory}/{name}-{hsh}.parquet"
+DATE_FMT: str = r"%Y_%m_%d"
+SRC_HASH_FMT: str = r"%Y%m%d%H%M%S"
+HASH_LENGTH =8 
+PATH_FMT: str = "/dbfs/mnt/lab/{restricted}/ELM-Project/{layer}/{directory}/"
+FILE_FMT: str = "{name}-{date}-{hsh}.parquet"
+PAT_FMT: str = "(^{name}-[\d_]*-{hsh}.parquet$)"
 SRID: int = 27700
-
 
 @dataclass
 class Dataset(ABC):
@@ -38,8 +43,12 @@ class Dataset(ABC):
     restricted: bool
 
     @abstractproperty
+    def date(self) -> str:
+        """The last modified date of the data file."""
+
+    @abstractproperty
     def metahash(self) -> str:
-        """The last modified date of the data file(s) from which a dataset is derived."""
+        """A semi-unique identifier of the last modified dates of the data file(s) from which a dataset is derived."""
 
     @abstractproperty
     def dict(self) -> dict:
@@ -50,21 +59,44 @@ class Dataset(ABC):
         """Populate the cache with a fresh version of this dataset."""
 
     @property
-    def path(self) -> str:
+    def path_dir(self) -> str:
+        """Path to the directory where the data will be saved."""
         restricted = "restricted" if self.restricted else "unrestricted"
-        # TODO: mkdir if not exists
-        return PATH_FMT.format(
-            restricted=restricted,
-            layer=self.layer,
-            directory=self.directory,
-            name=self.name,
-            hsh=self.metahash,
-        )
-
+        return PATH_FMT.format(restricted=restricted, layer=self.layer, directory=self.directory)
+    
     @property
     def is_fresh(self) -> bool:
         """Check whether this dataset needs to be refreshed in the cache."""
-        return os.path.exists(self.path)
+        return len(self.file_matches) > 0
+    
+    @property
+    def file_matches(self) -> list[str]:
+        """List of files that match the file path but may have different dates."""
+        pat=re.compile(PAT_FMT.format(name=self.name, hsh=self.metahash))
+        return [y.group(0) for y in [pat.fullmatch(x) for x in os.listdir(self.path_dir)] if y is not None]
+    
+    @property
+    def filename(self) -> str:
+        """Name of the file if it has been saved, else OSError."""
+        if not self.is_fresh:
+            msg = "The dataset has now been built yet. Please run `Dataset.refresh()`"
+            raise OSError(msg)
+        return next(iter(self.file_matches))
+    
+    @property
+    def path(self) -> str:
+        """Path to the file if it has been saved, else OSError."""
+        return self.path_dir + self.filename
+
+    @property
+    def _new_filename(self) -> str:
+        """New filename for parquet file being created."""
+        return FILE_FMT.format(name=self.name, date=self.date, hsh=self.hash)
+    
+    @property
+    def _new_path(self) -> str:
+        """New filepath for parquet file being created."""
+        return self.path_dir + self.new_filename
 
     def gdf(self, **kwargs) -> gpd.GeoDataFrame:
         """Load the dataset as a `geopandas.GeoDataFrame`
@@ -117,11 +149,17 @@ class SourceDataset(Dataset):
     source_path: str
     model: DataFrameModel | None = None
     partition_cols: list[str] | None = None
+    
+    @property
+    def date(self) -> str:
+        """Return the last-modified date of the source file in ISO string format."""
+        return time.strftime(DATE_FMT, time.gmtime(os.path.getmtime(self.source_path)))
 
     @property
     def metahash(self) -> str:
         """Return the last-modified date of the source file."""
-        return time.strftime(HASH_FMT, time.gmtime(os.path.getmtime(self.source_path)))
+        date = time.strftime(SRC_HASH_FMT, time.gmtime(os.path.getmtime(self.source_path)))
+        return sha256(date.encode()).hexdigest()[:HASH_LENGTH]
 
     @property
     def dict(self) -> dict:
@@ -140,7 +178,7 @@ class SourceDataset(Dataset):
         LOG.info(f"Creating '{self.name}' dataset.")
         gdf = gpd.read_file(self.source_path)
         gdf = self._validate(gdf)
-        gpd_to_partitioned_parquet(gdf, path=self.path, partition_cols=self.partition_cols)
+        gpd_to_partitioned_parquet(gdf, path=self._new_path, partition_cols=self.partition_cols)
         LOG.info(f"Saved to '{self.path}'.")
 
 
@@ -160,11 +198,16 @@ class DerivedDataset(Dataset):
     partition_cols: list[str] | None = None
 
     @property
+    def date(self) -> str:
+        """Return the current date for use in file naming."""
+        return datetime.today().strftime(DATE_FMT)
+
+    @property
     def metahash(self) -> str:
         """A hash derived from this dataset's dependencies."""
         # if any dependency's metahash changes, then this metahash will also change
         metahashes = "-".join(dependency.metahash for dependency in self.dependencies)
-        return sha256(metahashes.encode()).hexdigest()
+        return sha256(metahashes.encode()).hexdigest()[:HASH_LENGTH]
 
     @property
     def dict(self) -> dict:
@@ -184,5 +227,5 @@ class DerivedDataset(Dataset):
         LOG.info(f"Creating '{self.name}' dataset.")
         gdf = self.func(*self.dependencies)
         gdf = self._validate(gdf)
-        gpd_to_partitioned_parquet(gdf, path=self.path, partition_cols=self.partition_cols)
+        gpd_to_partitioned_parquet(gdf, path=self._new_path, partition_cols=self.partition_cols)
         LOG.info(f"Saved to '{self.path}'.")

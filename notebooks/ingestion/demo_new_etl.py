@@ -4,7 +4,6 @@
 # COMMAND ----------
 
 """Demo notebook for new ETL catalog."""
-
 from elmo_geo import register
 from elmo_geo.datasets import catalog, fc_sfi_agroforestry_raw, fc_sfi_agroforestry, write_catalog_json, destroy_datasets
 
@@ -36,11 +35,3 @@ write_catalog_json()
 
 # use with caution
 # destroy_datasets()
-
-# COMMAND ----------
-
-
-
-# COMMAND ----------
-
-
