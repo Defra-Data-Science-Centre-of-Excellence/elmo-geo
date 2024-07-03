@@ -2,10 +2,8 @@
 """Demo notebook for new ETL catalog."""
 from elmo_geo import register
 from elmo_geo.datasets import (
-    catalog,
     destroy_datasets,
     fc_sfi_agroforestry,
-    fc_sfi_agroforestry_raw,
     write_catalog_json,
 )
 
@@ -15,7 +13,6 @@ register()
 # TODO: Add support for DAG plot Co
 # TODO: Add support for non-geospatial Co
 # TODO: Add support for changing the data type in the func and model validation Co
-
 
 # COMMAND ----------
 
@@ -31,9 +28,10 @@ register()
 
 # COMMAND ----------
 
+# write the catalog to json
 write_catalog_json()
 
 # COMMAND ----------
 
 # use with caution
-# destroy_datasets()
+destroy_datasets()
