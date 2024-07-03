@@ -5,13 +5,13 @@ designed to manage data loading and any updates needed due to changes to source 
 dependants.
 """
 import os
+import re
 import time
 from abc import ABC, abstractmethod, abstractproperty
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime
 from hashlib import sha256
-import re
 
 import geopandas as gpd
 import pandas as pd
@@ -23,11 +23,12 @@ from elmo_geo.utils.log import LOG
 
 DATE_FMT: str = r"%Y_%m_%d"
 SRC_HASH_FMT: str = r"%Y%m%d%H%M%S"
-HASH_LENGTH =8 
+HASH_LENGTH = 8
 PATH_FMT: str = "/dbfs/mnt/lab/{restricted}/ELM-Project/{layer}/{directory}/"
 FILE_FMT: str = "{name}-{date}-{hsh}.parquet"
 PAT_FMT: str = "(^{name}-[\d_]*-{hsh}.parquet$)"
 SRID: int = 27700
+
 
 @dataclass
 class Dataset(ABC):
@@ -63,18 +64,18 @@ class Dataset(ABC):
         """Path to the directory where the data will be saved."""
         restricted = "restricted" if self.restricted else "unrestricted"
         return PATH_FMT.format(restricted=restricted, layer=self.layer, directory=self.directory)
-    
+
     @property
     def is_fresh(self) -> bool:
         """Check whether this dataset needs to be refreshed in the cache."""
         return len(self.file_matches) > 0
-    
+
     @property
     def file_matches(self) -> list[str]:
         """List of files that match the file path but may have different dates."""
-        pat=re.compile(PAT_FMT.format(name=self.name, hsh=self.metahash))
+        pat = re.compile(PAT_FMT.format(name=self.name, hsh=self.metahash))
         return [y.group(0) for y in [pat.fullmatch(x) for x in os.listdir(self.path_dir)] if y is not None]
-    
+
     @property
     def filename(self) -> str:
         """Name of the file if it has been saved, else OSError."""
@@ -82,7 +83,7 @@ class Dataset(ABC):
             msg = "The dataset has now been built yet. Please run `Dataset.refresh()`"
             raise OSError(msg)
         return next(iter(self.file_matches))
-    
+
     @property
     def path(self) -> str:
         """Path to the file if it has been saved, else OSError."""
@@ -92,7 +93,7 @@ class Dataset(ABC):
     def _new_filename(self) -> str:
         """New filename for parquet file being created."""
         return FILE_FMT.format(name=self.name, date=self.date, hsh=self.hash)
-    
+
     @property
     def _new_path(self) -> str:
         """New filepath for parquet file being created."""
@@ -133,6 +134,10 @@ class Dataset(ABC):
             self.model.validate(gdf)
         return gdf
 
+    @classmethod
+    def __type__(cls) -> str:
+        return cls.__name__
+
 
 @dataclass
 class SourceDataset(Dataset):
@@ -149,7 +154,7 @@ class SourceDataset(Dataset):
     source_path: str
     model: DataFrameModel | None = None
     partition_cols: list[str] | None = None
-    
+
     @property
     def date(self) -> str:
         """Return the last-modified date of the source file in ISO string format."""

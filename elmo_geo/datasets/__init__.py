@@ -14,7 +14,7 @@ catalog = [fc_sfi_agroforestry_raw, fc_sfi_agroforestry]
 def write_catalog_json():
     "Write the catalog as a json."
     with open("data/catalog.json", "w") as f:
-        f.write(json.dumps([dataset.dict for dataset in catalog], indent=4))
+        f.write(json.dumps({dataset.name: dataset.dict for dataset in catalog}, indent=4))
 
 
 def destroy_datasets():
