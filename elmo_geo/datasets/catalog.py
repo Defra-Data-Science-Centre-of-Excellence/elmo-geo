@@ -5,11 +5,6 @@ import shutil
 
 from elmo_geo.utils.log import LOG
 
-from .fc_agroforestry import fc_sfi_agroforestry, fc_sfi_agroforestry_raw
-
-catalog = [fc_sfi_agroforestry_raw, fc_sfi_agroforestry]
-"""List of datasets in `elmo_geo`."""
-
 
 def write_catalog_json():
     "Write the catalog as a json."

@@ -20,6 +20,8 @@ from pyspark.sql.dataframe import DataFrame as SparkDataFrame
 
 from elmo_geo.io import gpd_to_partitioned_parquet, to_sdf
 from elmo_geo.utils.log import LOG
+from elmo_geo.utils.misc import load_sdf
+
 
 DATE_FMT: str = r"%Y_%m_%d"
 SRC_HASH_FMT: str = r"%Y%m%d%H%M%S"
@@ -42,6 +44,8 @@ class Dataset(ABC):
     layer: str
     directory: str
     restricted: bool
+    model: DataFrameModel | None = None
+    partition_cols: list[str] | None = None
 
     @abstractproperty
     def date(self) -> str:
@@ -97,7 +101,7 @@ class Dataset(ABC):
     @property
     def _new_path(self) -> str:
         """New filepath for parquet file being created."""
-        return self.path_dir + self.new_filename
+        return self.path_dir + self._new_filename
 
     def gdf(self, **kwargs) -> gpd.GeoDataFrame:
         """Load the dataset as a `geopandas.GeoDataFrame`
@@ -109,7 +113,7 @@ class Dataset(ABC):
             self.refresh()
         return gpd.read_parquet(self.path, **kwargs)
 
-    def df(self, **kwargs) -> pd.DataFrame:
+    def pdf(self, **kwargs) -> pd.DataFrame:
         """Load the dataset as a `pandas.DataFrame`
 
         Columns and filters can be applied through `columns` and `filters` arguments, along with other options specified here:
@@ -117,7 +121,7 @@ class Dataset(ABC):
         """
         if not self.is_fresh:
             self.refresh()
-        return gpd.read_parquet(self.path, **kwargs)
+        return pd.read_parquet(self.path, **kwargs)
 
     def sdf(self, **kwargs) -> SparkDataFrame:
         """Load the dataset as a `pyspark.sql.dataframe.DataFrame`
@@ -127,7 +131,7 @@ class Dataset(ABC):
         """
         if not self.is_fresh:
             self.refresh()
-        return to_sdf(self.gdf(**kwargs))
+        return load_sdf(self.path, **kwargs)
 
     def _validate(self, gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
         if self.model is not None:
@@ -152,8 +156,6 @@ class SourceDataset(Dataset):
     """
 
     source_path: str
-    model: DataFrameModel | None = None
-    partition_cols: list[str] | None = None
 
     @property
     def date(self) -> str:
@@ -199,8 +201,6 @@ class DerivedDataset(Dataset):
 
     dependencies: list[Dataset]
     func: Callable[[list[SparkDataFrame]], SparkDataFrame]
-    model: DataFrameModel | None = None
-    partition_cols: list[str] | None = None
 
     @property
     def date(self) -> str:

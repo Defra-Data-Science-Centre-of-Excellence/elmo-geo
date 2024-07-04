@@ -16,9 +16,25 @@ register()
 
 # COMMAND ----------
 
+# MAGIC %pip install -q esridump
+
+# COMMAND ----------
+
+# import esridump
+# url = "https://services2.arcgis.com/mHXjwgl3OARRqqD4/ArcGIS/rest/services/SFI_Silvo_Arable/FeatureServer/0"
+# dumper = esridump.EsriDumper(url)
+
+dumper.can_handle_pagination
+timestamp = dumper.get_metadata()["editingInfo"]["dataLastEditDate"]
+for feature in dumper:
+    outfile.write(json.dumps(feature))
+    outfile.write('\n')
+
+# COMMAND ----------
+
 # example of reading the geodataframe using `.gdf()` with filtering of columns and rows at read.
 # Use `.sdf()` for a spark dataframe and `.df()` for a pandas df.
-(fc_sfi_agroforestry.gdf(columns=["geometry", "sensitivity"], filters=[("fid", "in", [1, 2, 3])]))
+fc_sfi_agroforestry.gdf(columns=["geometry", "sensitivity"], filters=[("fid", "in", [1, 2, 3])])
 
 # COMMAND ----------
 
