@@ -1,11 +1,8 @@
 # Databricks notebook source
 """Demo notebook for new ETL catalog."""
 from elmo_geo import register
-from elmo_geo.datasets import (
-    destroy_datasets,
-    fc_sfi_agroforestry,
-    write_catalog_json,
-)
+from elmo_geo.datasets import destroy_datasets, write_catalogue_json
+from elmo_geo.datasets.fc_agroforestry import fc_sfi_agroforestry
 
 register()
 
@@ -19,17 +16,15 @@ register()
 # example of reading the geodataframe using `.gdf()` with filtering of columns and rows at read.
 # Use `.sdf()` for a spark dataframe and `.df()` for a pandas df.
 (
-    fc_sfi_agroforestry
-    .gdf(
-        columns=["geometry", "sensitivity"],
-        filters=[('fid', 'in', [1, 2, 3])]
+    fc_sfi_agroforestry.gdf(
+        columns=["geometry", "sensitivity"], filters=[("fid", "in", [1, 2, 3])]
     )
 )
 
 # COMMAND ----------
 
 # write the catalog to json
-write_catalog_json()
+write_catalogue_json()
 
 # COMMAND ----------
 

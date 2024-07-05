@@ -18,8 +18,9 @@ import pandas as pd
 from pandera import DataFrameModel
 from pyspark.sql.dataframe import DataFrame as SparkDataFrame
 
-from elmo_geo.io import gpd_to_partitioned_parquet, to_sdf
+from elmo_geo.io import gpd_to_partitioned_parquet
 from elmo_geo.utils.log import LOG
+from elmo_geo.utils.misc import load_sdf
 
 DATE_FMT: str = r"%Y_%m_%d"
 SRC_HASH_FMT: str = r"%Y%m%d%H%M%S"
@@ -48,7 +49,7 @@ class Dataset(ABC):
         """The last modified date of the data file."""
 
     @abstractproperty
-    def metahash(self) -> str:
+    def _hash(self) -> str:
         """A semi-unique identifier of the last modified dates of the data file(s) from which a dataset is derived."""
 
     @abstractproperty
@@ -73,7 +74,7 @@ class Dataset(ABC):
     @property
     def file_matches(self) -> list[str]:
         """List of files that match the file path but may have different dates."""
-        pat = re.compile(PAT_FMT.format(name=self.name, hsh=self.metahash))
+        pat = re.compile(PAT_FMT.format(name=self.name, hsh=self._hash))
         return [y.group(0) for y in [pat.fullmatch(x) for x in os.listdir(self.path_dir)] if y is not None]
 
     @property
@@ -92,12 +93,12 @@ class Dataset(ABC):
     @property
     def _new_filename(self) -> str:
         """New filename for parquet file being created."""
-        return FILE_FMT.format(name=self.name, date=self.date, hsh=self.hash)
+        return FILE_FMT.format(name=self.name, date=self.date, hsh=self._hash)
 
     @property
     def _new_path(self) -> str:
         """New filepath for parquet file being created."""
-        return self.path_dir + self.new_filename
+        return self.path_dir + self._new_filename
 
     def gdf(self, **kwargs) -> gpd.GeoDataFrame:
         """Load the dataset as a `geopandas.GeoDataFrame`
@@ -109,7 +110,7 @@ class Dataset(ABC):
             self.refresh()
         return gpd.read_parquet(self.path, **kwargs)
 
-    def df(self, **kwargs) -> pd.DataFrame:
+    def pdf(self, **kwargs) -> pd.DataFrame:
         """Load the dataset as a `pandas.DataFrame`
 
         Columns and filters can be applied through `columns` and `filters` arguments, along with other options specified here:
@@ -117,19 +118,16 @@ class Dataset(ABC):
         """
         if not self.is_fresh:
             self.refresh()
-        return gpd.read_parquet(self.path, **kwargs)
+        return pd.read_parquet(self.path, **kwargs)
 
     def sdf(self, **kwargs) -> SparkDataFrame:
-        """Load the dataset as a `pyspark.sql.dataframe.DataFrame`
-
-        Columns and filters can be applied through `columns` and `filters` arguments, along with other options specified here:
-        https://arrow.apache.org/docs/python/generated/pyarrow.parquet.read_table.html#pyarrow.parquet.read_table
-        """
+        """Load the dataset as a `pyspark.sql.dataframe.DataFrame`."""
         if not self.is_fresh:
             self.refresh()
-        return to_sdf(self.gdf(**kwargs))
+        return load_sdf(self.path, **kwargs)
 
     def _validate(self, gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
+        """Validate the data against a model specification if one is defined."""
         if self.model is not None:
             self.model.validate(gdf)
         return gdf
@@ -161,7 +159,7 @@ class SourceDataset(Dataset):
         return time.strftime(DATE_FMT, time.gmtime(os.path.getmtime(self.source_path)))
 
     @property
-    def metahash(self) -> str:
+    def _hash(self) -> str:
         """Return the last-modified date of the source file."""
         date = time.strftime(SRC_HASH_FMT, time.gmtime(os.path.getmtime(self.source_path)))
         return sha256(date.encode()).hexdigest()[:HASH_LENGTH]
@@ -208,11 +206,13 @@ class DerivedDataset(Dataset):
         return datetime.today().strftime(DATE_FMT)
 
     @property
-    def metahash(self) -> str:
-        """A hash derived from this dataset's dependencies."""
-        # if any dependency's metahash changes, then this metahash will also change
-        metahashes = "-".join(dependency.metahash for dependency in self.dependencies)
-        return sha256(metahashes.encode()).hexdigest()[:HASH_LENGTH]
+    def _hash(self) -> str:
+        """A hash derived from this dataset's dependencies.
+
+        If any dependency's hashes change, then this hash will also change
+        """
+        hshs = "-".join(dependency._hash for dependency in self.dependencies)
+        return sha256(hshs.encode()).hexdigest()[:HASH_LENGTH]
 
     @property
     def dict(self) -> dict:

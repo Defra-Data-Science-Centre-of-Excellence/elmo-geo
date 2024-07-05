@@ -1,4 +1,4 @@
 """`elmo_geo` datasets."""
-from .catalog import catalog, destroy_datasets, write_catalog_json
+from .catalogue import catalogue, destroy_datasets, write_catalogue_json
 
-__all__ = ["catalog", "destroy_datasets", "write_catalog_json"]
+__all__ = ["catalogue", "destroy_datasets", "write_catalogue_json"]
