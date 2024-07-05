@@ -1,8 +1,8 @@
 {
     "sfi_agroforestry_raw": {
         "name": "sfi_agroforestry_raw",
-        "layer": "bronze",
-        "directory": "forestry_commission",
+        "level0": "bronze",
+        "level1": "forestry_commission",
         "restricted": false,
         "path": "/dbfs/mnt/lab/unrestricted/ELM-Project/bronze/forestry_commission/sfi_agroforestry_raw-2024_06_27-84a43997.parquet",
         "type": "<class 'elmo_geo.etl.SourceDataset'>",
@@ -10,8 +10,8 @@
     },
     "sfi_agroforestry": {
         "name": "sfi_agroforestry",
-        "layer": "silver",
-        "directory": "forestry_commission",
+        "level0": "silver",
+        "level1": "forestry_commission",
         "restricted": false,
         "path": "/dbfs/mnt/lab/unrestricted/ELM-Project/silver/forestry_commission/sfi_agroforestry-2024_07_05-ee3a7e93.parquet",
         "type": "<class 'elmo_geo.etl.DerivedDataset'>",

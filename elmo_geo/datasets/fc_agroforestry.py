@@ -23,16 +23,16 @@ def _func(ds: Dataset) -> gpd.GeoDataFrame:
 
 fc_sfi_agroforestry_raw = SourceDataset(
     name="sfi_agroforestry_raw",
-    directory="forestry_commission",
-    layer="bronze",
+    level0="bronze",
+    level1="forestry_commission",
     restricted=False,
     source_path="/dbfs/mnt/lab/unrestricted/elm_data/forestry_commission/sfi_agroforestry/2024_04_15/SFI_Agroforestry.shp",
 )
 
 fc_sfi_agroforestry = DerivedDataset(
     name="sfi_agroforestry",
-    directory="forestry_commission",
-    layer="silver",
+    level0="silver",
+    level1="forestry_commission",
     restricted=False,
     model=FcSfiAgroforestryClean,
     func=_func,
