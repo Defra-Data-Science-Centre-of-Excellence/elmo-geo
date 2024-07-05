@@ -25,9 +25,9 @@ from elmo_geo.utils.misc import load_sdf
 DATE_FMT: str = r"%Y_%m_%d"
 SRC_HASH_FMT: str = r"%Y%m%d%H%M%S"
 HASH_LENGTH = 8
-PATH_FMT: str = "/dbfs/mnt/lab/{restricted}/ELM-Project/{layer}/{directory}/"
+PATH_FMT: str = "/dbfs/mnt/lab/{restricted}/ELM-Project/{level0}/{level1}/"
 FILE_FMT: str = "{name}-{date}-{hsh}.parquet"
-PAT_FMT: str = "(^{name}-[\d_]*-{hsh}.parquet$)"
+PAT_FMT: str = "(^{name}-[\d_]+-{hsh}.parquet$)"
 SRID: int = 27700
 
 
@@ -40,8 +40,8 @@ class Dataset(ABC):
     """
 
     name: str
-    layer: str
-    directory: str
+    level0: str
+    level1: str
     restricted: bool
 
     @abstractproperty
@@ -64,7 +64,7 @@ class Dataset(ABC):
     def path_dir(self) -> str:
         """Path to the directory where the data will be saved."""
         restricted = "restricted" if self.restricted else "unrestricted"
-        return PATH_FMT.format(restricted=restricted, layer=self.layer, directory=self.directory)
+        return PATH_FMT.format(restricted=restricted, level0=self.level0, level1=self.level1)
 
     @property
     def is_fresh(self) -> bool:
@@ -169,8 +169,8 @@ class SourceDataset(Dataset):
         """A dictionary representation of the dataset."""
         return dict(
             name=self.name,
-            layer=self.layer,
-            directory=self.directory,
+            level0=self.level0,
+            level1=self.level1,
             restricted=self.restricted,
             path=self.path,
             type=str(type(self)),
@@ -219,8 +219,8 @@ class DerivedDataset(Dataset):
         """A dictionary representation of the dataset."""
         return dict(
             name=self.name,
-            layer=self.layer,
-            directory=self.directory,
+            level0=self.level0,
+            level1=self.level1,
             restricted=self.restricted,
             path=self.path,
             type=str(type(self)),
