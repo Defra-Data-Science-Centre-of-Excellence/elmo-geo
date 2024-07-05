@@ -30,4 +30,17 @@ def destroy_datasets():
             shutil.rmtree(dataset.path)
 
 
+def main():
+    LOG.info("Refreshing datasets...")
+    for dataset in catalogue:
+        if not dataset.is_fresh:
+            dataset.refresh()
+    LOG.info(f"Datasets are up to date.")
+
+
 __all__ = ["catalogue", "destroy_datasets", "write_catalogue_json"]
+
+
+if __name__ == "__main__":
+    """Run the whole ETL to build any missing datasets and refresh any stale ones."""
+    main()

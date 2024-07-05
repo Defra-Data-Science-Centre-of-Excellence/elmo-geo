@@ -6,7 +6,8 @@
         "restricted": false,
         "path": "/dbfs/mnt/lab/unrestricted/ELM-Project/bronze/forestry_commission/sfi_agroforestry_raw-2024_06_27-84a43997.parquet",
         "type": "<class 'elmo_geo.etl.SourceDataset'>",
-        "source_path": "/dbfs/mnt/lab/unrestricted/elm_data/forestry_commission/sfi_agroforestry/2024_04_15/SFI_Agroforestry.shp"
+        "source_path": "/dbfs/mnt/lab/unrestricted/elm_data/forestry_commission/sfi_agroforestry/2024_04_15/SFI_Agroforestry.shp",
+        "date": "2024_06_27"
     },
     "sfi_agroforestry": {
         "name": "sfi_agroforestry",
@@ -17,6 +18,7 @@
         "type": "<class 'elmo_geo.etl.DerivedDataset'>",
         "dependencies": [
             "sfi_agroforestry_raw"
-        ]
+        ],
+        "date": "2024_07_05"
     }
 }

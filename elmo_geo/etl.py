@@ -175,6 +175,7 @@ class SourceDataset(Dataset):
             path=self.path,
             type=str(type(self)),
             source_path=self.source_path,
+            date=self.date,
         )
 
     def refresh(self) -> None:
@@ -225,6 +226,7 @@ class DerivedDataset(Dataset):
             path=self.path,
             type=str(type(self)),
             dependencies=[dep.name for dep in self.dependencies],
+            date=self.date,
         )
 
     def refresh(self) -> None:
