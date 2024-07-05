@@ -16,7 +16,7 @@ class FcSfiAgroforestryClean(DataFrameModel):
     sensitivity: Category = Field(coerce=True)
 
 
-def _func(ds: Dataset) -> gpd.GeoDataFrame:
+def _transform_dataset(ds: Dataset) -> gpd.GeoDataFrame:
     """Only keep the geometry and the sensitivity col, fixing typo in colname."""
     return ds.gdf(columns=["geometry", "sensitivit"]).rename(columns={"sensitivit": "sensitivity"}).assign(fid=lambda df: range(len(df)))
 
@@ -35,6 +35,6 @@ fc_sfi_agroforestry = DerivedDataset(
     level1="forestry_commission",
     restricted=False,
     model=FcSfiAgroforestryClean,
-    func=_func,
+    func=_transform_dataset,
     dependencies=[fc_sfi_agroforestry_raw],
 )
