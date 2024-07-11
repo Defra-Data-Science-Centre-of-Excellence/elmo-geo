@@ -110,9 +110,9 @@ download_link(f)
 
 # COMMAND ----------
 
-# gdf = to_gdf(sdf.filter("sindex=='SO53'"))
-# gdf0 = gdf[["fid", "score", "geometry_olf"]].groupby("fid").first().pipe(to_gdf, column="geometry_olf")
-# gdf1 = gdf[["id_parcel", "geometry"]].groupby("id_parcel").first()
+gdf = to_gdf(sdf.filter("sindex=='SO53'"))
+gdf0 = gdf[["fid", "score", "geometry_olf"]].groupby("fid").first().pipe(to_gdf, column="geometry_olf")
+gdf1 = gdf[["id_parcel", "geometry"]].groupby("id_parcel").first()
 gdf1.plot(ax=plot_gdf(gdf0, column="score", cmap="GnBu", linewidth=1), color="goldenrod", alpha=.5, edgecolor="darkgoldenrod", linewidth=.5)
 
 # COMMAND ----------
@@ -124,8 +124,14 @@ gdf1.plot(ax=plot_gdf(gdf0, column="score", cmap="GnBu", linewidth=1), color="go
 
 # COMMAND ----------
 
+sdf_segment.createOrReplaceTempView("segment")
+
 sdf = (
-    sjoin(sdf_segment, sdf_olf)
+    spark.sql("""
+        SELECT segment.*, olf.* EXCEPT(olf.geometry), olf.geometry AS geometry_olf
+        FROM segment JOIN olf
+        WHERE ST_Intersects(segment.geometry, olf.geometry)
+    """)
     .groupby("id_parcel", "id_segment")
     .agg(
         F.collect_set("fid").alias("fids"),
