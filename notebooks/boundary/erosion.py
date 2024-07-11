@@ -19,13 +19,11 @@
 # COMMAND ----------
 
 
-import matplotlib.pyplot as plt
 import pandas as pd
-import geopandas as gpd
 from pyspark.sql import functions as F
 
 from elmo_geo import register
-from elmo_geo.io import to_gdf, download_link
+from elmo_geo.io import download_link, to_gdf
 from elmo_geo.plot.base_map import plot_gdf
 from elmo_geo.utils.misc import load_sdf
 
@@ -88,11 +86,13 @@ sdf_segment.createOrReplaceTempView("segment")
 
 # COMMAND ----------
 
-sdf = spark.sql("""
+sdf = spark.sql(
+    """
     SELECT parcel.*, olf.* EXCEPT(olf.geometry), olf.geometry AS geometry_olf
     FROM parcel JOIN olf
     ON ST_Intersects(parcel.geometry, olf.geometry)
-""")
+"""
+)
 
 
 sdf.display()
@@ -109,14 +109,14 @@ download_link(f)
 gdf = to_gdf(sdf.filter("sindex=='SO53'"))
 gdf0 = gdf[["fid", "score", "geometry_olf"]].groupby("fid").first().pipe(to_gdf, column="geometry_olf")
 gdf1 = gdf[["id_parcel", "geometry"]].groupby("id_parcel").first()
-gdf1.plot(ax=plot_gdf(gdf0, column="score", cmap="GnBu", linewidth=1, vmin=0, vmax=1), color="goldenrod", alpha=.5, edgecolor="darkgoldenrod", linewidth=.5)
+gdf1.plot(ax=plot_gdf(gdf0, column="score", cmap="GnBu", linewidth=1, vmin=0, vmax=1), color="goldenrod", alpha=0.5, edgecolor="darkgoldenrod", linewidth=0.5)
 
 # COMMAND ----------
 
 gdf = to_gdf(sdf.filter("sindex=='NY85'"))
 gdf0 = gdf[["fid", "score", "geometry_olf"]].groupby("fid").first().pipe(to_gdf, column="geometry_olf")
 gdf1 = gdf[["id_parcel", "geometry"]].groupby("id_parcel").first()
-gdf1.plot(ax=plot_gdf(gdf0, column="score", cmap="GnBu", linewidth=1, vmin=0, vmax=1), color="goldenrod", alpha=.5, edgecolor="darkgoldenrod", linewidth=.5)
+gdf1.plot(ax=plot_gdf(gdf0, column="score", cmap="GnBu", linewidth=1, vmin=0, vmax=1), color="goldenrod", alpha=0.5, edgecolor="darkgoldenrod", linewidth=0.5)
 
 # COMMAND ----------
 
@@ -126,11 +126,13 @@ gdf1.plot(ax=plot_gdf(gdf0, column="score", cmap="GnBu", linewidth=1, vmin=0, vm
 # COMMAND ----------
 
 sdf = (
-    spark.sql("""
+    spark.sql(
+        """
         SELECT segment.*, olf.* EXCEPT(olf.geometry), olf.geometry AS geometry_olf
         FROM segment JOIN olf
         ON ST_Intersects(segment.geometry, olf.geometry)
-    """)
+    """
+    )
     .groupby("id_parcel", "id_segment")
     .agg(
         F.collect_set("fid").alias("fids"),
