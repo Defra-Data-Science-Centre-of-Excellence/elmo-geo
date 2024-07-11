@@ -4,20 +4,16 @@
 # MAGIC
 # MAGIC ### Planning
 # MAGIC - join overland_flow with boundary segments
-# MAGIC - merge Crispins scores per segment
-# MAGIC - multiply by MaxAcc
+# MAGIC - create a score
+# MAGIC - review the score
 # MAGIC - stretch goal: use land_cover for interior segments
 # MAGIC - stretch goal: network effects - connectivity score
 # MAGIC
 # MAGIC
 # MAGIC ### Output
 # MAGIC - id_parcel, id_segment|None, *RiskScore, MaxFlowAcc, catchment, subcatchement, score
-# MAGIC
-# MAGIC
-# MAGIC ### TODO
-# MAGIC - plot the wye SO53
-# MAGIC - see how colourful the overland flows are, and parcels, and segments.
-# MAGIC - Compare with NY85 for hilly but not polluted
+# MAGIC - Plot of Wye Valley, floods likely, pollution high
+# MAGIC - Plot of North Pennines, floods unlikely, pollution low
 # MAGIC
 
 # COMMAND ----------
@@ -86,25 +82,25 @@ sdf_olf = load_sdf(f_olf).selectExpr(
 )
 
 
-sdf_olf.display()
-
-# COMMAND ----------
-
 sdf_parcel.createOrReplaceTempView("parcel")
 sdf_olf.createOrReplaceTempView("olf")
+sdf_segment.createOrReplaceTempView("segment")
+
+# COMMAND ----------
 
 sdf = spark.sql("""
     SELECT parcel.*, olf.* EXCEPT(olf.geometry), olf.geometry AS geometry_olf
     FROM parcel JOIN olf
-    WHERE ST_Intersects(parcel.geometry, olf.geometry)
+    ON ST_Intersects(parcel.geometry, olf.geometry)
 """)
 
 
 sdf.display()
+sdf.count()
 
 # COMMAND ----------
 
-pdf = sdf.drop("geometry_left", "geometry_right").toPandas()
+pdf = sdf.drop("geometry", "geometry_olf").toPandas()
 pdf.to_parquet(f)
 download_link(f)
 
@@ -113,24 +109,27 @@ download_link(f)
 gdf = to_gdf(sdf.filter("sindex=='SO53'"))
 gdf0 = gdf[["fid", "score", "geometry_olf"]].groupby("fid").first().pipe(to_gdf, column="geometry_olf")
 gdf1 = gdf[["id_parcel", "geometry"]].groupby("id_parcel").first()
-gdf1.plot(ax=plot_gdf(gdf0, column="score", cmap="GnBu", linewidth=1), color="goldenrod", alpha=.5, edgecolor="darkgoldenrod", linewidth=.5)
+gdf1.plot(ax=plot_gdf(gdf0, column="score", cmap="GnBu", linewidth=1, vmin=0, vmax=1), color="goldenrod", alpha=.5, edgecolor="darkgoldenrod", linewidth=.5)
 
 # COMMAND ----------
 
 gdf = to_gdf(sdf.filter("sindex=='NY85'"))
 gdf0 = gdf[["fid", "score", "geometry_olf"]].groupby("fid").first().pipe(to_gdf, column="geometry_olf")
 gdf1 = gdf[["id_parcel", "geometry"]].groupby("id_parcel").first()
-gdf1.plot(ax=plot_gdf(gdf0, column="score", cmap="GnBu", linewidth=1), color="goldenrod", alpha=.5, edgecolor="darkgoldenrod", linewidth=.5)
+gdf1.plot(ax=plot_gdf(gdf0, column="score", cmap="GnBu", linewidth=1, vmin=0, vmax=1), color="goldenrod", alpha=.5, edgecolor="darkgoldenrod", linewidth=.5)
 
 # COMMAND ----------
 
-sdf_segment.createOrReplaceTempView("segment")
+# MAGIC %md
+# MAGIC # TODO: use segments too
+
+# COMMAND ----------
 
 sdf = (
     spark.sql("""
         SELECT segment.*, olf.* EXCEPT(olf.geometry), olf.geometry AS geometry_olf
         FROM segment JOIN olf
-        WHERE ST_Intersects(segment.geometry, olf.geometry)
+        ON ST_Intersects(segment.geometry, olf.geometry)
     """)
     .groupby("id_parcel", "id_segment")
     .agg(
@@ -143,3 +142,4 @@ sdf = (
 
 
 sdf.display()
+sdf.count()
