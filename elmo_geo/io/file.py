@@ -47,6 +47,7 @@ def gpd_to_partitioned_parquet(
     write_covering_bbox: bool = False,
     compression: str = "snappy",
     partition_cols: list[str] | None = None,
+    use_deprecated_int96_timestamps: bool = True,
     **kwargs,
 ) -> None:
     """`geopandas.GeoDataFrame` to partitioned parquet.
@@ -55,7 +56,7 @@ def gpd_to_partitioned_parquet(
         We want to use the experimental geoparquet 1.1 here which saves as geoarrow
         instead of WKB and adds a bounding box column for predicate pushdown.
         See geopandas docs for more info, but have left the default of WKB for now
-        to avoit potential incompatibility.
+        to avoid potential incompatibility.
         https://geopandas.org/en/stable/docs/reference/api/geopandas.GeoDataFrame.to_parquet.html#geopandas.GeoDataFrame.to_parquet
     """
     schema_version = SUPPORTED_VERSIONS[-1]
@@ -65,6 +66,7 @@ def gpd_to_partitioned_parquet(
         path,
         compression=compression,
         partition_cols=partition_cols,
+        use_deprecated_int96_timestamps=use_deprecated_int96_timestamps,
         **kwargs,
     )
 
