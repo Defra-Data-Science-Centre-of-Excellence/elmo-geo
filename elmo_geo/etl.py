@@ -91,7 +91,7 @@ class Dataset(ABC):
     def filename(self) -> str:
         """Name of the file if it has been saved, else OSError."""
         if not self.is_fresh:
-            msg = "The dataset has now been built yet. Please run `Dataset.refresh()`"
+            msg = "The dataset has not been built yet. Please run `Dataset.refresh()`"
             raise OSError(msg)
         return next(iter(self.file_matches))
 
