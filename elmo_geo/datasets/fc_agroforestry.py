@@ -63,7 +63,7 @@ Columns have been renamed and dropped from the daw-version but the data/rows rem
 """
 
 
-class FcSfiAgroforestryParcels(DataFrameModel):
+class SfiAgroforestryParcels(DataFrameModel):
     """Model describing the `sfi_agroforestry_parcels` dataset.
 
     Parameters:
@@ -77,8 +77,9 @@ class FcSfiAgroforestryParcels(DataFrameModel):
     proportion: float = Field(ge=0, le=1)
 
 
-def _transform_dataset(parcels: Dataset, agroforestry: Dataset) -> gpd.GeoDataFrame:
-    """Only keep the geometry and the sensitivity col, fixing typo in colname."""
+def _join_datasets(parcels: Dataset, agroforestry: Dataset) -> gpd.GeoDataFrame:
+    """Spatial join the two datasets and calculate the proportion of the parcel that intersects."""
+    classes = ["sensitivity"]
     df_parcels = (
         parcels.sdf()
         .select("id_parcel", "geometry")
@@ -89,31 +90,27 @@ def _transform_dataset(parcels: Dataset, agroforestry: Dataset) -> gpd.GeoDataFr
     )
     df_feature = (
         agroforestry.sdf()
-        .select("sensitivity", "geometry")
+        .select("geometry", *classes)
         .withColumn("geometry", F.expr("ST_MakeValid(geometry)"))
         .withColumn("geometry", F.expr(f"ST_SimplifyPreserveTopology(geometry, {SIMPLIFY_TOLERENCE})"))
         .withColumn("geometry", F.expr("ST_Force_2D(geometry)"))
         .withColumn("geometry", F.expr("ST_MakeValid(geometry)"))
         .withColumn("geometry", F.expr(f"ST_SubdivideExplode(geometry, {MAX_VERTICES})"))
     )
-    df = (
+    return (
         sjoin(df_parcels, df_feature)
+        .groupby("id_parcel", *classes)
+        .agg(
+            F.expr("ST_Union_Aggr(geometry_left) AS geometry_left"),
+            F.expr("ST_Union_Aggr(geometry_right) AS geometry_right"),
+        )
         .withColumn("geometry_intersection", F.expr("ST_Intersection(geometry_left, geometry_right)"))
         .withColumn("area_left", F.expr("ST_Area(geometry_left)"))
         .withColumn("area_intersection", F.expr("ST_Area(geometry_intersection)"))
         .withColumn("proportion", F.col("area_intersection") / F.col("area_left"))
         .drop("area_left", "area_intersection", "geometry_left", "geometry_right", "geometry_intersection")
+        .toPandas()
     )
-    # group up the result and sum the proportions in case multiple polygons with
-    # the same attributes intersect with the parcel
-    df = (
-        df.groupBy(*[col for col in df.columns if col != "proportion"])
-        .sum("proportion")
-        .withColumn("proportion", F.round("sum(proportion)", 6))
-        .where("proportion > 0")
-        .drop("sum(proportion)")
-    )
-    return df.toPandas()
 
 
 sfi_agroforestry_parcels = DerivedDataset(
@@ -121,8 +118,8 @@ sfi_agroforestry_parcels = DerivedDataset(
     level0="silver",
     level1="forestry_commission",
     restricted=False,
-    func=_transform_dataset,
+    func=_join_datasets,
     dependencies=[reference_parcels, sfi_agroforestry],
-    model=FcSfiAgroforestryParcels,
+    model=SfiAgroforestryParcels,
 )
 """Definition for Forestry Commission's SFI Agroforestry dataset joined to RPA Parcels."""
