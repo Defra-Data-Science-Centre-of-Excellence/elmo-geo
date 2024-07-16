@@ -74,7 +74,7 @@ sdf_olf = load_sdf(f_olf).selectExpr(
     "CAST(SUBSTRING(MeanRainfalRisk, 1, 2) AS INT) AS MeanRainfallScore",
     # "MajLandUse", "MeanSlope", "Slope1haWatershed", "MinFlowWater", "MinFlowRoad", "SSSI_Intersect", "FlowAccClass", "MaxFlowAcc",
     "NTILE(5) OVER (ORDER BY MaxFlowAcc) AS AreaScore",  # Replace *MaxFlowAcc with +Quintile(MaxFlowAcc)
-    "(CatchmentScore + LandUseScore + SlopeScore + CombinedSoilScore + MeanRainfallScore + AreaScore) /5/6 AS score",
+    "(CatchmentScore + LandUseScore + SlopeScore + CombinedSoilScore + MeanRainfallScore + AreaScore) /6 AS score",
     "Shape_Length AS length",
     "geometry",
 )
