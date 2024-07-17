@@ -1,3 +1,4 @@
+import pandas as pd
 import geopandas as gpd
 import pyarrow.parquet as pq
 from geopandas.io.arrow import SUPPORTED_VERSIONS, _geopandas_to_arrow
@@ -38,6 +39,24 @@ def to_geoparquet_partitioned(sdf: SparkDataFrame, f: str, **kwargs):
     info_sdf(sdf, f)
     return sdf
 
+def pd_to_partitioned_parquet(
+    df: pd.DataFrame,
+    path: str,
+    index: bool | None = None,
+    compression: str = "snappy",
+    partition_cols: list[str] | None = None,
+    use_deprecated_int96_timestamps: bool = True,
+    **kwargs,
+    ) -> None:
+    table = pa.Table.from_pandas(df)
+    pq.write_to_dataset(
+        table,
+        path,
+        compression=compression,
+        partition_cols=partition_cols,
+        use_deprecated_int96_timestamps=use_deprecated_int96_timestamps,
+        **kwargs,
+    )
 
 def gpd_to_partitioned_parquet(
     gdf: gpd.GeoDataFrame,
