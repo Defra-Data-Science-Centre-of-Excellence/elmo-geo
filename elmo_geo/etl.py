@@ -6,12 +6,14 @@ dependants.
 """
 import os
 import re
+import shutil
 import time
 from abc import ABC, abstractmethod, abstractproperty
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime
 from hashlib import sha256
+from pathlib import Path
 
 import geopandas as gpd
 import pandas as pd
@@ -29,6 +31,14 @@ PATH_FMT: str = "/dbfs/mnt/lab/{restricted}/ELM-Project/{level0}/{level1}/"
 FILE_FMT: str = "{name}-{date}-{hsh}.parquet"
 PAT_FMT: str = "(^{name}-[\d_]+-{hsh}.parquet$)"
 SRID: int = 27700
+
+
+class NotGeoError(Exception):
+    """The dataset is not geospatial."""
+
+
+class UnknownFileExtension(Exception):
+    """Don't know how to read file with extension."""
 
 
 @dataclass
@@ -81,7 +91,7 @@ class Dataset(ABC):
     def filename(self) -> str:
         """Name of the file if it has been saved, else OSError."""
         if not self.is_fresh:
-            msg = "The dataset has now been built yet. Please run `Dataset.refresh()`"
+            msg = "The dataset has not been built yet. Please run `Dataset.refresh()`"
             raise OSError(msg)
         return next(iter(self.file_matches))
 
@@ -126,11 +136,21 @@ class Dataset(ABC):
             self.refresh()
         return load_sdf(self.path, **kwargs)
 
-    def _validate(self, gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
+    def _validate(self, df: gpd.GeoDataFrame | SparkDataFrame | pd.DataFrame) -> gpd.GeoDataFrame | SparkDataFrame | pd.DataFrame:
         """Validate the data against a model specification if one is defined."""
         if self.model is not None:
-            self.model.validate(gdf)
-        return gdf
+            self.model.validate(df)
+        return df
+
+    def destroy(self) -> None:
+        """Delete the cached dataset at `self.path`."""
+        if Path(self.path).exists():
+            shutil.rmtree(self.path)
+            msg = f"Destroyed '{self.name}' dataset."
+            LOG.warning(msg)
+            return
+        msg = f"'{self.name}' dataset cannot be destroyed as it doesn't exist yet."
+        LOG.warning(msg)
 
     @classmethod
     def __type__(cls) -> str:
@@ -152,6 +172,7 @@ class SourceDataset(Dataset):
     source_path: str
     model: DataFrameModel | None = None
     partition_cols: list[str] | None = None
+    is_geo: bool = True
 
     @property
     def date(self) -> str:
@@ -180,9 +201,22 @@ class SourceDataset(Dataset):
 
     def refresh(self) -> None:
         LOG.info(f"Creating '{self.name}' dataset.")
-        gdf = gpd.read_file(self.source_path)
-        gdf = self._validate(gdf)
-        gpd_to_partitioned_parquet(gdf, path=self._new_path, partition_cols=self.partition_cols)
+        if self.is_geo:
+            if Path(self.source_path).suffix == ".parquet":
+                gdf = gpd.read_parquet(self.source_path)
+            else:
+                gdf = gpd.read_file(self.source_path)
+            gdf = self._validate(gdf)
+            gpd_to_partitioned_parquet(gdf, path=self._new_path, partition_cols=self.partition_cols)
+        else:
+            if Path(self.source_path).suffix == ".parquet":
+                df = pd.read_parquet(self.source_path)
+            elif Path(self.source_path).suffix == ".csv":
+                df = pd.read_csv(self.source_path)
+            else:
+                raise UnknownFileExtension()
+            df = self._validate(df)
+            # TODO: to partitioned parquet
         LOG.info(f"Saved to '{self.path}'.")
 
 
@@ -200,6 +234,7 @@ class DerivedDataset(Dataset):
     func: Callable[[list[SparkDataFrame]], SparkDataFrame]
     model: DataFrameModel | None = None
     partition_cols: list[str] | None = None
+    is_geo: bool = True
 
     @property
     def date(self) -> str:
@@ -232,7 +267,15 @@ class DerivedDataset(Dataset):
     def refresh(self) -> None:
         """Populate the cache with a fresh version of this dataset."""
         LOG.info(f"Creating '{self.name}' dataset.")
-        gdf = self.func(*self.dependencies)
-        gdf = self._validate(gdf)
-        gpd_to_partitioned_parquet(gdf, path=self._new_path, partition_cols=self.partition_cols)
+        df = self.func(*self.dependencies)
+        df = self._validate(df)
+        if isinstance(df, SparkDataFrame):
+            df.write.format("parquet").partitionBy(self.partition_cols).formatsave(self._new_path, mode="overwrite")
+        elif isinstance(df, gpd.GeoDataFrame):
+            gpd_to_partitioned_parquet(df, path=self._new_path, partition_cols=self.partition_cols)
+        elif isinstance(df, pd.DataFrame):
+            df.to_parquet(path=self._new_path, partition_cols=self.partition_cols)
+        else:
+            msg = f"Expected Spark, GeoPandas or Pandas dataframe, recieved {type(df)}."
+            raise TypeError(msg)
         LOG.info(f"Saved to '{self.path}'.")
