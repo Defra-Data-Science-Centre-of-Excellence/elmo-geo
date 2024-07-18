@@ -1,5 +1,6 @@
 import pandas as pd
 import geopandas as gpd
+import pyarrow as pa
 import pyarrow.parquet as pq
 from geopandas.io.arrow import SUPPORTED_VERSIONS, _geopandas_to_arrow
 from pyspark.sql import functions as F
