@@ -18,6 +18,7 @@ from pandera.dtypes import Category
 from pyspark.sql import functions as F
 
 from elmo_geo.etl import SRID, Dataset, DerivedDataset, SourceDataset
+from elmo_geo.utils.types import SparkDataFrame
 
 esc_suitability_broadleaved_raw = SourceDataset(
     name="esc_suitability_broadleaved_raw",
@@ -66,25 +67,47 @@ class ESCTreeSuitabilityModel(DataFrameModel):
     riparian_suitability_quintile: Category = Field(coerce=True, nullable=True)
 
 
+def _convert_to_long_format(sdf: SparkDataFrame) -> SparkDataFrame:
+    vars_pattern = r"^(\w+)_(suitability|area|yield_class)$"
+    vars_cols = [c for c in sdf.columns if re.match(vars_pattern, c) is not None]
+    other_cols = [c for c in sdf_c.columns if c not in vars_cols]
+    species = list({re.match(species_pattern, c).groups()[0] for c in species_cols})
+
+    sdf_long = None
+    for s in species:
+        sdf_sp = (sdf
+            .withColumn("species", F.lit(s))
+            .selectExpr(*other_cols,
+                        "species",
+                        *[f"{c} as {c[len(s)+1:]}" for c in vars_cols if c[:len(s)+1]==f"{s}_"]) # selects columns like BE_area as area
+            .filter("area>0") # exclude parcels which have no area for a species
+        )
+
+        if sdf_long is None:
+            sdf_long = sdf
+        else:
+            sdf_long = sdf_long.union(sdf)
+    return sdf_long
+
+def _calculate_mean_suitability(sdf: SparkDatFrame, woodland_type: str) -> SparkDataFrame:
+    return (sdf_long.groupBy(["RLR_RW_REFERENCE_PARCELS_DEC_21_LPIS_REF", "period_AA_T1", "period_T2"])
+ .agg(
+    F.first("nopeatArea").alias("nopeatArea") ,
+    F.expr(f"SUM(area*suitability) / SUM(suitability) as {woodland_type}_suitability"), # weighted mean by area
+    F.expr("COUNT(distinct species) as n_species"),
+ )
+)
+
+    
+def _transform_
+
 def _transform(esc_broadleaved: Dataset,
                esc_coniferous: Dataset,
                esc_riparian: Dataset) -> pd.DataFrame:
     """Calculate the average suitability for each parcel across all tree species for the
     broadleaved, coniferous, and riparian datasets."""
 
-    def average_suitability(pdf: pd.DataFrame, tree_group: str) -> pd.DataFrame:
-        suitability_pattern = r".*_suitability$"
-        suitability_cols = [c for c in pdf.columns if re.match(suitability_pattern, c) is not None]
 
-        df_suitability = (pdf
-                        .rename(columns={"RLR_RW_REFERENCE_PARCELS_DEC_21_LPIS_REF": "id_parcel"})
-                        .set_index("id_parcel")[suitability_cols]
-                        .mean(axis=1)
-                        .rename(f"{tree_group}_suitability")
-                        .reset_index()
-        )
-        df_suitability[f"{tree_group}_suitability_quintile"] = pd.qcut(df_suitability[f"{tree_group}_suitability"], 5, labels = range(1,6))
-        return df_suitability
     
     # Coniferious dataset has incorrect values in the RC columns. Drop these
     # TODO: Update with corrected coniferous dataset
