@@ -11,6 +11,7 @@ ESC 1km grid resolution.
 Background:
     - https://www.forestresearch.gov.uk/tools-and-resources/fthr/ecological-site-classification/#:~:text=ESC%20assesses%20the%20suitability%20of,communities%20defined%20in%20the%20NVC.
 """
+import re
 import pandas as pd
 from pandera import DataFrameModel, Field
 from pandera.dtypes import Category
@@ -23,6 +24,7 @@ esc_suitability_broadleaved_raw = SourceDataset(
     level0="bronze",
     level1="evast",
     restricted=False,
+    is_geo=False,
     source_path="/dbfs/mnt/lab/unrestricted/elm_data/evast/M3_trees_rcp45/2024-07-04/EVAST_M3_native_broadleaved_rcp45.csv",
 )
 """Definition for the raw sourced version of ESC broadleaved tree suitability dataset, recevied from EVAST."""
@@ -32,6 +34,7 @@ esc_suitability_coniferous_raw = SourceDataset(
     level0="bronze",
     level1="evast",
     restricted=False,
+    is_geo=False,
     source_path="/dbfs/mnt/lab/unrestricted/elm_data/evast/M3_trees_rcp45/2024-07-04/EVAST_M3_productive_conifer_rcp45.csv",
 )
 """Definition for the raw sourced version of ESC coniferous tree suitability dataset, recevied from EVAST."""
@@ -41,6 +44,7 @@ esc_suitability_riparian_raw = SourceDataset(
     level0="bronze",
     level1="evast",
     restricted=False,
+    is_geo=False,
     source_path="/dbfs/mnt/lab/unrestricted/elm_data/evast/M3_trees_rcp45/2024-07-04/EVAST_M3_riparian_rcp45.csv",
 )
 """Definition for the raw sourced version of ESC riparian tree suitability dataset, recevied from EVAST."""
@@ -54,54 +58,56 @@ class ESCTreeSuitabilityModel(DataFrameModel):
         mean_species_suitability_quintile: The quintile of the mean tree suitability score.
     """
     id_parcel: str
-    mean_species_suitability: float = Field(ge=0, le=1)
-    mean_species_suitability_quintile: Category = Field(coerce=True)
+    boardleaved_suitability: float = Field(ge=0, le=1, nullable=True)
+    boardleaved_suitability_quintile: Category = Field(coerce=True, nullable=True)
+    coniferous_suitability: float = Field(ge=0, le=1, nullable=True)
+    coniferous_suitability_quintile: Category = Field(coerce=True, nullable=True)
+    riparian_suitability: float = Field(ge=0, le=1, nullable=True)
+    riparian_suitability_quintile: Category = Field(coerce=True, nullable=True)
 
 
-def _transform(esc_trees: Dataset) -> pd.DataFrame:
-    """Calculate the average suitability for each parcel across all tree species."""
-    suitability_pattern = r".*_suitability$"
-    suitability_cols = [c for c in esc_trees.pdf().columns if re.match(suitability_pattern, c) is not None]
+def _transform(esc_broadleaved: Dataset,
+               esc_coniferous: Dataset,
+               esc_riparian: Dataset) -> pd.DataFrame:
+    """Calculate the average suitability for each parcel across all tree species for the
+    broadleaved, coniferous, and riparian datasets."""
 
-    df_suitability = (esc_trees
-                      .rename(columns={"RLR_RW_REFERENCE_PARCELS_DEC_21_LPIS_REF": "id_parcel"})
-                      .set_index("id_parcel")[suitability_cols]
-                      .mean(axis=1)
-                      .rename("mean_species_suitability")
+    def average_suitability(pdf: pd.DataFrame, tree_group: str) -> pd.DataFrame:
+        suitability_pattern = r".*_suitability$"
+        suitability_cols = [c for c in pdf.columns if re.match(suitability_pattern, c) is not None]
+
+        df_suitability = (pdf
+                        .rename(columns={"RLR_RW_REFERENCE_PARCELS_DEC_21_LPIS_REF": "id_parcel"})
+                        .set_index("id_parcel")[suitability_cols]
+                        .mean(axis=1)
+                        .rename(f"{tree_group}_suitability")
+                        .reset_index()
+        )
+        df_suitability[f"{tree_group}_suitability_quintile"] = pd.qcut(df_suitability[f"{tree_group}_suitability"], 5, labels = range(1,6))
+        return df_suitability
+    
+    # Coniferious dataset has incorrect values in the RC columns. Drop these
+    # TODO: Update with corrected coniferous dataset
+    df_coniferous = esc_coniferous.pdf().drop(['RC_area', 'RC_suitability', 'RC_yield_class'], axis=1)
+
+    return (average_suitability(esc_broadleaved.pdf(), "boardleaved").set_index("id_parcel")
+                      .join(
+                          average_suitability(df_coniferous, "coniferous").set_index("id_parcel")
+                      )
+                      .join(
+                          average_suitability(esc_riparian.pdf(), "riparian").set_index("id_parcel")
+                      )
                       .reset_index()
     )
-    df_suitability["mean_species_suitability_quintile"] = df_suitability["broadleaf_suitability"].qcut(5)
-    return df_suitability
 
-esc_suitability_broadleaved = DerivedDataset(
-    name="esc_suitability_broadleaved",
+esc_tree_suitability = DerivedDataset(
+    name="esc_tree_suitability",
     level0="silver",
     level1="evast",
     restricted=False,
+    is_geo=False,
     func = _transform,
-    dependencies = [esc_suitability_broadleaved_raw],
+    dependencies = [esc_suitability_broadleaved_raw, esc_suitability_coniferous_raw, esc_suitability_riparian_raw],
     model = ESCTreeSuitabilityModel,
 )
 """Definition for the ESC tree suitability dataset aggregated to provide a single broadleaved tree suitability score per parcel."""
-
-esc_suitability_coniferous = DerivedDataset(
-    name="esc_suitability_coniferous",
-    level0="silver",
-    level1="evast",
-    restricted=False,
-    func = _transform,
-    dependencies = [esc_suitability_coniferous_raw],
-    model = ESCTreeSuitabilityModel,
-)
-"""Definition for the ESC tree suitability dataset aggregated to provide a single coniferous tree suitability score per parcel."""
-
-esc_suitability_riparian = DerivedDataset(
-    name="esc_suitability_riparian",
-    level0="silver",
-    level1="evast",
-    restricted=False,
-    func = _transform,
-    dependencies = [esc_suitability_riparian_raw],
-    model = ESCTreeSuitabilityModel,
-)
-"""Definition for the ESC tree suitability dataset aggregated to provide a single suitability score per parcel."""
