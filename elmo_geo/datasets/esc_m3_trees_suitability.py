@@ -92,8 +92,8 @@ class ESCTreeSuitabilityModel(DataFrameModel):
 def _convert_to_long_format(sdf: SparkDataFrame) -> SparkDataFrame:
     vars_pattern = r"^(\w+)_(suitability|area|yield_class)$"
     vars_cols = [c for c in sdf.columns if re.match(vars_pattern, c) is not None]
-    other_cols = [c for c in sdf_c.columns if c not in vars_cols]
-    species = list({re.match(species_pattern, c).groups()[0] for c in species_cols})
+    other_cols = [c for c in sdf.columns if c not in vars_cols]
+    species = list({re.match(vars_pattern, c).groups()[0] for c in vars_cols})
 
     sdf_long = None
     for s in species:
@@ -106,62 +106,63 @@ def _convert_to_long_format(sdf: SparkDataFrame) -> SparkDataFrame:
         )
 
         if sdf_long is None:
-            sdf_long = sdf
+            sdf_long = sdf_sp
         else:
-            sdf_long = sdf_long.union(sdf)
+            sdf_long = sdf_long.union(sdf_sp)
     return sdf_long
 
 def _calculate_mean_suitability(sdf: SparkDataFrame, woodland_type: str) -> SparkDataFrame:
-    return (sdf_long.groupBy(["RLR_RW_REFERENCE_PARCELS_DEC_21_LPIS_REF", "period_AA_T1", "period_T2"])
+    return (sdf.groupBy(["RLR_RW_REFERENCE_PARCELS_DEC_21_LPIS_REF", "period_AA_T1", "period_T2"])
  .agg(
     F.first("nopeatArea").alias("nopeatArea") ,
     F.expr(f"SUM(area*suitability) / SUM(suitability) as {woodland_type}_suitability"), # weighted mean by area
     F.expr("COUNT(distinct species) as n_species"),
  )
 )
-
     
 def _convert_to_wide_format(sdf: SparkDataFrame, woodland_type: str) -> SparkDataFrame:
     return (sdf
-            .withColumn("T1_T2", F.expr("CONCAT('T1',period_AA_T1, '_T2_', period_T2 )"))
+            .withColumn("T1_T2", F.expr("CONCAT('T1_',period_AA_T1, '_T2_', period_T2 )"))
             .groupby("RLR_RW_REFERENCE_PARCELS_DEC_21_LPIS_REF", "nopeatArea")
             .pivot("T1_T2")
             .agg(
-                F.first(f"{woodland_type}_suitability").alias("{woodland_type}_suitability"),
-                F.first("n_species").alias("n_species"),
+                F.first(f"{woodland_type}_suitability").alias(f"{woodland_type}_suitability"),
+                F.first("n_species").alias(f"n_{woodland_type}_species"),
                 )
             )
 
-def _transform_single_woodland_type(sdf: Dataset, woodland_type:str) -> SparkDataFrame:
+def _transform_single_woodland_type(sdf: SparkDataFrame, woodland_type:str) -> SparkDataFrame:
     return (sdf
-            .pipe(_convert_to_long_format)
-            .pipe(_calculate_mean_suitability, woodland_type)
-            .pipe(_convert_to_wide_format, woodland_type)
-            .withColumnsRenamed("id_parcel", "RLR_RW_REFERENCE_PARCELS_DEC_21_LPIS_REF")
+            .transform(_convert_to_long_format)
+            .transform(_calculate_mean_suitability, woodland_type)
+            .transform(_convert_to_wide_format, woodland_type)
+            .withColumnRenamed("RLR_RW_REFERENCE_PARCELS_DEC_21_LPIS_REF", "id_parcel")
     )
 
 
 def _transform(esc_broadleaved: Dataset,
                esc_coniferous: Dataset,
-               esc_riparian: Dataset) -> pd.DataFrame:
+               esc_riparian: Dataset,
+               ) -> pd.DataFrame:
     """Calculate the average suitability for each parcel across all tree species for the
     broadleaved, coniferous, and riparian datasets."""
 
-    
     # Coniferious dataset has incorrect values in the RC columns. Drop these
     # TODO: Update with corrected coniferous dataset
-    sdf_coniferous = esc_coniferous.sdf().drop(['RC_area', 'RC_suitability', 'RC_yield_class'], axis=1)
+    sdf_coniferous = esc_coniferous.sdf().drop('RC_area', 'RC_suitability', 'RC_yield_class')
 
-    return (_transform_single_woodland_type(esc_broadleaved.sdf(), "boardleaved")
+    return (_transform_single_woodland_type(esc_broadleaved.sdf(), "broadleaved")
                    .join(
-                       _transform_single_woodland_type(sdf_coniferous, "coniferous").drop("nopeatArea"),
+                       _transform_single_woodland_type(sdf_coniferous, "coniferous").withColumnRenamed("nopeatArea", "npaCon"),
                        on = ["id_parcel"]
                        )
                    .join(
-                       _transform_single_woodland_type(esc_riparian.pdf(), "riparian").drop("nopeatArea"),
+                       _transform_single_woodland_type(esc_riparian.sdf(), "riparian").withColumnRenamed("nopeatArea", "npaRip"),
                        on = ["id_parcel"]
                        )
-                   )
+                   .withColumn("nopeatArea", F.expr("COALESCE(nopeatArea, npaCon, npaRip)"))
+                   .drop("npaCon", "npaRip")
+                   ).toPandas()
 
 esc_tree_suitability = DerivedDataset(
     name="esc_tree_suitability",
