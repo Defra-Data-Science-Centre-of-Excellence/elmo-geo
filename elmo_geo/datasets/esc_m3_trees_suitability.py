@@ -59,12 +59,34 @@ class ESCTreeSuitabilityModel(DataFrameModel):
         mean_species_suitability_quintile: The quintile of the mean tree suitability score.
     """
     id_parcel: str
-    boardleaved_suitability: float = Field(ge=0, le=1, nullable=True)
-    boardleaved_suitability_quintile: Category = Field(coerce=True, nullable=True)
-    coniferous_suitability: float = Field(ge=0, le=1, nullable=True)
-    coniferous_suitability_quintile: Category = Field(coerce=True, nullable=True)
-    riparian_suitability: float = Field(ge=0, le=1, nullable=True)
-    riparian_suitability_quintile: Category = Field(coerce=True, nullable=True)
+    nopeatArea: float = Field(nullable=False)
+        
+    T1_2021_2028_T2_2021_2028_broadleaved_suitability: float = Field(ge=0, le=1, nullable=True)
+    T1_2021_2028_T2_2021_2028_n_broadleaved_species: int
+    T1_2029_2036_T2_2021_2036_broadleaved_suitability: float = Field(ge=0, le=1, nullable=True)
+    T1_2029_2036_T2_2021_2036_n_broadleaved_species: int
+    T1_2037_2050_T2_2021_2050_broadleaved_suitability: float = Field(ge=0, le=1, nullable=True)
+    T1_2037_2050_T2_2021_2050_n_broadleaved_species: int
+    T1_2051_2100_T2_2021_2100_broadleaved_suitability: float = Field(ge=0, le=1, nullable=True)
+    T1_2051_2100_T2_2021_2100_n_broadleaved_species: int
+    
+    T1_2021_2028_T2_2021_2028_coniferous_suitability: float = Field(ge=0, le=1, nullable=True)
+    T1_2021_2028_T2_2021_2028_n_coniferous_species: int
+    T1_2029_2036_T2_2021_2036_coniferous_suitability: float = Field(ge=0, le=1, nullable=True)
+    T1_2029_2036_T2_2021_2036_n_coniferous_species: int
+    T1_2037_2050_T2_2021_2050_coniferous_suitability: float = Field(ge=0, le=1, nullable=True)
+    T1_2037_2050_T2_2021_2050_n_coniferous_species: int
+    T1_2051_2100_T2_2021_2100_coniferous_suitability: float = Field(ge=0, le=1, nullable=True)
+    T1_2051_2100_T2_2021_2100_n_coniferous_species: int
+    
+    T1_2021_2028_T2_2021_2028_riparian_suitability: float = Field(ge=0, le=1, nullable=True)
+    T1_2021_2028_T2_2021_2028_n_riparian_species: int
+    T1_2029_2036_T2_2021_2036_riparian_suitability: float = Field(ge=0, le=1, nullable=True)
+    T1_2029_2036_T2_2021_2036_n_riparian_species: int
+    T1_2037_2050_T2_2021_2050_riparian_suitability: float = Field(ge=0, le=1, nullable=True)
+    T1_2037_2050_T2_2021_2050_n_riparian_species: int
+    T1_2051_2100_T2_2021_2100_riparian_suitability: float = Field(ge=0, le=1, nullable=True)
+    T1_2051_2100_T2_2021_2100_n_riparian_species: int
 
 
 def _convert_to_long_format(sdf: SparkDataFrame) -> SparkDataFrame:
@@ -89,7 +111,7 @@ def _convert_to_long_format(sdf: SparkDataFrame) -> SparkDataFrame:
             sdf_long = sdf_long.union(sdf)
     return sdf_long
 
-def _calculate_mean_suitability(sdf: SparkDatFrame, woodland_type: str) -> SparkDataFrame:
+def _calculate_mean_suitability(sdf: SparkDataFrame, woodland_type: str) -> SparkDataFrame:
     return (sdf_long.groupBy(["RLR_RW_REFERENCE_PARCELS_DEC_21_LPIS_REF", "period_AA_T1", "period_T2"])
  .agg(
     F.first("nopeatArea").alias("nopeatArea") ,
@@ -99,7 +121,25 @@ def _calculate_mean_suitability(sdf: SparkDatFrame, woodland_type: str) -> Spark
 )
 
     
-def _transform_
+def _convert_to_wide_format(sdf: SparkDataFrame, woodland_type: str) -> SparkDataFrame:
+    return (sdf
+            .withColumn("T1_T2", F.expr("CONCAT('T1',period_AA_T1, '_T2_', period_T2 )"))
+            .groupby("RLR_RW_REFERENCE_PARCELS_DEC_21_LPIS_REF", "nopeatArea")
+            .pivot("T1_T2")
+            .agg(
+                F.first(f"{woodland_type}_suitability").alias("{woodland_type}_suitability"),
+                F.first("n_species").alias("n_species"),
+                )
+            )
+
+def _transform_single_woodland_type(sdf: Dataset, woodland_type:str) -> SparkDataFrame:
+    return (sdf
+            .pipe(_convert_to_long_format)
+            .pipe(_calculate_mean_suitability, woodland_type)
+            .pipe(_convert_to_wide_format, woodland_type)
+            .withColumnsRenamed("id_parcel", "RLR_RW_REFERENCE_PARCELS_DEC_21_LPIS_REF")
+    )
+
 
 def _transform(esc_broadleaved: Dataset,
                esc_coniferous: Dataset,
@@ -107,21 +147,21 @@ def _transform(esc_broadleaved: Dataset,
     """Calculate the average suitability for each parcel across all tree species for the
     broadleaved, coniferous, and riparian datasets."""
 
-
     
     # Coniferious dataset has incorrect values in the RC columns. Drop these
     # TODO: Update with corrected coniferous dataset
-    df_coniferous = esc_coniferous.pdf().drop(['RC_area', 'RC_suitability', 'RC_yield_class'], axis=1)
+    sdf_coniferous = esc_coniferous.sdf().drop(['RC_area', 'RC_suitability', 'RC_yield_class'], axis=1)
 
-    return (average_suitability(esc_broadleaved.pdf(), "boardleaved").set_index("id_parcel")
-                      .join(
-                          average_suitability(df_coniferous, "coniferous").set_index("id_parcel")
-                      )
-                      .join(
-                          average_suitability(esc_riparian.pdf(), "riparian").set_index("id_parcel")
-                      )
-                      .reset_index()
-    )
+    return (_transform_single_woodland_type(esc_broadleaved.sdf(), "boardleaved")
+                   .join(
+                       _transform_single_woodland_type(sdf_coniferous, "coniferous").drop("nopeatArea"),
+                       on = ["id_parcel"]
+                       )
+                   .join(
+                       _transform_single_woodland_type(esc_riparian.pdf(), "riparian").drop("nopeatArea"),
+                       on = ["id_parcel"]
+                       )
+                   )
 
 esc_tree_suitability = DerivedDataset(
     name="esc_tree_suitability",
