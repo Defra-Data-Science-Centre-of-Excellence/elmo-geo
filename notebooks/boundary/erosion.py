@@ -72,9 +72,10 @@ sdf_olf = load_sdf(f_olf).selectExpr(
     "CAST(SUBSTRING(CombinedSoilRisk, 1, 2) AS INT) AS CombinedSoilScore",
     "CAST(SUBSTRING(ReceptorDistanceRisk, 1, 2) AS INT) AS ReceptorDistanceScore",
     "CAST(SUBSTRING(MeanRainfalRisk, 1, 2) AS INT) AS MeanRainfallScore",
+    "MaxFlowAcc",
     # "MajLandUse", "MeanSlope", "Slope1haWatershed", "MinFlowWater", "MinFlowRoad", "SSSI_Intersect", "FlowAccClass", "MaxFlowAcc",
-    "NTILE(5) OVER (ORDER BY MaxFlowAcc) AS AreaScore",  # Replace *MaxFlowAcc with +Quintile(MaxFlowAcc)
-    "(CatchmentScore + LandUseScore + SlopeScore + CombinedSoilScore + MeanRainfallScore + AreaScore) /6 AS score",
+    "NTILE(5) OVER (ORDER BY MaxFlowAcc) AS MaxFlowAccQuintile",  # Replace *MaxFlowAcc with +Quintile(MaxFlowAcc)
+    "(CatchmentScore + LandUseScore + SlopeScore + CombinedSoilScore + MeanRainfallScore + MaxFlowAccQuintile) /6 AS CombinedScore",
     "Shape_Length AS length",
     "geometry",
 )
@@ -100,23 +101,66 @@ sdf.count()
 
 # COMMAND ----------
 
-pdf = sdf.drop("geometry", "geometry_olf").toPandas()
+# First group by parcels and olf objects to get single unique olf object per parcel, then group by parcels to get average score per parcel
+pdf = (sdf
+       .groupby("id_parcel", "fid")
+        .agg(
+            F.first("fid").alias("olf_fid"),
+            F.first("CatchmentScore").alias("CatchmentScore"),
+            F.first("LandUseScore").alias("LandUseScore"),
+            F.first("SlopeScore").alias("SlopeScore"),
+            F.first("SoilErosionScore").alias("SoilErosionScore"),
+            F.first("SoilRunoffScore").alias("SoilRunoffScore"),
+            F.first("CombinedSoilScore").alias("CombinedSoilScore"),
+            F.first("ReceptorDistanceScore").alias("ReceptorDistanceScore"),
+            F.first("MeanRainfallScore").alias("MeanRainfallScore"),
+            F.first("MaxFlowAcc").alias("MaxFlowAcc"),
+            F.first("MaxFlowAccQuintile").alias("MaxFlowAccQuintile"),
+            F.first("CombinedScore").alias("CombinedScore"),
+        )
+        .groupby("id_parcel")
+        .agg(
+            F.count('olf_fid').alias('n_olf_fids'),
+            F.array_join(F.collect_list('olf_fid'),delimiter=', ').alias('olf_fids'),
+            F.mean("CatchmentScore").alias("CatchmentScore"),
+            F.mean("LandUseScore").alias("LandUseScore"),
+            F.mean("SlopeScore").alias("SlopeScore"),
+            F.mean("SoilErosionScore").alias("SoilErosionScore"),
+            F.mean("SoilRunoffScore").alias("SoilRunoffScore"),
+            F.mean("CombinedSoilScore").alias("CombinedSoilScore"),
+            F.mean("ReceptorDistanceScore").alias("ReceptorDistanceScore"),
+            F.mean("MeanRainfallScore").alias("MeanRainfallScore"),
+            F.mean("MaxFlowAcc").alias("MaxFlowAcc"),
+            F.mean("CombinedScore").alias("CombinedScore"),
+        )
+        .withColumn("MaxFlowAccQuintileParcels", F.expr("NTILE(5) OVER (Order BY MaxFlowAcc)"))
+        .drop("geometry", "geometry_olf").toPandas()
+
+        )
 pdf.to_parquet(f)
 download_link(f)
 
 # COMMAND ----------
 
+assert pdf.id_parcel.duplicated().any()==False
+
+# COMMAND ----------
+
+pdf.head()
+
+# COMMAND ----------
+
 gdf = to_gdf(sdf.filter("sindex=='SO53'"))
-gdf0 = gdf[["fid", "score", "geometry_olf"]].groupby("fid").first().pipe(to_gdf, column="geometry_olf")
+gdf0 = gdf[["fid", "CombinedScore", "geometry_olf"]].groupby("fid").first().pipe(to_gdf, column="geometry_olf")
 gdf1 = gdf[["id_parcel", "geometry"]].groupby("id_parcel").first()
-gdf1.plot(ax=plot_gdf(gdf0, column="score", cmap="GnBu", linewidth=1, vmin=0, vmax=1), color="goldenrod", alpha=0.5, edgecolor="darkgoldenrod", linewidth=0.5)
+gdf1.plot(ax=plot_gdf(gdf0, column="CombinedScore", cmap="GnBu", linewidth=1, vmin=0, vmax=1), color="goldenrod", alpha=0.5, edgecolor="darkgoldenrod", linewidth=0.5)
 
 # COMMAND ----------
 
 gdf = to_gdf(sdf.filter("sindex=='NY85'"))
-gdf0 = gdf[["fid", "score", "geometry_olf"]].groupby("fid").first().pipe(to_gdf, column="geometry_olf")
+gdf0 = gdf[["fid", "CombinedScore", "geometry_olf"]].groupby("fid").first().pipe(to_gdf, column="geometry_olf")
 gdf1 = gdf[["id_parcel", "geometry"]].groupby("id_parcel").first()
-gdf1.plot(ax=plot_gdf(gdf0, column="score", cmap="GnBu", linewidth=1, vmin=0, vmax=1), color="goldenrod", alpha=0.5, edgecolor="darkgoldenrod", linewidth=0.5)
+gdf1.plot(ax=plot_gdf(gdf0, column="CombinedScore", cmap="GnBu", linewidth=1, vmin=0, vmax=1), color="goldenrod", alpha=0.5, edgecolor="darkgoldenrod", linewidth=0.5)
 
 # COMMAND ----------
 
