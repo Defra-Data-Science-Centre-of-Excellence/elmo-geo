@@ -102,41 +102,41 @@ sdf.count()
 # COMMAND ----------
 
 # First group by parcels and olf objects to get single unique olf object per parcel, then group by parcels to get average score per parcel
-pdf = (sdf
-       .groupby("id_parcel", "fid")
-        .agg(
-            F.first("fid").alias("olf_fid"),
-            F.first("CatchmentScore").alias("CatchmentScore"),
-            F.first("LandUseScore").alias("LandUseScore"),
-            F.first("SlopeScore").alias("SlopeScore"),
-            F.first("SoilErosionScore").alias("SoilErosionScore"),
-            F.first("SoilRunoffScore").alias("SoilRunoffScore"),
-            F.first("CombinedSoilScore").alias("CombinedSoilScore"),
-            F.first("ReceptorDistanceScore").alias("ReceptorDistanceScore"),
-            F.first("MeanRainfallScore").alias("MeanRainfallScore"),
-            F.first("MaxFlowAcc").alias("MaxFlowAcc"),
-            F.first("MaxFlowAccQuintile").alias("MaxFlowAccQuintile"),
-            F.first("CombinedScore").alias("CombinedScore"),
-        )
-        .groupby("id_parcel")
-        .agg(
-            F.count('olf_fid').alias('n_olf_fids'),
-            F.array_join(F.collect_list('olf_fid'),delimiter=', ').alias('olf_fids'),
-            F.mean("CatchmentScore").alias("CatchmentScore"),
-            F.mean("LandUseScore").alias("LandUseScore"),
-            F.mean("SlopeScore").alias("SlopeScore"),
-            F.mean("SoilErosionScore").alias("SoilErosionScore"),
-            F.mean("SoilRunoffScore").alias("SoilRunoffScore"),
-            F.mean("CombinedSoilScore").alias("CombinedSoilScore"),
-            F.mean("ReceptorDistanceScore").alias("ReceptorDistanceScore"),
-            F.mean("MeanRainfallScore").alias("MeanRainfallScore"),
-            F.mean("MaxFlowAcc").alias("MaxFlowAcc"),
-            F.mean("CombinedScore").alias("CombinedScore"),
-        )
-        .withColumn("MaxFlowAccQuintileParcels", F.expr("NTILE(5) OVER (Order BY MaxFlowAcc)"))
-        .drop("geometry", "geometry_olf").toPandas()
-
-        )
+pdf = (
+    sdf.groupby("id_parcel", "fid")
+    .agg(
+        F.first("fid").alias("olf_fid"),
+        F.first("CatchmentScore").alias("CatchmentScore"),
+        F.first("LandUseScore").alias("LandUseScore"),
+        F.first("SlopeScore").alias("SlopeScore"),
+        F.first("SoilErosionScore").alias("SoilErosionScore"),
+        F.first("SoilRunoffScore").alias("SoilRunoffScore"),
+        F.first("CombinedSoilScore").alias("CombinedSoilScore"),
+        F.first("ReceptorDistanceScore").alias("ReceptorDistanceScore"),
+        F.first("MeanRainfallScore").alias("MeanRainfallScore"),
+        F.first("MaxFlowAcc").alias("MaxFlowAcc"),
+        F.first("MaxFlowAccQuintile").alias("MaxFlowAccQuintile"),
+        F.first("CombinedScore").alias("CombinedScore"),
+    )
+    .groupby("id_parcel")
+    .agg(
+        F.count("olf_fid").alias("n_olf_fids"),
+        F.array_join(F.collect_list("olf_fid"), delimiter=", ").alias("olf_fids"),
+        F.mean("CatchmentScore").alias("CatchmentScore"),
+        F.mean("LandUseScore").alias("LandUseScore"),
+        F.mean("SlopeScore").alias("SlopeScore"),
+        F.mean("SoilErosionScore").alias("SoilErosionScore"),
+        F.mean("SoilRunoffScore").alias("SoilRunoffScore"),
+        F.mean("CombinedSoilScore").alias("CombinedSoilScore"),
+        F.mean("ReceptorDistanceScore").alias("ReceptorDistanceScore"),
+        F.mean("MeanRainfallScore").alias("MeanRainfallScore"),
+        F.mean("MaxFlowAcc").alias("MaxFlowAcc"),
+        F.mean("CombinedScore").alias("CombinedScore"),
+    )
+    .withColumn("MaxFlowAccQuintileParcels", F.expr("NTILE(5) OVER (Order BY MaxFlowAcc)"))
+    .drop("geometry", "geometry_olf")
+    .toPandas()
+)
 pdf.to_parquet(f)
 download_link(f)
 
@@ -154,12 +154,12 @@ gdf = to_gdf(sdf.filter("sindex=='SO53'"))
 gdf0 = gdf[["fid", "CombinedScore", "geometry_olf"]].groupby("fid").first().pipe(to_gdf, column="geometry_olf")
 gdf1 = gdf[["id_parcel", "geometry"]].groupby("id_parcel").first()
 gdf1.plot(
-    ax=plot_gdf(gdf0, column="CombinedScore", cmap="GnBu", linewidth=1, vmin=0, vmax=1), 
-    color="goldenrod", 
-    alpha=0.5, 
-    edgecolor="darkgoldenrod", 
+    ax=plot_gdf(gdf0, column="CombinedScore", cmap="GnBu", linewidth=1, vmin=0, vmax=1),
+    color="goldenrod",
+    alpha=0.5,
+    edgecolor="darkgoldenrod",
     linewidth=0.5,
-    )
+)
 
 # COMMAND ----------
 
@@ -167,12 +167,12 @@ gdf = to_gdf(sdf.filter("sindex=='NY85'"))
 gdf0 = gdf[["fid", "CombinedScore", "geometry_olf"]].groupby("fid").first().pipe(to_gdf, column="geometry_olf")
 gdf1 = gdf[["id_parcel", "geometry"]].groupby("id_parcel").first()
 gdf1.plot(
-    ax=plot_gdf(gdf0, column="CombinedScore", cmap="GnBu", linewidth=1, vmin=0, vmax=1), 
-    color="goldenrod", 
-    alpha=0.5, 
-    edgecolor="darkgoldenrod", 
+    ax=plot_gdf(gdf0, column="CombinedScore", cmap="GnBu", linewidth=1, vmin=0, vmax=1),
+    color="goldenrod",
+    alpha=0.5,
+    edgecolor="darkgoldenrod",
     linewidth=0.5,
-    )
+)
 
 # COMMAND ----------
 
