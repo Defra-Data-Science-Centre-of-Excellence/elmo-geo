@@ -142,7 +142,7 @@ download_link(f)
 
 # COMMAND ----------
 
-assert pdf.id_parcel.duplicated().any()==False
+assert pdf.id_parcel.duplicated().any() is False
 
 # COMMAND ----------
 
@@ -153,14 +153,26 @@ pdf.head()
 gdf = to_gdf(sdf.filter("sindex=='SO53'"))
 gdf0 = gdf[["fid", "CombinedScore", "geometry_olf"]].groupby("fid").first().pipe(to_gdf, column="geometry_olf")
 gdf1 = gdf[["id_parcel", "geometry"]].groupby("id_parcel").first()
-gdf1.plot(ax=plot_gdf(gdf0, column="CombinedScore", cmap="GnBu", linewidth=1, vmin=0, vmax=1), color="goldenrod", alpha=0.5, edgecolor="darkgoldenrod", linewidth=0.5)
+gdf1.plot(
+    ax=plot_gdf(gdf0, column="CombinedScore", cmap="GnBu", linewidth=1, vmin=0, vmax=1), 
+    color="goldenrod", 
+    alpha=0.5, 
+    edgecolor="darkgoldenrod", 
+    linewidth=0.5,
+    )
 
 # COMMAND ----------
 
 gdf = to_gdf(sdf.filter("sindex=='NY85'"))
 gdf0 = gdf[["fid", "CombinedScore", "geometry_olf"]].groupby("fid").first().pipe(to_gdf, column="geometry_olf")
 gdf1 = gdf[["id_parcel", "geometry"]].groupby("id_parcel").first()
-gdf1.plot(ax=plot_gdf(gdf0, column="CombinedScore", cmap="GnBu", linewidth=1, vmin=0, vmax=1), color="goldenrod", alpha=0.5, edgecolor="darkgoldenrod", linewidth=0.5)
+gdf1.plot(
+    ax=plot_gdf(gdf0, column="CombinedScore", cmap="GnBu", linewidth=1, vmin=0, vmax=1), 
+    color="goldenrod", 
+    alpha=0.5, 
+    edgecolor="darkgoldenrod", 
+    linewidth=0.5,
+    )
 
 # COMMAND ----------
 
