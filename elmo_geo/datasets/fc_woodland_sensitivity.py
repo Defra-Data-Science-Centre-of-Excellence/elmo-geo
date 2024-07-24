@@ -5,19 +5,19 @@
 The low sensitivity areas have fewest identified constraints to address,
 and it should be easier to agree creating new woodland here than in other areas.
 """
+from functools import partial
+
 import geopandas as gpd
 from pandera import DataFrameModel, Field
 from pandera.dtypes import Category
 from pandera.engines.pandas_engine import Geometry
-from pyspark.sql import functions as F
 
 from elmo_geo.etl import SRID, Dataset, DerivedDataset, SourceDataset
-from elmo_geo.st.join import sjoin
+from elmo_geo.etl.transformations import join_parcels
 
 from .rpa_reference_parcels import reference_parcels
 
-SIMPLIFY_TOLERENCE: float = 20  # metres
-MAX_VERTICES: int = 256  # per polygon (row) for subdivide exploding the feature polygons
+_join_parcels = partial(join_parcels, columns=["sensitivity"])
 
 
 class WoodlandSensitivityClean(DataFrameModel):
@@ -49,43 +49,6 @@ class WoodlandSensitivityParcels(DataFrameModel):
 def _clean_dataset(ds: Dataset) -> gpd.GeoDataFrame:
     """Only keep the geometry and the sensitivity col, fixing typo in colname."""
     return ds.gdf(columns=["geometry", "sensitivit"]).rename(columns={"sensitivit": "sensitivity"}).assign(fid=lambda df: range(len(df)))
-
-
-def _join_parcels(parcels: Dataset, agroforestry: Dataset) -> gpd.GeoDataFrame:
-    """Spatial join the two datasets and calculate the proportion of the parcel that intersects."""
-    classes = ["sensitivity"]
-    df_parcels = (
-        parcels.sdf()
-        .select("id_parcel", "geometry")
-        .withColumn("geometry", F.expr("ST_MakeValid(geometry)"))
-        .withColumn("geometry", F.expr(f"ST_SimplifyPreserveTopology(geometry, {SIMPLIFY_TOLERENCE})"))
-        .withColumn("geometry", F.expr("ST_Force_2D(geometry)"))
-        .withColumn("geometry", F.expr("ST_MakeValid(geometry)"))
-    )
-    df_feature = (
-        agroforestry.sdf()
-        .select("geometry", *classes)
-        .withColumn("geometry", F.expr("ST_MakeValid(geometry)"))
-        .withColumn("geometry", F.expr(f"ST_SimplifyPreserveTopology(geometry, {SIMPLIFY_TOLERENCE})"))
-        .withColumn("geometry", F.expr("ST_Force_2D(geometry)"))
-        .withColumn("geometry", F.expr("ST_MakeValid(geometry)"))
-        .withColumn("geometry", F.expr(f"ST_SubdivideExplode(geometry, {MAX_VERTICES})"))
-    )
-    return (
-        sjoin(df_parcels, df_feature)
-        .groupby("id_parcel", *classes)
-        .agg(
-            F.expr("ST_Union_Aggr(geometry_left) AS geometry_left"),
-            F.expr("ST_Union_Aggr(geometry_right) AS geometry_right"),
-        )
-        .withColumn("geometry_intersection", F.expr("ST_Intersection(geometry_left, geometry_right)"))
-        .withColumn("area_left", F.expr("ST_Area(geometry_left)"))
-        .withColumn("area_intersection", F.expr("ST_Area(geometry_intersection)"))
-        .withColumn("proportion", F.col("area_intersection") / F.col("area_left"))
-        .drop("area_left", "area_intersection", "geometry_left", "geometry_right", "geometry_intersection")
-        .toPandas()
-        .assign(proportion=lambda df: df.proportion.clip(upper=1.0))
-    )
 
 
 sfi_agroforestry_raw = SourceDataset(
