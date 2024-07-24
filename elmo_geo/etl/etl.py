@@ -54,7 +54,7 @@ class Dataset(ABC):
     level0: str
     level1: str
     restricted: bool
-    
+
     @property
     def _new_date(self) -> str:
         """New date for parquet file being created."""
@@ -67,7 +67,7 @@ class Dataset(ABC):
     @property
     def date(self) -> str | None:
         """Return the last-modified date of the source file in ISO string format.
-        
+
         If the dataset has not been generated yet, return `None`."""
         pat = re.compile(PAT_DATE.format(name=self.name, hsh=self._hash))
         try:
