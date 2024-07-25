@@ -34,7 +34,7 @@ f_parcel = "/dbfs/mnt/lab/restricted/ELM-Project/silver/rpa-parcel-adas.parquet"
 f_segment = "/dbfs/mnt/lab/restricted/ELM-Project/silver/elmo_geo-boundary_segment-2024_06_21.parquet"
 f_olf = "/dbfs/mnt/lab/restricted/ELM-Project/bronze/ea-overland_flow-2024_06_19_direct.parquet"
 
-f = "/dbfs/mnt/lab/restricted/ELM-Project/gold/elmo_geo-parcel_olf-2024_07_11_beta.parquet"
+f = "/dbfs/mnt/lab/restricted/ELM-Project/silver/environment_agency/elmo_geo-parcel_olf-2024_07_11_beta.parquet"
 
 # COMMAND ----------
 
@@ -142,7 +142,7 @@ download_link(f)
 
 # COMMAND ----------
 
-assert pdf.id_parcel.duplicated().any() is False
+assert any(pdf.id_parcel.duplicated()) is False
 
 # COMMAND ----------
 
