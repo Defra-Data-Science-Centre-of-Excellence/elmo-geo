@@ -24,7 +24,10 @@ from .fc_woodland_sensitivity import (
 )
 from .rpa_reference_parcels import reference_parcels
 
+from .ons_itl import itl2_boundaries
+
 catalogue = [
+    itl2_boundaries,
     reference_parcels,
     sfi_agroforestry_raw,
     sfi_agroforestry,

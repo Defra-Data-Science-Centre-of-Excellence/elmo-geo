@@ -23,7 +23,7 @@ class ITL2Boundaries(DataFrameModel):
     geometry: Geometry(crs=SRID) = Field(coerce=True)
 
 
-ITL2_boundaries = SourceDataset(
+itl2_boundaries = SourceDataset(
     name="itl2_boundaries",
     level0="silver",
     level1="ons",
