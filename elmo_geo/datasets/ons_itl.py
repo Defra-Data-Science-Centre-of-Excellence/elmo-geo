@@ -9,10 +9,8 @@ from pandera.engines.pandas_engine import Geometry
 from elmo_geo.etl import SRID, SourceDataset
 
 
-class ITL_boundaries(DataFrameModel):
+class ITL2Boundaries(DataFrameModel):
     """Model for ONS ITL2 (counties and groups of counties) dataset.
-
-    More columns may be present in the data and would be persisted but we have defined here the ones we care about.
 
     Parameters:
         ITL221CD: Reference unique id for each geographic area ie TLC1.
@@ -26,10 +24,10 @@ class ITL_boundaries(DataFrameModel):
 
 
 ITL2_boundaries = SourceDataset(
-    name="ITL2_boundaries",
+    name="itl2_boundaries",
     level0="silver",
     level1="ons",
-    model=ITL_boundaries,
+    model=ITL2Boundaries,
     restricted=False,
     source_path="/dbfs/mnt/base/unrestricted/source_ons_open_geography_portal/dataset_int_territorial_lvl2_2021_uk_bgc_v2/format_GPKG_int_territorial_lvl2_2021_uk_bgc_v2/LATEST_int_territorial_lvl2_2021_uk_bgc_v2/International_Territorial_Level_2_January_2021_UK_BGC_V2_2022_1205324512979248673.gpkg",
 )
