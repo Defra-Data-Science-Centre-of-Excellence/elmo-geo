@@ -3,8 +3,14 @@ import json
 import shutil
 from pathlib import Path
 
+from elmo_geo import register
 from elmo_geo.utils.log import LOG
 
+from .fc_ewco import (
+    ewco_nature_recovery_priority_habitat,
+    ewco_nature_recovery_priority_habitat_parcels,
+    ewco_nature_recovery_priority_habitat_raw,
+)
 from .fc_woodland_sensitivity import (
     sfi_agroforestry,
     sfi_agroforestry_parcels,
@@ -25,6 +31,9 @@ from .fc_woodland_sensitivity import (
 from .rpa_reference_parcels import reference_parcels
 
 catalogue = [
+    ewco_nature_recovery_priority_habitat_parcels,
+    ewco_nature_recovery_priority_habitat_raw,
+    ewco_nature_recovery_priority_habitat,
     reference_parcels,
     sfi_agroforestry_raw,
     sfi_agroforestry,
@@ -47,6 +56,7 @@ catalogue = [
 
 def write_catalogue_json():
     "Write the catalogue as a json."
+    register()
     with open("data/catalogue.json", "w") as f:
         f.write(json.dumps({dataset.name: dataset.dict for dataset in catalogue}, indent=4))
 
@@ -57,12 +67,14 @@ def destroy_datasets():
     Warning:
         Datasets may take long time to rebuild the next time you need them.
     """
+    register()
     for dataset in catalogue:
         dataset.destroy()
 
 
 def main():
     """Run the whole ETL to build any missing datasets and refresh any stale ones."""
+    register()
     LOG.info("Refreshing all datasets...")
     for dataset in catalogue:
         if not dataset.is_fresh:
