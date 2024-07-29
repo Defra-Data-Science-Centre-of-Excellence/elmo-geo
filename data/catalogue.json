@@ -1,4 +1,14 @@
 {
+    "itl2_boundaries": {
+        "name": "itl2_boundaries",
+        "level0": "silver",
+        "level1": "ons",
+        "restricted": false,
+        "path": "/dbfs/mnt/lab/unrestricted/ELM-Project/silver/ons/itl2_boundaries-2024_07_24-4bea4832.parquet",
+        "type": "<class 'elmo_geo.etl.etl.SourceDataset'>",
+        "source_path": "/dbfs/mnt/base/unrestricted/source_ons_open_geography_portal/dataset_int_territorial_lvl2_2021_uk_bgc_v2/format_GPKG_int_territorial_lvl2_2021_uk_bgc_v2/LATEST_int_territorial_lvl2_2021_uk_bgc_v2/International_Territorial_Level_2_January_2021_UK_BGC_V2_2022_1205324512979248673.gpkg",
+        "date": "2024_07_24"
+    },
     "ewco_nature_recovery_priority_habitat_parcels": {
         "name": "ewco_nature_recovery_priority_habitat_parcels",
         "level0": "silver",
