@@ -47,4 +47,4 @@ dataset.path
 
 # COMMAND ----------
 
-download_link(dataset.path)
+dataset.download_link()

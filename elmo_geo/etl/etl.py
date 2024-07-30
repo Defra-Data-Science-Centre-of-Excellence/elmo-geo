@@ -19,6 +19,7 @@ import geopandas as gpd
 import pandas as pd
 from pandera import DataFrameModel
 from pyspark.sql.dataframe import DataFrame as SparkDataFrame
+from databricks.sdk.runtime import displayHTML, spark
 
 from elmo_geo.io import gpd_to_partitioned_parquet, pd_to_partitioned_parquet
 from elmo_geo.utils.log import LOG
@@ -163,6 +164,38 @@ class Dataset(ABC):
             return
         msg = f"'{self.name}' dataset cannot be destroyed as it doesn't exist yet."
         LOG.warning(msg)
+
+    def download_link(self, geo_as_parquet:bool=True) -> None:
+        """Save the dataset as a monolithic file in the /FileStore/elmo-geo-exports/ folder
+        and return a link to downlaod the file from this location.
+        """
+        filename = self.filename
+        exports_dir = "elmo-geo-exports"
+        path_out = f"/dbfs/FileStore/{exports_dir}/{filename}"
+
+        if not self.is_geo:
+            df = self.pdf()
+            df.to_parquet(path_out)
+        elif self.is_geo:
+            gdf = self.gdf()
+
+            if geo_as_parquet:
+                gdf.to_parquet(path_out)
+            else:
+                # TODO: https://github.com/Defra-Data-Science-Centre-of-Excellence/elmo-geo/issues/185
+                # Resolve IO error raise when trying to save as geopackage. Saving as geojson in the meantime.
+                path_out = f"{os.path.splitext(path_out)[0]}.geojson"
+                gdf.to_file(path_out)
+        url = (
+            f"https://{spark.conf.get('spark.databricks.workspaceUrl')}/files/"
+            f"{exports_dir}/{filename}"
+            f"?o={spark.conf.get('spark.databricks.clusterUsageTags.orgId')}"
+        )
+        # Return html snippet
+        displayHTML(f"<a href={url} target='_blank'>Download file: {filename}</a>")
+
+
+
 
     @classmethod
     def __type__(cls) -> str:
