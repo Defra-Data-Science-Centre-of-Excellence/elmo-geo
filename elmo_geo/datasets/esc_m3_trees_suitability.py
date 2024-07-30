@@ -28,7 +28,7 @@ esc_suitability_broadleaved_raw = SourceDataset(
     is_geo=False,
     source_path="/dbfs/mnt/lab/unrestricted/elm_data/evast/M3_trees_rcp45/2024-07-04/EVAST_M3_native_broadleaved_rcp45.csv",
 )
-"""Raw version of ESC broadleaved tree suitability dataset, recevied from EVAST."""
+"""Raw version of the Ecological Site Classification (ESC) broadleaved tree suitability dataset, received from EVAST."""
 
 esc_suitability_coniferous_raw = SourceDataset(
     name="esc_suitability_coniferous_raw",
@@ -38,7 +38,7 @@ esc_suitability_coniferous_raw = SourceDataset(
     is_geo=False,
     source_path="/dbfs/mnt/lab/unrestricted/elm_data/evast/M3_trees_rcp45/2024-07-04/EVAST_M3_productive_conifer_rcp45.csv",
 )
-"""Raw version of ESC coniferous tree suitability dataset, recevied from EVAST."""
+"""Raw version of the Ecological Site Classification (ESC) coniferous tree suitability dataset, received from EVAST."""
 
 esc_suitability_riparian_raw = SourceDataset(
     name="esc_suitability_riparian_raw",
@@ -48,7 +48,7 @@ esc_suitability_riparian_raw = SourceDataset(
     is_geo=False,
     source_path="/dbfs/mnt/lab/unrestricted/elm_data/evast/M3_trees_rcp45/2024-07-04/EVAST_M3_riparian_rcp45.csv",
 )
-"""Raw version of ESC riparian tree suitability dataset, recevied from EVAST."""
+"""Raw version of the Ecological Site Classification (ESC) riparian tree suitability dataset, received from EVAST."""
 
 
 class ESCTreeSuitabilityModel(DataFrameModel):
@@ -237,5 +237,5 @@ esc_tree_suitability = DerivedDataset(
     dependencies=[esc_suitability_broadleaved_raw, esc_suitability_coniferous_raw, esc_suitability_riparian_raw],
     model=ESCTreeSuitabilityModel,
 )
-"""Definition for the ESC tree suitability dataset aggregated to provide tree suitability scores 
+"""The Ecological Site Classification (ESC) tree suitability datasets aggregated to provide tree suitability scores 
 for broadleaved, coniferous, and riparian trees over different modelled time periods for each parcel."""
