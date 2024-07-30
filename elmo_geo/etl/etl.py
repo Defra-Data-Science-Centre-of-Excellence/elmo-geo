@@ -17,9 +17,9 @@ from pathlib import Path
 
 import geopandas as gpd
 import pandas as pd
+from databricks.sdk.runtime import displayHTML, spark
 from pandera import DataFrameModel
 from pyspark.sql.dataframe import DataFrame as SparkDataFrame
-from databricks.sdk.runtime import displayHTML, spark
 
 from elmo_geo.io import gpd_to_partitioned_parquet, pd_to_partitioned_parquet
 from elmo_geo.utils.log import LOG
@@ -165,7 +165,7 @@ class Dataset(ABC):
         msg = f"'{self.name}' dataset cannot be destroyed as it doesn't exist yet."
         LOG.warning(msg)
 
-    def download_link(self, geo_as_parquet:bool=True) -> None:
+    def download_link(self, geo_as_parquet: bool = True) -> None:
         """Save the dataset as a monolithic file in the /FileStore/elmo-geo-exports/ folder
         and return a link to downlaod the file from this location.
         """
@@ -193,9 +193,6 @@ class Dataset(ABC):
         )
         # Return html snippet
         displayHTML(f"<a href={url} target='_blank'>Download file: {filename}</a>")
-
-
-
 
     @classmethod
     def __type__(cls) -> str:
