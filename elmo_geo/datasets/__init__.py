@@ -6,7 +6,6 @@ from pathlib import Path
 from elmo_geo import register
 from elmo_geo.utils.log import LOG
 
-from .fr_esc_m3_trees_suitability import esc_suitability_broadleaved_raw, esc_suitability_coniferous_raw, esc_suitability_riparian_raw, esc_tree_suitability
 from .fc_ewco import (
     ewco_nature_recovery_priority_habitat,
     ewco_nature_recovery_priority_habitat_parcels,
@@ -29,6 +28,7 @@ from .fc_woodland_sensitivity import (
     woodland_creation_sensitivity_var3_parcels,
     woodland_creation_sensitivity_var3_raw,
 )
+from .fr_esc_m3_trees_suitability import esc_suitability_broadleaved_raw, esc_suitability_coniferous_raw, esc_suitability_riparian_raw, esc_tree_suitability
 from .ons_itl import itl2_boundaries
 from .rpa_reference_parcels import reference_parcels
 
