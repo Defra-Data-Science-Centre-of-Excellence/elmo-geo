@@ -30,6 +30,7 @@ HASH_LENGTH = 8
 PATH_FMT: str = "/dbfs/mnt/lab/{restricted}/ELM-Project/{level0}/{level1}/"
 FILE_FMT: str = "{name}-{date}-{hsh}.parquet"
 PAT_FMT: str = "(^{name}-[\d_]+-{hsh}.parquet$)"
+PAT_DATE: str = "(?<=^{name}-)([\d_]+)(?=-{hsh}.parquet$)"
 SRID: int = 27700
 
 
@@ -55,12 +56,23 @@ class Dataset(ABC):
     restricted: bool
 
     @abstractproperty
-    def date(self) -> str:
-        """The last modified date of the data file."""
+    def _new_date(self) -> str:
+        """New date for parquet file being created."""
 
     @abstractproperty
     def _hash(self) -> str:
         """A semi-unique identifier of the last modified dates of the data file(s) from which a dataset is derived."""
+
+    @property
+    def date(self) -> str | None:
+        """Return the last-modified date from the filename in ISO string format.
+
+        If the dataset has not been generated yet, return `None`."""
+        pat = re.compile(PAT_DATE.format(name=self.name, hsh=self._hash))
+        try:
+            return pat.findall(self.filename)[0]
+        except IndexError:
+            return None
 
     @abstractproperty
     def dict(self) -> dict:
@@ -103,7 +115,7 @@ class Dataset(ABC):
     @property
     def _new_filename(self) -> str:
         """New filename for parquet file being created."""
-        return FILE_FMT.format(name=self.name, date=self.date, hsh=self._hash)
+        return FILE_FMT.format(name=self.name, date=self._new_date, hsh=self._hash)
 
     @property
     def _new_path(self) -> str:
@@ -175,7 +187,7 @@ class SourceDataset(Dataset):
     is_geo: bool = True
 
     @property
-    def date(self) -> str:
+    def _new_date(self) -> str:
         """Return the last-modified date of the source file in ISO string format."""
         return time.strftime(DATE_FMT, time.gmtime(os.path.getmtime(self.source_path)))
 
@@ -237,7 +249,7 @@ class DerivedDataset(Dataset):
     is_geo: bool = True
 
     @property
-    def date(self) -> str:
+    def _new_date(self) -> str:
         """Return the current date for use in file naming."""
         return datetime.today().strftime(DATE_FMT)
 
