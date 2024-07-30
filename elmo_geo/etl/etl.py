@@ -168,6 +168,10 @@ class Dataset(ABC):
     def download_link(self, geo_as_parquet: bool = True) -> None:
         """Save the dataset as a monolithic file in the /FileStore/elmo-geo-exports/ folder
         and return a link to downlaod the file from this location.
+
+        Parameters:
+            geo_as_parquet: Set whether to save geographic datasets as a parquet file.
+                If False geodataframe is saved to geojson file.
         """
         filename = self.filename
         exports_dir = "elmo-geo-exports"
