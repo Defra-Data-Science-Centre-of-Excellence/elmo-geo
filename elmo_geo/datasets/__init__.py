@@ -5,7 +5,7 @@ from pathlib import Path
 
 from elmo_geo.utils.log import LOG
 
-from .esc_m3_trees_suitability import esc_suitability_broadleaved_raw, esc_suitability_coniferous_raw, esc_suitability_riparian_raw, esc_tree_suitability
+from .fr_esc_m3_trees_suitability import esc_suitability_broadleaved_raw, esc_suitability_coniferous_raw, esc_suitability_riparian_raw, esc_tree_suitability
 from .fc_woodland_sensitivity import (
     sfi_agroforestry,
     sfi_agroforestry_parcels,
@@ -27,10 +27,9 @@ from .rpa_reference_parcels import reference_parcels
 
 catalogue = [
     reference_parcels,
-    esc_suitability_broadleaved_raw,
-    esc_suitability_coniferous_raw,
-    esc_suitability_riparian_raw,
-    esc_tree_suitability,
+    sfi_agroforestry_raw,
+    sfi_agroforestry,
+    sfi_agroforestry_parcels,
     woodland_creation_sensitivity,
     woodland_creation_sensitivity_parcels,
     woodland_creation_sensitivity_raw,
