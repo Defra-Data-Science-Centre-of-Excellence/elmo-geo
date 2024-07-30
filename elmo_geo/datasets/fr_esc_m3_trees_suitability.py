@@ -58,8 +58,8 @@ class ESCTreeSuitabilityModel(DataFrameModel):
     (which prefix the variables)
 
     Parameters:
-        id_parcel: 11 character RPA reference parcel ID (including the sheet ID) e.g. `SE12263419`.#
-        nopeatArea: Non peat area of parcel.
+        id_parcel: 11 character RPA reference parcel ID (including the sheet ID) e.g. `SE12263419`
+        nopeatArea: Non peat area of parcel
         T1_2021_2028_T2_2021_2028_broadleaved_suitability: Broadleaved suitability score for the
             T1_2021_2028_T2_2021_2028 time periods
         T1_2021_2028_T2_2021_2028_n_broadleaved_species: Broadleaved species count for the
