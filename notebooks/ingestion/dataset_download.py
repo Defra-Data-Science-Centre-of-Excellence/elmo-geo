@@ -13,7 +13,6 @@
 # COMMAND ----------
 
 from elmo_geo.datasets import catalogue
-from elmo_geo.io.download import download_link
 
 # COMMAND ----------
 
@@ -39,7 +38,7 @@ dbutils.widgets.dropdown("C - Dataset", default_dataset, datasets)
 
 dataset = dbutils.widgets.get("C - Dataset")
 dataset = next(d for d in catalogue if d.name == dataset)
-[print(k, v, sep=":\t") for k, v in dataset.__dict__.items()];
+_ = [print(k, v, sep=":\t") for k, v in dataset.__dict__.items()]
 
 # COMMAND ----------
 
