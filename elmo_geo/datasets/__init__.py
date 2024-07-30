@@ -26,6 +26,10 @@ from .fc_woodland_sensitivity import (
 from .rpa_reference_parcels import reference_parcels
 
 catalogue = [
+    esc_suitability_broadleaved_raw,
+    esc_suitability_coniferous_raw,
+    esc_suitability_riparian_raw,
+    esc_tree_suitability,
     reference_parcels,
     sfi_agroforestry_raw,
     sfi_agroforestry,
