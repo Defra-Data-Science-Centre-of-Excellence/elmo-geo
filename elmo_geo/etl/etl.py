@@ -33,6 +33,7 @@ FILE_FMT: str = "{name}-{date}-{hsh}.parquet"
 PAT_FMT: str = "(^{name}-[\d_]+-{hsh}.parquet$)"
 PAT_DATE: str = "(?<=^{name}-)([\d_]+)(?=-{hsh}.parquet$)"
 SRID: int = 27700
+EXPORT_DIR: str = "elmo-geo-exports"
 
 
 class NotGeoError(Exception):
@@ -173,26 +174,27 @@ class Dataset(ABC):
             geo_as_parquet: Set whether to save geographic datasets as a parquet file.
                 If False geodataframe is saved to geojson file.
         """
+
         filename = self.filename
-        exports_dir = "elmo-geo-exports"
-        path_out = f"/dbfs/FileStore/{exports_dir}/{filename}"
+        if not geo_as_parquet:
+            # TODO: https://github.com/Defra-Data-Science-Centre-of-Excellence/elmo-geo/issues/185
+            # Resolve IO error raise when trying to save as geopackage. Saving as geojson in the meantime.
+            filename = f"{os.path.splitext(filename)[0]}.geojson"
+
+        path_out = f"/dbfs/FileStore/{self.EXPORTS_DIR}/{filename}"
 
         if not self.is_geo:
             df = self.pdf()
             df.to_parquet(path_out)
         elif self.is_geo:
             gdf = self.gdf()
-
             if geo_as_parquet:
                 gdf.to_parquet(path_out)
             else:
-                # TODO: https://github.com/Defra-Data-Science-Centre-of-Excellence/elmo-geo/issues/185
-                # Resolve IO error raise when trying to save as geopackage. Saving as geojson in the meantime.
-                path_out = f"{os.path.splitext(path_out)[0]}.geojson"
                 gdf.to_file(path_out)
         url = (
             f"https://{spark.conf.get('spark.databricks.workspaceUrl')}/files/"
-            f"{exports_dir}/{filename}"
+            f"{self.EXPORTS_DIR}/{filename}"
             f"?o={spark.conf.get('spark.databricks.clusterUsageTags.orgId')}"
         )
         # Return html snippet
