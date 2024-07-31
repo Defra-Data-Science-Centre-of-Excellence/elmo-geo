@@ -166,35 +166,48 @@ class Dataset(ABC):
         msg = f"'{self.name}' dataset cannot be destroyed as it doesn't exist yet."
         LOG.warning(msg)
 
-    def export(self, geo_as_parquet: bool = True) -> None:
+    def to_export_file(self, path_out: str) -> None:
+        """Write data to a monolithic (non-partitioned) file.
+
+        WARNING: GeoDatFrames cannot be saved to geopackage files.
+        See issue #185 https://github.com/Defra-Data-Science-Centre-of-Excellence/elmo-geo/issues/185
+
+        Parameters:
+            path_out: The path to write to.
+        """
+        LOG.info(f"Writing dataset for export to:{path_out}")
+        _, ext = os.path.splitext(path_out)
+        if self.is_geo:
+            gdf = self.gdf()
+            if ext == ".parquet":
+                gdf.to_parquet(path_out)
+            else:
+                # TODO: https://github.com/Defra-Data-Science-Centre-of-Excellence/elmo-geo/issues/185
+                # Resolve IO error raise when trying to save as geopackage. Saving as geojson in the meantime.
+                gdf.to_file(path_out)
+        else:
+            df = self.pdf()
+            if ext == ".parquet":
+                df.to_parquet(path_out)
+            else:
+                raise NotImplementedError(f"Non geographic datasets can only be saved to parquet files currently. Chosen format:{ext}")
+
+    def export(self, ext: str = ".parquet") -> None:
         """Save the dataset as a monolithic file in the /FileStore/elmo-geo-exports/ folder
         and return a link to downlaod the file from this location.
 
         Parameters:
-            geo_as_parquet: Set whether to save geographic datasets as a parquet file.
-                If False geodataframe is saved to geojson file.
+            ext: File extension to use when saving the dataset.
         """
+        filename = f"{os.path.splitext(self.filename)[0]}{ext}"
+        path_out = f"/dbfs/FileStore/{EXPORTS_FOLDER}/{filename}"
 
-        filename = self.filename
-        if not geo_as_parquet:
-            # TODO: https://github.com/Defra-Data-Science-Centre-of-Excellence/elmo-geo/issues/185
-            # Resolve IO error raise when trying to save as geopackage. Saving as geojson in the meantime.
-            filename = f"{os.path.splitext(filename)[0]}.geojson"
+        if not os.path.exists(path_out):
+            self.to_export_file(path_out)
 
-        path_out = f"/dbfs/FileStore/{self.EXPORTS_FOLDER}/{filename}"
-
-        if not self.is_geo:
-            df = self.pdf()
-            df.to_parquet(path_out)
-        elif self.is_geo:
-            gdf = self.gdf()
-            if geo_as_parquet:
-                gdf.to_parquet(path_out)
-            else:
-                gdf.to_file(path_out)
         url = (
             f"https://{spark.conf.get('spark.databricks.workspaceUrl')}/files/"
-            f"{self.EXPORTS_FOLDER}/{filename}"
+            f"{EXPORTS_FOLDER}/{filename}"
             f"?o={spark.conf.get('spark.databricks.clusterUsageTags.orgId')}"
         )
         # Return html snippet
