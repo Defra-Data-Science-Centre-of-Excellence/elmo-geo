@@ -166,7 +166,7 @@ class Dataset(ABC):
         msg = f"'{self.name}' dataset cannot be destroyed as it doesn't exist yet."
         LOG.warning(msg)
 
-    def download_link(self, geo_as_parquet: bool = True) -> None:
+    def export(self, geo_as_parquet: bool = True) -> None:
         """Save the dataset as a monolithic file in the /FileStore/elmo-geo-exports/ folder
         and return a link to downlaod the file from this location.
 

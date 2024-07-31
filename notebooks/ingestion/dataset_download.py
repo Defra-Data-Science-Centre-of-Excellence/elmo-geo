@@ -46,4 +46,4 @@ dataset.path
 
 # COMMAND ----------
 
-dataset.download_link()
+dataset.export()
