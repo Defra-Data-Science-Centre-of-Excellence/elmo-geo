@@ -33,7 +33,7 @@ FILE_FMT: str = "{name}-{date}-{hsh}.parquet"
 PAT_FMT: str = "(^{name}-[\d_]+-{hsh}.parquet$)"
 PAT_DATE: str = "(?<=^{name}-)([\d_]+)(?=-{hsh}.parquet$)"
 SRID: int = 27700
-EXPORT_DIR: str = "elmo-geo-exports"
+EXPORTS_FOLDER: str = "elmo-geo-exports"
 
 
 class NotGeoError(Exception):
@@ -181,7 +181,7 @@ class Dataset(ABC):
             # Resolve IO error raise when trying to save as geopackage. Saving as geojson in the meantime.
             filename = f"{os.path.splitext(filename)[0]}.geojson"
 
-        path_out = f"/dbfs/FileStore/{self.EXPORTS_DIR}/{filename}"
+        path_out = f"/dbfs/FileStore/{self.EXPORTS_FOLDER}/{filename}"
 
         if not self.is_geo:
             df = self.pdf()
@@ -194,7 +194,7 @@ class Dataset(ABC):
                 gdf.to_file(path_out)
         url = (
             f"https://{spark.conf.get('spark.databricks.workspaceUrl')}/files/"
-            f"{self.EXPORTS_DIR}/{filename}"
+            f"{self.EXPORTS_FOLDER}/{filename}"
             f"?o={spark.conf.get('spark.databricks.clusterUsageTags.orgId')}"
         )
         # Return html snippet
