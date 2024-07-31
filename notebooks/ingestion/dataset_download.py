@@ -46,4 +46,4 @@ dataset.path
 
 # COMMAND ----------
 
-dataset.export()
+displayHTML(dataset.export(spark))

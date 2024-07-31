@@ -17,13 +17,13 @@ from pathlib import Path
 
 import geopandas as gpd
 import pandas as pd
-from databricks.sdk.runtime import displayHTML, spark
 from pandera import DataFrameModel
 from pyspark.sql.dataframe import DataFrame as SparkDataFrame
 
 from elmo_geo.io import gpd_to_partitioned_parquet, pd_to_partitioned_parquet
 from elmo_geo.utils.log import LOG
 from elmo_geo.utils.misc import load_sdf
+from elmo_geo.utils.types import SparkSession
 
 DATE_FMT: str = r"%Y_%m_%d"
 SRC_HASH_FMT: str = r"%Y%m%d%H%M%S"
@@ -192,12 +192,17 @@ class Dataset(ABC):
             else:
                 raise NotImplementedError(f"Non geographic datasets can only be saved to parquet files currently. Chosen format:{ext}")
 
-    def export(self, ext: str = ".parquet") -> None:
+    def export(self, spark: SparkSession, ext: str = ".parquet") -> str:
         """Save the dataset as a monolithic file in the /FileStore/elmo-geo-exports/ folder
         and return a link to downlaod the file from this location.
 
         Parameters:
+            spark: The SparkSession. Used to get config settings for export download url.
             ext: File extension to use when saving the dataset.
+
+        Returns:
+            HTML download link for exported data.
+
         """
         filename = f"{os.path.splitext(self.filename)[0]}{ext}"
         path_out = f"/dbfs/FileStore/{EXPORTS_FOLDER}/{filename}"
@@ -211,7 +216,7 @@ class Dataset(ABC):
             f"?o={spark.conf.get('spark.databricks.clusterUsageTags.orgId')}"
         )
         # Return html snippet
-        displayHTML(f"<a href={url} target='_blank'>Download file: {filename}</a>")
+        return f"<a href={url} target='_blank'>Download file: {filename}</a>"
 
     @classmethod
     def __type__(cls) -> str:
