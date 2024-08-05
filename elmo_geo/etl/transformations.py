@@ -5,6 +5,7 @@ For use in `elmo.etl.DerivedDataset.func`.
 import pandas as pd
 from pyspark.sql import functions as F
 
+from elmo_geo.st.geometry import clean_geometry
 from elmo_geo.st.join import sjoin
 
 from .etl import Dataset
@@ -29,21 +30,11 @@ def join_parcels(
     """
     if columns is None:
         columns = []
-    df_parcels = (
-        parcels.sdf()
-        .select("id_parcel", "geometry")
-        .withColumn("geometry", F.expr("ST_MakeValid(geometry)"))
-        .withColumn("geometry", F.expr(f"ST_SimplifyPreserveTopology(geometry, {simplify_tolerence})"))
-        .withColumn("geometry", F.expr("ST_Force_2D(geometry)"))
-        .withColumn("geometry", F.expr("ST_MakeValid(geometry)"))
-    )
+    df_parcels = parcels.sdf().select("id_parcel", "geometry").withColumn("geometry", clean_geometry("geometry", simplify_tolerence=simplify_tolerence))
     df_feature = (
         features.sdf()
         .select("geometry", *columns)
-        .withColumn("geometry", F.expr("ST_MakeValid(geometry)"))
-        .withColumn("geometry", F.expr(f"ST_SimplifyPreserveTopology(geometry, {simplify_tolerence})"))
-        .withColumn("geometry", F.expr("ST_Force_2D(geometry)"))
-        .withColumn("geometry", F.expr("ST_MakeValid(geometry)"))
+        .withColumn("geometry", clean_geometry("geometry", simplify_tolerence=simplify_tolerence))
         .withColumn("geometry", F.expr(f"ST_SubdivideExplode(geometry, {max_vertices})"))
     )
     return (

@@ -6,6 +6,12 @@ from pathlib import Path
 from elmo_geo import register
 from elmo_geo.utils.log import LOG
 
+from .defra_priority_habitats import (
+    defra_grassland_proximity_parcels,
+    defra_heathland_proximity_parcels,
+    defra_priority_habitat_england,
+    defra_priority_habitat_parcels,
+)
 from .fc_ewco import (
     ewco_nature_recovery_priority_habitat,
     ewco_nature_recovery_priority_habitat_parcels,
@@ -33,6 +39,10 @@ from .rpa_reference_parcels import reference_parcels
 
 catalogue = [
     itl2_boundaries,
+    defra_priority_habitat_england,
+    defra_priority_habitat_parcels,
+    defra_heathland_proximity_parcels,
+    defra_grassland_proximity_parcels,
     ewco_nature_recovery_priority_habitat_parcels,
     ewco_nature_recovery_priority_habitat_raw,
     ewco_nature_recovery_priority_habitat,
