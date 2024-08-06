@@ -1,8 +1,7 @@
 # Databricks notebook source
 """Demo notebook for new ETL catalog."""
 from elmo_geo import register
-from elmo_geo.datasets import destroy_datasets, write_catalogue_json, reference_parcels
-import pyspark.sql.functions as F
+from elmo_geo.datasets import destroy_datasets, write_catalogue_json
 
 register()
 
@@ -19,4 +18,4 @@ write_catalogue_json()
 # COMMAND ----------
 
 # use with caution
-#destroy_datasets()
+destroy_datasets()
