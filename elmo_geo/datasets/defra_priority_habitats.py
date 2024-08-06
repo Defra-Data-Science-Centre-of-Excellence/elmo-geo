@@ -235,4 +235,12 @@ defra_grassland_proximity_parcels = DerivedDataset(
     model=PriorityHabitatProximity,
 )
 """Defra Priority Habitats distance from parcels to grassland habitats.
+
+The following grassland habitats are included:
+- Lowland calcareous grassland
+- Upland calcareous grassland
+- Lowland dry acid grassland
+- Lowland meadows
+- Purple moor grass and rush pastures
+- Grass moorland
 """
