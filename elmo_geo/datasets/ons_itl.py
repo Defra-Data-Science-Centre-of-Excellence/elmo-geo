@@ -5,17 +5,16 @@ https://geoportal.statistics.gov.uk/datasets/6750ae0351c749c4b40b31e5740233a0_0/
 
 from functools import partial
 
-import geopandas as gpd
 from pandera import DataFrameModel, Field
-from pandera.dtypes import Category
 from pandera.engines.pandas_engine import Geometry
 
-from elmo_geo.etl import SRID, SourceDataset, Dataset, DerivedDataset
+from elmo_geo.etl import SRID, DerivedDataset, SourceDataset
 from elmo_geo.etl.transformations import join_parcels
 
 from .rpa_reference_parcels import reference_parcels
 
-_join_parcels = partial(join_parcels, columns=["ITL221NM"])
+_join_parcels = partial(join_parcels, columns=["ITL221NM", "ITL221CD"])
+
 
 class ITL2Boundaries(DataFrameModel):
     """Model for ONS ITL2 (counties and groups of counties) dataset.
@@ -30,6 +29,7 @@ class ITL2Boundaries(DataFrameModel):
     ITL221NM: str = Field(coerce=True)
     geometry: Geometry(crs=SRID) = Field(coerce=True)
 
+
 class ITL2BoundariesParcels(DataFrameModel):
     """Model for ONS ITL2 with parcel dataset.
 
@@ -37,13 +37,13 @@ class ITL2BoundariesParcels(DataFrameModel):
         ITL221CD: Reference unique id for each geographic area ie TLC1.
         ITL221NM: Name of the county or group of counties ie Tees Valley and Durham
         geometry: The ITL geospatial polygons are in EPSG:27700.
-        proportion: The proportion of rpa refernce parcels that are within with each of the itl2 boundary.
+        id_parcel: 11 character RPA reference parcel ID (including the sheet ID) e.g. `SE12263419`.
     """
 
     ITL221CD: str = Field(coerce=True)
     ITL221NM: str = Field(coerce=True)
     geometry: Geometry(crs=SRID) = Field(coerce=True)
-    Proportion: float = Field(ge=0, le=1)
+    id_parcel: str
 
 
 itl2_boundaries = SourceDataset(
@@ -59,8 +59,8 @@ itl2_boundaries_parcels = DerivedDataset(
     name="itl2_boundaries_parcels",
     level0="silver",
     level1="ons",
-    restrictes=False,
+    restricted=False,
     func=_join_parcels,
     dependencies=[reference_parcels, itl2_boundaries],
-    model=ITL2BoundariesParcels
+    model=ITL2BoundariesParcels,
 )
