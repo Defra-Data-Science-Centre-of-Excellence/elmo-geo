@@ -34,16 +34,16 @@ class ITL2BoundariesParcels(DataFrameModel):
     """Model for ONS ITL2 with parcel dataset.
 
     Parameters:
+        id_parcel: 11 character RPA reference parcel ID (including the sheet ID) e.g. `SE12263419`.
         ITL221CD: Reference unique id for each geographic area ie TLC1.
         ITL221NM: Name of the county or group of counties ie Tees Valley and Durham
-        geometry: The ITL geospatial polygons are in EPSG:27700.
-        id_parcel: 11 character RPA reference parcel ID (including the sheet ID) e.g. `SE12263419`.
+        proportion: The proportion of the parcel that intersects with the itl2 boundary.
     """
 
+    id_parcel: str
     ITL221CD: str = Field(coerce=True)
     ITL221NM: str = Field(coerce=True)
-    geometry: Geometry(crs=SRID) = Field(coerce=True)
-    id_parcel: str
+    proportion: float = Field(ge=0, le=1)
 
 
 itl2_boundaries = SourceDataset(
