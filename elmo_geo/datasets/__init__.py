@@ -28,11 +28,12 @@ from .fc_woodland_sensitivity import (
     woodland_creation_sensitivity_var3_parcels,
     woodland_creation_sensitivity_var3_raw,
 )
-from .ons_itl import itl2_boundaries
+from .ons_itl import itl2_boundaries, itl2_boundaries_parcels
 from .rpa_reference_parcels import reference_parcels
 
 catalogue = [
     itl2_boundaries,
+    itl2_boundaries_parcels,
     ewco_nature_recovery_priority_habitat_parcels,
     ewco_nature_recovery_priority_habitat_raw,
     ewco_nature_recovery_priority_habitat,
