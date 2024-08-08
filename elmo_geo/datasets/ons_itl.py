@@ -57,7 +57,7 @@ itl2_boundaries_raw = SourceDataset(
 
 itl2_boundaries_parcels = DerivedDataset(
     name="itl2_boundaries_parcels",
-    level0="bronze",
+    level0="silver",
     level1="ons",
     restricted=False,
     func=_join_parcels,
