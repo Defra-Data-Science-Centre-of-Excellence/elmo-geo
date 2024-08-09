@@ -103,7 +103,10 @@ reference_parcels_raw = SourceDataset(
     restricted=False,
     source_path="/dbfs/mnt/lab/unrestricted/elm_data/rpa/reference_parcels/LIDM_Parcels.gdb",
 )
-"""Definition for the raw sourced version of the RPA's Reference Parcels dataset."""
+"""Definition for the raw sourced version of the RPA's Reference Parcels dataset.
+
+Current version is as of 1st June 2023 and is what is being used by us, LEEP WFM and EVAST.
+"""
 
 reference_parcels_raw_no_sbi = SourceDataset(
     name="reference_parcels_raw_no_sbi",
@@ -113,7 +116,10 @@ reference_parcels_raw_no_sbi = SourceDataset(
     restricted=False,
     source_path="/dbfs/mnt/lab/unrestricted/elm_data/rpa/reference_parcels/No_SBI_Parcels.gdb",
 )
-"""Raw parcels that have no SBI."""
+"""Raw parcels that have no SBI.
+
+Current version is as of 1st June 2023 and is what is being used by us, LEEP WFM and EVAST.
+"""
 
 reference_parcels = DerivedDataset(
     name="reference_parcels",
@@ -124,4 +130,9 @@ reference_parcels = DerivedDataset(
     func=_combine_and_clean_parcels,
     dependencies=[reference_parcels_raw, reference_parcels_raw_no_sbi],
 )
-"""Definition for the cleaned version of the RPA's Reference Parcels dataset."""
+"""Definition for the cleaned version of the RPA's Reference Parcels dataset.
+
+Current version is as of 1st June 2023 and is what is being used by us, LEEP WFM and EVAST.
+The parcel geometries have been cleaned and simplified to 1m resolution.
+There is one MultiPolygon, the rest are Polygons.
+"""
