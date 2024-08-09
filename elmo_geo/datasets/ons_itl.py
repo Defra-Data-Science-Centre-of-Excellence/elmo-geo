@@ -1,7 +1,7 @@
 """International Territorial Levels (ITLs) from Office of National Satitstics (ONS).
 
 Data taken from open geography portal here:
-https://geoportal.statistics.gov.uk/datasets/6750ae0351c749c4b40b31e5740233a0_0/explore?location=54.959130%2C-3.316600%2C6.04 """
+https://geoportal.statistics.gov.uk/datasets/6750ae0351c749c4b40b31e5740233a0_0/explore?location=54.959130%2C-3.316600%2C6.04"""
 
 from pandera import DataFrameModel, Field
 from pandera.engines.pandas_engine import Geometry
@@ -12,7 +12,7 @@ from elmo_geo.etl import SRID, SourceDataset
 class ITL2Boundaries(DataFrameModel):
     """Model for ONS ITL2 (counties and groups of counties) dataset.
 
-    Parameters:
+    Attributes:
         ITL221CD: Reference unique id for each geographic area ie TLC1.
         ITL221NM: Name of the county or group of counties ie Tees Valley and Durham
         geometry: The ITL geospatial polygons are in EPSG:27700.

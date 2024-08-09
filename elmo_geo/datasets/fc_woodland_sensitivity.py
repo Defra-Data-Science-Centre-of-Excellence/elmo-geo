@@ -23,7 +23,7 @@ _join_parcels = partial(join_parcels, columns=["sensitivity"])
 class WoodlandSensitivityClean(DataFrameModel):
     """Model describing the Forestry Commission's England Woodland Creation Sensitivity Maps.
 
-    Parameters:
+    Attributes:
         geometry: The sensitivity classification's geospatial extent (polygons).
         sensitivity: The sensitivity classification, one of `{Unsuitable, High, Medium, Low}`.
     """
@@ -35,7 +35,7 @@ class WoodlandSensitivityClean(DataFrameModel):
 class WoodlandSensitivityParcels(DataFrameModel):
     """Model describing a woodland creation sensitivity parcel-level dataset.
 
-    Parameters:
+    Attributes:
         id_parcel: 11 character RPA reference parcel ID (including the sheet ID) e.g. `SE12263419`.
         sensitivity: The sensitivity classification, one of `{Unsuitable, High, Medium, Low}`.
         proportion: The proportion of the parcel that intersects with the sensitivity classification.
