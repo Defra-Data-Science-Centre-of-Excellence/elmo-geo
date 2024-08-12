@@ -6,6 +6,8 @@ from pathlib import Path
 from elmo_geo import register
 from elmo_geo.utils.log import LOG
 
+from .defra_alc import alc_parcels, alc_raw
+from .defra_flood_risk_areas import flood_risk_areas_parcels, flood_risk_areas_raw
 from .fc_ewco import (
     ewco_nature_recovery_priority_habitat,
     ewco_nature_recovery_priority_habitat_parcels,
