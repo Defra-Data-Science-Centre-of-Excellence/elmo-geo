@@ -16,7 +16,7 @@ from .rpa_reference_parcels import reference_parcels
 _join_parcels = partial(join_parcels, columns=["ITL221NM", "ITL221CD"])
 
 
-class ITL2Boundaries(DataFrameModel):
+class ITL2BoundariesRaw(DataFrameModel):
     """Model for ONS ITL2 (counties and groups of counties) dataset.
 
     Attributes:
@@ -46,11 +46,11 @@ class ITL2BoundariesParcels(DataFrameModel):
     proportion: float = Field(ge=0, le=1)
 
 
-itl2_boundaries = SourceDataset(
-    name="itl2_boundaries",
-    level0="silver",
+itl2_boundaries_raw = SourceDataset(
+    name="itl2_boundaries_raw",
+    level0="bronze",
     level1="ons",
-    model=ITL2Boundaries,
+    model=ITL2BoundariesRaw,
     restricted=False,
     source_path="/dbfs/mnt/base/unrestricted/source_ons_open_geography_portal/dataset_int_territorial_lvl2_2021_uk_bgc_v2/format_GPKG_int_territorial_lvl2_2021_uk_bgc_v2/LATEST_int_territorial_lvl2_2021_uk_bgc_v2/International_Territorial_Level_2_January_2021_UK_BGC_V2_2022_1205324512979248673.gpkg",
 )
@@ -61,6 +61,6 @@ itl2_boundaries_parcels = DerivedDataset(
     level1="ons",
     restricted=False,
     func=_join_parcels,
-    dependencies=[reference_parcels, itl2_boundaries],
+    dependencies=[reference_parcels, itl2_boundaries_raw],
     model=ITL2BoundariesParcels,
 )
