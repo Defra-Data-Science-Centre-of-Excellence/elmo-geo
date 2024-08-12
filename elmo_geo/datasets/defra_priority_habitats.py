@@ -15,7 +15,8 @@ from pandera.engines.pandas_engine import Geometry
 from pyspark.sql import functions as F
 
 from elmo_geo.etl import Dataset, DerivedDataset, SourceDataset
-from elmo_geo.etl.transformations import join_parcels, load_geometry
+from elmo_geo.etl.transformations import join_parcels
+from elmo_geo.st.geometry import load_geometry
 from elmo_geo.st.join import knn
 
 from .rpa_reference_parcels import reference_parcels

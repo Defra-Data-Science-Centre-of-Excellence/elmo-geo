@@ -5,33 +5,10 @@ For use in `elmo.etl.DerivedDataset.func`.
 import pandas as pd
 from pyspark.sql import functions as F
 
+from elmo_geo.st.geometry import load_geometry
 from elmo_geo.st.join import sjoin
 
 from .etl import Dataset
-
-
-def load_geometry(column: str = "geometry", precision: int = 3, encoding_fn: str = "ST_GeomFromWKB", simplify_tolerence: float = 1.0) -> callable:
-    """Load Geometry
-    Useful for ingesting data.
-    Missing
-      Check for NULL values and replace with an empty point
-    Encoding
-      encoding_fn '', 'ST_GeomFromWKB', 'ST_GeomFromWKT'
-    Standardise
-      Force 2D
-      Normalise ordering
-    Optimise
-      3 = 0.001m = 1mm precision
-      0 simplify to precision
-    """
-    null = 'ST_GeomFromText("Point EMPTY")'
-    string = f"ST_MakeValid({encoding_fn}({column}))"
-    string = f"COALESCE({string}, {null})"
-    string = f"ST_MakeValid(ST_Force_2D({string}))"
-    string = f"ST_MakeValid(ST_PrecisionReduce({string}, {precision}))"
-    string = f"ST_MakeValid(ST_SimplifyPreserveTopology({string}, {simplify_tolerence}))"
-    string = string + " AS " + column
-    return F.expr(string)
 
 
 def join_parcels(
