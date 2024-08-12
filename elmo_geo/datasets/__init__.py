@@ -33,13 +33,11 @@ from .rpa_reference_parcels import reference_parcels, reference_parcels_raw, ref
 
 
 catalogue = [
-    itl2_boundaries_raw,
-    itl2_boundaries_parcels,
     ewco_nature_recovery_priority_habitat_parcels,
     ewco_nature_recovery_priority_habitat_raw,
     ewco_nature_recovery_priority_habitat,
     ewco_nature_recovery_priority_habitat_parcels,
-    itl2_boundaries,
+    itl2_boundaries_raw,
     itl2_boundaries_parcels,
     reference_parcels_raw,
     reference_parcels_raw_no_sbi,
