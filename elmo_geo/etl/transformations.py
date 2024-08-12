@@ -5,14 +5,14 @@ For use in `elmo.etl.DerivedDataset.func`.
 import pandas as pd
 from pyspark.sql import functions as F
 
-from elmo_geo.st.geometry import clean_geometry
+from elmo_geo.st.geometry import load_geometry
 from elmo_geo.st.join import sjoin
 
 from .etl import Dataset
 
 
 def join_parcels(
-    parcels: Dataset, features: Dataset, columns: list[str] | None = None, simplify_tolerence: float = 20.0, max_vertices: int = 256
+    parcels: Dataset, features: Dataset, columns: list[str] | None = None, simplify_tolerence: float = 1.0, max_vertices: int = 256
 ) -> pd.DataFrame:
     """Spatial join the two datasets and calculate the proportion of the parcel that intersects.
 
@@ -30,11 +30,11 @@ def join_parcels(
     """
     if columns is None:
         columns = []
-    df_parcels = parcels.sdf().select("id_parcel", "geometry").withColumn("geometry", clean_geometry("geometry", simplify_tolerence=simplify_tolerence))
+    df_parcels = parcels.sdf().select("id_parcel", "geometry").withColumn("geometry", load_geometry("geometry", encoding_fn="", simplify_tolerence=simplify_tolerence))
     df_feature = (
         features.sdf()
         .select("geometry", *columns)
-        .withColumn("geometry", clean_geometry("geometry", simplify_tolerence=simplify_tolerence))
+        .withColumn("geometry", load_geometry("geometry", encoding_fn="", simplify_tolerence=simplify_tolerence))
         .withColumn("geometry", F.expr(f"ST_SubdivideExplode(geometry, {max_vertices})"))
     )
     return (

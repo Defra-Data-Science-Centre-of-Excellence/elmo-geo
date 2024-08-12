@@ -10,21 +10,7 @@ def load_missing(column: str) -> callable:
     # return F.expr(f'NVL({column}, {null})')
     # return F.expr(f'CASE WHEN {column} IS NULL THEN {null} ELSE {column} END')
 
-
-def clean_geometry(column: str = "geometry", precision: int = 3, simplify_tolerence: float = 20.0) -> callable:
-    """Cleans geometries.
-
-    Does MakeValid, ST_Force_2D, ST_PrecisionReduce, and ST_SimplifyPreserveTopology
-    """
-    string = f"ST_MakeValid({column})"
-    string = f"ST_Force_2D({string})"
-    string = f"ST_PrecisionReduce({string}, {precision})"
-    string = f"ST_SimplifyPreserveTopology({string}, {simplify_tolerence})"
-    string = f"ST_MakeValid({string})"
-    return F.expr(string)
-
-
-def load_geometry(column: str = "geometry", precision: int = 3, encoding_fn: str = "ST_GeomFromWKB") -> callable:
+def load_geometry(column: str = "geometry", precision: int = 3, encoding_fn: str = "ST_GeomFromWKB", simplify_tolerence: float = 1.0) -> callable:
     """Load Geometry
     Useful for ingesting data.
     Missing
@@ -43,7 +29,7 @@ def load_geometry(column: str = "geometry", precision: int = 3, encoding_fn: str
     string = f"COALESCE({string}, {null})"
     string = f"ST_MakeValid(ST_Force_2D({string}))"
     string = f"ST_MakeValid(ST_PrecisionReduce({string}, {precision}))"
-    string = f"ST_MakeValid(ST_SimplifyPreserveTopology({string}, 0))"
+    string = f"ST_MakeValid(ST_SimplifyPreserveTopology({string}, {simplify_tolerence}))"
     string = string + " AS " + column
     return F.expr(string)
 
