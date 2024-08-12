@@ -53,7 +53,7 @@ class FloodRiskAreasParcels(DataFrameModel):
 
 
 flood_risk_areas_raw = SourceDataset(
-    name="fra_raw",
+    name="flood_risk_areas_raw",
     level0="bronze",
     level1="defra",
     model=FloodRiskAreasRaw,
@@ -62,7 +62,7 @@ flood_risk_areas_raw = SourceDataset(
 )
 
 flood_risk_areas_parcels = DerivedDataset(
-    name="fra_parcels",
+    name="flood_risk_areas_parcels",
     level0="silver",
     level1="defra",
     restricted=False,
