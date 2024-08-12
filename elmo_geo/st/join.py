@@ -202,7 +202,7 @@ def knn(
 
     sdf = spark.sql(
         f"""
-        SELECT {id_left}, {id_right}, cast(round(distance, 0) as int) as distance, rank
+        SELECT {id_left}, {id_right}, CAST(ROUND(distance, 0) as int) as distance, rank
         FROM (
             SELECT {id_left}, {id_right}, distance,
                 ROW_NUMBER() OVER(PARTITION BY {id_left}, {id_right} ORDER BY distance ASC) AS rank
