@@ -1,4 +1,9 @@
-"""Reference Parcels from Rural Payments Agency."""
+"""Reference Parcels from Rural Payments Agency.
+
+The parcels came in two files - one with SBIs and one without.
+It is unclear why a parcel would not have an SBI - purhaps they are non-agricultural,
+however to claim CS you need an SBI so unsure here at present.
+"""
 import geopandas as gpd
 import pandas as pd
 from pandera import DataFrameModel, Field
@@ -10,7 +15,7 @@ from elmo_geo.etl import SRID, Dataset, DerivedDataset, SourceDataset
 class ReferenceParcelsRaw(DataFrameModel):
     """Model for raw version of Rural Payment Agency's Reference Parcels dataset.
 
-    More columns may be present in the data and would be persisted but we have defined here the ones we care about.
+    "More columns may be present in the data and would be persisted but we have defined here the ones we want to validate
 
     Attributes:
         geometry: The parcel geospatial polygons in EPSG:27700.
@@ -22,7 +27,7 @@ class ReferenceParcelsRaw(DataFrameModel):
 class ReferenceParcelsRawNoSBI(DataFrameModel):
     """Model for raw version of Rural Payment Agency's Reference Parcels dataset.
 
-    More columns may be present in the data and would be persisted but we have defined here the ones we care about.
+    "More columns may be present in the data and would be persisted but we have defined here the ones we want to validate
 
     Attributes:
         geometry: The parcel geospatial polygons in EPSG:27700.
@@ -41,7 +46,7 @@ class ReferenceParcels(DataFrameModel):
         geometry: The parcel geospatial polygons in EPSG:27700.
     """
 
-    id_parcel: str = Field(coerce=True, str_matches=r"(^[A-Z]{2}[\d]{8}$)")
+    id_parcel: str = Field(coerce=True, str_matches=r"(^[A-Z]{2}[\d]{8}$)", unique=True)
     sbi: str = Field(coerce=True, str_matches=r"(^[\d]{9}$)", nullable=True)
     area_ha: float = Field(coerce=True, gt=0)
     geometry: Geometry(crs=SRID) = Field(coerce=True)
