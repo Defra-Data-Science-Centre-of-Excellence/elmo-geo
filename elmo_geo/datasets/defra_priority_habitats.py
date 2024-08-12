@@ -1,4 +1,4 @@
-"""Defra Priority Habitats.
+"""Priority Habitats Inventory (PHI).
 
 The [Priority Habitats Inventory](https://www.data.gov.uk/dataset/4b6ddab7-6c0f-4407-946e-d6499f19fcde/priority-habitats-inventory-england) 
 is a spatial dataset indicating the locations and extents of habitat of 'principle importance'.
