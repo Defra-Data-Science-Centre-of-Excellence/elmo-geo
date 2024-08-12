@@ -12,12 +12,11 @@ from pandera import DataFrameModel, Field
 from pandera.dtypes import Category, Date
 from pandera.engines.pandas_engine import Geometry
 from pyspark.sql import functions as F
+import geopandas as gpd
 
 from elmo_geo.etl import Dataset, DerivedDataset, SourceDataset
-from elmo_geo.etl.transformations import join_parcels
-from elmo_geo.st.geometry import load_geometry
+from elmo_geo.etl.transformations import join_parcels, load_geometry
 from elmo_geo.st.join import knn
-from elmo_geo.utils.types import SparkDataFrame
 
 from .rpa_reference_parcels import reference_parcels
 
@@ -25,14 +24,28 @@ DISTANCE_THRESHOLD = 5_000
 _join_parcels = partial(join_parcels, columns=["Main_Habit"])
 
 
-def _combine(south: Dataset, central: Dataset, north: Dataset) -> pd.DataFrame:
+def _combine(south: Dataset, central: Dataset, north: Dataset) -> gpd.GeoDataFrame:
     """Union the priority habitats datasets for different regions into a single dataset."""
-    return pd.concat([south.gdf(), central.gdf(), north.gdf()])
+    simplify_tolerence = 1
+    sdf = None
+    for ds in [south, central, north]:
+        # Clean geometries to 1m resolution.
+        sdf_part = ds.sdf().withColumn("geometry",
+                                  load_geometry("geometry", 
+                                                encoding_fn="", 
+                                                simplify_tolerence=simplify_tolerence))
+        if sdf is None:
+            sdf = sdf_part
+        else:
+            sdf = sdf.unionByName(sdf_part)
+    
+    df = sdf.withColumn("geometry", F.expr("ST_AsBinary(geometry)")).toPandas()
+    return gpd.GeoDataFrame(df, geometry = gpd.GeoSeries.from_wkb(df["geometry"]), crs="epsg:27700")
 
 
 def _habitat_proximity(
-    parcels: Dataset, habitats: Dataset, habitat_filter_expr: str, simplify_tolerence: float = 20.0, max_vertices: int = 256
-) -> SparkDataFrame:
+    parcels: Dataset, habitats: Dataset, habitat_filter_expr: str, max_vertices: int = 256
+) -> pd.DataFrame:
     """Calculate the distance from each parcel to each selected habitat type.
 
     Used to find the closest habitat to each parcel and the associated distance. Applies filter
@@ -44,17 +57,15 @@ def _habitat_proximity(
         parcels: The parcels dataset.
         habitats: The habitats dataset.
         habitat_filter_exr: SQL expression for filtering the habitats dataset.
-        simplify_tolerence: Tolerance to use when simplifying geometries.
         max_vertices: Max number of habitat geometries veritices. Geoometries exceeding this threshol are split.
 
     Returns:
-        SparkDataFrame of parel id to nearest habitat and the associated distance.
+        DataFrame of parel id to nearest habitat and the associated distance.
     """
     sdf_habitat = (
         habitats.sdf()
         .filter(F.expr(habitat_filter_expr))
         .select("Main_Habit", "geometry")
-        .withColumn("geometry", load_geometry("geometry", encoding_fn="", simplify_tolerence=simplify_tolerence))
         .withColumn("geometry", F.expr(f"ST_SubdivideExplode(geometry, {max_vertices})"))
         .repartition(1_000)  # approx 1,600 records per partition
     )
@@ -62,7 +73,6 @@ def _habitat_proximity(
     sdf_parcels = (
         parcels.sdf()
         .select("id_parcel", "geometry")
-        .withColumn("geometry", load_geometry("geometry", encoding_fn="", simplify_tolerence=simplify_tolerence))
         .repartition(1_000)
     )
 
