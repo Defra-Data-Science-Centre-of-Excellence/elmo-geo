@@ -31,7 +31,6 @@ from .fc_woodland_sensitivity import (
 from .ons_itl import itl2_boundaries_parcels, itl2_boundaries_raw
 from .rpa_reference_parcels import reference_parcels, reference_parcels_raw, reference_parcels_raw_no_sbi
 
-
 catalogue = [
     ewco_nature_recovery_priority_habitat_parcels,
     ewco_nature_recovery_priority_habitat_raw,
