@@ -7,12 +7,12 @@ The data is not a exhaustive survey of habitat locations but is the best availab
 """
 from functools import partial
 
+import geopandas as gpd
 import pandas as pd
 from pandera import DataFrameModel, Field
 from pandera.dtypes import Category, Date
 from pandera.engines.pandas_engine import Geometry
 from pyspark.sql import functions as F
-import geopandas as gpd
 
 from elmo_geo.etl import Dataset, DerivedDataset, SourceDataset
 from elmo_geo.etl.transformations import join_parcels, load_geometry
@@ -30,22 +30,17 @@ def _combine(south: Dataset, central: Dataset, north: Dataset) -> gpd.GeoDataFra
     sdf = None
     for ds in [south, central, north]:
         # Clean geometries to 1m resolution.
-        sdf_part = ds.sdf().withColumn("geometry",
-                                  load_geometry("geometry", 
-                                                encoding_fn="", 
-                                                simplify_tolerence=simplify_tolerence))
+        sdf_part = ds.sdf().withColumn("geometry", load_geometry("geometry", encoding_fn="", simplify_tolerence=simplify_tolerence))
         if sdf is None:
             sdf = sdf_part
         else:
             sdf = sdf.unionByName(sdf_part)
-    
+
     df = sdf.withColumn("geometry", F.expr("ST_AsBinary(geometry)")).toPandas()
-    return gpd.GeoDataFrame(df, geometry = gpd.GeoSeries.from_wkb(df["geometry"]), crs="epsg:27700")
+    return gpd.GeoDataFrame(df, geometry=gpd.GeoSeries.from_wkb(df["geometry"]), crs="epsg:27700")
 
 
-def _habitat_proximity(
-    parcels: Dataset, habitats: Dataset, habitat_filter_expr: str, max_vertices: int = 256
-) -> pd.DataFrame:
+def _habitat_proximity(parcels: Dataset, habitats: Dataset, habitat_filter_expr: str, max_vertices: int = 256) -> pd.DataFrame:
     """Calculate the distance from each parcel to each selected habitat type.
 
     Used to find the closest habitat to each parcel and the associated distance. Applies filter
@@ -70,11 +65,7 @@ def _habitat_proximity(
         .repartition(1_000)  # approx 1,600 records per partition
     )
 
-    sdf_parcels = (
-        parcels.sdf()
-        .select("id_parcel", "geometry")
-        .repartition(1_000)
-    )
+    sdf_parcels = parcels.sdf().select("id_parcel", "geometry").repartition(1_000)
 
     sdf_knn = knn(sdf_parcels, sdf_habitat, id_left="id_parcel", id_right="Main_Habit", k=1, distance_threshold=DISTANCE_THRESHOLD).drop("rank")
 
@@ -85,14 +76,18 @@ def _habitat_proximity(
 _heathland_habitat_proximity = partial(_habitat_proximity, habitat_filter_expr="Main_Habit like '%heath%'")
 _grassland_habitat_proximity = partial(
     _habitat_proximity,
-    habitat_filter_expr="Main_Habit in ('{}')".format("','".join([
-        "Lowland calcareous grassland",
-        "Upland calcareous grassland",
-        "Lowland dry acid grassland",
-        "Lowland meadows",
-        "Purple moor grass and rush pastures",
-        "Grass moorland",
-    ]))
+    habitat_filter_expr="Main_Habit in ('{}')".format(
+        "','".join(
+            [
+                "Lowland calcareous grassland",
+                "Upland calcareous grassland",
+                "Lowland dry acid grassland",
+                "Lowland meadows",
+                "Purple moor grass and rush pastures",
+                "Grass moorland",
+            ]
+        )
+    ),
 )
 
 

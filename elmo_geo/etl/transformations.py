@@ -53,8 +53,9 @@ def join_parcels(
     """
     if columns is None:
         columns = []
-    df_parcels = parcels.sdf().select("id_parcel", "geometry").withColumn("geometry", 
-                                                                          load_geometry("geometry", encoding_fn="", simplify_tolerence=simplify_tolerence))
+    df_parcels = (
+        parcels.sdf().select("id_parcel", "geometry").withColumn("geometry", load_geometry("geometry", encoding_fn="", simplify_tolerence=simplify_tolerence))
+    )
     df_feature = (
         features.sdf()
         .select("geometry", *columns)
