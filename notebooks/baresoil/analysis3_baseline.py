@@ -1,6 +1,8 @@
 # Databricks notebook source
 # MAGIC %md # Baseline Analysis
-# MAGIC We would like to see what the baseline should be for each of the arable and improved grassland SFI actions. From an excel () we find that the baseline is set at 65% and 77% respectively for arable and improved grassllands currently. This was calculated from older data. The action requires 70% and 90% greenery respectively for arable and imprvoed grassland actions.
+# MAGIC We would like to see what the baseline should be for each of the arable and improved grassland SFI actions. From an excel () we find that the baseline
+# MAGIC is set at 65% and 77% respectively for arable and improved grassllands currently. This was calculated from older data. The action requires 70% and 90%
+# MAGIC greenery respectively for arable and imprvoed grassland actions.
 # MAGIC
 # MAGIC In this notebook, we will:
 # MAGIC - Locate the data for several years of both types of parcels.
@@ -57,16 +59,23 @@ def add_bool_col(df, col_list, new_col_name):
 
 
 # arable soil column
-predicate = lambda col: col.startswith("ha_arable_")
+def predicate(col):
+    return col.startswith("ha_arable_")
+
+
 wfm = add_bool_col(wfm, predicate, "arable")
 
+
 # improved grassland column
-predicate = lambda col: col in [
-    "ha_grassland_temporary_improved_grades_1_2",
-    "ha_grassland_temporary_improved_grades_3_plus",
-    "ha_grassland_improved_disadvantaged",
-    # "ha_arable_grassland_temporary",
-]
+def predicate(col):
+    return col in [
+        "ha_grassland_temporary_improved_grades_1_2",
+        "ha_grassland_temporary_improved_grades_3_plus",
+        "ha_grassland_improved_disadvantaged",
+        # "ha_arable_grassland_temporary",
+    ]
+
+
 wfm = add_bool_col(wfm, predicate, "improved_grassland")
 print(wfm.shape)
 

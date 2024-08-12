@@ -65,7 +65,10 @@ def add_bool_col(df, col_list, new_col_name):
 # COMMAND ----------
 
 
-predicate = lambda col: col.startswith("ha_arable_")
+def predicate(col):
+    return col.startswith("ha_arable_")
+
+
 wfm["arable"] = wfm[filter(predicate, wfm.columns)].sum(axis=1) > 0
 fig, ax = plot_bare_soil_dist(
     data=wfm.loc[wfm.arable, "bare_soil_percent"],
@@ -75,13 +78,17 @@ fig.show()
 
 # COMMAND ----------
 
+
 # improved grassland soils analysis
-predicate = lambda col: col in [
-    "ha_grassland_temporary_improved_grades_1_2",
-    "ha_grassland_temporary_improved_grades_3_plus",
-    "ha_grassland_improved_disadvantaged",
-    # "ha_arable_grassland_temporary",
-]
+def predicate(col):
+    return col in [
+        "ha_grassland_temporary_improved_grades_1_2",
+        "ha_grassland_temporary_improved_grades_3_plus",
+        "ha_grassland_improved_disadvantaged",
+        # "ha_arable_grassland_temporary",
+    ]
+
+
 wfm["improved_grassland"] = wfm[filter(predicate, wfm.columns)].sum(axis=1) > 0
 fig, ax = plot_bare_soil_dist(
     data=wfm.loc[wfm.improved_grassland, "bare_soil_percent"],
