@@ -24,10 +24,10 @@
 
 # COMMAND ----------
 
-import elm_se
+from glob import glob
 
-elm_se.register()
 import contextily as ctx
+import elm_se
 import geopandas as gpd
 import matplotlib.pyplot as plt
 import numpy as np
@@ -36,6 +36,8 @@ import rioxarray as rxr
 import seaborn as sns
 from pyspark.sql import functions as F
 from pyspark.sql import window as W
+
+elm_se.register()
 
 # COMMAND ----------
 
@@ -113,7 +115,7 @@ def calc_bs(data):
         try:
             clipped = da.rio.clip_box(*g.bounds).rio.clip([g])
             return float((threshold < clipped).mean(skipna=True))
-        except:
+        except Exception:
             return -100
 
     return gpd.GeoSeries.from_wkb(data).apply(fn)
@@ -129,13 +131,6 @@ display(sdf)
 sdf.filter(F.isnan("bare_soil")).count()
 
 # COMMAND ----------
-
-from glob import glob
-
-import geopandas as gpd
-import numpy as np
-import pandas as pd
-import rioxarray as rxr
 
 
 def fn(f, year, threshold):
@@ -154,7 +149,7 @@ def fn(f, year, threshold):
         try:
             clipped = da.rio.clip_box(*g.bounds).rio.clip([g])
             return float((threshold < clipped).mean(skipna=True))
-        except:
+        except Exception:
             return np.nan
 
     gdf["bare_soil"] = gdf["geometry"].apply(calc_bs, da=da, threshold=0.25)

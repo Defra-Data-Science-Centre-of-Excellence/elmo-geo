@@ -6,6 +6,7 @@ from glob import iglob
 from fiona import listlayers
 from fiona.errors import DriverError
 from pyspark.sql import functions as F
+from pyspark.sql import types as T
 
 from elmo_geo import LOG
 from elmo_geo.io.file import to_parquet
@@ -41,18 +42,14 @@ def to_gdf(
                 x = x.withColumn(c.name, F.expr(f"ST_AsBinary({c.name})"))
         gdf = to_gdf(x.toPandas(), column, crs)
     elif isinstance(x, PandasDataFrame):
-        gdf = GeoDataFrame(
-            x,
-            geometry=GeoSeries.from_wkb(x[column], crs=crs),
-            crs=crs,
-        )
+        gdf = GeoDataFrame(x, geometry=GeoSeries.from_wkb(x[column]))
     elif isinstance(x, GeoSeries):
-        gdf = GeoDataFrame(geometry=x, crs=crs)
+        gdf = x.to_frame()
     elif isinstance(x, BaseGeometry):
-        gdf = GeoDataFrame(geometry=GeoSeries(x), crs=crs)
+        gdf = GeoSeries(x).to_frame()
     else:
         raise TypeError(f"Unknown type: {type(x)}")
-    return gdf
+    return gdf.set_crs(crs)
 
 
 def to_sdf(
@@ -129,6 +126,22 @@ def convert_dataset(f_in: str, f_out: str):
         ogr_to_geoparquet(f0, f1, layer)
 
 
+def cast_to_project_data_type(column):
+    """Cast certain data types for compatibility across project operations.
+    Data Types: https://spark.apache.org/docs/latest/api/python/reference/pyspark.sql/data_types.html
+    Casting DecimalType to DoubleType because DecimalType is not considered a numeric value in Pandas.
+    """
+    dtype_map = {
+        T.DecimalType: T.DoubleType(),
+    }
+    dtype = dtype_map.get(type(column.dataType), column.dataType)
+    return F.col(column.name).cast(dtype).alias(column.name)
+
+
+def cast_to_project_data_types(sdf: SparkDataFrame) -> SparkDataFrame:
+    return sdf.select([cast_to_project_data_type(column) for column in sdf.schema])
+
+
 def partition_geoparquet(f_in: str, f_out: str, columns: dict) -> SparkDataFrame:
     """Repartition vector dataset in parquet format using the chipping method at 10km"""
     LOG.info(f"Partition: {f_in}, {f_out}")
@@ -136,6 +149,7 @@ def partition_geoparquet(f_in: str, f_out: str, columns: dict) -> SparkDataFrame
     sdf.write.format("noop").mode("overwrite").save()  # miid bug
     return (
         sdf.withColumnsRenamed(columns)
+        .transform(cast_to_project_data_types)
         .withColumn("geometry", load_geometry())
         .withColumn("geometry", F.expr("EXPLODE(ST_Dump(geometry))"))
         .transform(sindex, method="BNG", resolution="10km", index_fn="chipped_index")

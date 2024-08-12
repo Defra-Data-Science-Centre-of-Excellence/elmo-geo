@@ -5,29 +5,19 @@ description = "Environmental Land Management Geospatial Analysis"
 readme = "README.md"
 dependencies = [
     "apache-sedona==1.4.1",
-    "beautifulsoup4",
     "contextily",
-    "databricks-cli",
-    "databricks-sdk",
-    "python-dotenv",
-    "esridump",
+    "databricks-sdk<0.21",
+    "folium",
     "geopandas",
     "mapclassify",
-    "numpy",
-    "osdatahub",
-    "osmnx",
-    "pandas<=1.5.3",
+    "pandas",
+    "pandera[geopandas,pyspark]",
     "pyarrow",
-    "pydantic",
-    "pyogrio",
     "pyspark==3.3.2",
+    "python-dotenv",
     "rich",
-    "rasterio",
     "rioxarray",
     "seaborn",
-    "sentinelsat",
-    "shapely",
-    "xarray",
 ]
 requires-python = ">=3.10"
 
@@ -36,13 +26,17 @@ exclude = ["tests"]
 
 [project.optional-dependencies]
 dev = [
-    "ruff<=0.1.15",
     "pip-tools",
     "pytest",
-    "dbx",
-    "ipykernel",
-    "ipython",
-    "ipywidgets",
+    "ruff<0.2",
+]
+old = [
+    "beautifulsoup4",
+    "fiona",
+    "osmnx",
+    "osdatahub",
+    "sentinelsat",
+    "statsmodels",
 ]
 
 [project.urls]
@@ -53,6 +47,8 @@ homepage = "https://github.com/Defra-Data-Science-Centre-of-Excellence/elmo-geo"
 requires = ["setuptools>=64.0.0"]
 build-backend = "setuptools.build_meta"
 
+
+
 [tool.pytest.ini_options]
 python_files = "tests/*.py"
 markers = ["dbr: Requires databricks runtime"]
@@ -61,9 +57,6 @@ markers = ["dbr: Requires databricks runtime"]
 [tool.ruff]
 line-length = 160
 unsafe-fixes = false
-extend-exclude = [  # Issue: #78
-    "notebooks/awest/subdivide.py",
-]
 builtins = ["spark", "dbutils", "sc", "display", "displayHTML"]
 
 [tool.ruff.lint]
@@ -72,12 +65,3 @@ ignore = ["D203", "D212", "COM812", "ISC001"]  # Conflict
 
 [tool.ruff.lint.per-file-ignores]
 "**/__init__.py" = ["F401"]
-# Issue: #78
-"notebooks/analysis/*" = ["E402", "E501"]
-"notebooks/awest/*" = ["E402", "E712", "E722", "E731", "E741", "F811", "F821", "F841"]
-"notebooks/baresoil/*" = ["E402", "E501", "E731"]
-"notebooks/boundary/*" = ["E402", "E501", "E712", "E731", "E741", "F811", "F821", "F823", "F841"]
-"notebooks/habitats/*" = ["E402", "E501"]
-"notebooks/historic/*" = ["E402", "E501", "E731", "E741"]
-"notebooks/ingestion/*" = ["E402", "E501"]
-"notebooks/plots/*" = ["E402", "E501", "F403", "F405", "F811"]
