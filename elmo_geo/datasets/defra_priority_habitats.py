@@ -15,7 +15,7 @@ from pyspark.sql import functions as F
 
 from elmo_geo.etl import Dataset, DerivedDataset, SourceDataset
 from elmo_geo.etl.transformations import join_parcels
-from elmo_geo.st.geometry import clean_geometry
+from elmo_geo.st.geometry import load_geometry
 from elmo_geo.st.join import knn
 from elmo_geo.utils.types import SparkDataFrame
 
@@ -54,7 +54,7 @@ def _habitat_proximity(
         habitats.sdf()
         .filter(F.expr(habitat_filter_expr))
         .select("Main_Habit", "geometry")
-        .withColumn("geometry", clean_geometry("geometry", simplify_tolerence=simplify_tolerence))
+        .withColumn("geometry", load_geometry("geometry", encoding_fn="", simplify_tolerence=simplify_tolerence))
         .withColumn("geometry", F.expr(f"ST_SubdivideExplode(geometry, {max_vertices})"))
         .repartition(1_000)  # approx 1,600 records per partition
     )
@@ -62,7 +62,7 @@ def _habitat_proximity(
     sdf_parcels = (
         parcels.sdf()
         .select("id_parcel", "geometry")
-        .withColumn("geometry", clean_geometry("geometry", simplify_tolerence=simplify_tolerence))
+        .withColumn("geometry", load_geometry("geometry", encoding_fn="", simplify_tolerence=simplify_tolerence))
         .repartition(1_000)
     )
 
@@ -75,9 +75,14 @@ def _habitat_proximity(
 _heathland_habitat_proximity = partial(_habitat_proximity, habitat_filter_expr="Main_Habit like '%heath%'")
 _grassland_habitat_proximity = partial(
     _habitat_proximity,
-    habitat_filter_expr="Main_Habit in ('Lowland calcareous grassland','Upland calcareous grassland',"
-    "'Lowland dry acid grassland','Lowland meadows',"
-    "'Purple moor grass and rush pastures','Grass moorland')",
+    habitat_filter_expr="Main_Habit in ('{}')".format("','".join([
+        "Lowland calcareous grassland",
+        "Upland calcareous grassland",
+        "Lowland dry acid grassland",
+        "Lowland meadows",
+        "Purple moor grass and rush pastures",
+        "Grass moorland",
+    ]))
 )
 
 
