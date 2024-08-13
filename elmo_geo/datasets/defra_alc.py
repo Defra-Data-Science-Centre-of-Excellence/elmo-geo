@@ -3,7 +3,7 @@
 Data is sourced from DASH.  See GeoPortal description for references:
 https://services.arcgis.com/JJzESW51TqeY9uat/ArcGIS/rest/services/Provisional%20Agricultural%20Land%20Classification%20(ALC)%20(England)/FeatureServer
 """
-from itertools import partial
+from functools import partial
 
 from pandera import DataFrameModel, Field
 from pandera.engines.pandas_engine import Geometry
