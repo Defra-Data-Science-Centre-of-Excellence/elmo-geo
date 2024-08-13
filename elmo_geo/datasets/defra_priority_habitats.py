@@ -63,10 +63,9 @@ def _habitat_proximity(parcels: Dataset, habitats: Dataset, habitat_filter_expr:
         .filter(F.expr(habitat_filter_expr))
         .select("Main_Habit", "geometry")
         .withColumn("geometry", F.expr(f"ST_SubdivideExplode(geometry, {max_vertices})"))
-        .repartition(1_000)  # approx 1,600 records per partition
     )
 
-    sdf_parcels = parcels.sdf().select("id_parcel", "geometry").repartition(1_000)
+    sdf_parcels = parcels.sdf().select("id_parcel", "geometry")
 
     sdf_knn = knn(sdf_parcels, sdf_habitat, id_left="id_parcel", id_right="Main_Habit", k=1, distance_threshold=DISTANCE_THRESHOLD).drop("rank")
 
@@ -162,7 +161,7 @@ defra_priority_habitat_raw_south = SourceDataset(
     level1="defra",
     restricted=False,
     is_geo=True,
-    source_path="/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_priority_habitat_inventory_south/format_GEOPARQUET_priority_habitat_inventory_south/LATEST_priority_habitat_inventory_south/layer=PHI_v2_3_South.snappy.parquet",
+    source_path="/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_priority_habitat_inventory_south/format_GEOPARQUET_priority_habitat_inventory_south/LATEST_priority_habitat_inventory_south/PHI_v2_3_South.parquet",
 )
 """Raw version of the priority habitats data - South England. 
 
@@ -176,7 +175,7 @@ defra_priority_habitat_raw_central = SourceDataset(
     level1="defra",
     restricted=False,
     is_geo=True,
-    source_path="/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_priority_habitat_inventory_central/format_GEOPARQUET_priority_habitat_inventory_central/LATEST_priority_habitat_inventory_central/layer=PHI_v2_3_Central.snappy.parquet",
+    source_path="/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_priority_habitat_inventory_central/format_GEOPARQUET_priority_habitat_inventory_central/LATEST_priority_habitat_inventory_central/PHI_v2_3_Central.parquet",
 )
 """Raw version of the priority habitats data - Central England. 
 
@@ -190,7 +189,7 @@ defra_priority_habitat_raw_north = SourceDataset(
     level1="defra",
     restricted=False,
     is_geo=True,
-    source_path="/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_priority_habitat_inventory_north/format_GEOPARQUET_priority_habitat_inventory_north/LATEST_priority_habitat_inventory_north/layer=PHI_v2_3_North.snappy.parquet",
+    source_path="/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_priority_habitat_inventory_north/format_GEOPARQUET_priority_habitat_inventory_north/LATEST_priority_habitat_inventory_north/PHI_v2_3_North.parquet",
 )
 """Raw version of the priority habitats data - North England. 
 
