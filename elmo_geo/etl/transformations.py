@@ -15,10 +15,12 @@ def _agg_calc_proportion(
     geometry_left: str = "geometry_left",
     geometry_right: str = "geometry_right",
     column: str = "proportion",
+    geometry_dim: int = 0,
 ) -> callable:
     l, r = f"ST_Union_Aggr({geometry_left})", f"ST_Union_Aggr({geometry_right})"
     string = f"ST_Intersection({l}, {r})"
-    string = f"ST_CollectionExtract({string}, 3)"
+    if geometry_dim:
+        string = f"ST_CollectionExtract({string}, {geometry_dim})"
     string = f"ST_Area({string}) / ST_Area({l})"
     string = f"LEAST(GREATEST({string}, 0), 1)"
     return F.expr(f"{string} AS {column}")
@@ -29,7 +31,8 @@ def join_parcels(
     features: Dataset,
     columns: list[str] | None = None,
     simplify_tolerence: float = 1.0,
-    max_vertices: int = 256
+    max_vertices: int = 256,
+    geometry_dim: int = 0,
 ) -> pd.DataFrame:
     """Spatial join the two datasets and calculate the proportion of the parcel that intersects.
 
@@ -41,6 +44,8 @@ def join_parcels(
             Defaults to 20m (assuming SRID 27700).
         - max_vertices: The features polygons will be subdivided and exploded to reduce them
             to this number of vertices to improve performance and memory use. Defaults to 256.
+        - geometry_dim: Only select geometries of this dimension after intersection.
+            0 means any, 1 = Points, 2 = LineStrings, 3 = Polygons, Multi is included.
 
     Returns:
         - A Pandas dataframe with `id_parcel`, `proportion` and columns included in the `columns` list.
