@@ -55,12 +55,12 @@ def join_parcels(
     df_parcels = (
         parcels.sdf()
         .select("id_parcel", "geometry")
-        .withColumn("geometry", load_geometry())
+        .withColumn("geometry", load_geometry(encoding_fn="", simplify_tolerence=simplify_tolerence))
     )
     df_feature = (
         features.sdf()
         .select("geometry", *columns)
-        .withColumn("geometry", load_geometry())
+        .withColumn("geometry", load_geometry(encoding_fn="", simplify_tolerence=simplify_tolerence))
         .withColumn("geometry", F.expr(f"ST_SubdivideExplode(geometry, {max_vertices})"))
     )
     return (
