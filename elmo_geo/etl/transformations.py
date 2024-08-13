@@ -5,13 +5,31 @@ For use in `elmo.etl.DerivedDataset.func`.
 import pandas as pd
 from pyspark.sql import functions as F
 
+from elmo_geo.st.geometry import load_geometry
 from elmo_geo.st.join import sjoin
 
 from .etl import Dataset
 
 
+def _agg_calc_proportion(
+    geometry_left: str = "geometry_left",
+    geometry_right: str = "geometry_right",
+    column: str = "proportion",
+) -> callable:
+    l, r = f"ST_Union_Aggr({geometry_left})", f"ST_Union_Aggr({geometry_right})"
+    string = f"ST_Intersection({l}, {r})"
+    string = f"ST_CollectionExtract({string}, 3)"
+    string = f"ST_Area({string}) / ST_Area({l})"
+    string = f"LEAST(GREATEST({string}, 0), 1)"
+    return F.expr(f"{string} AS {column}")
+
+
 def join_parcels(
-    parcels: Dataset, features: Dataset, columns: list[str] | None = None, simplify_tolerence: float = 20.0, max_vertices: int = 256
+    parcels: Dataset,
+    features: Dataset,
+    columns: list[str] | None = None,
+    simplify_tolerence: float = 1.0,
+    max_vertices: int = 256
 ) -> pd.DataFrame:
     """Spatial join the two datasets and calculate the proportion of the parcel that intersects.
 
@@ -32,34 +50,17 @@ def join_parcels(
     df_parcels = (
         parcels.sdf()
         .select("id_parcel", "geometry")
-        .withColumn("geometry", F.expr("ST_MakeValid(geometry)"))
-        .withColumn("geometry", F.expr("ST_PrecisionReduce(geometry, 3)"))
-        .withColumn("geometry", F.expr(f"ST_SimplifyPreserveTopology(geometry, {simplify_tolerence})"))
-        .withColumn("geometry", F.expr("ST_Force_2D(geometry)"))
-        .withColumn("geometry", F.expr("ST_MakeValid(geometry)"))
+        .withColumn("geometry", load_geometry())
     )
     df_feature = (
         features.sdf()
         .select("geometry", *columns)
-        .withColumn("geometry", F.expr("ST_MakeValid(geometry)"))
-        .withColumn("geometry", F.expr(f"ST_SimplifyPreserveTopology(geometry, {simplify_tolerence})"))
-        .withColumn("geometry", F.expr("ST_MakeValid(geometry)"))
-        .withColumn("geometry", F.expr("ST_Force_2D(geometry)"))
-        .withColumn("geometry", F.expr("ST_MakeValid(geometry)"))
+        .withColumn("geometry", load_geometry())
         .withColumn("geometry", F.expr(f"ST_SubdivideExplode(geometry, {max_vertices})"))
     )
     return (
         sjoin(df_parcels, df_feature)
         .groupby("id_parcel", *columns)
-        .agg(
-            F.expr("ST_Union_Aggr(geometry_left) AS geometry_left"),
-            F.expr("ST_Union_Aggr(geometry_right) AS geometry_right"),
-        )
-        .withColumn("geometry_intersection", F.expr("ST_Intersection(geometry_left, geometry_right)"))
-        .withColumn("area_left", F.expr("ST_Area(geometry_left)"))
-        .withColumn("area_intersection", F.expr("ST_Area(geometry_intersection)"))
-        .withColumn("proportion", F.col("area_intersection") / F.col("area_left"))
-        .drop("area_left", "area_intersection", "geometry_left", "geometry_right", "geometry_intersection")
+        .agg(_agg_calc_proportion())
         .toPandas()
-        .assign(proportion=lambda df: df.proportion.clip(upper=1.0))
     )
