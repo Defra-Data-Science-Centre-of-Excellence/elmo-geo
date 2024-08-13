@@ -3,6 +3,8 @@
 Data is sourced from DASH.  See GeoPortal description for references:
 https://services.arcgis.com/JJzESW51TqeY9uat/ArcGIS/rest/services/Provisional%20Agricultural%20Land%20Classification%20(ALC)%20(England)/FeatureServer
 """
+from itertools import partial
+
 from pandera import DataFrameModel, Field
 from pandera.engines.pandas_engine import Geometry
 
@@ -16,9 +18,21 @@ class ALCRaw(DataFrameModel):
     """Model for Defra Provisional Agricultural Land Classification (ALC) dataset.
 
     Attributes:
-        alc_grade: One of these values: "Grade 1" (excellent quality agricultural land), "Grade 2", "Grade 3", "Grade 4", "Grade 5" (very poor quality argicultural land), "Urban", "Non-agricultural", "Woodland", "Agricultural buildings", "Open water", "Land not surveyed".
+        alc_grade: One of these values:
+            "Grade 1" (excellent quality agricultural land),
+            "Grade 2",
+            "Grade 3",
+            "Grade 4",
+            "Grade 5" (very poor quality argicultural land),
+            "Urban",
+            "Non-agricultural",
+            "Woodland",
+            "Agricultural buildings",
+            "Open water",
+            "Land not surveyed".
         geometry: ALC geometries in EPSG:27700.
     """
+
     alc_grade: str = Field(coerce=True)
     geometry: Geometry(crs=SRID) = Field(coerce=True)
 
@@ -28,9 +42,21 @@ class ALCParcels(DataFrameModel):
 
     Attributes:
         id_parcel: 11 character RPA reference parcel ID (including the sheet ID) e.g. `SE12263419`.
-        alc_grade: One of these values: "Grade 1" (excellent quality agricultural land), "Grade 2", "Grade 3", "Grade 4", "Grade 5" (very poor quality argicultural land), "Urban", "Non-agricultural", "Woodland", "Agricultural buildings", "Open water", "Land not surveyed".
+        alc_grade: One of these values:
+            "Grade 1" (excellent quality agricultural land),
+            "Grade 2",
+            "Grade 3",
+            "Grade 4",
+            "Grade 5" (very poor quality argicultural land),
+            "Urban",
+            "Non-agricultural",
+            "Woodland",
+            "Agricultural buildings",
+            "Open water",
+            "Land not surveyed".
         geometry: ALC geometries in EPSG:27700.
     """
+
     id_parcel: str
     alc_grade: str = Field(coerce=True)
     proportion: float = Field(ge=0, le=1)
