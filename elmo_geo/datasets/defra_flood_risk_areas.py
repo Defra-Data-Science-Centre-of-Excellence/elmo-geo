@@ -67,7 +67,7 @@ flood_risk_areas_raw = SourceDataset(
     level1="defra",
     model=FloodRiskAreasRaw,
     restricted=False,
-    source_path="/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_flood_risk_areas/format_GEOPARQUET_flood_risk_areas/LATEST_flood_risk_areas/layer=Flood_Risk_Areas.snappy.parquet",
+    source_path="/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_flood_risk_areas/format_GEOPARQUET_flood_risk_areas/LATEST_flood_risk_areas/Flood_Risk_Areas.parquet",
 )
 
 flood_risk_areas_parcels = DerivedDataset(
