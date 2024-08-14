@@ -165,7 +165,7 @@ jncc_spa_raw = SourceDataset(
     name="jncc_spa_raw",
     level0="bronze",
     level1="jncc",
-    model="JNCCSPARaw",
+    model=JNCCSPARaw,
     restricted=False,
     source_path="/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_special_protection_areas/format_GEOPARQUET_special_protection_areas/LATEST_special_protection_areas/Special_Protection_Areas_England.parquet",
 )
@@ -189,7 +189,7 @@ ne_ramsar_raw = SourceDataset(
     name="ne_ramsar_raw",
     level0="bronze",
     level1="ne",
-    model="NERamsarRaw",
+    model=NERamsarRaw,
     restricted=False,
     source_path="/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_ramsar/format_GEOPARQUET_ramsar/LATEST_ramsar/Ramsar_England.parquet",
 )
@@ -210,10 +210,10 @@ class NEMarineConservationZonesRaw(DataFrameModel):
 
 
 ne_marine_conservation_zones_raw = SourceDataset(
-    name="ne_marine_conservation_zones_raw)",
+    name="ne_marine_conservation_zones_raw",
     level0="bronze",
     level1="ne",
-    model="NEMarineConservationZonesRaw",
+    model=NEMarineConservationZonesRaw,
     restricted=False,
     source_path="/dbfs/mnt/base/unrestricted/source_natural_england_open_data_geoportal/dataset_marine_conservation_zones/format_GEOPARQUET_marine_conservation_zones/LATEST_marine_conservation_zones/Marine_Conservation_Zones___Natural_England_and_JNCC.parquet",
 )
