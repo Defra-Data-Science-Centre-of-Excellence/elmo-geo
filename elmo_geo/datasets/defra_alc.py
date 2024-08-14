@@ -68,7 +68,7 @@ alc_raw = SourceDataset(
     level1="defra",
     model=ALCRaw,
     restricted=False,
-    source_path="/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_provisional_agricultural_land_classification_alc/format_GEOPARQUET_provisional_agricultural_land_classification_alc/SNAPSHOT_2021_03_16_provisional_agricultural_land_classification_alc/Agricultural_Land_Classification_Provisional_England.parquet",
+    source_path="/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_provisional_agricultural_land_classification_alc/format_GEOPARQUET_provisional_agricultural_land_classification_alc/LATEST_provisional_agricultural_land_classification_alc/",
 )
 
 alc_parcels = DerivedDataset(
