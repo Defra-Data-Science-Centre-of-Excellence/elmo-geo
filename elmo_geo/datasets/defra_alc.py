@@ -57,8 +57,8 @@ class ALCParcels(DataFrameModel):
         geometry: ALC geometries in EPSG:27700.
     """
 
-    id_parcel: str
-    alc_grade: str = Field(coerce=True)
+    id_parcel: str = Field()
+    alc_grade: str = Field()
     proportion: float = Field(ge=0, le=1)
 
 

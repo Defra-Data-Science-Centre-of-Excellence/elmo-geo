@@ -56,8 +56,8 @@ class FloodRiskAreasParcels(DataFrameModel):
         geometry: Flood Risk Area geometries in EPSG:27700.
     """
 
-    id_parcel: str = Field(coerce=True)
-    flood_sour: str = Field(coerce=True)
+    id_parcel: str = Field()
+    flood_sour: str = Field()
     proportion: float = Field(ge=0, le=1)
 
 
