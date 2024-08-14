@@ -57,9 +57,9 @@ class NESSSIUnitsRaw(DataFrameModel):
        geometry: geospatial polygons in EPSG:27700
     """
 
-    sssi_name: str = Field(coerce=True)
+    sssi_name: object = Field(coerce=True)
     id: float = Field(ge=0, le=1)
-    condition: str = Field(coerce=True)
+    condition: object = Field(coerce=True)
     geometry: Geometry(crs=SRID) = Field(coerce=True, nullable=True)
 
 
@@ -73,9 +73,9 @@ class NESSSIUnitsParcels(DataFrameModel):
         proportion: The proportion of the parcel that intersects with the sssi units
     """
 
-    sssi_name: str = Field(coerce=True)
+    sssi_name: object = Field(coerce=True)
     id: float = Field(ge=0, le=1)
-    condition: str = Field(coerce=True)
+    condition: object = Field(coerce=True)
     proportion: float = Field(ge=0, le=1)
 
 
@@ -85,7 +85,7 @@ ne_sssi_units_raw = SourceDataset(
     level1="ne",
     model=NESSSIUnitsRaw,
     restricted=False,
-    source_path="/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_sites_of_special_scientific_interest_units/format_GEOPARQUET_sites_of_special_scientific_interest_units/LATEST_sites_of_special_scientific_interest_units",
+    source_path="/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_sites_of_special_scientific_interest_units/format_GEOPARQUET_sites_of_special_scientific_interest_units/LATEST_sites_of_special_scientific_interest_units/Sites_of_Special_Scientific_Interest_Units_England.parquett",
 )
 
 ne_sssi_units_parcels = DerivedDataset(
@@ -109,7 +109,7 @@ class NENNRRaw(DataFrameModel):
     """
 
     nnr_name: str = Field(coerce=True)
-    reference: float = Field(ge=0, le=1)  # check could be object?
+    reference: object = Field(coerce=True)
     geometry: Geometry(crs=SRID) = Field(coerce=True, nullable=True)
 
 
@@ -132,8 +132,8 @@ class NESACRaw(DataFrameModel):
         geometry: geospatial polygons in EPSG:27700
     """
 
-    sac_name: str = Field(coerce=True)  # check could be object?
-    sac_code: str = Field(coerce=True)  # check could be object?
+    sac_name: object = Field(coerce=True)  # check could be object?
+    sac_code: object = Field(coerce=True)  # check could be object?
     geometry: Geometry(crs=SRID) = Field(coerce=True, nullable=True)
 
 
@@ -156,8 +156,8 @@ class JNCCSPARaw(DataFrameModel):
         geometry: geospatial polygons in EPSG:27700
     """
 
-    spa_name: str = Field(coerce=True)  # check could be object?
-    spa_code: str = Field(coerce=True)  # check could be object?
+    spa_name: object = Field(coerce=True)  # check could be object?
+    spa_code: object = Field(coerce=True)  # check could be object?
     geometry: Geometry(crs=SRID) = Field(coerce=True, nullable=True)
 
 
@@ -180,8 +180,8 @@ class NERamsarRaw(DataFrameModel):
         geometry: geospatial polygons in EPSG:27700
     """
 
-    name: str = Field(coerce=True)  # check could be object?
-    code: str = Field(coerce=True)  # check could be object?
+    name: object = Field(coerce=True)  # check could be object?
+    code: object = Field(coerce=True)  # check could be object?
     geometry: Geometry(crs=SRID) = Field(coerce=True, nullable=True)
 
 
@@ -204,8 +204,8 @@ class NEMarineConservationZonesRaw(DataFrameModel):
         geometry: geospatial polygons in EPSG:27700
     """
 
-    MCZ_NAME: str = Field(coerce=True)  # check could be object?
-    MCZ_CODE: str = Field(coerce=True)  # check could be object?
+    MCZ_NAME: object = Field(coerce=True)  # check could be object?
+    MCZ_CODE: object = Field(coerce=True)  # check could be object?
     geometry: Geometry(crs=SRID) = Field(coerce=True, nullable=True)
 
 
