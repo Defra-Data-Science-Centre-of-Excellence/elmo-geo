@@ -214,20 +214,20 @@ class SourceDataset(Dataset):
     def refresh(self) -> None:
         LOG.info(f"Creating '{self.name}' dataset.")
         if self.is_geo:
-            if Path(self.source_path).suffix == ".parquet":
+            if Path(self.source_path).suffix == ".parquet" or Path(self.source_path).isdir():
                 gdf = gpd.read_parquet(self.source_path)
             else:
                 gdf = gpd.read_file(self.source_path)
             gdf = self._validate(gdf)
             gpd_to_partitioned_parquet(gdf, path=self._new_path, partition_cols=self.partition_cols)
         else:
-            if Path(self.source_path).suffix == ".parquet":
-                df = pd.read_parquet(self.source_path)
+            if Path(self.source_path).suffix == ".parquet" or Path(self.source_path).isdir():
+                pdf = pd.read_parquet(self.source_path)
             elif Path(self.source_path).suffix == ".csv":
-                df = pd.read_csv(self.source_path)
+                pdf = pd.read_csv(self.source_path)
             else:
                 raise UnknownFileExtension()
-            df = self._validate(df)
+            pdf = self._validate(pdf)
             # TODO: to partitioned parquet
         LOG.info(f"Saved to '{self.path}'.")
 
