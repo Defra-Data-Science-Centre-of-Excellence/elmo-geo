@@ -29,9 +29,25 @@ from .fc_woodland_sensitivity import (
     woodland_creation_sensitivity_var3_raw,
 )
 from .ons_itl import itl2_boundaries_parcels, itl2_boundaries_raw
+from .protected_areas import (
+    jncc_spa_raw,
+    ne_marine_conservation_zones_raw,
+    ne_nnr_raw,
+    ne_ramsar_raw,
+    ne_sac_raw,
+    ne_sssi_units_parcels,
+    ne_sssi_units_raw,
+)
 from .rpa_reference_parcels import reference_parcels, reference_parcels_raw, reference_parcels_raw_no_sbi
 
 catalogue = [
+    ne_sssi_units_raw,
+    ne_sssi_units_parcels,
+    ne_nnr_raw,
+    ne_sac_raw,
+    jncc_spa_raw,
+    ne_ramsar_raw,
+    ne_marine_conservation_zones_raw,
     ewco_nature_recovery_priority_habitat_parcels,
     ewco_nature_recovery_priority_habitat_raw,
     ewco_nature_recovery_priority_habitat,
