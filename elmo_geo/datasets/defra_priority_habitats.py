@@ -22,7 +22,7 @@ from elmo_geo.st.join import knn
 from .rpa_reference_parcels import reference_parcels
 
 DISTANCE_THRESHOLD = 5_000
-_join_parcels = partial(join_parcels, columns=["Main_Habit"], geometry_dim=3)
+_join_parcels = partial(join_parcels, columns=["Main_Habit"])
 
 
 def _combine(south: Dataset, central: Dataset, north: Dataset) -> gpd.GeoDataFrame:

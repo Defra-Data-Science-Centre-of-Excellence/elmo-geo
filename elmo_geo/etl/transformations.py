@@ -61,8 +61,7 @@ def sjoin_and_proportion(
             F.expr("ST_Union_Aggr(geometry_left) AS geometry_left"),
             F.expr("ST_Union_Aggr(geometry_right) AS geometry_right"),
         )
-        .withColumn("proportion", _calc_proportion("geometry_left", "geometry_right", "area_left"))
-        .drop("geometry_left", "geometry_right")
+        .select("id_parcel", *columns, _calc_proportion("geometry_left", "geometry_right", "area_left")),
     )
 
 
