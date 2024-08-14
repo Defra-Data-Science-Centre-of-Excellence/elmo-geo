@@ -81,7 +81,7 @@ class NESSSIUnitsParcels(DataFrameModel):
 
 ne_sssi_units_raw = SourceDataset(
     name="ne_sssi_units_raw",
-    Level0="bronze",
+    level0="bronze",
     level1="ne",
     model=NESSSIUnitsRaw,
     restricted=False,
@@ -115,7 +115,7 @@ class NENNRRaw(DataFrameModel):
 
 ne_nnr_raw = SourceDataset(
     name="ne_nnr_raw",
-    Level0="bronze",
+    level0="bronze",
     level1="ne",
     model=NENNRRaw,
     restricted=False,
