@@ -37,6 +37,9 @@ def sjoin_and_proportion(sdf_parcels:SparkDataFrame,
     """Join a parcels data frame to a features dataframe and calculate the 
     proportion of each parcel that is overlapped by features.
 
+    Splits multipart geometries into single part as this is required for the groupby
+    operation to work.
+
     Parameters:
         sdf_parcels: The parcels dataframe.
         sdf_features: The features dataframe.
