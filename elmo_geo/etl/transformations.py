@@ -10,18 +10,16 @@ from elmo_geo.st.join import sjoin
 from elmo_geo.utils.types import SparkDataFrame
 
 from .etl import Dataset
-from elmo_geo.st import sjoin
-from elmo_geo.st.geometry import load_geometry
-from pyspark.sql import functions as F
 
-def _calc_proportion(geometry_left:str, geometry_right:str, denominator:str|None=None) -> callable:
+
+def _calc_proportion(geometry_left: str, geometry_right: str, denominator: str | None = None) -> callable:
     """Calculate the proportion overlap between two geometries.
 
     Parameters:
-        geometry_left: Name of one of the left hand geometry field. 
+        geometry_left: Name of one of the left hand geometry field.
         geometry_right: Name of one of the right hand geometry field.
         demoninator: Name of the denominator field to use in proportion calculation.
-            If none defaults to the area of the geometry_left geometry. 
+            If none defaults to the area of the geometry_left geometry.
     """
     if not denominator:
         denominator = f"ST_Area({geometry_left})"
@@ -30,11 +28,13 @@ def _calc_proportion(geometry_left:str, geometry_right:str, denominator:str|None
     string = f"LEAST(GREATEST({string}, 0), 1)"
     return F.expr(f"{string} AS proportion")
 
-def sjoin_and_proportion(sdf_parcels:SparkDataFrame, 
-                         sdf_features: SparkDataFrame, 
-                         columns:list[str],
-                         ):
-    """Join a parcels data frame to a features dataframe and calculate the 
+
+def sjoin_and_proportion(
+    sdf_parcels: SparkDataFrame,
+    sdf_features: SparkDataFrame,
+    columns: list[str],
+):
+    """Join a parcels data frame to a features dataframe and calculate the
     proportion of each parcel that is overlapped by features.
 
     Splits multipart geometries into single part as this is required for the groupby
@@ -43,19 +43,13 @@ def sjoin_and_proportion(sdf_parcels:SparkDataFrame,
     Parameters:
         sdf_parcels: The parcels dataframe.
         sdf_features: The features dataframe.
-        columns: Columns in the features dataframe to include in the group by when calculating 
+        columns: Columns in the features dataframe to include in the group by when calculating
             the proportion value.
     """
     return (
         sjoin(
-            (
-                sdf_parcels
-                .withColumn("geometry", F.expr("EXPLODE(ST_Dump(geometry))"))
-            ),
-            (
-                sdf_features
-                .withColumn("geometry", F.expr("EXPLODE(ST_Dump(geometry))"))
-            ),
+            (sdf_parcels.withColumn("geometry", F.expr("EXPLODE(ST_Dump(geometry))"))),
+            (sdf_features.withColumn("geometry", F.expr("EXPLODE(ST_Dump(geometry))"))),
         )
         # join in area, required to handle multi polygons
         .join(
@@ -70,6 +64,7 @@ def sjoin_and_proportion(sdf_parcels:SparkDataFrame,
         .withColumn("proportion", _calc_proportion("geometry_left", "geometry_right", "area_left"))
         .drop("geometry_left", "geometry_right")
     )
+
 
 def join_parcels(
     parcels: Dataset,
@@ -96,15 +91,16 @@ def join_parcels(
     """
     if columns is None:
         columns = []
-    
-    sdf_parcels = parcels.sdf()
-    sdf_features = (features.sdf()
-                    .withColumn("geometry", load_geometry(encoding_fn="", simplify_tolerance=simplify_tolerence))
-                    .withColumn("geometry", F.expr(f"ST_SubDivideExplode(geometry, {max_vertices})"))
-                    )
 
-    return (sjoin_and_proportion(sdf_parcels, 
-                                sdf_features, 
-                                columns=columns,
-                                )
-            .toPandas())
+    sdf_parcels = parcels.sdf()
+    sdf_features = (
+        features.sdf()
+        .withColumn("geometry", load_geometry(encoding_fn="", simplify_tolerance=simplify_tolerence))
+        .withColumn("geometry", F.expr(f"ST_SubDivideExplode(geometry, {max_vertices})"))
+    )
+
+    return sjoin_and_proportion(
+        sdf_parcels,
+        sdf_features,
+        columns=columns,
+    ).toPandas()

@@ -1,6 +1,7 @@
 import geopandas as gpd
 import pytest
 
+from elmo_geo.etl.transformations import sjoin_and_proportion
 from elmo_geo.io.convert import to_sdf
 from elmo_geo.st.udf import st_union
 from elmo_geo.utils.register import register
@@ -31,42 +32,42 @@ def test_st_union():
     all_true = sdf.transform(st_union, ["key"]).selectExpr(f"{test} AS test").toPandas()["test"].all()
     assert all_true == 1
 
-def prep_data(parcel_geoms:list[str], feature_geoms:list[str]) -> bool:
+
+def prep_data(parcel_geoms: list[str], feature_geoms: list[str]) -> bool:
     ids = list(range(len(parcel_geoms)))
     gdf = gpd.GeoDataFrame({"id_parcel": ids}, geometry=gpd.GeoSeries.from_wkt(parcel_geoms))
     sdf_parcels = to_sdf(gdf)
 
-    gdf = gpd.GeoDataFrame({"class": ["a"]*len(feature_geoms)}, geometry=gpd.GeoSeries.from_wkt(feature_geoms))
+    gdf = gpd.GeoDataFrame({"class": ["a"] * len(feature_geoms)}, geometry=gpd.GeoSeries.from_wkt(feature_geoms))
     sdf_features = to_sdf(gdf)
 
     return sdf_parcels, sdf_features
 
+
 @pytest.mark.dbr
 def test_sjoin_polygon_types():
-    """
-    """
+    """ """
     register()
     parcel_geoms = ["Polygon((0 0, 0 1, 1 1, 1 0, 0 0 ))"]
     feature_geoms = ["LineString(0 1, 1 1)", "Polygon((0 0, 0 0.5, 0.5 0.5, 0.5 0, 0 0))"]
     df = sjoin_and_proportion(
         *prep_data(parcel_geoms, feature_geoms),
-         columns = ["class"],
-         ).toPandas()
+        columns=["class"],
+    ).toPandas()
     prop = df.loc[0, "proportion"]
-    assert prop==0.25
+    assert prop == 0.25
 
 
 @pytest.mark.dbr
 def test_sjoin_multipolygon_types():
-    """
-    """
+    """ """
     register()
     parcel_geoms = ["MultiPolygon(((0 0, 0 1, 1 1, 1 0, 0 0 )), ((2 2, 2 3, 3 3, 3 2, 2 2)))"]
     feature_geoms = ["LineString(0 1, 1 1)", "Polygon((0 0, 0 0.5, 0.5 0.5, 0.5 0, 0 0))"]
 
     df = sjoin_and_proportion(
         *prep_data(parcel_geoms, feature_geoms),
-         columns = ["class"],
-         ).toPandas()
+        columns=["class"],
+    ).toPandas()
     prop = df.loc[0, "proportion"]
-    assert prop==0.125
+    assert prop == 0.125
