@@ -50,7 +50,7 @@ def prep_data(parcel_geoms: list[str], feature_geoms: list[str]) -> bool:
 def test_sjoin_polygon_types():
     """ """
     register()
-    parcel_geoms = ["Polygon((0 0, 0 1, 1 1, 1 0, 0 0 ))"]
+    parcel_geoms = ["Polygon((0 0, 0 1, 1 1, 1 0, 0 0))"]
     feature_geoms = ["LineString(0 1, 1 1)", "Polygon((0 0, 0 0.5, 0.5 0.5, 0.5 0, 0 0))"]
     df = sjoin_and_proportion(
         *prep_data(parcel_geoms, feature_geoms),
@@ -64,7 +64,7 @@ def test_sjoin_polygon_types():
 def test_sjoin_multipolygon_types():
     """ """
     register()
-    parcel_geoms = ["MultiPolygon(((0 0, 0 1, 1 1, 1 0, 0 0 )), ((2 2, 2 3, 3 3, 3 2, 2 2)))"]
+    parcel_geoms = ["MultiPolygon(((0 0, 0 1, 1 1, 1 0, 0 0)), ((2 2, 2 3, 3 3, 3 2, 2 2)))"]
     feature_geoms = ["LineString(0 1, 1 1)", "Polygon((0 0, 0 0.5, 0.5 0.5, 0.5 0, 0 0))"]
 
     df = sjoin_and_proportion(
@@ -79,7 +79,7 @@ def test_sjoin_multipolygon_types():
 def test_sjoin_multipolygon_types2():
     """ """
     register()
-    parcel_geoms = ["MultiPolygon(((0 0, 0 1, 1 1, 1 0, 0 0 )), ((2 2, 2 3, 3 3, 3 2, 2 2)))"]
+    parcel_geoms = ["MultiPolygon(((0 0, 0 1, 1 1, 1 0, 0 0)), ((2 2, 2 3, 3 3, 3 2, 2 2)))"]
     feature_geoms = ["LineString(1 1, 2 2)", "Polygon((0 0, 0 0.5, 0.5 0.5, 0.5 0, 0 0))"]
 
     df = sjoin_and_proportion(
