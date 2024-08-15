@@ -49,8 +49,6 @@ def join_parcels(
     parcels: Dataset,
     features: Dataset,
     columns: list[str] | None = None,
-    simplify_tolerence: float = 1.0,
-    max_vertices: int = 256,
 ) -> pd.DataFrame:
     """Spatial join the two datasets and calculate the proportion of the parcel that intersects.
 
@@ -66,6 +64,8 @@ def join_parcels(
     Returns:
         - A Pandas dataframe with `id_parcel`, `proportion` and columns included in the `columns` list.
     """
+    simplify_tolerence = 1.0
+    max_vertices = 256
     if columns is None:
         columns = []
 
