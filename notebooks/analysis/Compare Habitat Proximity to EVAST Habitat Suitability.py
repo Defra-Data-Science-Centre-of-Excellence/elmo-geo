@@ -1,14 +1,8 @@
 # Databricks notebook source
-import matplotlib.gridspec as gridspec
-import matplotlib.pyplot as plt
-import matplotlib.ticker as tick
-import numpy as np
 import pandas as pd
-import seaborn as sns
-from pyspark.sql import functions as F
 
 from elmo_geo import register
-from elmo_geo.datasets import defra_heathland_proximity_parcels, defra_grassland_proximity_parcels
+#from elmo_geo.datasets import defra_heathland_proximity_parcels, defra_grassland_proximity_parcels
 
 register()
 
@@ -89,7 +83,7 @@ def produce_summary(df_comp, grassland_map, bto_col):
     df_comp_matched[f"{bto_col}_phi"] = df_comp_matched[bto_col].replace(grassland_map)
 
     df_comp_matched_comparable = df_comp_matched.loc[ df_comp_matched[bto_col].isin(list(grassland_map.keys()))]
-    df_comp_matched_incomparable = df_comp_matched.loc[ ~df_comp_matched[bto_col].isin(list(grassland_map.keys()))]
+    #df_comp_matched_incomparable = df_comp_matched.loc[ ~df_comp_matched[bto_col].isin(list(grassland_map.keys()))]
 
     df_comp_matched_comparable["match"] = df_comp_matched_comparable[f"{bto_col}_phi"] == df_comp_matched_comparable["Main_Habit"]
     df_comp_matched_comparable["match_part"] = df_comp_matched_comparable.apply(lambda row: row[f"{bto_col}_phi"] in  row["Main_Habit"], axis=1)
