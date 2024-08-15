@@ -12,23 +12,6 @@ from elmo_geo.utils.types import SparkDataFrame
 from .etl import Dataset
 
 
-def _calc_proportion(geometry_left: str, geometry_right: str, denominator: str | None = None) -> callable:
-    """Calculate the proportion overlap between two geometries.
-
-    Parameters:
-        geometry_left: Name of one of the left hand geometry field.
-        geometry_right: Name of one of the right hand geometry field.
-        demoninator: Name of the denominator field to use in proportion calculation.
-            If none defaults to the area of the geometry_left geometry.
-    """
-    if not denominator:
-        denominator = f"ST_Area({geometry_left})"
-    string = f"ST_Intersection({geometry_left}, {geometry_right})"
-    string = f"ST_Area({string}) / {denominator}"
-    string = f"LEAST(GREATEST({string}, 0), 1)"
-    return F.expr(f"{string} AS proportion")
-
-
 def sjoin_and_proportion(
     sdf_parcels: SparkDataFrame,
     sdf_features: SparkDataFrame,
@@ -48,20 +31,17 @@ def sjoin_and_proportion(
     """
     return (
         sjoin(
-            (sdf_parcels.withColumn("geometry", F.expr("EXPLODE(ST_Dump(geometry))"))),
-            (sdf_features.withColumn("geometry", F.expr("EXPLODE(ST_Dump(geometry))"))),
+            sdf_parcels,
+            sdf_features,
         )
         # join in area, required to handle multi polygons
         .join(
-            sdf_parcels.groupby("id_parcel").agg(F.expr("SUM(ST_Area(geometry)) as area_left")),
+            sdf_parcels.groupby("id_parcel").agg(F.expr("SUM(ST_Area(geometry)) as area_parcel")),
             on="id_parcel",
         )
-        .groupby("id_parcel", "area_left", *columns)
-        .agg(
-            F.expr("ST_Union_Aggr(geometry_left) AS geometry_left"),
-            F.expr("ST_Union_Aggr(geometry_right) AS geometry_right"),
-        )
-        .select("id_parcel", *columns, _calc_proportion("geometry_left", "geometry_right", "area_left")),
+        .groupby("id_parcel", "area_parcel", *columns)
+        .agg(F.expr("SUM(ST_Area(ST_Intersection(geometry_left, geometry_right))) as overlap"))
+        .select("id_parcel", *columns, F.expr("LEAST(GREATEST(overlap/area_parcel, 0), 1) as proportion"))
     )
 
 
@@ -91,9 +71,10 @@ def join_parcels(
     if columns is None:
         columns = []
 
-    sdf_parcels = parcels.sdf()
+    sdf_parcels = parcels.sdf().repartition(1_000)
     sdf_features = (
         features.sdf()
+        .repartition(1_000)
         .withColumn("geometry", load_geometry(encoding_fn="", simplify_tolerance=simplify_tolerence))
         .withColumn("geometry", F.expr(f"ST_SubDivideExplode(geometry, {max_vertices})"))
     )
