@@ -9,13 +9,14 @@
 # MAGIC This notebook is a brief comparison of two methods for classifying which parcels are suitable for different types of habitat creation.
 # MAGIC
 # MAGIC I compare two parcel levels datasets:
-# MAGIC     - BTO habitats: this is used by the EVAST team to assign a habitat creation type to parcels. 
+# MAGIC     - BTO habitats: this is used by the EVAST team to assign a habitat creation type to parcels.
 # MAGIC       These in turn inform stocking densities on those parcels in the habitat creation scenario.
 # MAGIC     - Grassland/heathland proximity: this is used by the FCP team to determine parcel eligibility
 # MAGIC       for habitat creation/restoration actions.
 # MAGIC
 # MAGIC
-# MAGIC The BTO dataset is based on spatially coarse SoilScapes soil classifications while the habitat proximity datasets are bsed on distance to priority habitats.
+# MAGIC The BTO dataset is based on spatially coarse SoilScapes soil classifications while the habitat proximity datasets are based on
+# MAGIC distance to priority habitats.
 
 # COMMAND ----------
 
