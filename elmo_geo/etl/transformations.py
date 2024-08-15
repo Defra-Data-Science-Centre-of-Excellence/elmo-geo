@@ -62,8 +62,6 @@ def join_parcels(
             Defaults to 20m (assuming SRID 27700).
         - max_vertices: The features polygons will be subdivided and exploded to reduce them
             to this number of vertices to improve performance and memory use. Defaults to 256.
-        - geometry_dim: Only select geometries of this dimension after intersection.
-            0 means any, 1 = Points, 2 = LineStrings, 3 = Polygons, Multi is included.
 
     Returns:
         - A Pandas dataframe with `id_parcel`, `proportion` and columns included in the `columns` list.
