@@ -2,7 +2,8 @@
 import pandas as pd
 
 from elmo_geo import register
-#from elmo_geo.datasets import defra_heathland_proximity_parcels, defra_grassland_proximity_parcels
+
+# from elmo_geo.datasets import defra_heathland_proximity_parcels, defra_grassland_proximity_parcels
 
 register()
 
@@ -73,20 +74,20 @@ print(df_h["id_parcel"].duplicated().value_counts())
 
 
 def produce_summary(df_comp, grassland_map, bto_col):
-    prop_bto_parcels_unmatched = df_comp["RLR_RW_R_5"].isnull().sum()/df_bto.shape[0]
-    prop_phi_parcels_unmatched = df_comp["id_parcel"].isnull().sum()/df_g.shape[0]
+    prop_bto_parcels_unmatched = df_comp["RLR_RW_R_5"].isnull().sum() / df_bto.shape[0]
+    prop_phi_parcels_unmatched = df_comp["id_parcel"].isnull().sum() / df_g.shape[0]
 
     print(f"Percentage of parcels in BTO unmatched: {prop_bto_parcels_unmatched:.1%}")
     print(f"Percentage of parcels in PHI unmatched: {prop_phi_parcels_unmatched:.1%}")
 
-    df_comp_matched = df_comp.loc[ (~df_comp["id_parcel"].isnull()) & (~df_comp["RLR_RW_R_5"].isnull())]
+    df_comp_matched = df_comp.loc[(~df_comp["id_parcel"].isnull()) & (~df_comp["RLR_RW_R_5"].isnull())]
     df_comp_matched[f"{bto_col}_phi"] = df_comp_matched[bto_col].replace(grassland_map)
 
-    df_comp_matched_comparable = df_comp_matched.loc[ df_comp_matched[bto_col].isin(list(grassland_map.keys()))]
-    #df_comp_matched_incomparable = df_comp_matched.loc[ ~df_comp_matched[bto_col].isin(list(grassland_map.keys()))]
+    df_comp_matched_comparable = df_comp_matched.loc[df_comp_matched[bto_col].isin(list(grassland_map.keys()))]
+    # df_comp_matched_incomparable = df_comp_matched.loc[ ~df_comp_matched[bto_col].isin(list(grassland_map.keys()))]
 
     df_comp_matched_comparable["match"] = df_comp_matched_comparable[f"{bto_col}_phi"] == df_comp_matched_comparable["Main_Habit"]
-    df_comp_matched_comparable["match_part"] = df_comp_matched_comparable.apply(lambda row: row[f"{bto_col}_phi"] in  row["Main_Habit"], axis=1)
+    df_comp_matched_comparable["match_part"] = df_comp_matched_comparable.apply(lambda row: row[f"{bto_col}_phi"] in row["Main_Habit"], axis=1)
 
     df_res = df_comp_matched_comparable.groupby(bto_col)["match"].apply(lambda s: s.value_counts()).unstack()
     df_res.loc["total"] = df_res.sum()
@@ -95,10 +96,9 @@ def produce_summary(df_comp, grassland_map, bto_col):
     return df_res
 
 
-
 # COMMAND ----------
 
-df_comp = pd.merge(df_g, df_bto, left_on = ["id_parcel"], right_on=["RLR_RW_R_5"], how="outer")
+df_comp = pd.merge(df_g, df_bto, left_on=["id_parcel"], right_on=["RLR_RW_R_5"], how="outer")
 df_res = produce_summary(df_comp, grassland_map)
 
 
@@ -109,7 +109,7 @@ df_res
 
 # COMMAND ----------
 
-df_comp_h = pd.merge(df_h, df_bto, left_on = ["id_parcel"], right_on=["RLR_RW_R_5"], how="outer")
+df_comp_h = pd.merge(df_h, df_bto, left_on=["id_parcel"], right_on=["RLR_RW_R_5"], how="outer")
 df_res_h = produce_summary(df_comp_h, heathland_map, bto_col="int_heathland")
 
 # COMMAND ----------
