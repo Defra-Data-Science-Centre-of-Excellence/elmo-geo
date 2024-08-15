@@ -6,12 +6,11 @@ from elmo_geo.io.convert import to_sdf
 from elmo_geo.st.udf import st_union
 from elmo_geo.utils.register import register
 
-register()
-
 
 @pytest.mark.dbr
 def test_to_sdf():
     """Test convertion to SparkDataFrame is successful"""
+    register()
     test = "ST_AsText(geometry) = 'LINESTRING (0 0, 1 1)'"
     g = ["LineString(0 0, 1 1)"]
     gdf = gpd.GeoDataFrame(geometry=gpd.GeoSeries.from_wkt(g))
@@ -27,6 +26,7 @@ def test_st_union():
     'LineString(1 1, 2 2)' is a the multilinestring
     'MULTILINESTRING ((0 0, 1 1), (1 1, 2 2))'.
     """
+    register()
     test = "(ST_AsText(geometry) = 'MULTILINESTRING ((0 0, 1 1), (1 1, 2 2))') OR (ST_AsText(geometry) = 'MULTILINESTRING ((1 1, 2 2), (0 0, 1 1))')"
     s = ["LineString(0 0, 1 1)", "LineString(1 1, 2 2)"]
     gdf = gpd.GeoDataFrame({"key": [1, 1]}, geometry=gpd.GeoSeries.from_wkt(s))
@@ -49,6 +49,7 @@ def prep_data(parcel_geoms: list[str], feature_geoms: list[str]) -> bool:
 @pytest.mark.dbr
 def test_sjoin_polygon_types():
     """ """
+    register()
     parcel_geoms = ["Polygon((0 0, 0 1, 1 1, 1 0, 0 0 ))"]
     feature_geoms = ["LineString(0 1, 1 1)", "Polygon((0 0, 0 0.5, 0.5 0.5, 0.5 0, 0 0))"]
     df = sjoin_and_proportion(
@@ -62,6 +63,7 @@ def test_sjoin_polygon_types():
 @pytest.mark.dbr
 def test_sjoin_multipolygon_types():
     """ """
+    register()
     parcel_geoms = ["MultiPolygon(((0 0, 0 1, 1 1, 1 0, 0 0 )), ((2 2, 2 3, 3 3, 3 2, 2 2)))"]
     feature_geoms = ["LineString(0 1, 1 1)", "Polygon((0 0, 0 0.5, 0.5 0.5, 0.5 0, 0 0))"]
 
@@ -76,6 +78,7 @@ def test_sjoin_multipolygon_types():
 @pytest.mark.dbr
 def test_sjoin_multipolygon_types2():
     """ """
+    register()
     parcel_geoms = ["MultiPolygon(((0 0, 0 1, 1 1, 1 0, 0 0 )), ((2 2, 2 3, 3 3, 3 2, 2 2)))"]
     feature_geoms = ["LineString(1 1, 2 2)", "Polygon((0 0, 0 0.5, 0.5 0.5, 0.5 0, 0 0))"]
 
