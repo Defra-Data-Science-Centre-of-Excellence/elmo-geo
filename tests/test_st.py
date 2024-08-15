@@ -6,6 +6,8 @@ from elmo_geo.io.convert import to_sdf
 from elmo_geo.st.udf import st_union
 from elmo_geo.utils.register import register
 
+register()
+
 
 @pytest.mark.dbr
 def test_to_sdf():
@@ -47,7 +49,6 @@ def prep_data(parcel_geoms: list[str], feature_geoms: list[str]) -> bool:
 @pytest.mark.dbr
 def test_sjoin_polygon_types():
     """ """
-    register()
     parcel_geoms = ["Polygon((0 0, 0 1, 1 1, 1 0, 0 0 ))"]
     feature_geoms = ["LineString(0 1, 1 1)", "Polygon((0 0, 0 0.5, 0.5 0.5, 0.5 0, 0 0))"]
     df = sjoin_and_proportion(
@@ -61,9 +62,22 @@ def test_sjoin_polygon_types():
 @pytest.mark.dbr
 def test_sjoin_multipolygon_types():
     """ """
-    register()
     parcel_geoms = ["MultiPolygon(((0 0, 0 1, 1 1, 1 0, 0 0 )), ((2 2, 2 3, 3 3, 3 2, 2 2)))"]
     feature_geoms = ["LineString(0 1, 1 1)", "Polygon((0 0, 0 0.5, 0.5 0.5, 0.5 0, 0 0))"]
+
+    df = sjoin_and_proportion(
+        *prep_data(parcel_geoms, feature_geoms),
+        columns=["class"],
+    ).toPandas()
+    prop = df.loc[0, "proportion"]
+    assert prop == 0.125
+
+
+@pytest.mark.dbr
+def test_sjoin_multipolygon_types2():
+    """ """
+    parcel_geoms = ["MultiPolygon(((0 0, 0 1, 1 1, 1 0, 0 0 )), ((2 2, 2 3, 3 3, 3 2, 2 2)))"]
+    feature_geoms = ["LineString(1 1, 2 2)", "Polygon((0 0, 0 0.5, 0.5 0.5, 0.5 0, 0 0))"]
 
     df = sjoin_and_proportion(
         *prep_data(parcel_geoms, feature_geoms),
