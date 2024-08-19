@@ -34,6 +34,8 @@ from .ons_itl import itl2_boundaries_parcels, itl2_boundaries_raw
 from .rpa_reference_parcels import reference_parcels
 
 catalogue = [
+    alc_parcels, alc_raw,
+    flood_risk_areas_parcels, flood_risk_areas_raw,
     itl2_boundaries_raw,
     itl2_boundaries_parcels,
     ewco_nature_recovery_priority_habitat_parcels,

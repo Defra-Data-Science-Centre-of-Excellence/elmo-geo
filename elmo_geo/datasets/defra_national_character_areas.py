@@ -1,5 +1,7 @@
 """National Character Areas (NCA) from Defra, provided by DASH[^1].
 
+This describes the geological land types.
+
 [^1]: https://app.powerbi.com/Redirect?action=OpenReport&appId=5762de14-3aa8-4a83-92b3-045cc953e30c&reportObjectId=c8802134-4f3b-484e-bf14-1ed9f8881450&ctid=770a2450-0227-4c62-90c7-4e38537f1102&reportPage=ReportSectionf8b0041ad0335117bacb
 """
 from functools import partial
