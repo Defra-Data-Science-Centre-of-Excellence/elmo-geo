@@ -49,43 +49,44 @@ _join_parcels = partial(join_parcels, columns=["sssi_name", "id", "condition"])
 
 
 class NESSSIUnitsRaw(DataFrameModel):
-    """model for NE SSSI units dataset.
+    """Model for Natural England Sites of Special Sscientific Interest (SSSI) units dataset.
     Attributes:
-       sssi_name:name of the SSSI
-       id: reference id for the SSSI unit
-       condition: condition of the SSSI unit, the objective is for all to be in favourable condition
-       geometry: geospatial polygons in EPSG:27700
+       sssi_name: Name of the SSSI
+       id: Reference id for the SSSI unit
+       condition: Condition of the SSSI unit, the objective is for all to be in favourable condition
+       geometry: Geospatial polygons in EPSG:27700
     """
 
-    sssi_name: object = Field(coerce=True)
-    id: float = Field(ge=0, le=1)
-    condition: object = Field(coerce=True)
-    geometry: Geometry(crs=SRID) = Field(coerce=True, nullable=True)
+    sssi_name: str = Field(coerce=True)
+    id: float = Field(coerce=True)
+    condition: str = Field(coerce=True)
+    geometry: Geometry(crs=SRID) = Field(coerce=True)
 
 
 class NESSSIUnitsParcels(DataFrameModel):
-    """Model for NE SSSI with parcel dataset.
+    """Model for Natural England Sites of Special Scientific Interest (SSSI) with parcel dataset.
 
     Parameters:
-        sssi_name:name of the SSSI
-        id: reference id for the SSSI unit
-        condition: condition of the SSSI unit, the objective is for all to be in favourable condition
+        sssi_name:Name of the SSSI
+        id: Reference id for the SSSI unit
+        condition: Condition of the SSSI unit, the objective is for all to be in favourable condition
         proportion: The proportion of the parcel that intersects with the sssi units
     """
 
-    sssi_name: object = Field(coerce=True)
-    id: float = Field(ge=0, le=1)
-    condition: object = Field(coerce=True)
+    sssi_name: str = Field(coerce=True)
+    id: float = Field(coerce=True)
+    condition: str = Field(coerce=True)
     proportion: float = Field(ge=0, le=1)
 
 
 ne_sssi_units_raw = SourceDataset(
+    is_geo=False,
     name="ne_sssi_units_raw",
     level0="bronze",
     level1="ne",
     model=NESSSIUnitsRaw,
     restricted=False,
-    source_path="/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_sites_of_special_scientific_interest_units/format_GEOPARQUET_sites_of_special_scientific_interest_units/LATEST_sites_of_special_scientific_interest_units/Sites_of_Special_Scientific_Interest_Units_England.parquett",
+    source_path="/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_sites_of_special_scientific_interest_units/format_GEOPARQUET_sites_of_special_scientific_interest_units/LATEST_sites_of_special_scientific_interest_units/Sites_of_Special_Scientific_Interest_Units_England.parquet",
 )
 
 ne_sssi_units_parcels = DerivedDataset(
@@ -101,16 +102,16 @@ ne_sssi_units_parcels = DerivedDataset(
 
 # National Naruture Reserves (NNR)
 class NENNRRaw(DataFrameModel):
-    """model for NE NNR dataset.
+    """Model for Natural England National Nature Reserves (NNR) dataset.
     Attributes:
-       nnr_name:name of the NNR
-       refernce: reference id for each NNR
-       geometry: geospatial polygons in EPSG:27700
+       nnr_name: Name of the NNR
+       reference: Reference id for each NNR
+       geometry: Geospatial polygons in EPSG:27700
     """
 
     nnr_name: str = Field(coerce=True)
-    reference: object = Field(coerce=True)
-    geometry: Geometry(crs=SRID) = Field(coerce=True, nullable=True)
+    reference: str = Field(coerce=True)
+    geometry: Geometry(crs=SRID) = Field(coerce=True)
 
 
 ne_nnr_raw = SourceDataset(
@@ -123,18 +124,18 @@ ne_nnr_raw = SourceDataset(
 )
 
 
-# Special areas of Conservation (SAC)
+# Special Areas of Conservation (SAC)
 class NESACRaw(DataFrameModel):
-    """model for NE SAC dataset.
+    """Model for Natural England Special Areas of Conservation (SAC) dataset.
     Attributes:
-        sac_name:name of each SAC
-        sac_code:reference id for each SAC
-        geometry: geospatial polygons in EPSG:27700
+        sac_name: Name of each SAC
+        sac_code: Reference id for each SAC
+        geometry: Geospatial polygons in EPSG:27700
     """
 
-    sac_name: object = Field(coerce=True)  # check could be object?
-    sac_code: object = Field(coerce=True)  # check could be object?
-    geometry: Geometry(crs=SRID) = Field(coerce=True, nullable=True)
+    sac_name: str = Field(coerce=True)  # check could be object?
+    sac_code: str = Field(coerce=True)  # check could be object?
+    geometry: Geometry(crs=SRID) = Field(coerce=True)
 
 
 ne_sac_raw = SourceDataset(
@@ -149,16 +150,16 @@ ne_sac_raw = SourceDataset(
 
 # Special Protection Areas (SPAs)
 class JNCCSPARaw(DataFrameModel):
-    """model for JNCC SPAs dataset.
+    """Model for Joint Nature Conservation Committee Special Protection Areas (SPAs) dataset.
     Attributes:
-        spa_name:name of each SPA
-        spa_code: reference id for each SPA
-        geometry: geospatial polygons in EPSG:27700
+        spa_name: Name of each SPA
+        spa_code: Reference id for each SPA
+        geometry: Geospatial polygons in EPSG:27700
     """
 
-    spa_name: object = Field(coerce=True)  # check could be object?
-    spa_code: object = Field(coerce=True)  # check could be object?
-    geometry: Geometry(crs=SRID) = Field(coerce=True, nullable=True)
+    spa_name: str = Field(coerce=True)  # check could be object?
+    spa_code: str = Field(coerce=True)  # check could be object?
+    geometry: Geometry(crs=SRID) = Field(coerce=True)
 
 
 jncc_spa_raw = SourceDataset(
@@ -173,16 +174,16 @@ jncc_spa_raw = SourceDataset(
 
 # ramsar
 class NERamsarRaw(DataFrameModel):
-    """model for NE Ramsar dataset.
+    """Model for Natural England Ramsar dataset.
     Attributes:
-        name:name of each ramsar site
-        code:reference id for each site
-        geometry: geospatial polygons in EPSG:27700
+        name: Name of each ramsar site
+        code: Reference id for each site
+        geometry: Geospatial polygons in EPSG:27700
     """
 
-    name: object = Field(coerce=True)  # check could be object?
-    code: object = Field(coerce=True)  # check could be object?
-    geometry: Geometry(crs=SRID) = Field(coerce=True, nullable=True)
+    name: str = Field(coerce=True)  # check could be object?
+    code: str = Field(coerce=True)  # check could be object?
+    geometry: Geometry(crs=SRID) = Field(coerce=True)
 
 
 ne_ramsar_raw = SourceDataset(
@@ -197,16 +198,16 @@ ne_ramsar_raw = SourceDataset(
 
 # Marine Conservation Zones
 class NEMarineConservationZonesRaw(DataFrameModel):
-    """model for NE Marine Conservation Areas dataset.
+    """Model for Natural England Marine Conservation Zones (MCZ) dataset.
     Attributes:
-        MCZ_NAME:name of each MCZ site
-        MCZ_CODE:reference id for each MCZ
-        geometry: geospatial polygons in EPSG:27700
+        MCZ_NAME: Name of each MCZ site
+        MCZ_CODE: Reference id for each MCZ
+        geometry: Geospatial polygons in EPSG:27700
     """
 
-    MCZ_NAME: object = Field(coerce=True)  # check could be object?
-    MCZ_CODE: object = Field(coerce=True)  # check could be object?
-    geometry: Geometry(crs=SRID) = Field(coerce=True, nullable=True)
+    MCZ_NAME: str = Field(coerce=True)  # check could be object?
+    MCZ_CODE: str = Field(coerce=True)  # check could be object?
+    geometry: Geometry(crs=SRID) = Field(coerce=True)
 
 
 ne_marine_conservation_zones_raw = SourceDataset(
