@@ -1,8 +1,8 @@
 """Living England - Habitat Map (Phase 4), provided by DASH.
 
-Comes in 3 parquet parts, and such reading the folder combines them.
+Note: Comes in 3 parquet parts, and such reading the folder combines them.
 
-[^DASH Data Catalogue, Living England]: https://app.powerbi.com/Redirect?action=OpenReport&appId=5762de14-3aa8-4a83-92b3-045cc953e30c&reportObjectId=c8802134-4f3b-484e-bf14-1ed9f8881450&ctid=770a2450-0227-4c62-90c7-4e38537f1102&reportPage=ReportSectionf8b0041ad0335117bacb&pbi_source=appShareLink&portalSessionId=b29b27bf-6765-4900-91e4-e5f94f3fd339
+[^DASH: Living England]:
 """
 
 from functools import partial

@@ -7,7 +7,7 @@ In combination this defines "uplands", as either Less Favourable Areas (LFA) are
 - MS: Moorland and Severaly Disadvantaged Area
 
 [^Gov Data: LFA and Moorland]: https://www.data.gov.uk/dataset/0817bc9e-341f-4d8c-be66-38b1fab69b21/
-[^DASH Data Catalogue, Moorline]: https://app.powerbi.com/Redirect?action=OpenReport&appId=5762de14-3aa8-4a83-92b3-045cc953e30c&reportObjectId=c8802134-4f3b-484e-bf14-1ed9f8881450&ctid=770a2450-0227-4c62-90c7-4e38537f1102&reportPage=ReportSectionf8b0041ad0335117bacb&pbi_source=appShareLink&portalSessionId=b29b27bf-6765-4900-91e4-e5f94f3fd339
+[^DASH: Moorline]:
 """
 
 from functools import partial

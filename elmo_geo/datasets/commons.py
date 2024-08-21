@@ -2,7 +2,7 @@
 
 Common Land Amalgamation merges Registered Common Land (BPS Layer), CRoW Act 2000 Section 4, Historic Common Land.
 
-[^DASH Data Catalogue]: https://app.powerbi.com/groups/me/apps/5762de14-3aa8-4a83-92b3-045cc953e30c/reports/c8802134-4f3b-484e-bf14-1ed9f8881450/ReportSectionff2a0c223272005d9b10?ctid=770a2450-0227-4c62-90c7-4e38537f1102&experience=power-bi
+[^DASH: Search "common"]:
 """
 from functools import partial
 
@@ -25,7 +25,7 @@ class CommonsRaw(DataFrameModel):
             "BPS_RCL" this is Registered Common Land (BPS Layer), this is conclusively common land.
             "CROW" this is CRoW Act 2000 Section 4, this is conclusively common land.
             "BPS_RCL & CROW", this is conclusively common land.
-            "HISTORIC2001?" this if from many historic source that make Historic Common Land, but not found in BPS or CRoW, and is unconclusively common land.
+            "HISTORIC2001?", is from many historic source that make Historic Common Land, but the feature area is not found in BPS or CRoW, and is classes as unconclusively common land.
         geometry: Polygon geometries in EPSG:27700.
     """
 

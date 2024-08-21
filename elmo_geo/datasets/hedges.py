@@ -1,6 +1,6 @@
 """Ecological Focus Areas Control Layer (Hedges) from RPA (RPA Hedges), provided by DASH.
 
-[^DASH Data Catalogue "Hedge"]: https://app.powerbi.com/groups/me/apps/5762de14-3aa8-4a83-92b3-045cc953e30c/reports/c8802134-4f3b-484e-bf14-1ed9f8881450/ReportSectionff2a0c223272005d9b10?ctid=770a2450-0227-4c62-90c7-4e38537f1102&experience=power-bi
+[^DASH: Search "hedge"]:
 """
 
 from pandera import DataFrameModel, Field

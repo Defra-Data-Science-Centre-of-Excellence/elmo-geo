@@ -1,6 +1,6 @@
-"""Flood Risk Areas from Defra, provided by DASH[^1].
+"""Flood Risk Areas from Defra, provided by DASH.
 
-[^1]: https://app.powerbi.com/groups/me/apps/5762de14-3aa8-4a83-92b3-045cc953e30c/reports/c8802134-4f3b-484e-bf14-1ed9f8881450/ReportSectionff2a0c223272005d9b10?experience=power-bi
+[^DASH: Flood Risk Areas]:
 """
 from pandera import DataFrameModel, Field
 from pandera.engines.pandas_engine import Geometry
