@@ -10,6 +10,20 @@ from elmo_geo.st.join import sjoin
 from .etl import Dataset
 
 
+def combine(*datasets: list[Dataset], sources: list[str] | None = None):
+    sdf = None
+    for dataset, source in zip(datasets, sources):
+        _sdf = dataset.sdf()
+        if source is None:
+            source = dataset.name
+        _sdf = _sdf.withColumn("source", F.lit(source))
+        if sdf is None:
+            sdf = _sdf
+        else:
+            sdf.unionByName(_sdf, allowMissingColumns=True)
+    return sdf
+
+
 def join_parcels(
     parcels: Dataset, features: Dataset, columns: list[str] | None = None, simplify_tolerence: float = 20.0, max_vertices: int = 256
 ) -> pd.DataFrame:
