@@ -1,6 +1,6 @@
 """Ecological Focus Areas Control Layer (Hedges) from RPA (RPA Hedges), provided by DASH.
 
-[^DASH: Search "hedge"]:
+[^DASH: Search "hedge"]: TODO
 """
 
 from pandera import DataFrameModel, Field
@@ -53,7 +53,7 @@ rpa_hedges_parcels = DerivedDataset(
     level0="silver",
     level1="rpa",
     restricted=False,
-    func=join_parcels,  # TODO: tidy
+    func=join_parcels,  # TODO: parcel_boundary_segments
     dependencies=[reference_parcels, rpa_hedges_raw],
     model=RPAHedgesParcels,
 )

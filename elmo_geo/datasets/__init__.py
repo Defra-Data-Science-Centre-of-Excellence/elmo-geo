@@ -6,9 +6,9 @@ from pathlib import Path
 from elmo_geo import register
 from elmo_geo.utils.log import LOG
 
-from .commons import commons_parcels, commons_raw
-from .defra_alc import alc_parcels, alc_raw
-from .defra_flood_risk_areas import flood_risk_areas_parcels, flood_risk_areas_raw
+from .commons import commons_parcels, commons_raw  # TODO: link, is_conclusive, gpkg
+from .defra_alc import alc_parcels, alc_raw  # TODO: link
+from .defra_flood_risk_areas import flood_risk_areas_parcels, flood_risk_areas_raw  # TODO: link
 from .fc_ewco import (
     ewco_nature_recovery_priority_habitat,
     ewco_nature_recovery_priority_habitat_parcels,
@@ -31,10 +31,18 @@ from .fc_woodland_sensitivity import (
     woodland_creation_sensitivity_var3_parcels,
     woodland_creation_sensitivity_var3_raw,
 )
-from .living_england import living_england_habitat_map_phase_4_parcel, living_england_habitat_map_phase_4_raw
-from .moor import moorline_parcel, moorline_raw
-from .ons_itl import itl2_boundaries_parcels, itl2_boundaries_raw
-from .rpa_reference_parcels import reference_parcels
+from .living_england import living_england_habitat_map_phase_4_parcel, living_england_habitat_map_phase_4_raw  # TODO: link
+from .hedges import rpa_hedges_parcels, rpa_hedges_raw  # TODO: link, parcel_boundary_segments
+from .moor import moorline_parcel, moorline_raw  # TODO: link, gpkg
+from .ons_itl import itl2_boundaries_parcels, itl2_boundaries_raw  # TODO: merge with ons
+from .ons import *   # TODO
+from .os import *  # TODO: blocker geoparquet
+from .osm import osm_raw, osm_tidy, osm_parcel  # TODO: link, fn_osm_tidy
+from .peat import peaty_soils_parcels, peaty_soils_raw  # TODO: link
+from .protected_landscapes import national_landscapes_raw, national_parks_raw, protected_landscapes_parcels, protected_landscapes_tidy  # TODO: link, test_combine
+from .rpa_reference_parcels import reference_parcels  # TODO: link
+# TODO: test they work
+
 
 catalogue = [
     alc_parcels,
