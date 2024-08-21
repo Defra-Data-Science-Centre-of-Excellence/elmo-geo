@@ -32,6 +32,7 @@ from .fc_woodland_sensitivity import (
     woodland_creation_sensitivity_var3_raw,
 )
 from .living_england import living_england_habitat_map_phase_4_parcel, living_england_habitat_map_phase_4_raw
+from .moor import moorline_parcel, moorline_raw
 from .ons_itl import itl2_boundaries_parcels, itl2_boundaries_raw
 from .rpa_reference_parcels import reference_parcels
 
@@ -49,6 +50,8 @@ catalogue = [
     itl2_boundaries_parcels,
     living_england_habitat_map_phase_4_parcel,
     living_england_habitat_map_phase_4_raw,
+    moorline_parcel,
+    moorline_raw,
     reference_parcels,
     sfi_agroforestry,
     sfi_agroforestry_parcels,
