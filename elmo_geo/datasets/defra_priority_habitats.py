@@ -137,7 +137,7 @@ class PriorityHabitatParcels(DataFrameModel):
 
     id_parcel: str
     Main_Habit: Category = Field(coerce=True)
-    proportion: float = Field(ge=0, le=1)
+    proportion: float = Field(coerce=True, ge=0, le=1)
 
 
 class PriorityHabitatProximity(DataFrameModel):

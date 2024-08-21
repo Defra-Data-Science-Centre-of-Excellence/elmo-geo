@@ -9,7 +9,7 @@ def load_missing(column: str) -> callable:
     return F.expr(f"COALESCE({column}, {null})")
 
 
-def load_geometry(column: str = "geometry", precision: int = 0, encoding_fn: str = "ST_GeomFromWKB", simplify_tolerance: int = 1) -> callable:
+def load_geometry(column: str = "geometry", encoding_fn: str = "ST_GeomFromWKB") -> callable:
     """Load Geometry
     Useful for ingesting data.
     Missing
@@ -27,8 +27,8 @@ def load_geometry(column: str = "geometry", precision: int = 0, encoding_fn: str
     string = f"ST_MakeValid({encoding_fn}({column}))"
     string = f"COALESCE({string}, {null})"
     string = f"ST_MakeValid(ST_Force_2D({string}))"
-    string = f"ST_MakeValid(ST_SimplifyPreserveTopology({string}, {simplify_tolerance}))"
-    string = f"ST_MakeValid(ST_PrecisionReduce({string}, {precision}))"
+    string = f"ST_MakeValid(ST_SimplifyPreserveTopology({string}, 1))"
+    string = f"ST_MakeValid(ST_PrecisionReduce({string}, 0))"
     string = string + " AS " + column
     return F.expr(string)
 

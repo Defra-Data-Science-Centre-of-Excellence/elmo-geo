@@ -48,7 +48,7 @@ def prep_data(parcel_geoms: list[str], feature_geoms: list[str]) -> bool:
 
 @pytest.mark.dbr
 def test_sjoin_polygon_types():
-    """ """
+    """Test single part parcel geometry intersecting with one single part feature."""
     register()
     parcel_geoms = ["Polygon((0 0, 0 1, 1 1, 1 0, 0 0))"]
     feature_geoms = ["LineString(0 1, 1 1)", "Polygon((0 0, 0 0.5, 0.5 0.5, 0.5 0, 0 0))"]
@@ -62,7 +62,7 @@ def test_sjoin_polygon_types():
 
 @pytest.mark.dbr
 def test_sjoin_multipolygon_types():
-    """ """
+    """Test multi-part parcel geometry intersecting with one single part feature."""
     register()
     parcel_geoms = ["MultiPolygon(((0 0, 0 1, 1 1, 1 0, 0 0)), ((2 2, 2 3, 3 3, 3 2, 2 2)))"]
     feature_geoms = ["LineString(0 1, 1 1)", "Polygon((0 0, 0 0.5, 0.5 0.5, 0.5 0, 0 0))"]
@@ -77,7 +77,7 @@ def test_sjoin_multipolygon_types():
 
 @pytest.mark.dbr
 def test_sjoin_multipolygon_types2():
-    """ """
+    """Test multi-part parcel geometry intersecting with two single part features."""
     register()
     parcel_geoms = ["MultiPolygon(((0 0, 0 1, 1 1, 1 0, 0 0)), ((2 2, 2 3, 3 3, 3 2, 2 2)))"]
     feature_geoms = ["LineString(1 1, 2 2)", "Polygon((0 0, 0 0.5, 0.5 0.5, 0.5 0, 0 0))"]
@@ -88,3 +88,37 @@ def test_sjoin_multipolygon_types2():
     ).toPandas()
     prop = df.loc[0, "proportion"]
     assert prop == 0.125
+
+@pytest.mark.dbr
+def test_sjoin_multipolygon_types3():
+    """Test multi-part parcel geometry intersecting with overlapping
+    single part and multi-part features."""
+    register()
+    parcel_geoms = ["MultiPolygon(((0 0, 0 1, 1 1, 1 0, 0 0)), ((2 2, 2 3, 3 3, 3 2, 2 2)))"]
+    feature_geoms = ["LineString(1 1, 2 2)", "Polygon((0 0, 0 0.5, 0.5 0.5, 0.5 0, 0 0))"]
+
+    df = sjoin_and_proportion(
+        *prep_data(parcel_geoms, feature_geoms),
+        columns=["class"],
+    ).toPandas()
+    prop = df.loc[0, "proportion"]
+    assert prop == 0.125
+
+@pytest.mark.dbr
+def test_sjoin_multipolygon_types4():
+    """Test multi-part parcel geometry intersecting with overlapping
+    single part and multi-part features."""
+    register()
+    parcel_geoms = ["MultiPolygon(((0 0, 0 1, 1 1, 1 0, 0 0)), ((2 2, 2 3, 3 3, 3 2, 2 2)))"]
+    feature_geoms = ["Polygon((0.5 0, 0.5 0.5, 1 0.5, 1 0, 0.5 0))", 
+                     "Polygon((0 0, 0 0.5, 1 0.5, 1 0, 0 0))", 
+                     "LineString(1 1, 2 2)", 
+                     "MultiPolygon(((2 2, 2 2.5, 3 2.5, 3 2, 2 2)), ((4 4, 4 5, 5 5, 5 4, 4 4)))",
+                     ]
+
+    df = sjoin_and_proportion(
+        *prep_data(parcel_geoms, feature_geoms),
+        columns=["class"],
+    ).toPandas()
+    prop = df.loc[0, "proportion"]
+    assert prop == 0.5
