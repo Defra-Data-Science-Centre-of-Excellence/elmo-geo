@@ -44,10 +44,6 @@ from elmo_geo.etl.transformations import join_parcels
 
 from .rpa_reference_parcels import reference_parcels
 
-# SSSI units
-_join_parcels = partial(join_parcels, columns=["sssi_name", "id", "condition"])
-
-
 class NESSSIUnitsRaw(DataFrameModel):
     """Model for Natural England Sites of Special Sscientific Interest (SSSI) units dataset.
     Attributes:
@@ -73,9 +69,7 @@ class NESSSIUnitsParcels(DataFrameModel):
         proportion: The proportion of the parcel that intersects with the sssi units
     """
 
-    sssi_name: str = Field(coerce=True)
-    id: float = Field(coerce=True)
-    condition: str = Field(coerce=True)
+    id_parcel: str: Field()
     proportion: float = Field(ge=0, le=1)
 
 
@@ -94,7 +88,7 @@ ne_sssi_units_parcels = DerivedDataset(
     level0="silver",
     level1="ne",
     restricted=False,
-    func=_join_parcels,
+    func=join_parcels,
     dependencies=[reference_parcels, ne_sssi_units_raw],
     model=NESSSIUnitsParcels,
 )
