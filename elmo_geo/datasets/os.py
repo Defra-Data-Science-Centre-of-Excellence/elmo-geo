@@ -1,4 +1,7 @@
-"""
+"""Ordance Survey Themed Layers, provided by DASH.
+
+TODO: Waiting for OS data to be converted to GeoParquet by DASH, for easier layers.
+
 os-wtr_fts-2023_12_16
 os-wtr_ntwk-2023_12_16
 /dbfs/mnt/base/unrestricted/source_ordnance_survey_data_hub/dataset_open_greenspace/format_GEOPARQUET_open_greenspace/LATEST_open_greenspace/
