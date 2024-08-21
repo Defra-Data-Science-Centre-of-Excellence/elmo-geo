@@ -1,6 +1,7 @@
 """Ecological Focus Areas Control Layer (Hedges) from RPA (RPA Hedges), provided by DASH.
+
+[^DASH Data Catalogue "Hedge"]: https://app.powerbi.com/groups/me/apps/5762de14-3aa8-4a83-92b3-045cc953e30c/reports/c8802134-4f3b-484e-bf14-1ed9f8881450/ReportSectionff2a0c223272005d9b10?ctid=770a2450-0227-4c62-90c7-4e38537f1102&experience=power-bi
 """
-from functools import partial
 
 from pandera import DataFrameModel, Field
 from pandera.engines.pandas_engine import Geometry
@@ -17,16 +18,18 @@ class RPAHedgesRaw(DataFrameModel):
     Attributes:
         geometry: geometries in EPSG:27700.
     """
-    sheet_id: str = Field(coerce=True, nullable=False, alias="REF_PARCEL_SHEET_ID")
-    parcel_ref: str = Field(coerce=True, nullable=False, alias="REF_PARCEL_PARCEL_ID")
+
+    sheet_id: str = Field(coerce=True, alias="REF_PARCEL_SHEET_ID")
+    parcel_ref: str = Field(coerce=True, alias="REF_PARCEL_PARCEL_ID")
     adj_sheet_id: str = Field(coerce=True, nullable=True, alias="ADJACENT_PARCEL_SHEET_ID")
     adj_parcel_ref: str = Field(coerce=True, nullable=True, alias="ADJACENT_PARCEL_PARCEL_ID")
-    geometry: Geometry(crs=SRID) = Field(coerce=True, nullable=False, alias="GEOM")
+    geometry: Geometry(crs=SRID) = Field(coerce=True, alias="GEOM")
+
 
 rpa_hedges_raw = SourceDataset(
     name="rpa_hedges_raw",
     level0="bronze",
-    level1="defra",
+    level1="rpa",
     model=RPAHedgesRaw,
     restricted=False,
     source_path="/dbfs/mnt/base/unrestricted/source_rpa_spatial_data_mart/dataset_efa_control_layer/format_GEOPARQUET_efa_control_layer/LATEST_efa_control_layer/",
@@ -38,18 +41,19 @@ class RPAHedgesParcels(DataFrameModel):
 
     Attributes:
         id_parcel: 11 character RPA reference parcel ID (including the sheet ID) e.g. `SE12263419`.
-        geometry: ALC geometries in EPSG:27700.
+        proportion: proportion of Parcel geometry overlapping with feature geometry.
     """
 
     id_parcel: str = Field()
     proportion: float = Field(ge=0, le=1)
 
+
 rpa_hedges_parcels = DerivedDataset(
     name="rpa_hedges_parcels",
     level0="silver",
-    level1="defra",
+    level1="rpa",
     restricted=False,
-    func=None,
+    func=join_parcels,  # TODO: tidy
     dependencies=[reference_parcels, rpa_hedges_raw],
     model=RPAHedgesParcels,
 )

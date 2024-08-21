@@ -1,6 +1,6 @@
 """England Woodland Creation Offer (EWCO) datasets from Forestry Commission.
 
-[A guide to Forestry Commission’s sensitivity maps for woodland creation](https://www.gov.uk/guidance/a-guide-to-forestry-commissions-sensitivity-maps-for-woodland-creation)
+[A guide to Forestry Commission's sensitivity maps for woodland creation](https://www.gov.uk/guidance/a-guide-to-forestry-commissions-sensitivity-maps-for-woodland-creation)
 
 The low sensitivity areas have fewest identified constraints to address,
 and it should be easier to agree creating new woodland here than in other areas.

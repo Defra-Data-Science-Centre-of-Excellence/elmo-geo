@@ -29,6 +29,16 @@ class FloodRiskAreasRaw(DataFrameModel):
     geometry: Geometry(crs=SRID) = Field(coerce=True)
 
 
+flood_risk_areas_raw = SourceDataset(
+    name="flood_risk_areas_raw",
+    level0="bronze",
+    level1="defra",
+    model=FloodRiskAreasRaw,
+    restricted=False,
+    source_path="/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_flood_risk_areas/format_GEOPARQUET_flood_risk_areas/LATEST_flood_risk_areas/Flood_Risk_Areas.parquet",
+)
+
+
 class FloodRiskAreasParcels(DataFrameModel):
     """Model for Defra Flood Risk Areas with parcel dataset.
 
@@ -41,15 +51,6 @@ class FloodRiskAreasParcels(DataFrameModel):
     flood_sour: str = Field()
     proportion: float = Field(ge=0, le=1)
 
-
-flood_risk_areas_raw = SourceDataset(
-    name="flood_risk_areas_raw",
-    level0="bronze",
-    level1="defra",
-    model=FloodRiskAreasRaw,
-    restricted=False,
-    source_path="/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_flood_risk_areas/format_GEOPARQUET_flood_risk_areas/LATEST_flood_risk_areas/Flood_Risk_Areas.parquet",
-)
 
 flood_risk_areas_parcels = DerivedDataset(
     name="flood_risk_areas_parcels",

@@ -6,6 +6,7 @@ from pathlib import Path
 from elmo_geo import register
 from elmo_geo.utils.log import LOG
 
+from .commons import commons_parcels, commons_raw
 from .defra_alc import alc_parcels, alc_raw
 from .defra_flood_risk_areas import flood_risk_areas_parcels, flood_risk_areas_raw
 from .fc_ewco import (
@@ -34,17 +35,21 @@ from .ons_itl import itl2_boundaries_parcels, itl2_boundaries_raw
 from .rpa_reference_parcels import reference_parcels
 
 catalogue = [
-    alc_parcels, alc_raw,
-    flood_risk_areas_parcels, flood_risk_areas_raw,
-    itl2_boundaries_raw,
-    itl2_boundaries_parcels,
+    alc_parcels,
+    alc_raw,
+    commons_parcels,
+    commons_raw,
+    flood_risk_areas_parcels,
+    flood_risk_areas_raw,
+    ewco_nature_recovery_priority_habitat,
     ewco_nature_recovery_priority_habitat_parcels,
     ewco_nature_recovery_priority_habitat_raw,
-    ewco_nature_recovery_priority_habitat,
+    itl2_boundaries_raw,
+    itl2_boundaries_parcels,
     reference_parcels,
-    sfi_agroforestry_raw,
     sfi_agroforestry,
     sfi_agroforestry_parcels,
+    sfi_agroforestry_raw,
     woodland_creation_sensitivity,
     woodland_creation_sensitivity_parcels,
     woodland_creation_sensitivity_raw,

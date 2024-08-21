@@ -27,7 +27,9 @@ class NCARaw(DataFrameModel):
         alt: Agricultural Landscape Typology
             Eastern Arable, Upland Fringe, Upland, Chalk and Limestone Mixed, SE Mixed (Wooded), Western mixed, Western Mixed, Unclassified, None
         blt: Broad Landscape Typology
-            Low-lying coast, Sandstone hills and ridges, Upland fringe, Upland, Moorland and moorland fringe, Vales and valleys, Lowlands, Magnesian limestone, Limestone hills, Chalk wolds and downs, Estuary, "Fens, levels and marshes", Coal measures, Forests and parklands, Conurbation, Limestone wolds, Rugged coast, Lowland heath, Claylands, None
+            Low-lying coast, Sandstone hills and ridges, Upland fringe, Upland, Moorland and moorland fringe, Vales and valleys, Lowlands, Magnesian limestone,
+            Limestone hills, Chalk wolds and downs, Estuary, "Fens, levels and marshes", Coal measures, Forests and parklands, Conurbation, Limestone wolds,
+            Rugged coast, Lowland heath, Claylands, None
         geometry: NCA geometries in EPSG:27700.
     """
 
@@ -40,6 +42,16 @@ class NCARaw(DataFrameModel):
     geometry: Geometry(crs=SRID) = Field(coerce=True)
 
 
+nca_raw = SourceDataset(
+    name="nca_raw",
+    level0="bronze",
+    level1="defra",
+    model=NCARaw,
+    restricted=False,
+    source_path="/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_national_character_areas/format_GEOPARQUET_national_character_areas/LATEST_national_character_areas/",
+)
+
+
 class NCAParcels(DataFrameModel):
     """Model for Defra NCA with parcel dataset.
 
@@ -48,19 +60,11 @@ class NCAParcels(DataFrameModel):
         blt: Broad Landscape Typology
         geometry: NCA geometries in EPSG:27700.
     """
+
     id_parcel: str = Field()
     blt: Category = Field()
     proportion: float = Field(ge=0, le=1)
 
-
-nca_raw = SourceDataset(
-    name="nca_raw",
-    level0="bronze",
-    level1="defra",
-    model=ALCRaw,
-    restricted=False,
-    source_path="/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_national_character_areas/format_GEOPARQUET_national_character_areas/LATEST_national_character_areas/",
-)
 
 nca_parcels = DerivedDataset(
     name="nca_parcels",
