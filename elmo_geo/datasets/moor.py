@@ -13,6 +13,7 @@ In combination this defines "uplands", as either Less Favourable Areas (LFA) are
 from functools import partial
 
 from pandera import DataFrameModel, Field
+from pandera.dtypes import Category
 from pandera.engines.pandas_engine import Geometry
 
 from elmo_geo.etl import DerivedDataset, SourceDataset
@@ -32,6 +33,7 @@ class MoorlineRaw(DataFrameModel):
             MS: Moorland and Severaly Disadvantaged Area
         geometry: (Multi)Polygon geometries in EPSG:27700.
     """
+
     name: Category = Field(coerce=True, isin=["D", "S", "MD", "MS"])
     geometry: Geometry = Field(coerce=True)
 
