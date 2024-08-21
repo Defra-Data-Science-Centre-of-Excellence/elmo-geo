@@ -22,10 +22,11 @@ class CommonsRaw(DataFrameModel):
     Attributes:
         name: Description or name of the common
         source: Source of the data
-            "BPS_RCL" this is Registered Common Land (BPS Layer), this is conclusively common land.
-            "CROW" this is CRoW Act 2000 Section 4, this is conclusively common land.
-            "BPS_RCL & CROW", this is conclusively common land.
-            "HISTORIC2001?", is from many historic source that make Historic Common Land, but the feature area is not found in BPS or CRoW, and is classes as unconclusively common land.
+            "BPS_RCL" this is Registered Common Land (BPS Layer).
+            "CROW" this is CRoW Act 2000 Section 4.
+            "BPS_RCL & CROW".
+            "HISTORIC2001?", is from many historic source that make Historic Common Land, but the feature area is not found in BPS or CRoW.
+                This is the only dataset classed as inconclusive common land.
         geometry: Polygon geometries in EPSG:27700.
     """
 
