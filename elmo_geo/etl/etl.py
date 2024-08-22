@@ -21,6 +21,7 @@ from pandera import DataFrameModel
 from pyspark.sql.dataframe import DataFrame as SparkDataFrame
 
 from elmo_geo.io import gpd_to_partitioned_parquet, pd_to_partitioned_parquet
+from elmo_geo.io.download import download_link
 from elmo_geo.utils.log import LOG
 from elmo_geo.utils.misc import load_sdf
 from elmo_geo.utils.types import SparkSession
@@ -166,57 +167,35 @@ class Dataset(ABC):
         msg = f"'{self.name}' dataset cannot be destroyed as it doesn't exist yet."
         LOG.warning(msg)
 
-    def to_export_file(self, path_out: str) -> None:
-        """Write data to a monolithic (non-partitioned) file.
-
-        WARNING: GeoDatFrames cannot be saved to geopackage files.
-        See issue #185 https://github.com/Defra-Data-Science-Centre-of-Excellence/elmo-geo/issues/185
+    def export(self, ext: str = "parquet") -> str:
+        """Create a copy of the dataset as a monolithic file in the /FileStore/elmo-geo-exports/ folder
+        and return a link to download the file from this location.
 
         Parameters:
-            path_out: The path to write to.
-        """
-        LOG.info(f"Writing dataset for export to:{path_out}")
-        _, ext = os.path.splitext(path_out)
-        if self.is_geo:
-            gdf = self.gdf()
-            if ext == ".parquet":
-                gdf.to_parquet(path_out)
-            else:
-                # TODO: https://github.com/Defra-Data-Science-Centre-of-Excellence/elmo-geo/issues/185
-                # Resolve IO error raise when trying to save as geopackage. Saving as geojson in the meantime.
-                gdf.to_file(path_out)
-        else:
-            df = self.pdf()
-            if ext == ".parquet":
-                df.to_parquet(path_out)
-            else:
-                raise NotImplementedError(f"Non geographic datasets can only be saved to parquet files currently. Chosen format:{ext}")
-
-    def export(self, spark: SparkSession, ext: str = ".parquet") -> str:
-        """Save the dataset as a monolithic file in the /FileStore/elmo-geo-exports/ folder
-        and return a link to downlaod the file from this location.
-
-        Parameters:
-            spark: The SparkSession. Used to get config settings for export download url.
             ext: File extension to use when saving the dataset.
 
         Returns:
             HTML download link for exported data.
-
         """
-        filename = f"{os.path.splitext(self.filename)[0]}{ext}"
-        path_out = f"/dbfs/FileStore/{EXPORTS_FOLDER}/{filename}"
+        fname, _ = os.path.splitext(self.filename)
+        path_exp = f"/dbfs/FileStore/{EXPORTS_FOLDER}/{fname}.{ext}"
 
-        if not os.path.exists(path_out):
-            self.to_export_file(path_out)
+        if not os.path.exists(path_exp):
+            if ext=="parquet":
+                shutil.copy(self.path, path_exp)
+            elif self.is_geo:
+                if ext=="gpkg":
+                    f_tmp = "/tmp/{self.name}.{ext}"
+                    self.gdf().to_file(f_tmp)
+                    shutil.copy(f_tmp, path_exp)
+                else:
+                    self.gdf().to_file(path_exp)
+            elif ext=="csv":
+                self.pdf().to_csv(path_exp)
+            else:
+                raise NotImplementedError(f"Requested export format '{ext}' for non-spatial data not currently supported.")
+        return download_link(path_exp)
 
-        url = (
-            f"https://{spark.conf.get('spark.databricks.workspaceUrl')}/files/"
-            f"{EXPORTS_FOLDER}/{filename}"
-            f"?o={spark.conf.get('spark.databricks.clusterUsageTags.orgId')}"
-        )
-        # Return html snippet
-        return f"<a href={url} target='_blank'>Download file: {filename}</a>"
 
     @classmethod
     def __type__(cls) -> str:
