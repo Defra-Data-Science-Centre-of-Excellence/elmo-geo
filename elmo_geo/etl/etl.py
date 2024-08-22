@@ -24,7 +24,6 @@ from elmo_geo.io import gpd_to_partitioned_parquet, pd_to_partitioned_parquet
 from elmo_geo.io.download import download_link
 from elmo_geo.utils.log import LOG
 from elmo_geo.utils.misc import load_sdf
-from elmo_geo.utils.types import SparkSession
 
 DATE_FMT: str = r"%Y_%m_%d"
 SRC_HASH_FMT: str = r"%Y%m%d%H%M%S"
@@ -181,21 +180,20 @@ class Dataset(ABC):
         path_exp = f"/dbfs/FileStore/{EXPORTS_FOLDER}/{fname}.{ext}"
 
         if not os.path.exists(path_exp):
-            if ext=="parquet":
+            if ext == "parquet":
                 shutil.copy(self.path, path_exp)
             elif self.is_geo:
-                if ext=="gpkg":
+                if ext == "gpkg":
                     f_tmp = "/tmp/{self.name}.{ext}"
                     self.gdf().to_file(f_tmp)
                     shutil.copy(f_tmp, path_exp)
                 else:
                     self.gdf().to_file(path_exp)
-            elif ext=="csv":
+            elif ext == "csv":
                 self.pdf().to_csv(path_exp)
             else:
                 raise NotImplementedError(f"Requested export format '{ext}' for non-spatial data not currently supported.")
         return download_link(path_exp)
-
 
     @classmethod
     def __type__(cls) -> str:
