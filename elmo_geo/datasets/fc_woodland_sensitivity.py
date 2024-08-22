@@ -1,4 +1,4 @@
-"""England Woodland Creation Full Sensitivity Map and it's varients from Forestry Commission.
+"""England Woodland Creation Full Sensitivity Map and it's variants from Forestry Commission.
 
 [A guide to Forestry Commission's sensitivity maps for woodland creation](https://www.gov.uk/guidance/a-guide-to-forestry-commissions-sensitivity-maps-for-woodland-creation)
 
@@ -133,7 +133,7 @@ sfi_agroforestry = DerivedDataset(
 )
 """Definition for the cleaned version of Forestry Commission's SFI Agroforestry dataset.
 
-Columns have been renamed and dropped from the daw-version but the data/rows remain consistant.
+Columns have been renamed and dropped from the daw-version but the data/rows remain consistent.
 """
 
 woodland_creation_sensitivity = DerivedDataset(
@@ -147,7 +147,7 @@ woodland_creation_sensitivity = DerivedDataset(
 )
 """Definition for the cleaned version of Forestry Commission's England Woodland Creation Full Sensitivity Map.
 
-Columns have been renamed and dropped from the raw-version but the data/rows remain consistant.
+Columns have been renamed and dropped from the raw-version but the data/rows remain consistent.
 """
 
 woodland_creation_sensitivity_var1 = DerivedDataset(
@@ -161,7 +161,7 @@ woodland_creation_sensitivity_var1 = DerivedDataset(
 )
 """Definition for the cleaned version of Forestry Commission's England Woodland Creation Full Sensitivity Map Variant 1.
 
-Columns have been renamed and dropped from the raw-version but the data/rows remain consistant.
+Columns have been renamed and dropped from the raw-version but the data/rows remain consistent.
 """
 
 woodland_creation_sensitivity_var2 = DerivedDataset(
@@ -175,7 +175,7 @@ woodland_creation_sensitivity_var2 = DerivedDataset(
 )
 """Definition for the cleaned version of Forestry Commission's England Woodland Creation Full Sensitivity Map Variant 2.
 
-Columns have been renamed and dropped from the raw-version but the data/rows remain consistant.
+Columns have been renamed and dropped from the raw-version but the data/rows remain consistent.
 """
 
 woodland_creation_sensitivity_var3 = DerivedDataset(
@@ -189,7 +189,7 @@ woodland_creation_sensitivity_var3 = DerivedDataset(
 )
 """Definition for the cleaned version of Forestry Commission's England Woodland Creation Full Sensitivity Map Variant 3.
 
-Columns have been renamed and dropped from the raw-version but the data/rows remain consistant.
+Columns have been renamed and dropped from the raw-version but the data/rows remain consistent.
 """
 
 sfi_agroforestry_parcels = DerivedDataset(

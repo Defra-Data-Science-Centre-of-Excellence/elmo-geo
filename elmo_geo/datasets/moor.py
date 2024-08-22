@@ -2,9 +2,9 @@
 
 In combination this defines "uplands", as either Less Favourable Areas (LFA) areas and/or Moorland areas:
 - D: Disadvantaged Area
-- S: Severaly Disadvantaged Area
+- S: Severely Disadvantaged Area
 - MD: Moorland and Disadvantaged Area
-- MS: Moorland and Severaly Disadvantaged Area
+- MS: Moorland and Severely Disadvantaged Area
 
 [^DASH: Moorline]: TODO
 [^Gov Data: LFA and Moorland]: https://www.data.gov.uk/dataset/0817bc9e-341f-4d8c-be66-38b1fab69b21/
@@ -28,9 +28,9 @@ class MoorlineRaw(DataFrameModel):
     Attributes:
         name: Upland classification:
             D: Disadvantaged Area
-            S: Severaly Disadvantaged Area
+            S: Severely Disadvantaged Area
             MD: Moorland and Disadvantaged Area
-            MS: Moorland and Severaly Disadvantaged Area
+            MS: Moorland and Severely Disadvantaged Area
         geometry: (Multi)Polygon geometries in EPSG:27700.
     """
 

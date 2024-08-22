@@ -25,7 +25,7 @@ def combine(*datasets: list[Dataset], sources: list[str] | None = None):
 
 
 def join_parcels(
-    parcels: Dataset, features: Dataset, columns: list[str] | None = None, simplify_tolerence: float = 20.0, max_vertices: int = 256
+    parcels: Dataset, features: Dataset, columns: list[str] | None = None, simplify_tolerance: float = 20.0, max_vertices: int = 256
 ) -> pd.DataFrame:
     """Spatial join the two datasets and calculate the proportion of the parcel that intersects.
 
@@ -33,7 +33,7 @@ def join_parcels(
         - parcels: The RPA `reference_parcels` `Dataset`
         - features: The dataset to join in, assumed to be comprised of polygons.
         - columns: The columns in `features` to be included (on top of `geometry`).
-        - simplify_tolerence: The tolerance to simplify geometries to (in both datasets).
+        - simplify_tolerance: The tolerance to simplify geometries to (in both datasets).
             Defaults to 20m (assuming SRID 27700).
         - max_vertices: The features polygons will be subdivided and exploded to reduce them
             to this number of vertices to improve performance and memory use. Defaults to 256.
@@ -47,7 +47,7 @@ def join_parcels(
         parcels.sdf()
         .select("id_parcel", "geometry")
         .withColumn("geometry", F.expr("ST_MakeValid(geometry)"))
-        .withColumn("geometry", F.expr(f"ST_SimplifyPreserveTopology(geometry, {simplify_tolerence})"))
+        .withColumn("geometry", F.expr(f"ST_SimplifyPreserveTopology(geometry, {simplify_tolerance})"))
         .withColumn("geometry", F.expr("ST_Force_2D(geometry)"))
         .withColumn("geometry", F.expr("ST_MakeValid(geometry)"))
     )
@@ -55,7 +55,7 @@ def join_parcels(
         features.sdf()
         .select("geometry", *columns)
         .withColumn("geometry", F.expr("ST_MakeValid(geometry)"))
-        .withColumn("geometry", F.expr(f"ST_SimplifyPreserveTopology(geometry, {simplify_tolerence})"))
+        .withColumn("geometry", F.expr(f"ST_SimplifyPreserveTopology(geometry, {simplify_tolerance})"))
         .withColumn("geometry", F.expr("ST_Force_2D(geometry)"))
         .withColumn("geometry", F.expr("ST_MakeValid(geometry)"))
         .withColumn("geometry", F.expr(f"ST_SubdivideExplode(geometry, {max_vertices})"))

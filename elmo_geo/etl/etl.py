@@ -288,6 +288,6 @@ class DerivedDataset(Dataset):
         elif isinstance(df, pd.DataFrame):
             df.to_parquet(path=self._new_path, partition_cols=self.partition_cols)
         else:
-            msg = f"Expected Spark, GeoPandas or Pandas dataframe, recieved {type(df)}."
+            msg = f"Expected Spark, GeoPandas or Pandas dataframe, received {type(df)}."
             raise TypeError(msg)
         LOG.info(f"Saved to '{self.path}'.")

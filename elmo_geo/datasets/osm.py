@@ -1,4 +1,4 @@
-"""OpenStreetMaps United Kingdon (OSM), provided by DASH.
+"""OpenStreetMaps United Kingdom (OSM), provided by DASH.
 
 OSM is an open, crowd sourced, geographic data.
 United Kingdom is a subset of osm.planet, which contains all information suitable for our domain.

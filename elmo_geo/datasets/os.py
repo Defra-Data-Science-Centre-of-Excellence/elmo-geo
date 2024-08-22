@@ -1,4 +1,4 @@
-"""Ordance Survey Themed Layers, provided by DASH.
+"""Ordnance Survey Themed Layers, provided by DASH.
 
 TODO: Waiting for OS data to be converted to GeoParquet by DASH, for easier layers.
 
