@@ -76,6 +76,7 @@ class ProtectedLandscapesTidy(DataFrameModel):
     name: str = Field()
     proportion: float = Field(ge=0, le=1)
 
+
 protected_landscapes_tidy = DerivedDataset(
     name="protected_landscapes_tidy",
     level0="silver",
@@ -99,6 +100,7 @@ class ProtectedLandscapesParcel(DataFrameModel):
     id_parcel: str = Field()
     conclusive: bool = Field()
     proportion: float = Field(ge=0, le=1)
+
 
 protected_landscapes_parcels = DerivedDataset(
     name="protected_landscapes_parcels",
