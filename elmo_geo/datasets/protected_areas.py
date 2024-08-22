@@ -34,7 +34,6 @@
 
 JNCC guidance available here: https://jncc.gov.uk/our-work/uk-protected-areas/"""
 
-from functools import partial
 
 from pandera import DataFrameModel, Field
 from pandera.engines.pandas_engine import Geometry
@@ -44,6 +43,8 @@ from elmo_geo.etl.transformations import join_parcels
 
 from .rpa_reference_parcels import reference_parcels
 
+
+# Sites of Scientific Interest (SSSI)
 class NESSSIUnitsRaw(DataFrameModel):
     """Model for Natural England Sites of Special Sscientific Interest (SSSI) units dataset.
     Attributes:
@@ -55,21 +56,19 @@ class NESSSIUnitsRaw(DataFrameModel):
 
     sssi_name: str = Field(coerce=True)
     id: float = Field(coerce=True)
-    condition: str = Field(coerce=True)
+    condition: str = Field(coerce=True, nullable=True)
     geometry: Geometry(crs=SRID) = Field(coerce=True)
 
 
 class NESSSIUnitsParcels(DataFrameModel):
-    """Model for Natural England Sites of Special Scientific Interest (SSSI) with parcel dataset.
+    """Model for Natural England Sites of Special Scientific Interest (SSSI) dataset joined with Rural Payment Agency parcel dataset.
 
     Parameters:
-        sssi_name:Name of the SSSI
-        id: Reference id for the SSSI unit
-        condition: Condition of the SSSI unit, the objective is for all to be in favourable condition
+        id_parcel: 11 character RPA reference parcel ID (including the sheet ID) e.g. `SE12263419`.
         proportion: The proportion of the parcel that intersects with the sssi units
     """
 
-    id_parcel: str: Field()
+    id_parcel: str = Field(coerce=True)
     proportion: float = Field(ge=0, le=1)
 
 
@@ -108,6 +107,18 @@ class NENNRRaw(DataFrameModel):
     geometry: Geometry(crs=SRID) = Field(coerce=True)
 
 
+class NESSSINNRParcels(DataFrameModel):
+    """Model for Natural England National Nature Reserves (NNR) dataset joined with Rural Payment Agency parcel dataset.
+
+    Parameters:
+        id_parcel: 11 character RPA reference parcel ID (including the sheet ID) e.g. `SE12263419`.
+        proportion: The proportion of the parcel that intersects with the National Nature Reserves.
+    """
+
+    id_parcel: str = Field(coerce=True)
+    proportion: float = Field(ge=0, le=1)
+
+
 ne_nnr_raw = SourceDataset(
     name="ne_nnr_raw",
     level0="bronze",
@@ -115,6 +126,17 @@ ne_nnr_raw = SourceDataset(
     model=NENNRRaw,
     restricted=False,
     source_path="/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_national_nature_reserves/format_GEOPARQUET_national_nature_reserves/LATEST_national_nature_reserves/National_Nature_Reserves_England.parquet",
+)
+
+
+ne_nnr_parcels = DerivedDataset(
+    name="ne_nnr_parcels",
+    level0="silver",
+    level1="ne",
+    restricted=False,
+    func=join_parcels,
+    dependencies=[reference_parcels, ne_nnr_raw],
+    model=NESSSINNRParcels,
 )
 
 
@@ -127,9 +149,21 @@ class NESACRaw(DataFrameModel):
         geometry: Geospatial polygons in EPSG:27700
     """
 
-    sac_name: str = Field(coerce=True)  # check could be object?
-    sac_code: str = Field(coerce=True)  # check could be object?
+    sac_name: str = Field(coerce=True)
+    sac_code: str = Field(coerce=True)
     geometry: Geometry(crs=SRID) = Field(coerce=True)
+
+
+class NESACParcels(DataFrameModel):
+    """Model for Natural England Special Areas of Conservation (SAC) dataset joined with Rural Payment Agency parcel dataset.
+
+    Parame"ters:
+        id_parcel: 11 character RPA reference parcel ID (including the sheet ID) e.g. `SE12263419`.
+        proportion: The proportion of the parcel that intersects with the Special Areas of Conservation.
+    """
+
+    id_parcel: str = Field(coerce=True)
+    proportion: float = Field(ge=0, le=1) 
 
 
 ne_sac_raw = SourceDataset(
@@ -142,6 +176,17 @@ ne_sac_raw = SourceDataset(
 )
 
 
+ne_sac_parcels = DerivedDataset(
+    name="ne_sac_parcels",
+    level0="silver",
+    level1="ne",
+    restricted=False,
+    func=join_parcels,
+    dependencies=[reference_parcels, ne_sac_raw],
+    model=NESACParcels,
+)
+
+
 # Special Protection Areas (SPAs)
 class JNCCSPARaw(DataFrameModel):
     """Model for Joint Nature Conservation Committee Special Protection Areas (SPAs) dataset.
@@ -151,9 +196,20 @@ class JNCCSPARaw(DataFrameModel):
         geometry: Geospatial polygons in EPSG:27700
     """
 
-    spa_name: str = Field(coerce=True)  # check could be object?
-    spa_code: str = Field(coerce=True)  # check could be object?
+    spa_name: str = Field(coerce=True)
+    spa_code: str = Field(coerce=True)
     geometry: Geometry(crs=SRID) = Field(coerce=True)
+
+
+class JNCCSPARParcels(DataFrameModel):
+    """Model for Joint Nature Conservation Committee Special Protection Areas (SPAs) dataset joined with Rural Payment Agency parcel dataset.
+    Attributes:
+        id_parcel: 11 character RPA reference parcel ID (including the sheet ID) e.g. `SE12263419`.
+        proportion: The proportion of the parcel that intersects with the Special Protection Areas.
+    """
+
+    id_parcel: str = Field(coerce=True)
+    proportion: float = Field(ge=0, le=1) 
 
 
 jncc_spa_raw = SourceDataset(
@@ -166,6 +222,17 @@ jncc_spa_raw = SourceDataset(
 )
 
 
+jncc_spa_parcels = DerivedDataset(
+    name="jncc_spa_parcels",
+    level0="silver",
+    level1="jncc",
+    restricted=False,
+    func=join_parcels,
+    dependencies=[reference_parcels, jncc_spa_raw],
+    model=JNCCSPARParcels,
+)
+
+
 # ramsar
 class NERamsarRaw(DataFrameModel):
     """Model for Natural England Ramsar dataset.
@@ -175,10 +242,20 @@ class NERamsarRaw(DataFrameModel):
         geometry: Geospatial polygons in EPSG:27700
     """
 
-    name: str = Field(coerce=True)  # check could be object?
-    code: str = Field(coerce=True)  # check could be object?
+    name: str = Field(coerce=True)
+    code: str = Field(coerce=True)
     geometry: Geometry(crs=SRID) = Field(coerce=True)
 
+
+class NERamsarParcels(DataFrameModel):
+    """Model for Natural England Ramsar dataset joined with Rural Payment Agency parcel dataset.
+    Attributes:
+        id_parcel: 11 character RPA reference parcel ID (including the sheet ID) e.g. `SE12263419`.
+        proportion: The proportion of the parcel that intersects with the Ramsar sites.
+    """
+
+    id_parcel: str = Field(coerce=True)
+    proportion: float = Field(ge=0, le=1)
 
 ne_ramsar_raw = SourceDataset(
     name="ne_ramsar_raw",
@@ -187,6 +264,17 @@ ne_ramsar_raw = SourceDataset(
     model=NERamsarRaw,
     restricted=False,
     source_path="/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_ramsar/format_GEOPARQUET_ramsar/LATEST_ramsar/Ramsar_England.parquet",
+)
+
+
+ne_ramsar_parcels = DerivedDataset(
+    name="ne_ramsar_parcels",
+    level0="silver",
+    level1="ne",
+    restricted=False,
+    func=join_parcels,
+    dependencies=[reference_parcels, ne_ramsar_raw],
+    model=NERamsarParcels,
 )
 
 
@@ -199,10 +287,20 @@ class NEMarineConservationZonesRaw(DataFrameModel):
         geometry: Geospatial polygons in EPSG:27700
     """
 
-    MCZ_NAME: str = Field(coerce=True)  # check could be object?
-    MCZ_CODE: str = Field(coerce=True)  # check could be object?
+    MCZ_NAME: str = Field(coerce=True)
+    MCZ_CODE: str = Field(coerce=True)
     geometry: Geometry(crs=SRID) = Field(coerce=True)
 
+
+class NEMarineConservationZonesParcels(DataFrameModel):
+    """Model for Natural England Marine Conservation Zones (MCZ) dataset joined with Rural Payment Agency parcel dataset.
+    Attributes:
+        id_parcel: 11 character RPA reference parcel ID (including the sheet ID) e.g. `SE12263419`.
+        proportion: The proportion of the parcel that intersects with MCZ sites.
+    """
+
+    id_parcel: str = Field(coerce=True)
+    proportion: float = Field(ge=0, le=1)
 
 ne_marine_conservation_zones_raw = SourceDataset(
     name="ne_marine_conservation_zones_raw",
@@ -211,4 +309,15 @@ ne_marine_conservation_zones_raw = SourceDataset(
     model=NEMarineConservationZonesRaw,
     restricted=False,
     source_path="/dbfs/mnt/base/unrestricted/source_natural_england_open_data_geoportal/dataset_marine_conservation_zones/format_GEOPARQUET_marine_conservation_zones/LATEST_marine_conservation_zones/Marine_Conservation_Zones___Natural_England_and_JNCC.parquet",
+)
+
+
+ne_marine_conservation_zones_parcels = DerivedDataset(
+    name="ne_marine_conservation_zones_parcels",
+    level0="silver",
+    level="ne",
+    restricted=False,
+    func=join_parcels,
+    dependencies=[reference_parcels, ne_marine_conservation_zones_raw],
+    model=NEMarineConservationZonesParcels,
 )
