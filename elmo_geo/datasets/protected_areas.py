@@ -163,7 +163,7 @@ class NESACParcels(DataFrameModel):
     """
 
     id_parcel: str = Field(coerce=True)
-    proportion: float = Field(ge=0, le=1) 
+    proportion: float = Field(ge=0, le=1)
 
 
 ne_sac_raw = SourceDataset(
@@ -209,7 +209,7 @@ class JNCCSPARParcels(DataFrameModel):
     """
 
     id_parcel: str = Field(coerce=True)
-    proportion: float = Field(ge=0, le=1) 
+    proportion: float = Field(ge=0, le=1)
 
 
 jncc_spa_raw = SourceDataset(
@@ -257,6 +257,7 @@ class NERamsarParcels(DataFrameModel):
     id_parcel: str = Field(coerce=True)
     proportion: float = Field(ge=0, le=1)
 
+
 ne_ramsar_raw = SourceDataset(
     name="ne_ramsar_raw",
     level0="bronze",
@@ -301,6 +302,7 @@ class NEMarineConservationZonesParcels(DataFrameModel):
 
     id_parcel: str = Field(coerce=True)
     proportion: float = Field(ge=0, le=1)
+
 
 ne_marine_conservation_zones_raw = SourceDataset(
     name="ne_marine_conservation_zones_raw",
