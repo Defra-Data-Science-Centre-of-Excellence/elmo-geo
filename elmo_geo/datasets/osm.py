@@ -14,7 +14,7 @@ from pandera import DataFrameModel, Field
 from pandera.dtypes import Category
 from pandera.engines.pandas_engine import Geometry
 
-from elmo_geo.etl import DerivedDataset, SourceDataset
+from elmo_geo.etl import SRID, DerivedDataset, SourceDataset
 from elmo_geo.etl.transformations import join_parcels
 
 from .rpa_reference_parcels import reference_parcels
@@ -60,7 +60,7 @@ class OSMRaw(DataFrameModel):
     place: Category = Field(coerce=True, nullable=True, isin=["city", "village", "suburb", "town"])
     man_made: Category = Field(coerce=True, nullable=True, isin=["monitoring_station", "surveillance"])
     other_tags: str = Field(coerce=True, nullable=True)
-    geometry: Geometry = Field(coerce=True)
+    geometry: Geometry(crs=SRID) = Field(coerce=True)
 
 
 osm_raw = SourceDataset(
@@ -91,7 +91,7 @@ class OSMTidy(DataFrameModel):
     osm_id: str = Field()
     json_tags: str = Field()
     group: Category = Field(isin=["fence", "hedgerow", "heritage_wall", "watercourse", "waterbody"])
-    geometry: Geometry = Field()
+    geometry: Geometry(crs=SRID) = Field()
 
 
 def fn_osm_tidy(osm):
@@ -125,7 +125,7 @@ class OSMParcel(DataFrameModel):
 
     id_parcel: str = Field()
     group: str = Field()
-    geometry: Geometry = Field()
+    geometry: Geometry(crs=SRID) = Field()
 
 
 osm_parcel = DerivedDataset(

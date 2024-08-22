@@ -47,7 +47,7 @@ class WoodlandSensitivityParcels(DataFrameModel):
 
 
 def _clean_dataset(ds: Dataset) -> gpd.GeoDataFrame:
-    """Only keep the geometry and the sensitivity col, fixing typo in colname."""
+    """Only keep the Geometry(crs=SRID) and the sensitivity col, fixing typo in colname."""
     return ds.gdf(columns=["geometry", "sensitivit"]).rename(columns={"sensitivit": "sensitivity"}).assign(fid=lambda df: range(len(df)))
 
 

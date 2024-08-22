@@ -65,7 +65,7 @@ class ALCParcels(DataFrameModel):
             "Agricultural buildings",
             "Open water",
             "Land not surveyed".
-        proportion: proportion of Parcel geometry overlapping with ALC geometry, separated by alc_grade.
+        proportion: proportion of Parcel Geometry(crs=SRID) overlapping with ALC geometry, separated by alc_grade.
     """
 
     id_parcel: str = Field()

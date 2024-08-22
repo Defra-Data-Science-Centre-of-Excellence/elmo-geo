@@ -47,7 +47,7 @@ class SpatialPriorityParcels(DataFrameModel):
 
 
 def _clean_dataset(ds: Dataset) -> gpd.GeoDataFrame:
-    """Only keep the geometry and simplify the cat column renaming to spatial_priority, explode geoms.
+    """Only keep the Geometry(crs=SRID) and simplify the cat column renaming to spatial_priority, explode geoms.
 
     `cat` column is renamed `spatial_priority`, and values are simplified to be one of {'Premium', 'High', 'Low'}.
     """

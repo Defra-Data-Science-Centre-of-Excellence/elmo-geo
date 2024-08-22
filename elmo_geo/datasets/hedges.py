@@ -41,7 +41,7 @@ class RPAHedgesParcels(DataFrameModel):
 
     Attributes:
         id_parcel: 11 character RPA reference parcel ID (including the sheet ID) e.g. `SE12263419`.
-        proportion: proportion of Parcel geometry overlapping with feature geometry.
+        proportion: proportion of Parcel Geometry(crs=SRID) overlapping with feature geometry.
     """
 
     id_parcel: str = Field()

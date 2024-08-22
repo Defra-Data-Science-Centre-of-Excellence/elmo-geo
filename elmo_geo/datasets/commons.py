@@ -10,7 +10,7 @@ from pandera import DataFrameModel, Field
 from pandera.dtypes import Category
 from pandera.engines.pandas_engine import Geometry
 
-from elmo_geo.etl import DerivedDataset, SourceDataset
+from elmo_geo.etl import SRID, DerivedDataset, SourceDataset
 from elmo_geo.etl.transformations import join_parcels
 
 from .rpa_reference_parcels import reference_parcels
@@ -32,7 +32,7 @@ class CommonsRaw(DataFrameModel):
 
     name: str = Field(coerce=True)
     source: Category = Field(coerce=True, isin=["BPS_RCL", "BPS_RCL & CROW", "CROW", "HISTORIC2001?"])
-    geometry: Geometry = Field(coerce=True)
+    geometry: Geometry(crs=SRID) = Field(coerce=True)
 
 
 commons_raw = SourceDataset(
@@ -51,7 +51,7 @@ class CommonsParcels(DataFrameModel):
     Attributes:
         id_parcel: 11 character RPA reference parcel ID (including the sheet ID) e.g. `SE12263419`.
         conclusive: Is this area conclusively common land, or only suggested by historic data sources.
-        proportion: proportion of Parcel geometry overlapping with feature geometry.
+        proportion: proportion of Parcel Geometry(crs=SRID) overlapping with feature geometry.
     """
 
     id_parcel: str = Field()

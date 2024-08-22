@@ -10,7 +10,7 @@ from functools import partial
 from pandera import DataFrameModel, Field
 from pandera.engines.pandas_engine import Geometry
 
-from elmo_geo.etl import DerivedDataset, SourceDataset
+from elmo_geo.etl import SRID, DerivedDataset, SourceDataset
 from elmo_geo.etl.transformations import join_parcels
 
 from .rpa_reference_parcels import reference_parcels
@@ -50,7 +50,7 @@ class LivingEnglandHabitatMapPhase4Raw(DataFrameModel):
     A_prob: float = Field(coerce=True, ge=0, le=100)
     B_pred: str = Field(coerce=True)
     B_prob: float = Field(coerce=True, ge=0, le=100)
-    geometry: Geometry = Field(coerce=True)
+    geometry: Geometry(crs=SRID) = Field(coerce=True)
 
 
 living_england_habitat_map_phase_4_raw = SourceDataset(
@@ -88,7 +88,7 @@ class LivingEnglandHabitatMapPhase4Parcel(DataFrameModel):
     Attributes:
         id_parcel: 11 character RPA reference parcel ID (including the sheet ID) e.g. `SE12263419`.
         A_pred: The most likely habitat.
-        proportion: proportion of Parcel geometry overlapping with feature geometry.
+        proportion: proportion of Parcel Geometry(crs=SRID) overlapping with feature geometry.
     """
 
     id_parcel: str = Field()
