@@ -30,16 +30,16 @@ from .fc_woodland_sensitivity import (
 )
 from .ons_itl import itl2_boundaries_parcels, itl2_boundaries_raw
 from .protected_areas import (
-    jncc_spa_raw,
     jncc_spa_parcels,
-    ne_marine_conservation_zones_raw,
+    jncc_spa_raw,
     ne_marine_conservation_zones_parcels,
-    ne_nnr_raw,
+    ne_marine_conservation_zones_raw,
     ne_nnr_parcels,
-    ne_ramsar_raw,
+    ne_nnr_raw,
     ne_ramsar_parcels,
-    ne_sac_raw,
+    ne_ramsar_raw,
     ne_sac_parcels,
+    ne_sac_raw,
     ne_sssi_units_parcels,
     ne_sssi_units_raw,
 )
