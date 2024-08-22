@@ -1,40 +1,40 @@
 """Office of National Statistics (ONS) Open GeoPortal Layers, provided by DASH.
 
-This is a collection of official subdivisions of England[^ONS Geographies], these are typically used to limit analysis to domains of interest or identify
+This is a collection of official subdivisions of England[^ons_geographies], these are typically used to limit analysis to domains of interest or identify
 regional bias.
 
-| Dataset Name | Short Name | Domain | Similar | Example/Notes |
-| ------------ | ---------- | ------ | ------- | ------- |
-| [Countries][^country] | | UK | | England, Northern Ireland, Scotland, Wales |
-| [International Territorial Level 1][^itl1] | ITL1/Regions | UK | "Regions"[^ONS Geographies] | |
-| [International Territorial Level 2][^itl2] | ITL2 | UK | "Counties and groups of counties"[^ONS Geographies] | |
-| [International Territorial Level 3][^itl2] | ITL3 | UK | "Counties and groups of unitary authorities"[^ONS Geographies] | Not available on DASH. |
-| [Councils][^council] | | UK |
-| [Counties and Unitary Authorities][^cau] | CAU | England |
-| [Local Authority Districts][^lad] | LAD | England |
-| [Wards][^ward] | | England |
-| [Parishes][^parish] | | England |
+| Dataset Name | Short Name | Domain | Notes |
+| ------------ | ---------- | ------ | ----- |
+| Countries[^country] | | UK, BFE | These are; England, Northern Ireland, Scotland, Wales. |
+| International Territorial Level 1[^region] | ITL1 / Regions | UK, BFE | ITL1s are also known as "Regions"[^ons_geographies] | |
+| International Territorial Level 2[^itl2] | ITL2 | UK, BGC | ITL2s are "counties and groups of counties"[^ons_geographies] | |
+| International Territorial Level 3[^itl2] | ITL3 | UK | ITL3s are "counties and groups of unitary authorities"<br>**Currently not available on DASH.** |
+| Counties and Unitary Authorities[^cau] | CAU | England, BFE |
+| Local Authority Districts[^lad] | LAD | England, BFE |
+| Wards[^ward] | | England, BFE |
+| Built Up Areas[^bua] | BAU | Great Britain, BGG | BUAs are not administrative boundaries.<br>**BUAs are useful for defining "rural". |
 
-| Resolution | Code | Description |
+| Resolution[^ons_geoportal] | Code | Description |
 | ---------- | ---- | ----------- |
-| Full Extent | BFE | Full resolution boundaries go to the Extent of the Realm (Low Water Mark) and are the most detailed of the boundaries. |
-| Full Clipped | BFC | Full resolution boundaries that are clipped to the coastline (Mean High Water mark). |
-| Generalised Clipped | BGC | Generalised to 20m and clipped to the coastline (Mean High Water mark) and more generalised than the BFE boundaries. |
-| Super Generalised Clipped | BSC | Generalised to 200m and clipped to the coastline (Mean High Water mark). |
-| Ultra Generalised Clipped | BUC | Generalised to 500m and clipped to the coastline (Mean High Water mark). |
-| Grid, Extent | BGE | Grid formed of equally sized cells which extend beyond the coastline. |
-| Generalised, Grid | BGG | Generalised 50m grid squares. |
+| Boundary Full Extent | BFE | Full resolution boundaries go to the Extent of the Realm (Low Water Mark) and are the most detailed of the boundaries. |
+| Boundary Full Clipped | BFC | Full resolution boundaries that are clipped to the coastline (Mean High Water mark). |
+| Boundary Generalised Clipped | BGC | Generalised to 20m and clipped to the coastline (Mean High Water mark) and more generalised than the BFE boundaries. |
+| Boundary Super Generalised Clipped | BSC | Generalised to 200m and clipped to the coastline (Mean High Water mark). |
+| Boundary Ultra Generalised Clipped | BUC | Generalised to 500m and clipped to the coastline (Mean High Water mark). |
+| Boundary Grid Extent | BGE | Grid formed of equally sized cells which extend beyond the coastline. |
+| Boundary Grid Generalised | BGG | Generalised 50m grid squares. |
 
-[^ONS Geographies]: https://www.ons.gov.uk/methodology/geography/ukgeographies/
-[^itl1]:
-[^itl2]: https://geoportal.statistics.gov.uk/datasets/6750ae0351c749c4b40b31e5740233a0_0/explore?location=54.959130%2C-3.316600%2C6.04
-[^itl3]:
-[^country]:
-[^council]:
-[^cau]:
-[^lad]:
-[^ward]:
-[^parish]:
+[^ons_geographies]: https://www.ons.gov.uk/methodology/geography/ukgeographies/
+[^ons_geographies_pdf]: https://www.arcgis.com/sharing/rest/content/items/0f1aa7078628466ea4429dfa8393d87d/data
+[^ons_geoportal]: https://geoportal.statistics.gov.uk/
+[^country]: https://geoportal.statistics.gov.uk/datasets/8295b10303ce46c982f62af3733b9405_0/
+[^region]: https://geoportal.statistics.gov.uk/datasets/ba75af3e4a00492ca30945ded570b183_0/
+[^itl2]: https://geoportal.statistics.gov.uk/datasets/6750ae0351c749c4b40b31e5740233a0_0/
+[^itl3]: https://geoportal.statistics.gov.uk/datasets/c769b68ed2f34da7a936da425cf6d853_0/
+[^cau]: https://geoportal.statistics.gov.uk/datasets/445118cc2e3b495aa81afa3925bfb0d9_0/
+[^lad]: https://geoportal.statistics.gov.uk/datasets/3cba595dd06848f68879e3f2c3604f7e_0/
+[^ward]: https://geoportal.statistics.gov.uk/datasets/3f28a3b7919b4a579b34c0823b386a51_0/
+[^bua]: https://geoportal.statistics.gov.uk/datasets/53c633a774634385bb3ec5344f6bd4e2_0/
 """
 
 from functools import partial
@@ -202,10 +202,6 @@ itl2_parcels = DerivedDataset(
     dependencies=[reference_parcels, itl2_raw],
     model=ITL2Parcels,
 )
-
-
-# ITL3
-# TODO
 
 
 # Counties and Unitary Authorities (CAUs)

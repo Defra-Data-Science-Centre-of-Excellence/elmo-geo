@@ -34,7 +34,7 @@ from .fc_woodland_sensitivity import (
 from .hedges import rpa_hedges_parcels, rpa_hedges_raw  # TODO: link, parcel_boundary_segments
 from .living_england import living_england_habitat_map_phase_4_parcel, living_england_habitat_map_phase_4_raw  # TODO: link
 from .moor import moorline_parcel, moorline_raw  # TODO: link, gpkg
-from .ons import (  # TODO: links*2, itl3
+from .ons import (
     bua_parcels,
     bua_raw,
     country_parcels,
