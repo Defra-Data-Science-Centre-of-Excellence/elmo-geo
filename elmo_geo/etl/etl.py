@@ -33,7 +33,6 @@ FILE_FMT: str = "{name}-{date}-{hsh}.parquet"
 PAT_FMT: str = "(^{name}-[\d_]+-{hsh}.parquet$)"
 PAT_DATE: str = "(?<=^{name}-)([\d_]+)(?=-{hsh}.parquet$)"
 SRID: int = 27700
-EXPORTS_FOLDER: str = "elmo-geo-exports"
 
 
 class NotGeoError(Exception):
@@ -177,22 +176,26 @@ class Dataset(ABC):
             HTML download link for exported data.
         """
         fname, _ = os.path.splitext(self.filename)
-        path_exp = f"/dbfs/FileStore/{EXPORTS_FOLDER}/{fname}.{ext}"
+        path_exp = f"/dbfs/FileStore/elmo-geo-downloads/{fname}.{ext}"
 
-        if not os.path.exists(path_exp):
-            if ext == "parquet":
-                shutil.copy(self.path, path_exp)
-            elif self.is_geo:
-                if ext == "gpkg":
-                    f_tmp = "/tmp/{self.name}.{ext}"
-                    self.gdf().to_file(f_tmp)
-                    shutil.copy(f_tmp, path_exp)
-                else:
-                    self.gdf().to_file(path_exp)
-            elif ext == "csv":
-                self.pdf().to_csv(path_exp)
+        if os.path.exists(path_exp):
+            LOG.info("Export file already exists. Returning download link.")
+            return download_link(path_exp)
+
+        LOG.info("Exporting file to FileStore/elmo-geo-downloads/.")
+        if ext == "parquet":
+            path_exp = self.path
+        elif self.is_geo:
+            if ext == "gpkg":
+                f_tmp = f"/tmp/{self.name}.{ext}"
+                self.gdf().to_file(f_tmp)
+                shutil.copy(f_tmp, path_exp)
             else:
-                raise NotImplementedError(f"Requested export format '{ext}' for non-spatial data not currently supported.")
+                self.gdf().to_file(path_exp)
+        elif ext == "csv":
+            self.pdf().to_csv(path_exp)
+        else:
+            raise NotImplementedError(f"Requested export format '{ext}' for non-spatial data not currently supported.")
         return download_link(path_exp)
 
     @classmethod

@@ -3,16 +3,24 @@ import shutil
 import zipfile
 
 from elmo_geo.utils.dbr import displayHTML, spark
+from elmo_geo.utils.log import LOG
 from elmo_geo.utils.misc import dbfs
 
 
 def zip_folder(path_in, path_out):
-    with zipfile.ZipFile(path_out, "w", zipfile.ZIP_DEFLATED) as zipf:
-        for root, _, files in os.walk(path_in):
-            for file in files:
+    LOG.info(f"Zipping directory {path_in} to {path_out}")
+    zipf = zipfile.ZipFile(path_out, "w", zipfile.ZIP_DEFLATED)
+    zipf._seekable = False
+    for root, _, files in os.walk(path_in):
+        for file in files:
+            try:
                 filepath = os.path.join(root, file)
                 arcname = os.path.relpath(filepath, path_in)
                 zipf.write(filepath, arcname)
+            except Exception as err:
+                LOG.error(err)
+                LOG.error(f"Failed to write file {filepath} to zip archive {path_out}. Arcname = {arcname}")
+    zipf.close()
 
 
 def download_link(filepath: str, name: str = None, return_over_display: bool = False) -> str:
@@ -32,10 +40,11 @@ def download_link(filepath: str, name: str = None, return_over_display: bool = F
         path = filepath.replace(f"{filestore}/", "")
     else:
         if os.path.isdir(filepath):
-            path = f"downloads/{name}.zip"
-            zip_folder(filepath, f"{filestore}/{path}")
+            path = f"elmo-geo-downloads/{name}.zip"
+            if not os.path.exists(f"{filestore}/{path}"):
+                zip_folder(filepath, f"{filestore}/{path}")
         else:
-            path = f"downloads/{name}"
+            path = f"elmo-geo-downloads/{name}"
             shutil.copy(filepath, f"{filestore}/{path}")
     workspace = spark.conf.get("spark.databricks.workspaceUrl")
     org = spark.conf.get("spark.databricks.clusterUsageTags.orgId")
