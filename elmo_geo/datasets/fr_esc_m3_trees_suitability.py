@@ -75,11 +75,12 @@ class ESCTreeSuitabilityModel(DataFrameModel):
         n_species: The number of tree species averaged to give the suitability score
     """
 
-    id_parcel: str = Field(coerce=True,nullable=False)
-    nopeatArea: float = Field(coerce=True,nullable=False)
-    period_T1_T2: Category = Field(coerce=True, nullable=False, 
-                                   isin = ["2029_2036-2021_2036", "2037_2050-2021_2050", "2051_2100-2021_2100", "2021_2028-2021_2028"])
-    woodland_type: Category = Field(coerce=True,nullable=False, isin = ["coniferous", "broadleaved", "riparian"])
+    id_parcel: str = Field(coerce=True, nullable=False)
+    nopeatArea: float = Field(coerce=True, nullable=False)
+    period_T1_T2: Category = Field(
+        coerce=True, nullable=False, isin=["2029_2036-2021_2036", "2037_2050-2021_2050", "2051_2100-2021_2100", "2021_2028-2021_2028"]
+    )
+    woodland_type: Category = Field(coerce=True, nullable=False, isin=["coniferous", "broadleaved", "riparian"])
     suitability: float = Field(coerce=True, nullable=False)
     n_species: int = Field(coerce=True, nullable=False)
 
@@ -131,10 +132,10 @@ def _transform(
     woodland types for multiple modelled time periods. Returned dataset has a single row per parcel id."""
 
     sdf_all = None
-    for dataset, woodland_type in zip([esc_broadleaved, esc_coniferous, esc_riparian], 
-                                      ["broadleaved", "coniferous", "riparian"],
-                                      ):
-        
+    for dataset, woodland_type in zip(
+        [esc_broadleaved, esc_coniferous, esc_riparian],
+        ["broadleaved", "coniferous", "riparian"],
+    ):
         drop_cols = []
         if woodland_type == "coniferous":
             # Coniferious dataset has incorrect values in the RC columns. Drop these
@@ -142,12 +143,8 @@ def _transform(
             drop_cols = ["RC_area", "RC_suitability", "RC_yield_class"]
 
         # Convert each dataset to long format
-        sdf = (dataset.sdf()
-               .drop(*drop_cols)
-               .transform(_convert_to_long_format)
-               .withColumn("woodland_type", F.lit(woodland_type))
-               )
-        
+        sdf = dataset.sdf().drop(*drop_cols).transform(_convert_to_long_format).withColumn("woodland_type", F.lit(woodland_type))
+
         # Combine into single dataframe
         if sdf_all is None:
             sdf_all = sdf
@@ -155,11 +152,13 @@ def _transform(
             sdf_all = sdf_all.unionByName(sdf, allowMissingColumns=False)
 
     # Return woodland type suitablity
-    return (sdf_all.transform(_calculate_mean_suitability)
-            .withColumn("period_T1_T2", F.expr("CONCAT(period_AA_T1, '-', period_T2)"))
-            .drop("period_AA_T1", "period_T2")
-            .withColumnRenamed("RLR_RW_REFERENCE_PARCELS_DEC_21_LPIS_REF", "id_parcel")
-            .toPandas())
+    return (
+        sdf_all.transform(_calculate_mean_suitability)
+        .withColumn("period_T1_T2", F.expr("CONCAT(period_AA_T1, '-', period_T2)"))
+        .drop("period_AA_T1", "period_T2")
+        .withColumnRenamed("RLR_RW_REFERENCE_PARCELS_DEC_21_LPIS_REF", "id_parcel")
+        .toPandas()
+    )
 
 
 esc_tree_suitability = DerivedDataset(
