@@ -9,18 +9,13 @@ from elmo_geo.utils.misc import dbfs
 
 def zip_folder(path_in, path_out):
     LOG.info(f"Zipping directory {path_in} to {path_out}")
-    zipf = zipfile.ZipFile(path_out, "w", zipfile.ZIP_DEFLATED)
-    zipf._seekable = False
-    for root, _, files in os.walk(path_in):
-        for file in files:
-            try:
+    with zipfile.ZipFile(path_out, "w", zipfile.ZIP_DEFLATED) as zipf:
+        zipf._seekable = False  # required to avoid OSError: [Errno 95] Operation not supported
+        for root, _, files in os.walk(path_in):
+            for file in files:
                 filepath = os.path.join(root, file)
                 arcname = os.path.relpath(filepath, path_in)
                 zipf.write(filepath, arcname)
-            except Exception as err:
-                LOG.error(err)
-                LOG.error(f"Failed to write file {filepath} to zip archive {path_out}. Arcname = {arcname}")
-    zipf.close()
 
 
 def download_link(filepath: str, name: str = None, return_over_display: bool = False) -> str:
