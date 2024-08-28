@@ -31,10 +31,10 @@ def sjoin_and_proportion(
 
     @F.pandas_udf(T.FloatType(), F.PandasUDFType.GROUPED_AGG)
     def _udf_overlap(geometry_left, geometry_right):
-        geometry_left = gpd.GeoSeries.from_wkb(geometry_left)[0]  # Grouby First
-        geometry_right = gpd.GeoSeries.from_wkb(geometry_right).union_all(method='unary')  # Groupby Union
-        intersection = geometry_left.intersection(geometry_right)
-        return max(min(intersection.area / geometry_left.area, 1.0),0.0)
+        geometry_left_first = gpd.GeoSeries.from_wkb(geometry_left)[0]  # since grouping by id_parcel, selecting first g_left gives the parcel geom.
+        geometry_right_union = gpd.GeoSeries.from_wkb(geometry_right).union_all(method='unary')  # combine intersecting feature geometries into single geom.
+        geometry_intersection = geometry_left_first.intersection(geometry_right_union)
+        return max(0, min(1, (geometry_intersection.area / geometry_left_first.area)))
 
     return (
         sjoin(sdf_parcels, sdf_features)
@@ -70,11 +70,11 @@ def join_parcels(
         columns = []
 
     sdf_parcels = (parcels.sdf()
-                   .repartition(1_000)
+                   .repartition(200)
     )
     sdf_features = (
         features.sdf()
-        .repartition(1_000)
+        .repartition(200)
         .withColumn("geometry", load_geometry(encoding_fn=""))
         .withColumn("geometry", F.expr(f"ST_SubDivideExplode(geometry, {max_vertices})"))
     )

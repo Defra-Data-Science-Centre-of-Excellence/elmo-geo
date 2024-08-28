@@ -89,6 +89,7 @@ def test_sjoin_multipolygon_types2():
     prop = df.loc[0, "proportion"]
     assert prop == 0.125
 
+
 @pytest.mark.dbr
 def test_sjoin_multipolygon_types3():
     """Test multi-part parcel geometry intersecting with overlapping
@@ -104,17 +105,19 @@ def test_sjoin_multipolygon_types3():
     prop = df.loc[0, "proportion"]
     assert prop == 0.125
 
+
 @pytest.mark.dbr
 def test_sjoin_multipolygon_types4():
     """Test multi-part parcel geometry intersecting with overlapping
     single part and multi-part features."""
     register()
     parcel_geoms = ["MultiPolygon(((0 0, 0 1, 1 1, 1 0, 0 0)), ((2 2, 2 3, 3 3, 3 2, 2 2)))"]
-    feature_geoms = ["Polygon((0.5 0, 0.5 0.5, 1 0.5, 1 0, 0.5 0))", 
-                     "Polygon((0 0, 0 0.5, 1 0.5, 1 0, 0 0))", 
-                     "LineString(1 1, 2 2)", 
-                     "MultiPolygon(((2 2, 2 2.5, 3 2.5, 3 2, 2 2)), ((4 4, 4 5, 5 5, 5 4, 4 4)))",
-                     ]
+    feature_geoms = [
+        "Polygon((0.5 0, 0.5 0.5, 1 0.5, 1 0, 0.5 0))",
+        "Polygon((0 0, 0 0.5, 1 0.5, 1 0, 0 0))",
+        "LineString(1 1, 2 2)",
+        "MultiPolygon(((2 2, 2 2.5, 3 2.5, 3 2, 2 2)), ((4 4, 4 5, 5 5, 5 4, 4 4)))",
+    ]
 
     df = sjoin_and_proportion(
         *prep_data(parcel_geoms, feature_geoms),

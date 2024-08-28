@@ -9,19 +9,17 @@ def load_missing(column: str) -> callable:
     return F.expr(f"COALESCE({column}, {null})")
 
 
-def load_geometry(column: str = "geometry", encoding_fn: str = "ST_GeomFromWKB") -> callable:
+def load_geometry(column: str = "geometry", encoding_fn: str = "ST_GeomFromWKB", geometry_dim: int | None = None) -> callable:
     """Load Geometry
-    Useful for ingesting data.
-    Missing
-      Check for NULL values and replace with an empty point
-    Encoding
-      encoding_fn; '', 'ST_GeomFromWKB', 'ST_GeomFromWKT'
-    Standardise
-      Force 2D
-      Normalise ordering
-    Optimise
-      0 = 1m precision
-      1 = 1m simplify
+
+    Loads and cleans geometries.
+
+    Parameters:
+      column: The name of the geometry column to load.
+      encoding_fn = Function to load geometries with. Either "ST_GeomFromWKB" or "ST_GeomFromWKB" or "" to
+      apply claening to pre-loaded geometries.
+      geometry_dim: Geometry type to extract from collection. 1 for Point, 2 for LineString, 3 for Polygon.
+
     """
     null = 'ST_GeomFromText("Point EMPTY")'
     string = f"ST_MakeValid({encoding_fn}({column}))"
@@ -29,6 +27,7 @@ def load_geometry(column: str = "geometry", encoding_fn: str = "ST_GeomFromWKB")
     string = f"ST_MakeValid(ST_Force_2D({string}))"
     string = f"ST_MakeValid(ST_SimplifyPreserveTopology({string}, 1))"
     string = f"ST_MakeValid(ST_PrecisionReduce({string}, 0))"
+    string = f"ST_MakeValid(ST_CollectionExtract({string}, {geometry_dim}))" if geometry_dim else string
     string = string + " AS " + column
     return F.expr(string)
 
