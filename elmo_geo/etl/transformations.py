@@ -2,16 +2,55 @@
 
 For use in `elmo.etl.DerivedDataset.func`.
 """
+import geopandas as gpd
 import pandas as pd
 from pyspark.sql import functions as F
+from pyspark.sql import types as T
 
+from elmo_geo.st.geometry import load_geometry
 from elmo_geo.st.join import sjoin
+from elmo_geo.utils.types import SparkDataFrame
 
 from .etl import Dataset
 
 
+def sjoin_and_proportion(
+    sdf_parcels: SparkDataFrame,
+    sdf_features: SparkDataFrame,
+    columns: list[str],
+):
+    """Join a parcels data frame to a features dataframe and calculate the
+    proportion of each parcel that is overlapped by features.
+
+    Parameters:
+        sdf_parcels: The parcels dataframe.
+        sdf_features: The features dataframe.
+        columns: Columns in the features dataframe to include in the group by when calculating
+            the proportion value.
+    """
+
+    @F.pandas_udf(T.FloatType(), F.PandasUDFType.GROUPED_AGG)
+    def _udf_overlap(geometry_left, geometry_right):
+        geometry_left_first = gpd.GeoSeries.from_wkb(geometry_left)[0]  # since grouping by id_parcel, selecting first g_left gives the parcel geom.
+        geometry_right_union = gpd.GeoSeries.from_wkb(geometry_right).union_all(method="unary")  # combine intersecting feature geometries into single geom.
+        geometry_intersection = geometry_left_first.intersection(geometry_right_union)
+        return max(0, min(1, (geometry_intersection.area / geometry_left_first.area)))
+
+    return (
+        sjoin(sdf_parcels, sdf_features)
+        .withColumn("geometry_left", F.expr("ST_AsBinary(geometry_left)"))
+        .withColumn("geometry_right", F.expr("ST_AsBinary(geometry_right)"))
+        .groupby(["id_parcel", *columns])
+        .agg(
+            _udf_overlap("geometry_left", "geometry_right").alias("proportion"),
+        )
+    )
+
+
 def join_parcels(
-    parcels: Dataset, features: Dataset, columns: list[str] | None = None, simplify_tolerence: float = 20.0, max_vertices: int = 256
+    parcels: Dataset,
+    features: Dataset,
+    columns: list[str] | None = None,
 ) -> pd.DataFrame:
     """Spatial join the two datasets and calculate the proportion of the parcel that intersects.
 
@@ -27,39 +66,20 @@ def join_parcels(
     Returns:
         - A Pandas dataframe with `id_parcel`, `proportion` and columns included in the `columns` list.
     """
+    max_vertices = 256
     if columns is None:
         columns = []
-    df_parcels = (
-        parcels.sdf()
-        .select("id_parcel", "geometry")
-        .withColumn("geometry", F.expr("ST_MakeValid(geometry)"))
-        .withColumn("geometry", F.expr("ST_PrecisionReduce(geometry, 3)"))
-        .withColumn("geometry", F.expr(f"ST_SimplifyPreserveTopology(geometry, {simplify_tolerence})"))
-        .withColumn("geometry", F.expr("ST_Force_2D(geometry)"))
-        .withColumn("geometry", F.expr("ST_MakeValid(geometry)"))
-    )
-    df_feature = (
+
+    sdf_parcels = parcels.sdf().repartition(200)
+    sdf_features = (
         features.sdf()
-        .select("geometry", *columns)
-        .withColumn("geometry", F.expr("ST_MakeValid(geometry)"))
-        .withColumn("geometry", F.expr(f"ST_SimplifyPreserveTopology(geometry, {simplify_tolerence})"))
-        .withColumn("geometry", F.expr("ST_MakeValid(geometry)"))
-        .withColumn("geometry", F.expr("ST_Force_2D(geometry)"))
-        .withColumn("geometry", F.expr("ST_MakeValid(geometry)"))
-        .withColumn("geometry", F.expr(f"ST_SubdivideExplode(geometry, {max_vertices})"))
+        .repartition(200)
+        .withColumn("geometry", load_geometry(encoding_fn=""))
+        .withColumn("geometry", F.expr(f"ST_SubDivideExplode(geometry, {max_vertices})"))
     )
-    return (
-        sjoin(df_parcels, df_feature)
-        .groupby("id_parcel", *columns)
-        .agg(
-            F.expr("ST_Union_Aggr(geometry_left) AS geometry_left"),
-            F.expr("ST_Union_Aggr(geometry_right) AS geometry_right"),
-        )
-        .withColumn("geometry_intersection", F.expr("ST_Intersection(geometry_left, geometry_right)"))
-        .withColumn("area_left", F.expr("ST_Area(geometry_left)"))
-        .withColumn("area_intersection", F.expr("ST_Area(geometry_intersection)"))
-        .withColumn("proportion", F.col("area_intersection") / F.col("area_left"))
-        .drop("area_left", "area_intersection", "geometry_left", "geometry_right", "geometry_intersection")
-        .toPandas()
-        .assign(proportion=lambda df: df.proportion.clip(upper=1.0))
-    )
+
+    return sjoin_and_proportion(
+        sdf_parcels,
+        sdf_features,
+        columns=columns,
+    ).toPandas()

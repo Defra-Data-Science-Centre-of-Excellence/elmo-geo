@@ -99,7 +99,7 @@ def info_sdf(sdf: SparkDataFrame, f: str = None, geometry_column: str = "geometr
         {df}
     """
     )
-    return df
+    return sdf
 
 
 def snake_case(string: str) -> str:
