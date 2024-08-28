@@ -30,7 +30,7 @@ def test_to_gdf_from_sdf():
     register()
 
     for c in ["geometry", "geometry_test"]:
-        gdf_in = gpd.GeoDataFrame({c: [Point(0, 0).wkb], "id": [0]})
+        gdf_in = gpd.GeoDataFrame({c: [Point(0, 0)], "id": [0]})
         sdf = to_sdf(gdf_in, column=c)
 
         gdf_out = to_gdf(
