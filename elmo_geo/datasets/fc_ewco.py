@@ -23,7 +23,7 @@ _join_parcels = partial(join_parcels, columns=["spatial_priority"])
 class EwcoClean(DataFrameModel):
     """Model describing the Forestry Commission's EWCO Nature Recovery Priority Habitat dataset.
 
-    Parameters:
+    Attributes:
         geometry: The sensitivity classification's geospatial extent (polygons).
         spatial_priority: The spatial priority, one of `{'Premium', 'High', 'Lower'}`.
     """
@@ -35,7 +35,7 @@ class EwcoClean(DataFrameModel):
 class SpatialPriorityParcels(DataFrameModel):
     """Model describing the EWCO Nature Recovery Priority Habitat parcel-level dataset.
 
-    Parameters:
+    Attributes:
         id_parcel: 11 character RPA reference parcel ID (including the sheet ID) e.g. `SE12263419`.
         spatial_priority: The spatial priority, one of `{'Premium', 'High', 'Lower'}`.
         proportion: The proportion of the parcel that intersects with the spatial priority.

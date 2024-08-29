@@ -9,6 +9,12 @@ from elmo_geo.utils.log import LOG
 from .commons import commons_parcels, commons_raw  # TODO: is_conclusive, gpkg
 from .defra_alc import alc_parcels, alc_raw
 from .defra_flood_risk_areas import flood_risk_areas_parcels, flood_risk_areas_raw
+from .defra_priority_habitats import (
+    defra_grassland_proximity_parcels,
+    defra_heathland_proximity_parcels,
+    defra_priority_habitat_england,
+    defra_priority_habitat_parcels,
+)
 from .fc_ewco import (
     ewco_nature_recovery_priority_habitat,
     ewco_nature_recovery_priority_habitat_parcels,
@@ -59,7 +65,7 @@ from .protected_landscapes import (  # TODO: test_combine
     protected_landscapes_parcels,
     protected_landscapes_tidy,
 )
-from .rpa_reference_parcels import reference_parcels
+from .rpa_reference_parcels import reference_parcels, reference_parcels_raw, reference_parcels_raw_no_sbi
 
 # TODO: test they work
 
@@ -88,6 +94,16 @@ catalogue = [
     lad_raw,
     moorline_parcel,
     moorline_raw,
+    defra_priority_habitat_england,
+    defra_priority_habitat_parcels,
+    defra_heathland_proximity_parcels,
+    defra_grassland_proximity_parcels,
+    ewco_nature_recovery_priority_habitat_parcels,
+    ewco_nature_recovery_priority_habitat_raw,
+    ewco_nature_recovery_priority_habitat,
+    ewco_nature_recovery_priority_habitat_parcels,
+    reference_parcels_raw,
+    reference_parcels_raw_no_sbi,
     reference_parcels,
     region_parcels,
     region_raw,
@@ -96,18 +112,18 @@ catalogue = [
     sfi_agroforestry_raw,
     ward_parcels,
     ward_raw,
+    woodland_creation_sensitivity_raw,
     woodland_creation_sensitivity,
     woodland_creation_sensitivity_parcels,
-    woodland_creation_sensitivity_raw,
+    woodland_creation_sensitivity_var1_raw,
     woodland_creation_sensitivity_var1,
     woodland_creation_sensitivity_var1_parcels,
-    woodland_creation_sensitivity_var1_raw,
+    woodland_creation_sensitivity_var2_raw,
     woodland_creation_sensitivity_var2,
     woodland_creation_sensitivity_var2_parcels,
-    woodland_creation_sensitivity_var2_raw,
+    woodland_creation_sensitivity_var3_raw,
     woodland_creation_sensitivity_var3,
     woodland_creation_sensitivity_var3_parcels,
-    woodland_creation_sensitivity_var3_raw,
 ]
 """List of datasets in `elmo_geo`."""
 

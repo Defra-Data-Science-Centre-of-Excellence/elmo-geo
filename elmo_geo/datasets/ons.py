@@ -9,7 +9,7 @@ regional bias.
 | International Territorial Level 1[^region] | ITL1 / Regions | UK, BFE | ITL1s are also known as "Regions"[^ons_geographies] | |
 | International Territorial Level 2[^itl2] | ITL2 | UK, BGC | ITL2s are "counties and groups of counties"[^ons_geographies] | |
 | International Territorial Level 3[^itl2] | ITL3 | UK | ITL3s are "counties and groups of unitary authorities"<br>**Currently not available on DASH.** |
-| Counties and Unitary Authorities[^cau] | CAU | England, BFE |
+| Counties and Unitary Authorities[^cua] | CUA | England, BFE |
 | Local Authority Districts[^lad] | LAD | England, BFE |
 | Wards[^ward] | | England, BFE |
 | Built Up Areas[^bua] | BAU | Great Britain, BGG | BUAs are not administrative boundaries.<br>**BUAs are useful for defining "rural". |
@@ -32,7 +32,7 @@ regional bias.
 [^region]: https://geoportal.statistics.gov.uk/datasets/ba75af3e4a00492ca30945ded570b183_0/
 [^itl2]: https://geoportal.statistics.gov.uk/datasets/6750ae0351c749c4b40b31e5740233a0_0/
 [^itl3]: https://geoportal.statistics.gov.uk/datasets/c769b68ed2f34da7a936da425cf6d853_0/
-[^cau]: https://geoportal.statistics.gov.uk/datasets/445118cc2e3b495aa81afa3925bfb0d9_0/
+[^cua]: https://geoportal.statistics.gov.uk/datasets/445118cc2e3b495aa81afa3925bfb0d9_0/
 [^lad]: https://geoportal.statistics.gov.uk/datasets/3cba595dd06848f68879e3f2c3604f7e_0/
 [^ward]: https://geoportal.statistics.gov.uk/datasets/3f28a3b7919b4a579b34c0823b386a51_0/
 [^bua]: https://geoportal.statistics.gov.uk/datasets/53c633a774634385bb3ec5344f6bd4e2_0/
