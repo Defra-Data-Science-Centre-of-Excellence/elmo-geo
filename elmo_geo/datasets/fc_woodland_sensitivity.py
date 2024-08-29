@@ -24,12 +24,12 @@ class WoodlandSensitivityClean(DataFrameModel):
     """Model describing the Forestry Commission's England Woodland Creation Sensitivity Maps.
 
     Attributes:
-        geometry: The sensitivity classification's geospatial extent (polygons).
         sensitivity: The sensitivity classification, one of `{Unsuitable, High, Medium, Low}`.
+        geometry: The sensitivity classification's geospatial extent (polygons).
     """
 
+    sensitivity: Category = Field(coerce=True, isin=["Unsuitable", "High", "Medium", "Low"])
     geometry: Geometry(crs=SRID) = Field(coerce=True)
-    sensitivity: Category = Field(coerce=True)
 
 
 class WoodlandSensitivityParcels(DataFrameModel):
@@ -41,13 +41,13 @@ class WoodlandSensitivityParcels(DataFrameModel):
         proportion: The proportion of the parcel that intersects with the sensitivity classification.
     """
 
-    id_parcel: str
-    sensitivity: Category = Field(coerce=True)
+    id_parcel: str = Field()
+    sensitivity: Category = Field(coerce=True, isin=["Unsuitable", "High", "Medium", "Low"])
     proportion: float = Field(ge=0, le=1)
 
 
 def _clean_dataset(ds: Dataset) -> gpd.GeoDataFrame:
-    """Only keep the Geometry(crs=SRID) and the sensitivity col, fixing typo in colname."""
+    """Only keep the geometry and the sensitivity col, fixing typo in colname."""
     return ds.gdf(columns=["geometry", "sensitivit"]).rename(columns={"sensitivit": "sensitivity"}).assign(fid=lambda df: range(len(df)))
 
 
