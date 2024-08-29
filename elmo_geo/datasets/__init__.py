@@ -6,7 +6,7 @@ from pathlib import Path
 from elmo_geo import register
 from elmo_geo.utils.log import LOG
 
-from .commons import commons_parcels, commons_raw  # TODO: is_conclusive, gpkg
+# from .commons import commons_parcels, commons_raw  # TODO: is_conclusive, gpkg
 from .defra_alc import alc_parcels, alc_raw
 from .defra_flood_risk_areas import flood_risk_areas_parcels, flood_risk_areas_raw
 from .defra_priority_habitats import (
@@ -37,7 +37,8 @@ from .fc_woodland_sensitivity import (
     woodland_creation_sensitivity_var3_parcels,
     woodland_creation_sensitivity_var3_raw,
 )
-from .hedges import rpa_hedges_parcels, rpa_hedges_raw  # TODO: parcel_boundary_segments
+
+# from .hedges import rpa_hedges_parcels, rpa_hedges_raw  # TODO: parcel_boundary_segments
 from .living_england import living_england_habitat_map_phase_4_parcel, living_england_habitat_map_phase_4_raw
 from .moor import moorline_parcel, moorline_raw  # TODO: gpkg
 from .ons import (
@@ -56,10 +57,11 @@ from .ons import (
     ward_parcels,
     ward_raw,
 )
-from .os import *  # noqa TODO: blocker geoparquet
-from .osm import osm_parcel, osm_raw, osm_tidy  # TODO: fn_osm_tidy
+
+# from .os import *  # noqa TODO: blocker geoparquet
+# from .osm import osm_parcel, osm_raw, osm_tidy  # TODO: fn_osm_tidy
 from .peat import peaty_soils_parcels, peaty_soils_raw
-from .protected_landscapes import (  # TODO: test_combine
+from .protected_landscapes import (
     national_landscapes_raw,
     national_parks_raw,
     protected_landscapes_parcels,
@@ -67,33 +69,17 @@ from .protected_landscapes import (  # TODO: test_combine
 )
 from .rpa_reference_parcels import reference_parcels, reference_parcels_raw, reference_parcels_raw_no_sbi
 
-# TODO: test they work
-
-
 catalogue = [
-    alc_parcels,
     alc_raw,
-    bua_parcels,
+    alc_parcels,
     bua_raw,
-    commons_parcels,
-    commons_raw,
-    country_parcels,
+    bua_parcels,
+    # commons_raw,
+    # commons_parcels,
     country_raw,
-    cua_parcels,
+    country_parcels,
     cua_raw,
-    flood_risk_areas_parcels,
-    flood_risk_areas_raw,
-    ewco_nature_recovery_priority_habitat,
-    ewco_nature_recovery_priority_habitat_parcels,
-    ewco_nature_recovery_priority_habitat_raw,
-    itl2_parcels,
-    itl2_raw,
-    living_england_habitat_map_phase_4_parcel,
-    living_england_habitat_map_phase_4_raw,
-    lad_parcels,
-    lad_raw,
-    moorline_parcel,
-    moorline_raw,
+    cua_parcels,
     defra_priority_habitat_england,
     defra_priority_habitat_parcels,
     defra_heathland_proximity_parcels,
@@ -101,17 +87,26 @@ catalogue = [
     ewco_nature_recovery_priority_habitat_parcels,
     ewco_nature_recovery_priority_habitat_raw,
     ewco_nature_recovery_priority_habitat,
-    ewco_nature_recovery_priority_habitat_parcels,
+    flood_risk_areas_raw,
+    flood_risk_areas_parcels,
+    itl2_raw,
+    itl2_parcels,
+    living_england_habitat_map_phase_4_raw,
+    living_england_habitat_map_phase_4_parcel,
+    lad_raw,
+    lad_parcels,
+    moorline_raw,
+    moorline_parcel,
     reference_parcels_raw,
     reference_parcels_raw_no_sbi,
     reference_parcels,
-    region_parcels,
     region_raw,
+    region_parcels,
+    sfi_agroforestry_raw,
     sfi_agroforestry,
     sfi_agroforestry_parcels,
-    sfi_agroforestry_raw,
-    ward_parcels,
     ward_raw,
+    ward_parcels,
     woodland_creation_sensitivity_raw,
     woodland_creation_sensitivity,
     woodland_creation_sensitivity_parcels,
