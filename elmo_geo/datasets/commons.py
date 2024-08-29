@@ -2,7 +2,7 @@
 
 Common Land Amalgamation merges Registered Common Land (BPS Layer), CRoW Act 2000 Section 4, Historic Common Land.
 
-[^DASH: Search "common"]: TODO
+[^DASH: Search "common"]: https://app.powerbi.com/groups/de0d7293-1d23-4194-869d-a4ff2ed2d169/reports/c8802134-4f3b-484e-bf14-1ed9f8881450?ctid=770a2450-0227-4c62-90c7-4e38537f1102&pbi_source=linkShare&bookmarkGuid=b7ecc75d-5130-4fb5-8518-86bcb6161ca4
 """
 from functools import partial
 
@@ -55,7 +55,7 @@ class CommonsParcels(DataFrameModel):
     """
 
     id_parcel: str = Field()
-    conclusive: bool = Field()  # TODO: gdf["conclusive"] = gdf["source"] in ['CROW', 'BPS_RCL', 'BPS_RCL & CROW']
+    conclusive: bool = Field()  # TODO: gdf["conclusive"] = gdf["source"].isin(['CROW', 'BPS_RCL', 'BPS_RCL & CROW'])
     proportion: float = Field(ge=0, le=1)
 
 

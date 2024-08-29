@@ -3,7 +3,8 @@
 Peaty Soils is a simplified England Peat Status GHG and C storage (Peat Layer).
 Peat Layer contains many more features and columns than Peaty Soils, but they are the same total area to 1ha.
 
-[^DASH: Search "peat"]: TODO
+[^DASH: Peaty Soils]: https://app.powerbi.com/groups/de0d7293-1d23-4194-869d-a4ff2ed2d169/reports/c8802134-4f3b-484e-bf14-1ed9f8881450?ctid=770a2450-0227-4c62-90c7-4e38537f1102&pbi_source=linkShare&bookmarkGuid=093de660-dc9d-4bf4-bf82-deeb3aa69dc6
+[^DASH: Search "peat"]: https://app.powerbi.com/groups/de0d7293-1d23-4194-869d-a4ff2ed2d169/reports/c8802134-4f3b-484e-bf14-1ed9f8881450?ctid=770a2450-0227-4c62-90c7-4e38537f1102&pbi_source=linkShare&bookmarkGuid=efe914ce-17ad-44c4-b3d5-21a5f07e7929
 """
 from functools import partial
 

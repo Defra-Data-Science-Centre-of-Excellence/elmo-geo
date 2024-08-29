@@ -1,6 +1,6 @@
 """Agricultural Land Classification (ALC) from Defra, provided by DASH.
 
-[^DASH: ALC]: TODO
+[^DASH: ALC]: https://app.powerbi.com/groups/de0d7293-1d23-4194-869d-a4ff2ed2d169/reports/c8802134-4f3b-484e-bf14-1ed9f8881450?ctid=770a2450-0227-4c62-90c7-4e38537f1102&pbi_source=linkShare&bookmarkGuid=627cd3a2-c9d0-4fb6-824d-5cee8dc5f867
 [^GeoPortal API]: https://services.arcgis.com/JJzESW51TqeY9uat/ArcGIS/rest/services/Provisional%20Agricultural%20Land%20Classification%20(ALC)%20(England)/FeatureServer
 [^ALC Guidelines 1988]: https://webarchive.nationalarchives.gov.uk/ukgwa/20130402200910/http://archive.defra.gov.uk/foodfarm/landmanage/land-use/documents/alc-guidelines-1988.pdf
 """

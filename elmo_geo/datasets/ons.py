@@ -24,6 +24,7 @@ regional bias.
 | Boundary Grid Extent | BGE | Grid formed of equally sized cells which extend beyond the coastline. |
 | Boundary Grid Generalised | BGG | Generalised 50m grid squares. |
 
+[^DASH: ONS]: https://app.powerbi.com/groups/de0d7293-1d23-4194-869d-a4ff2ed2d169/reports/c8802134-4f3b-484e-bf14-1ed9f8881450?ctid=770a2450-0227-4c62-90c7-4e38537f1102&pbi_source=linkShare&bookmarkGuid=0132cbdc-349d-44d2-b2bd-6aa036b90421
 [^ons_geographies]: https://www.ons.gov.uk/methodology/geography/ukgeographies/
 [^ons_geographies_pdf]: https://www.arcgis.com/sharing/rest/content/items/0f1aa7078628466ea4429dfa8393d87d/data
 [^ons_geoportal]: https://geoportal.statistics.gov.uk/
