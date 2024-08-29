@@ -73,7 +73,6 @@ class NESSSIUnitsParcels(DataFrameModel):
 
 
 ne_sssi_units_raw = SourceDataset(
-    is_geo=False,
     name="ne_sssi_units_raw",
     level0="bronze",
     level1="ne",
