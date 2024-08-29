@@ -99,4 +99,15 @@ def to_geoparquet_zsorted(sdf: SparkDataFrame, f: str, **kwargs):
     return sdf
 
 
+def to_pq(df, **kwargs):
+    if isinstance(df, SparkDataFrame):
+        df.write.format("parquet").partitionBy(self.partition_cols).formatsave(self._new_path, mode="overwrite")
+    elif isinstance(df, gpd.GeoDataFrame):
+        gpd_to_partitioned_parquet(df, path=self._new_path, partition_cols=self.partition_cols)
+    elif isinstance(df, pd.DataFrame):
+        df.to_parquet(path=self._new_path, partition_cols=self.partition_cols)
+    else:
+        msg = f"Expected Spark, GeoPandas or Pandas dataframe, recieved {type(df)}."
+        raise TypeError(msg)
+
 to_gpq = to_geoparquet_partitioned

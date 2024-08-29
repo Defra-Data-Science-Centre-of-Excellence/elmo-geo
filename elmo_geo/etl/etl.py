@@ -20,7 +20,7 @@ import pandas as pd
 from pandera import DataFrameModel
 from pyspark.sql.dataframe import DataFrame as SparkDataFrame
 
-from elmo_geo.io import gpd_to_partitioned_parquet
+from elmo_geo.io import to_pq
 from elmo_geo.utils.log import LOG
 from elmo_geo.utils.misc import load_sdf
 
@@ -215,11 +215,10 @@ class SourceDataset(Dataset):
         LOG.info(f"Creating '{self.name}' dataset.")
         if self.is_geo:
             if Path(self.source_path).suffix == ".parquet":
-                gdf = gpd.read_parquet(self.source_path)
+                df = gpd.read_parquet(self.source_path)
             else:
-                gdf = gpd.read_file(self.source_path)
-            gdf = self._validate(gdf)
-            gpd_to_partitioned_parquet(gdf, path=self._new_path, partition_cols=self.partition_cols)
+                df = gpd.read_file(self.source_path)
+            df = self._validate(df)
         else:
             if Path(self.source_path).suffix == ".parquet":
                 df = pd.read_parquet(self.source_path)
@@ -228,7 +227,7 @@ class SourceDataset(Dataset):
             else:
                 raise UnknownFileExtension()
             df = self._validate(df)
-            # TODO: to partitioned parquet
+        to_pq(df)
         LOG.info(f"Saved to '{self.path}'.")
 
 
@@ -281,13 +280,5 @@ class DerivedDataset(Dataset):
         LOG.info(f"Creating '{self.name}' dataset.")
         df = self.func(*self.dependencies)
         df = self._validate(df)
-        if isinstance(df, SparkDataFrame):
-            df.write.format("parquet").partitionBy(self.partition_cols).formatsave(self._new_path, mode="overwrite")
-        elif isinstance(df, gpd.GeoDataFrame):
-            gpd_to_partitioned_parquet(df, path=self._new_path, partition_cols=self.partition_cols)
-        elif isinstance(df, pd.DataFrame):
-            df.to_parquet(path=self._new_path, partition_cols=self.partition_cols)
-        else:
-            msg = f"Expected Spark, GeoPandas or Pandas dataframe, recieved {type(df)}."
-            raise TypeError(msg)
+        to_pq(df)
         LOG.info(f"Saved to '{self.path}'.")
