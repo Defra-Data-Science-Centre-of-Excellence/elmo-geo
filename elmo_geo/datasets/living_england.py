@@ -97,6 +97,7 @@ class LivingEnglandHabitatMapPhase4Parcel(DataFrameModel):
 
 
 living_england_habitat_map_phase_4_parcel = DerivedDataset(
+    is_geo=False,
     name="living_england_habitat_map_phase_4_parcel",
     level0="silver",
     level1="living_england",

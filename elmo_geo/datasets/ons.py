@@ -91,6 +91,7 @@ class CountryParcels(DataFrameModel):
 
 
 country_parcels = DerivedDataset(
+    is_geo=False,
     name="country_parcels",
     level0="silver",
     level1="ons",
@@ -143,6 +144,7 @@ class RegionParcels(DataFrameModel):
 
 
 region_parcels = DerivedDataset(
+    is_geo=False,
     name="region_parcels",
     level0="silver",
     level1="ons",
@@ -195,6 +197,7 @@ class ITL2Parcels(DataFrameModel):
 
 
 itl2_parcels = DerivedDataset(
+    is_geo=False,
     name="itl2_parcels",
     level0="silver",
     level1="ons",
@@ -247,6 +250,7 @@ class CUAParcels(DataFrameModel):
 
 
 cua_parcels = DerivedDataset(
+    is_geo=False,
     name="cua_parcels",
     level0="silver",
     level1="ons",
@@ -299,6 +303,7 @@ class LADParcels(DataFrameModel):
 
 
 lad_parcels = DerivedDataset(
+    is_geo=False,
     name="lad_parcels",
     level0="silver",
     level1="ons",
@@ -351,6 +356,7 @@ class WardParcels(DataFrameModel):
 
 
 ward_parcels = DerivedDataset(
+    is_geo=False,
     name="ward_parcels",
     level0="silver",
     level1="ons",
@@ -403,6 +409,7 @@ class BUAParcels(DataFrameModel):
 
 
 bua_parcels = DerivedDataset(
+    is_geo=False,
     name="bua_parcels",
     level0="silver",
     level1="ons",

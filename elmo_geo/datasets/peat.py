@@ -60,6 +60,7 @@ class PeatySoilsParcels(DataFrameModel):
 
 
 peaty_soils_parcels = DerivedDataset(
+    is_geo=False,
     name="peaty_soils_parcels",
     level0="silver",
     level1="defra",

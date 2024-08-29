@@ -49,6 +49,7 @@ class RPAHedgesParcels(DataFrameModel):
 
 
 rpa_hedges_parcels = DerivedDataset(
+    is_geo=False,
     name="rpa_hedges_parcels",
     level0="silver",
     level1="rpa",

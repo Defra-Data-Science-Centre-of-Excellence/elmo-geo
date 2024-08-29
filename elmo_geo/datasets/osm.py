@@ -129,6 +129,7 @@ class OSMParcel(DataFrameModel):
 
 
 osm_parcel = DerivedDataset(
+    is_geo=False,
     name="osm_parcel",
     level0="silver",
     level1="osm",

@@ -53,6 +53,7 @@ class FloodRiskAreasParcels(DataFrameModel):
 
 
 flood_risk_areas_parcels = DerivedDataset(
+    is_geo=False,
     name="flood_risk_areas_parcels",
     level0="silver",
     level1="defra",

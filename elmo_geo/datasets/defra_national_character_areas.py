@@ -67,6 +67,7 @@ class NCAParcels(DataFrameModel):
 
 
 nca_parcels = DerivedDataset(
+    is_geo=False,
     name="nca_parcels",
     level0="silver",
     level1="defra",

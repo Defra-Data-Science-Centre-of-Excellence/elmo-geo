@@ -63,6 +63,7 @@ class MoorlineParcel(DataFrameModel):
 
 
 moorline_parcel = DerivedDataset(
+    is_geo=False,
     name="moorline_parcel",
     level0="silver",
     level1="rpa",

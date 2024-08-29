@@ -78,6 +78,7 @@ class ProtectedLandscapesTidy(DataFrameModel):
 
 
 protected_landscapes_tidy = DerivedDataset(
+    is_geo=False,
     name="protected_landscapes_tidy",
     level0="silver",
     level1="defra",
@@ -103,6 +104,7 @@ class ProtectedLandscapesParcel(DataFrameModel):
 
 
 protected_landscapes_parcels = DerivedDataset(
+    is_geo=False,
     name="protected_landscapes_parcels",
     level0="silver",
     level1="defra",
