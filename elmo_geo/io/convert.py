@@ -35,7 +35,7 @@ def to_gdf(
 ) -> GeoDataFrame:
     """Convert anything-ish to GeoDataFrame"""
     if isinstance(x, GeoDataFrame):
-        gdf = x
+        gdf = x.set_geometry(column)
     elif isinstance(x, SparkDataFrame):
         for c in x.schema:
             if isinstance(c.dataType, SedonaType):
@@ -44,9 +44,9 @@ def to_gdf(
     elif isinstance(x, PandasDataFrame):
         gdf = GeoDataFrame(x, geometry=GeoSeries.from_wkb(x[column]))
     elif isinstance(x, GeoSeries):
-        gdf = x.to_frame()
+        gdf = x.to_frame(name=column)
     elif isinstance(x, BaseGeometry):
-        gdf = GeoSeries(x).to_frame()
+        gdf = GeoSeries(x).to_frame(name=column)
     else:
         raise TypeError(f"Unknown type: {type(x)}")
     return gdf.set_crs(crs)
