@@ -9,9 +9,11 @@ from functools import partial
 from pandera import DataFrameModel, Field
 from pandera.dtypes import Category
 from pandera.engines.pandas_engine import Geometry
+from pyspark.sql import functions as F
 
 from elmo_geo.etl import SRID, DerivedDataset, SourceDataset
 from elmo_geo.etl.transformations import join_parcels
+from elmo_geo.utils.types import SparkDataFrame
 
 from .rpa_reference_parcels import reference_parcels
 
@@ -45,6 +47,10 @@ commons_raw = SourceDataset(
 )
 
 
+def fn_conclusive(sdf: SparkDataFrame) -> SparkDataFrame:
+    return sdf.withColumn("conclusive", F.expr()).drop("source")
+
+
 class CommonsParcels(DataFrameModel):
     """Model for Defra ALC with parcel dataset.
 
@@ -60,11 +66,12 @@ class CommonsParcels(DataFrameModel):
 
 
 commons_parcels = DerivedDataset(
+    is_geo=False,
     name="commons_parcels",
     level0="silver",
     level1="defra",
     restricted=False,
-    func=partial(join_parcels, columns=["conclusive"]),
+    func=partial(join_parcels, columns=["conclusive"], fn_pre=fn_conclusive),
     dependencies=[reference_parcels, commons_raw],
     model=CommonsParcels,
 )
