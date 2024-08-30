@@ -11,18 +11,19 @@ from elmo_geo.st.geometry import load_geometry
 from elmo_geo.st.join import sjoin
 from elmo_geo.utils.types import SparkDataFrame
 
-from .etl import Dataset
+from .etl import Dataset, DerivedDataset
 
 
-def combine_wide(*datasets: list[Dataset], sources: list[str] | None = None) -> SparkDataFrame:
-    """Join multiple derived datasets together using the rpa parcel id to create one big table.
+def combine_wide(*datasets: list[DerivedDataset], sources: list[str] | None = None) -> SparkDataFrame:
+    """Join multiple DerivedDatasets together using the rpa parcel id to create a wide table.
 
     Parameters:
-        *datasets: dependent data updated names, this will make the table easier to understand
-        i.e. replacing the duplicated proportion field with the source dataset name.
-        sources: dependent dataset names for joining, these are the derived datasets joind to the RPA parcels
+        *datasets: Datasets to join together. Must contain an 'id_parcel' field.
+        sources: Dataset shorthand names. Used to rename 'proportion' fields.
     """
     sdf = None
+    if sources is None:
+        sources = [None]*len(datasets)
     for dataset, source in zip(datasets, sources):
         _sdf = dataset.sdf()
         if source is None:
