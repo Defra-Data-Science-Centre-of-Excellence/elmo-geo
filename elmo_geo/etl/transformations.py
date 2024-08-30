@@ -23,7 +23,7 @@ def combine_wide(*datasets: list[DerivedDataset], sources: list[str] | None = No
     """
     sdf = None
     if sources is None:
-        sources = [None]*len(datasets)
+        sources = [None] * len(datasets)
     for dataset, source in zip(datasets, sources):
         _sdf = dataset.sdf()
         if source is None:
