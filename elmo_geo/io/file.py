@@ -50,6 +50,9 @@ def write_parquet(df: DataFrame, path: str, partition_cols: str | None = None):
     if Path(path).exists():
         LOG.warning(f"Replacing Dataset: {path}")
         shutil.rmtree(path)
+
+    Path(path).parent.mkdir(parents=True, exist_ok=True)
+
     if isinstance(df, SparkDataFrame):
         if "geometry" in df.columns:
             df.withColumn("geometry", F.expr("ST_AsBinary(geometry)"))
