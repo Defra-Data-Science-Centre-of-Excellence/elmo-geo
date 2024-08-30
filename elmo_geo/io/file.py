@@ -2,7 +2,7 @@ import shutil
 from pathlib import Path
 
 from geopandas.io.arrow import _geopandas_to_arrow
-from pyarrow.dataset import write_dataset
+from pyarrow.parquet import write_to_dataset
 from pyspark.sql import functions as F
 
 from elmo_geo.utils.log import LOG
@@ -22,7 +22,7 @@ def to_parquet(df: DataFrame, path: str, partition_cols: str | None = None):
     def to_gpqs(df):
         "geopandas writer as partial function"
         table = _geopandas_to_arrow(df)
-        write_dataset(table, path, format="parquet", partition_cols=partition_cols)
+        write_to_dataset(table, path, partition_cols=partition_cols)
 
     if Path(path).exists():
         LOG.warning("Replacing Dataset")
