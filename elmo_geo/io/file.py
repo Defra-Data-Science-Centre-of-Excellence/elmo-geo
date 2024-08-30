@@ -19,7 +19,7 @@ def to_parquet(df: DataFrame, path: str, partition_cols: str | None = None):
         partition_cols: Column to write the output as separate files.
     """
 
-    def to_gpq(df):
+    def to_gpqs(df):
         "geopandas writer as partial function"
         table = _geopandas_to_arrow(df)
         write_dataset(table, path, format="parquet", partition_cols=partition_cols)
@@ -28,9 +28,9 @@ def to_parquet(df: DataFrame, path: str, partition_cols: str | None = None):
         LOG.warning("Replacing Dataset")
         shutil.rmtree(path)
     if isinstance(df, SparkDataFrame):
-        df.withColumn("geometry", F.expr("ST_AsBinary(geometry)")).groupby(partition_cols).applyInPandas(to_gpq, "")
+        df.withColumn("geometry", F.expr("ST_AsBinary(geometry)")).groupby(partition_cols).applyInPandas(to_gpqs, "")
     elif isinstance(df, GeoDataFrame):
-        to_gpq(df)
+        to_gpqs(df)
     elif isinstance(df, PandasDataFrame):
         df.to_parquet(path, partition_cols=partition_cols)
     else:
