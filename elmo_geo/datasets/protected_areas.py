@@ -1,4 +1,4 @@
-"""Protected Areas for Conservation identified using guidance written by the JNCC protected areas include:
+"""Protected Areas for Conservation identified using guidance written by the JNCC. Protected areas include:
 
 - Sites of Special Scientific Interest (SSSI)
     Sites of Special Scientific Interest Site (SSSI) Units are divisions of SSSIs based on habitat,
@@ -11,7 +11,7 @@
     A National Nature Reserve (NNR) is the land declared under the National Parks and Access
     to the Countryside Act 1949 or Wildlife and Countryside Act (1981) as amended. The data does not include "proposed" sites. 
 
-- Special areas of Conservation (SAC)
+- Special Areas of Conservation (SAC)
     A Special Area of Conservation (SAC) is the land designated under Directive 92/43/EEC on the Conservation of
     Natural Habitats and of Wild Fauna and Flora. Data supplied has the status of "Candidate". The data does not include "proposed" Sites.
 
