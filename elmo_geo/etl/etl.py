@@ -96,9 +96,16 @@ class Dataset(ABC):
 
     @property
     def file_matches(self) -> list[str]:
-        """List of files that match the file path but may have different dates."""
+        """List of files that match the file path but may have different dates.
+
+        Return in order of newest to oldest.
+        """
         pat = re.compile(PAT_FMT.format(name=self.name, hsh=self._hash))
-        return [y.group(0) for y in [pat.fullmatch(x) for x in os.listdir(self.path_dir)] if y is not None]
+        return sorted(
+            [y.group(0) for y in [pat.fullmatch(x) for x in os.listdir(self.path_dir)] if y is not None],
+            key=lambda x: os.path.getmtime(self.path_dir + x),
+            reverse=True,
+        )
 
     @property
     def filename(self) -> str:

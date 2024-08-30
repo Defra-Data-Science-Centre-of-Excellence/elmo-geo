@@ -1,7 +1,7 @@
-import pandas as pd
-import numpy as np
-import re
 import os
+
+import numpy as np
+import pandas as pd
 
 from elmo_geo.etl import DerivedDataset, SourceDataset
 
@@ -16,10 +16,12 @@ test_source_dataset = SourceDataset(
 """Test SourceDataset
 """
 
+
 def _make_test_dataset():
     np.random.seed(1)
-    n=10
-    return pd.DataFrame({"id":range(n), "class":["a","b"]*int(n/2), "val":np.random.rand(n)})
+    n = 10
+    return pd.DataFrame({"id": range(n), "class": ["a", "b"] * int(n / 2), "val": np.random.rand(n)})
+
 
 test_derived_dataset = DerivedDataset(
     name="test_derived_dataset",
@@ -35,9 +37,7 @@ test_derived_dataset = DerivedDataset(
 
 
 def test_loads_most_recent_data():
-    paths = [os.path.join(test_derived_dataset.path_dir, x) 
-             for x in os.listdir(test_derived_dataset.path_dir)
-             if test_derived_dataset.name in x]
-    most_recent = sorted(paths, key =  os.path.getmtime, reverse=True)[0]
+    paths = [os.path.join(test_derived_dataset.path_dir, x) for x in os.listdir(test_derived_dataset.path_dir) if test_derived_dataset.name in x]
+    most_recent = sorted(paths, key=os.path.getmtime, reverse=True)[0]
 
     assert test_derived_dataset.path == most_recent
