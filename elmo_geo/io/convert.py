@@ -9,7 +9,7 @@ from pyspark.sql import functions as F
 from pyspark.sql import types as T
 
 from elmo_geo import LOG
-from elmo_geo.io.file import to_parquet
+from elmo_geo.io.file import write_parquet
 from elmo_geo.st.geometry import load_geometry
 from elmo_geo.st.index import sindex
 from elmo_geo.utils.dbr import spark
@@ -153,7 +153,7 @@ def partition_geoparquet(f_in: str, f_out: str, columns: dict) -> SparkDataFrame
         .withColumn("geometry", load_geometry())
         .withColumn("geometry", F.expr("EXPLODE(ST_Dump(geometry))"))
         .transform(sindex, method="BNG", resolution="10km", index_fn="chipped_index")
-        .transform(to_parquet, f_out)
+        .transform(write_parquet, f_out)
     )
 
 
