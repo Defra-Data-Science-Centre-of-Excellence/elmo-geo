@@ -34,10 +34,15 @@ from .fc_woodland_sensitivity import (
     woodland_creation_sensitivity_var3_parcels,
     woodland_creation_sensitivity_var3_raw,
 )
+from .fr_esc_m3_trees_suitability import esc_suitability_broadleaved_raw, esc_suitability_coniferous_raw, esc_suitability_riparian_raw, esc_tree_suitability
 from .ons_itl import itl2_boundaries_parcels, itl2_boundaries_raw
 from .rpa_reference_parcels import reference_parcels, reference_parcels_raw, reference_parcels_raw_no_sbi
 
 catalogue = [
+    esc_suitability_broadleaved_raw,
+    esc_suitability_coniferous_raw,
+    esc_suitability_riparian_raw,
+    esc_tree_suitability,
     defra_priority_habitat_england,
     defra_priority_habitat_parcels,
     defra_heathland_proximity_parcels,
