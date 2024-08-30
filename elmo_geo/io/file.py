@@ -28,7 +28,9 @@ def to_parquet(df: DataFrame, path: str, partition_cols: str | None = None):
         LOG.warning("Replacing Dataset")
         shutil.rmtree(path)
     if isinstance(df, SparkDataFrame):
-        df.withColumn("geometry", F.expr("ST_AsBinary(geometry)")).groupby(partition_cols).applyInPandas(to_gpqs, "")
+        if "geometry" in df.columns:
+            df.withColumn("geometry", F.expr("ST_AsBinary(geometry)"))
+        df.groupby(partition_cols).applyInPandas(to_gpqs, "")
     elif isinstance(df, GeoDataFrame):
         to_gpqs(df)
     elif isinstance(df, PandasDataFrame):
