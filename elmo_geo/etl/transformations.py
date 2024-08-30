@@ -11,7 +11,26 @@ from elmo_geo.st.geometry import load_geometry
 from elmo_geo.st.join import sjoin
 from elmo_geo.utils.types import SparkDataFrame
 
-from .etl import Dataset
+from .etl import Dataset, DerivedDataset
+
+
+def combine_wide(*datasets: list[DerivedDataset], sources: list[str] | None = None) -> SparkDataFrame:
+    """Join multiple DerivedDatasets together using the rpa parcel id to create a wide table.
+
+    Parameters:
+        *datasets: Datasets to join together. Must contain an 'id_parcel' field.
+        sources: Dataset shorthand names. Used to rename 'proportion' fields.
+    """
+    sdf = None
+    if sources is None:
+        sources = [None] * len(datasets)
+    for dataset, source in zip(datasets, sources):
+        _sdf = dataset.sdf()
+        if source is None:
+            source = dataset.name
+        _sdf = _sdf.withColumnRenamed("proportion", f"proportion_{source}")
+        sdf = sdf.join(_sdf, on="id_parcel") if sdf else _sdf
+    return sdf.toPandas()
 
 
 def sjoin_and_proportion(
@@ -29,7 +48,7 @@ def sjoin_and_proportion(
             the proportion value.
     """
 
-    @F.pandas_udf(T.FloatType(), F.PandasUDFType.GROUPED_AGG)
+    @F.pandas_udf(T.DoubleType(), F.PandasUDFType.GROUPED_AGG)
     def _udf_overlap(geometry_left, geometry_right):
         geometry_left_first = gpd.GeoSeries.from_wkb(geometry_left)[0]  # since grouping by id_parcel, selecting first g_left gives the parcel geom.
         geometry_right_union = gpd.GeoSeries.from_wkb(geometry_right).union_all(method="unary")  # combine intersecting feature geometries into single geom.

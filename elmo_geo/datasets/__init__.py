@@ -36,9 +36,37 @@ from .fc_woodland_sensitivity import (
 )
 from .fr_esc_m3_trees_suitability import esc_suitability_broadleaved_raw, esc_suitability_coniferous_raw, esc_suitability_riparian_raw, esc_tree_suitability
 from .ons_itl import itl2_boundaries_parcels, itl2_boundaries_raw
+from .protected_areas import (
+    jncc_spa_parcels,
+    jncc_spa_raw,
+    ne_marine_conservation_zones_parcels,
+    ne_marine_conservation_zones_raw,
+    ne_nnr_parcels,
+    ne_nnr_raw,
+    ne_ramsar_parcels,
+    ne_ramsar_raw,
+    ne_sac_parcels,
+    ne_sac_raw,
+    ne_sssi_units_parcels,
+    ne_sssi_units_raw,
+    protected_areas_parcels,
+)
 from .rpa_reference_parcels import reference_parcels, reference_parcels_raw, reference_parcels_raw_no_sbi
 
 catalogue = [
+    protected_areas_parcels,
+    ne_sssi_units_raw,
+    ne_sssi_units_parcels,
+    ne_nnr_raw,
+    ne_nnr_parcels,
+    ne_sac_raw,
+    ne_sac_parcels,
+    jncc_spa_raw,
+    jncc_spa_parcels,
+    ne_ramsar_raw,
+    ne_ramsar_parcels,
+    ne_marine_conservation_zones_raw,
+    ne_marine_conservation_zones_parcels,
     esc_suitability_broadleaved_raw,
     esc_suitability_coniferous_raw,
     esc_suitability_riparian_raw,
