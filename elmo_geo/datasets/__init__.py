@@ -53,6 +53,7 @@ from .protected_areas import (
 from .rpa_reference_parcels import reference_parcels, reference_parcels_raw, reference_parcels_raw_no_sbi
 
 catalogue = [
+    protected_areas_parcels,
     ne_sssi_units_raw,
     ne_sssi_units_parcels,
     ne_nnr_raw,
