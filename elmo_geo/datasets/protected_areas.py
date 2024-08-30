@@ -332,17 +332,16 @@ ne_marine_conservation_zones_parcels = DerivedDataset(
 )
 
 
-# Protected Areas One Big Table
 class ProtectedAreasParcels(DataFrameModel):
-    """Model for creating one big table that pulls together the proportion fields for each protected area dervived dataset linked to parcels.
+    """Model for one wide table that pulls together the proportion fields for each protected area dervived dataset linked to parcels.
     Attributes:
         id_parcel: 11 character RPA reference parcel ID (including the sheet ID) e.g. `SE12263419`.
-        sssi: The proportion of the parcel that intersects with sssi sites.
-        nnr: The proportion of the parcel that intersects with nnr sites.
-        sac: The proportion of the parcel that intersects with sac sites.
-        spa: The proportion of the parcel that intersects with spa sites.
-        ramsar: The proportion of the parcel that intersects with ramsar sites.
-        mcz: The proportion of the parcel that intersects with mcz sites."""
+        proportion_sssi: The proportion of the parcel that intersects with sssi sites.
+        proportion_nnr: The proportion of the parcel that intersects with nnr sites.
+        proportion_sac: The proportion of the parcel that intersects with sac sites.
+        proportion_spa: The proportion of the parcel that intersects with spa sites.
+        proportion_ramsar: The proportion of the parcel that intersects with ramsar sites.
+        proportion_mcz: The proportion of the parcel that intersects with mcz sites."""
 
     id_parcel: str = Field(coerce=True)
     proportion_sssi: float = Field(ge=0, le=1)
