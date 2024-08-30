@@ -1,4 +1,4 @@
-""" Protected Areas for Conservation identified using guidance written by the JNCC protected areas include:
+"""Protected Areas for Conservation identified using guidance written by the JNCC protected areas include:
 
 - Sites of Special Scientific Interest (SSSI)
     Sites of Special Scientific Interest Site (SSSI) Units are divisions of SSSIs based on habitat,
