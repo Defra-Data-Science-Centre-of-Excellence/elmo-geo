@@ -48,6 +48,7 @@ from .protected_areas import (
     ne_sac_raw,
     ne_sssi_units_parcels,
     ne_sssi_units_raw,
+    protected_areas_parcels,
 )
 from .rpa_reference_parcels import reference_parcels, reference_parcels_raw, reference_parcels_raw_no_sbi
 

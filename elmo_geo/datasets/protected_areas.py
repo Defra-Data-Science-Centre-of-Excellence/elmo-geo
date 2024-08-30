@@ -16,14 +16,14 @@
     Natural Habitats and of Wild Fauna and Flora. Data supplied has the status of "Candidate". The data does not include "proposed" Sites.
 
 - Special Protection Area (SPAs)
-    Special Protection Areas (SPAs) with "marine components" protect bird species that are dependent on the marine environment
+    Special Protection Areas (SPAs) protect bird species that are dependent on the marine environment
     for all or part of their lifecycle, where these species are found in association with intertidal or subtidal habitats within the site.
     JNCC collates boundary and attribute data on Special Protection Areas (SPAs) on behalf of the
     Country Nature Conservation Bodies (CNCBs) to create a dataset of inshore and offshore sites across the UK. 
 
 - Ramsar
     A Ramsar site is the land listed as a Wetland of International Importance under the Convention on Wetlands of International Importance
-    Especially as Waterfowl Habitat (the Ramsar Convention) 1973. Data supplied has the status of "Listed". The data does not include "proposed" sites.
+    Especially as Waterfowl Habitat (the Ramsar Convention) 1973.
 
 - Marine Conservation Zones
     These are the boundaries for Marine Conservation Zones, and Highly Protected Marine Areas,
@@ -35,11 +35,13 @@
 JNCC guidance available here: https://jncc.gov.uk/our-work/uk-protected-areas/"""
 
 
+from functools import partial
+
 from pandera import DataFrameModel, Field
 from pandera.engines.pandas_engine import Geometry
 
 from elmo_geo.etl import SRID, DerivedDataset, SourceDataset
-from elmo_geo.etl.transformations import join_parcels
+from elmo_geo.etl.transformations import combine_wide, join_parcels
 
 from .rpa_reference_parcels import reference_parcels
 
@@ -63,7 +65,7 @@ class NESSSIUnitsRaw(DataFrameModel):
 class NESSSIUnitsParcels(DataFrameModel):
     """Model for Natural England Sites of Special Scientific Interest (SSSI) dataset joined with Rural Payment Agency parcel dataset.
 
-    Parameters:
+    Attributes:
         id_parcel: 11 character RPA reference parcel ID (including the sheet ID) e.g. `SE12263419`.
         proportion: The proportion of the parcel that intersects with the sssi units
     """
@@ -82,6 +84,7 @@ ne_sssi_units_raw = SourceDataset(
 )
 
 ne_sssi_units_parcels = DerivedDataset(
+    is_geo=False,
     name="ne_sssi_units_parcels",
     level0="silver",
     level1="ne",
@@ -109,7 +112,7 @@ class NENNRRaw(DataFrameModel):
 class NESSSINNRParcels(DataFrameModel):
     """Model for Natural England National Nature Reserves (NNR) dataset joined with Rural Payment Agency parcel dataset.
 
-    Parameters:
+    Attributes:
         id_parcel: 11 character RPA reference parcel ID (including the sheet ID) e.g. `SE12263419`.
         proportion: The proportion of the parcel that intersects with the National Nature Reserves.
     """
@@ -129,6 +132,7 @@ ne_nnr_raw = SourceDataset(
 
 
 ne_nnr_parcels = DerivedDataset(
+    is_geo=False,
     name="ne_nnr_parcels",
     level0="silver",
     level1="ne",
@@ -176,6 +180,7 @@ ne_sac_raw = SourceDataset(
 
 
 ne_sac_parcels = DerivedDataset(
+    is_geo=False,
     name="ne_sac_parcels",
     level0="silver",
     level1="ne",
@@ -222,6 +227,7 @@ jncc_spa_raw = SourceDataset(
 
 
 jncc_spa_parcels = DerivedDataset(
+    is_geo=False,
     name="jncc_spa_parcels",
     level0="silver",
     level1="jncc",
@@ -268,6 +274,7 @@ ne_ramsar_raw = SourceDataset(
 
 
 ne_ramsar_parcels = DerivedDataset(
+    is_geo=False,
     name="ne_ramsar_parcels",
     level0="silver",
     level1="ne",
@@ -314,6 +321,7 @@ ne_marine_conservation_zones_raw = SourceDataset(
 
 
 ne_marine_conservation_zones_parcels = DerivedDataset(
+    is_geo=False,
     name="ne_marine_conservation_zones_parcels",
     level0="silver",
     level1="ne",
@@ -321,4 +329,37 @@ ne_marine_conservation_zones_parcels = DerivedDataset(
     func=join_parcels,
     dependencies=[reference_parcels, ne_marine_conservation_zones_raw],
     model=NEMarineConservationZonesParcels,
+)
+
+
+# Protected Areas One Big Table
+class ProtectedAreasParcels(DataFrameModel):
+    """Model for creating one big table that pulls together the proportion fields for each protected area dervived dataset linked to parcels.
+    Attributes:
+        id_parcel: 11 character RPA reference parcel ID (including the sheet ID) e.g. `SE12263419`.
+        sssi: The proportion of the parcel that intersects with sssi sites.
+        nnr: The proportion of the parcel that intersects with nnr sites.
+        sac: The proportion of the parcel that intersects with sac sites.
+        spa: The proportion of the parcel that intersects with spa sites.
+        ramsar: The proportion of the parcel that intersects with ramsar sites.
+        mcz: The proportion of the parcel that intersects with mcz sites."""
+
+    id_parcel: str = Field(coerce=True)
+    proportion_sssi: float = Field(ge=0, le=1)
+    proportion_nnr: float = Field(ge=0, le=1)
+    proportion_sac: float = Field(ge=0, le=1)
+    proportion_spa: float = Field(ge=0, le=1)
+    proportion_ramsar: float = Field(ge=0, le=1)
+    proportion_mcz: float = Field(ge=0, le=1)
+
+
+protected_areas_parcels = DerivedDataset(
+    is_geo=False,
+    name="protected_areas_parcels",
+    level0="silver",
+    level1="protected_areas_combined",
+    restricted=False,
+    func=partial(combine_wide, sources=["sssi", "nnr", "sac", "spa", "ramsar", "mcz"]),
+    dependencies=[ne_sssi_units_parcels, ne_nnr_parcels, ne_sac_parcels, jncc_spa_parcels, ne_ramsar_parcels, ne_marine_conservation_zones_parcels],
+    model=ProtectedAreasParcels,
 )
