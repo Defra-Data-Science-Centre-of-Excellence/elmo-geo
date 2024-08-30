@@ -20,7 +20,7 @@ import pandas as pd
 from pandera import DataFrameModel
 from pyspark.sql.dataframe import DataFrame as SparkDataFrame
 
-from elmo_geo.io import to_parquet
+from elmo_geo.io import read_file, write_parquet
 from elmo_geo.utils.log import LOG
 from elmo_geo.utils.misc import load_sdf
 
@@ -32,14 +32,6 @@ FILE_FMT: str = "{name}-{date}-{hsh}.parquet"
 PAT_FMT: str = r"(^{name}-[\d_]+-{hsh}.parquet$)"
 PAT_DATE: str = r"(?<=^{name}-)([\d_]+)(?=-{hsh}.parquet$)"
 SRID: int = 27700
-
-
-class NotGeoError(Exception):
-    """The dataset is not geospatial."""
-
-
-class UnknownFileExtension(Exception):
-    """Don't know how to read file with extension."""
 
 
 @dataclass
@@ -213,21 +205,9 @@ class SourceDataset(Dataset):
 
     def refresh(self) -> None:
         LOG.info(f"Creating '{self.name}' dataset.")
-        if self.is_geo:
-            if Path(self.source_path).suffix == ".parquet":
-                df = gpd.read_parquet(self.source_path)
-            else:
-                df = gpd.read_file(self.source_path)
-            df = self._validate(df)
-        else:
-            if Path(self.source_path).suffix == ".parquet":
-                df = pd.read_parquet(self.source_path)
-            elif Path(self.source_path).suffix == ".csv":
-                df = pd.read_csv(self.source_path)
-            else:
-                raise UnknownFileExtension()
-            df = self._validate(df)
-        to_parquet(df)
+        df = read_file(self.source_path, self.is_geo)
+        df = self._validate(df)
+        write_parquet(df, path=self.path, partition_cols=self.partition_cols)
         LOG.info(f"Saved to '{self.path}'.")
 
 
@@ -280,5 +260,5 @@ class DerivedDataset(Dataset):
         LOG.info(f"Creating '{self.name}' dataset.")
         df = self.func(*self.dependencies)
         df = self._validate(df)
-        to_parquet(df, path=self.path, partition_cols=self.partition_cols)
+        write_parquet(df, path=self.path, partition_cols=self.partition_cols)
         LOG.info(f"Saved to '{self.path}'.")
