@@ -20,7 +20,7 @@ import pandas as pd
 from pandera import DataFrameModel
 from pyspark.sql.dataframe import DataFrame as SparkDataFrame
 
-from elmo_geo.io import to_pq
+from elmo_geo.io import to_parquet
 from elmo_geo.utils.log import LOG
 from elmo_geo.utils.misc import load_sdf
 
@@ -227,7 +227,7 @@ class SourceDataset(Dataset):
             else:
                 raise UnknownFileExtension()
             df = self._validate(df)
-        to_pq(df)
+        to_parquet(df)
         LOG.info(f"Saved to '{self.path}'.")
 
 
@@ -280,5 +280,5 @@ class DerivedDataset(Dataset):
         LOG.info(f"Creating '{self.name}' dataset.")
         df = self.func(*self.dependencies)
         df = self._validate(df)
-        to_pq(df)
+        to_parquet(df, path=self.path, partition_cols=self.partition_cols)
         LOG.info(f"Saved to '{self.path}'.")

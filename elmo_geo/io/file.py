@@ -43,7 +43,7 @@ def gdf_to_partitioned_parquet(
     )
 
 
-def to_pq(df: DataFrame, f: str, partition_cols: str | None = None):
+def to_pq(df: DataFrame, path: str, partition_cols: str | None = None):
     """Write any DataFrame to parquet, partition if needed.
 
     Parameters:
@@ -51,14 +51,14 @@ def to_pq(df: DataFrame, f: str, partition_cols: str | None = None):
         f
         partition_cols
     """
-    if Path(f).exists():
-        shutil.rmtree(f)
+    if Path(path).exists():
         LOG.warning("Replacing Dataset")
+        shutil.rmtree(path)
     if isinstance(df, SparkDataFrame):
-        df.withColumn("geometry", F.expr("ST_AsBinary(geometry)")).write.parquet(dbfs(f, True), partitionBy=partition_cols, mode="overwrite")
+        df.withColumn("geometry", F.expr("ST_AsBinary(geometry)")).write.parquet(dbfs(path, True), partitionBy=partition_cols, mode="overwrite")
     elif isinstance(df, GeoDataFrame):
-        gdf_to_partitioned_parquet(df, f, partition_cols=partition_cols)
+        gdf_to_partitioned_parquet(df, path, partition_cols=partition_cols)
     elif isinstance(df, PandasDataFrame):
-        df.to_parquet(f, partition_cols=partition_cols)
+        df.to_parquet(path, partition_cols=partition_cols)
     else:
         raise TypeError(f"Expected Spark, GeoPandas or Pandas dataframe, received {type(df)}.")
