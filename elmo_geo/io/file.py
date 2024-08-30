@@ -11,10 +11,10 @@ from elmo_geo.utils.types import DataFrame, GeoDataFrame, PandasDataFrame, Spark
 
 def to_parquet(df: DataFrame, path: str, partition_cols: str | None = None):
     """Write a DataFrame to parquet and partition.
-    Takes in Spark, Pandas, or GeoPandas dataframe, remove any already written data, and writes a new dataframe.
+    Takes in Spark, Pandas, or GeoPandas dataframe, removes any already written data, checks if it's geospatial, and writes as new parquet dataset.
 
     Parameters:
-        df: Dataframe to be written as (geo)parquet.
+        df: Dataframe to be written as (Geo)Parquet.
         path: Output path to write the data into.
         partition_cols: Column to write the output as separate files.
     """
