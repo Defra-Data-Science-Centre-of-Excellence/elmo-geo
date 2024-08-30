@@ -43,7 +43,7 @@ def gdf_to_partitioned_parquet(
     )
 
 
-def to_pq(df: DataFrame, path: str, partition_cols: str | None = None):
+def to_parquet(df: DataFrame, path: str, partition_cols: str | None = None):
     """Write any DataFrame to parquet, partition if needed.
 
     Parameters:

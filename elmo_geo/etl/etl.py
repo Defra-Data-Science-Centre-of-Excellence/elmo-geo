@@ -29,8 +29,8 @@ SRC_HASH_FMT: str = r"%Y%m%d%H%M%S"
 HASH_LENGTH = 8
 PATH_FMT: str = "/dbfs/mnt/lab/{restricted}/ELM-Project/{level0}/{level1}/"
 FILE_FMT: str = "{name}-{date}-{hsh}.parquet"
-PAT_FMT: str = "(^{name}-[\d_]+-{hsh}.parquet$)"
-PAT_DATE: str = "(?<=^{name}-)([\d_]+)(?=-{hsh}.parquet$)"
+PAT_FMT: str = r"(^{name}-[\d_]+-{hsh}.parquet$)"
+PAT_DATE: str = r"(?<=^{name}-)([\d_]+)(?=-{hsh}.parquet$)"
 SRID: int = 27700
 
 
