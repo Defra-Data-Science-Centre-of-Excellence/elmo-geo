@@ -40,6 +40,6 @@ test_derived_dataset = DerivedDataset(
 @pytest.mark.dbr
 def test_loads_most_recent_data():
     paths = [os.path.join(test_derived_dataset.path_dir, x) for x in os.listdir(test_derived_dataset.path_dir) if test_derived_dataset.name in x]
-    most_recent = sorted(paths, key=os.path.getmtime, reverse=True)[0]
+    dataset_gm = os.path.getmtime(test_derived_dataset.path)
 
-    assert test_derived_dataset.path == most_recent
+    assert all(dataset_gm >= os.path.getmtime(p) for p in paths)
