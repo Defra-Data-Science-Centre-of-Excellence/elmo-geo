@@ -98,7 +98,8 @@ class Dataset(ABC):
     def file_matches(self) -> list[str]:
         """List of files that match the file path but may have different dates.
 
-        Return in order of newest to oldest.
+        Return in order of newest to oldest by the modified date of the path. Does
+        not take into account modified dates of the dataset dependencies.
         """
         pat = re.compile(PAT_FMT.format(name=self.name, hsh=self._hash))
         return sorted(
