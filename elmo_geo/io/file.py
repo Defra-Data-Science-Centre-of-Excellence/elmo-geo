@@ -15,13 +15,13 @@ class UnknownFileExtension(Exception):
     """Don't know how to read file with extension."""
 
 
-def read_file(source_path: str, is_geo: bool) -> PandasDataFrame | GeoDataFrame:
+def read_file(source_path: str, is_geo: bool, layer: int | str | None = None) -> PandasDataFrame | GeoDataFrame:
     path = Path(source_path)
     if is_geo:
         if path.suffix == ".parquet" or path.is_dir():
             df = gpd.read_parquet(path)
         else:
-            df = gpd.read_file(path)
+            df = gpd.read_file(path, layer=layer)
     else:
         if path.suffix == ".parquet" or path.is_dir():
             df = pd.read_parquet(path)

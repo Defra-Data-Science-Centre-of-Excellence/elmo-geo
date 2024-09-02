@@ -20,7 +20,7 @@ import pandas as pd
 from pandera import DataFrameModel
 from pyspark.sql.dataframe import DataFrame as SparkDataFrame
 
-from elmo_geo.io import read_file, write_parquet
+from elmo_geo.io import download_link, read_file, write_parquet
 from elmo_geo.utils.log import LOG
 from elmo_geo.utils.misc import load_sdf
 
