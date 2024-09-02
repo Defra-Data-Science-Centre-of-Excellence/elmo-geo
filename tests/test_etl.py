@@ -8,11 +8,11 @@ from elmo_geo.etl import DerivedDataset, SourceDataset
 
 test_source_dataset = SourceDataset(
     name="test_source_dataset",
-    level0="test",
+    level0="bronze",
     level1="test",
     restricted=False,
     is_geo=False,
-    source_path="/dbfs/mnt/lab/unrestricted/test/test_dataset.parquet",
+    source_path="/dbfs/mnt/lab/unrestricted/elm_data/test/test_dataset.parquet",
 )
 """Test SourceDataset
 """
@@ -26,7 +26,7 @@ def _make_test_dataset():
 
 test_derived_dataset = DerivedDataset(
     name="test_derived_dataset",
-    level0="test",
+    level0="silver",
     level1="test",
     restricted=False,
     is_geo=False,
