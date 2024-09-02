@@ -218,7 +218,6 @@ class SourceDataset(Dataset):
     model: DataFrameModel | None = None
     partition_cols: list[str] | None = None
     is_geo: bool = True
-    layer: int | str | None = None
 
     @property
     def _new_date(self) -> str:
@@ -247,7 +246,7 @@ class SourceDataset(Dataset):
 
     def refresh(self) -> None:
         LOG.info(f"Creating '{self.name}' dataset.")
-        df = read_file(self.source_path, self.is_geo, self.layer)
+        df = read_file(self.source_path, self.is_geo)
         df = self._validate(df)
         write_parquet(df, path=self._new_path, partition_cols=self.partition_cols)
         LOG.info(f"Saved to '{self.path}'.")
