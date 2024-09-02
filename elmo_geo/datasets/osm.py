@@ -24,7 +24,7 @@ class OSMRaw(DataFrameModel):
     """Model for OSM dataset.
 
     Attributes:
-        osm_id: integer unique id for each feature.
+        fid: osm_id is the integer unique id for each feature.
         name: name of the feature.
         ref: ad-hoc geospatial reference to the feature.
         is_in: ad-hoc parent area.
@@ -32,35 +32,21 @@ class OSMRaw(DataFrameModel):
         barrier, highway, place, man_made: are common tags, these are consistent.
         other_tags: is a pearl-like dictionary of other tags, these are inconsistent.
         geometry: Any type geometries in EPSG:27700.
+        layer: layer name, 
     """
 
-    osm_id: int = Field(coerce=True, unique=True)
+    fid: int = Field(coerce=True, unique=True, alias="osm_id")
     name: str = Field(coerce=True, nullable=True)
     ref: str = Field(coerce=True, nullable=True)
     is_in: str = Field(coerce=True, nullable=True)
     address: str = Field(coerce=True, nullable=True)
-    barrier: Category = Field(coerce=True, nullable=True, isin=["gate", "lift_gate", "bollard", "cycle_barrier", "fence"])
-    highway: Category = Field(
-        coerce=True,
-        nullable=True,
-        isin=[
-            "crossing",
-            "traffic_signals",
-            "mini_roundabout",
-            "motorway_junction",
-            "speed_camera",
-            "give_way",
-            "turning_circle",
-            "passing_place",
-            "emergency_bay",
-            "milestone",
-            "street_lamp",
-        ],
-    )
-    place: Category = Field(coerce=True, nullable=True, isin=["city", "village", "suburb", "town"])
-    man_made: Category = Field(coerce=True, nullable=True, isin=["monitoring_station", "surveillance"])
+    barrier: str = Field(coerce=True, nullable=True)
+    highway: str = Field(coerce=True, nullable=True)
+    place: str = Field(coerce=True, nullable=True)
+    man_made: str = Field(coerce=True, nullable=True)
     other_tags: str = Field(coerce=True, nullable=True)
     geometry: Geometry(crs=SRID) = Field(coerce=True)
+    layer: str = Field(coerce)
 
 
 osm_raw = SourceDataset(
@@ -73,12 +59,36 @@ osm_raw = SourceDataset(
 )
 
 
+def tidy_osm_tags(sdf: SparkDataFrame) -> SparkDataFrame:
+    return sdf.selectExpr(
+        "fid",
+        """LOWER(SUBSTRING(CONCAT(
+            NVL(CONCAT(',"highway"=>', highway), ''),
+            NVL(CONCAT(',"waterway"=>', waterway), ''),
+            NVL(CONCAT(',"aerialway"=>', aerialway), ''),
+            NVL(CONCAT(',"barrier"=>', barrier), ''),
+            NVL(CONCAT(',"man_made"=>', man_made), ''),
+            NVL(CONCAT(',"railway"=>', railway), ''),
+            NVL(CONCAT(',', other_tags), '')
+        ), 2)) AS tags""",
+        """CASE
+            WHEN (tags LIKE '%"%hedge%"=>%') THEN "hedge"
+            WHEN (tags LIKE '%"%dry%wall%"=>%') THEN "dry_wall"
+            WHEN (tags LIKE '%"%wall%"=>%' OR tags LIKE '%"%barrier%"=>%') THEN "wall"
+            WHEN (tags LIKE '%"%waterway%"=>%') THEN "watercourse"
+            WHEN (tags LIKE '%"%water%"=>%') THEN "waterbody"
+            WHEN (FALSE) THEN "ditch"
+            ELSE NULL
+        END AS group""",
+        "geometry",
+    )
+
 class OSMTidy(DataFrameModel):
     """Model for OSM with parcel dataset.
 
     Attributes:
-        osm_id: integer unique id for each feature.
-        json_tags: All tags tidied into a single columns containing JSON.
+        fid: integer unique id for each feature.
+        tags: All tags tidied into a single columns containing JSON.
         group: Grouped tags into useful collections:
             hedgerow
             fence
