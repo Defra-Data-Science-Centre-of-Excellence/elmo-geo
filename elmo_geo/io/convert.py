@@ -35,7 +35,7 @@ def to_gdf(
         gdf = GeoSeries(x).to_frame(name=column)
     else:
         raise TypeError(f"Unknown type: {type(x)}")
-    return gdf.set_crs(crs)
+    return gdf.set_crs(crs, allow_override=True)
 
 
 def to_sdf(
