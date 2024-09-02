@@ -10,6 +10,8 @@ from pyspark.sql import functions as F
 from elmo_geo.utils.log import LOG
 from elmo_geo.utils.types import DataFrame, GeoDataFrame, PandasDataFrame, SparkDataFrame
 
+from .convert import to_gdf
+
 
 class UnknownFileExtension(Exception):
     """Don't know how to read file with extension."""
@@ -36,7 +38,7 @@ def read_file(source_path: str, is_geo: bool) -> PandasDataFrame | GeoDataFrame:
     return df
 
 
-def write_parquet(df: DataFrame, path: str, partition_cols: str | None = None):
+def write_parquet(df: DataFrame, path: str, partition_cols: list[str] = []):
     """Write a DataFrame to parquet and partition.
     Takes in Spark, Pandas, or GeoPandas dataframe, remove any already written data, and writes a new dataframe.
 
@@ -47,12 +49,10 @@ def write_parquet(df: DataFrame, path: str, partition_cols: str | None = None):
     """
 
     def to_gpqs(df):
-        "geopandas writer as partial function"
-        table = _geopandas_to_arrow(df)
+        "GeoPandas writer as partial function."
+        table = _geopandas_to_arrow(to_gdf(df))
         write_to_dataset(table, path, partition_cols=partition_cols)
-
-    if partition_cols is None:
-        partition_cols = []
+        return pd.DataFrame([])
 
     path = Path(path)
     if path.exists():
@@ -66,8 +66,8 @@ def write_parquet(df: DataFrame, path: str, partition_cols: str | None = None):
 
     if isinstance(df, SparkDataFrame):
         if "geometry" in df.columns:
-            df.withColumn("geometry", F.expr("ST_AsBinary(geometry)"))
-        df.groupby(partition_cols).applyInPandas(to_gpqs, "")
+            df = df.withColumn("geometry", F.expr("ST_AsBinary(geometry)"))
+        df.groupby(partition_cols).applyInPandas(to_gpqs, "col struct<>").collect()
     elif isinstance(df, GeoDataFrame):
         to_gpqs(df)
     elif isinstance(df, PandasDataFrame):
