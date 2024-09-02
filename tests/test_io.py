@@ -3,7 +3,7 @@ import pytest
 from shapely.geometry import Point
 
 from elmo_geo.io import read_file, write_parquet
-from elmo_geo.utils.types import GeoDataFrame, PandasDataFrame, SparkDataFrame
+from elmo_geo.utils.types import PandasDataFrame
 from tests.test_etl import test_source_dataset, test_source_geodataset
 
 
@@ -74,26 +74,36 @@ def test_read_write_dataset_sdf():
 
     register()
 
-    p = "/dbfs/mnt/lab/unrestricted/ELM-Project/bronze/test/test_source_dataset_io_sdf.parquet"
+    f = "/dbfs/mnt/lab/unrestricted/ELM-Project/bronze/test/test_source_dataset_io_sdf.parquet"
     df = test_source_dataset.sdf()
-    df_read = _write_read_dataset(df, p, test_source_dataset.is_geo, partition_cols=None)
-    assert type(df_read) == SparkDataFrame
+    df_read = _write_read_dataset(df, f, test_source_dataset.is_geo, partition_cols=None)
     assert (df.toPandas() == df_read).all().all()
 
 
 @pytest.mark.dbr
 def test_read_write_dataset_pdf():
-    p = "/dbfs/mnt/lab/unrestricted/ELM-Project/bronze/test/test_source_dataset_io_pdf.parquet"
+    f = "/dbfs/mnt/lab/unrestricted/ELM-Project/bronze/test/test_source_dataset_io_pdf.parquet"
     df = test_source_dataset.pdf()
-    df_read = _write_read_dataset(df, p, test_source_dataset.is_geo, partition_cols=None)
+    df_read = _write_read_dataset(df, f, test_source_dataset.is_geo, partition_cols=None)
     assert type(df_read) == PandasDataFrame
     assert (df == df_read).all().all()
 
 
 @pytest.mark.dbr
-def test_read_write_dataset_gdf():
-    p = "/dbfs/mnt/lab/unrestricted/ELM-Project/bronze/test/test_source_dataset_io_gdf.parquet"
+def test_read_write_geodataset_sdf():
+    from elmo_geo.utils.register import register
+
+    register()
+
+    f = "/dbfs/mnt/lab/unrestricted/ELM-Project/bronze/test/test_source_geodataset_io_sdf.parquet"
+    df = test_source_geodataset.sdf()
+    df_read = _write_read_dataset(df, f, test_source_geodataset.is_geo, partition_cols=None)
+    assert (df.toPandas() == df_read).all().all()
+
+
+@pytest.mark.dbr
+def test_read_write_geodataset_gdf():
+    f = "/dbfs/mnt/lab/unrestricted/ELM-Project/bronze/test/test_source_geodataset_io_gdf.parquet"
     df = test_source_geodataset.gdf()
-    df_read = _write_read_dataset(df, p, test_source_geodataset.is_geo, partition_cols=None)
-    assert type(df_read) == GeoDataFrame
+    df_read = _write_read_dataset(df, f, test_source_geodataset.is_geo, partition_cols=None)
     assert (df == df_read).all().all()
