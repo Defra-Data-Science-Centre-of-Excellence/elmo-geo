@@ -6,7 +6,7 @@ from pathlib import Path
 from elmo_geo import register
 from elmo_geo.utils.log import LOG
 
-# from .commons import commons_parcels, commons_raw  # TODO: is_conclusive, gpkg
+from .commons import commons_parcels, commons_raw
 from .defra_alc import alc_parcels, alc_raw
 from .defra_flood_risk_areas import flood_risk_areas_parcels, flood_risk_areas_raw
 from .defra_priority_habitats import (
@@ -37,10 +37,9 @@ from .fc_woodland_sensitivity import (
     woodland_creation_sensitivity_var3_parcels,
     woodland_creation_sensitivity_var3_raw,
 )
-
-# from .hedges import rpa_hedges_parcels, rpa_hedges_raw  # TODO: parcel_boundary_segments
+from .hedges import rpa_hedges_parcels, rpa_hedges_raw
 from .living_england import living_england_habitat_map_phase_4_parcel, living_england_habitat_map_phase_4_raw
-from .moor import moorline_parcel, moorline_raw  # TODO: gpkg
+from .moor import moorline_parcel, moorline_raw
 from .ons import (
     bua_parcels,
     bua_raw,
@@ -57,9 +56,8 @@ from .ons import (
     ward_parcels,
     ward_raw,
 )
-
-# from .os import *  # noqa TODO: blocker geoparquet
-# from .osm import osm_parcel, osm_raw, osm_tidy  # TODO: fn_osm_tidy
+from .os import os_ngd_raw
+from .osm import osm_parcel, osm_raw, osm_tidy
 from .peat import peaty_soils_parcels, peaty_soils_raw
 from .protected_landscapes import (
     national_landscapes_raw,
@@ -74,8 +72,8 @@ catalogue = [
     alc_parcels,
     bua_raw,
     bua_parcels,
-    # commons_raw,
-    # commons_parcels,
+    commons_raw,  # GPKG
+    commons_parcels,
     country_raw,
     country_parcels,
     cua_raw,
@@ -95,13 +93,19 @@ catalogue = [
     living_england_habitat_map_phase_4_parcel,
     lad_raw,
     lad_parcels,
-    moorline_raw,
+    moorline_raw,  # GPKG
     moorline_parcel,
+    # os_ngd_raw,  # multiple files and layers
+    # osm_raw,  # multiple layers
+    # osm_tidy,  # fn_osm_tidy
+    # osm_parcel,
     reference_parcels_raw,
     reference_parcels_raw_no_sbi,
     reference_parcels,
     region_raw,
     region_parcels,
+    rpa_hedges_raw,
+    # rpa_hedges_parcel,  # TODO: parcel_boundary_segments
     sfi_agroforestry_raw,
     sfi_agroforestry,
     sfi_agroforestry_parcels,

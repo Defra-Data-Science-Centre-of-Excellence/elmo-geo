@@ -58,7 +58,7 @@ class MoorlineParcel(DataFrameModel):
     """
 
     id_parcel: str = Field()
-    name: bool = Field()
+    name: str = Field()
     proportion: float = Field(ge=0, le=1)
 
 

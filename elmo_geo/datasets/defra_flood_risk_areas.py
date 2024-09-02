@@ -48,7 +48,6 @@ class FloodRiskAreasParcels(DataFrameModel):
     """
 
     id_parcel: str = Field()
-    flood_sour: str = Field()
     proportion: float = Field(ge=0, le=1)
 
 

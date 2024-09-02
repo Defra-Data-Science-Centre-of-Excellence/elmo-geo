@@ -48,7 +48,7 @@ commons_raw = SourceDataset(
 
 
 def fn_conclusive(sdf: SparkDataFrame) -> SparkDataFrame:
-    return sdf.withColumn("conclusive", F.expr()).drop("source")
+    return sdf.withColumn("conclusive", F.col("source").isin(["BPS_RCL", "BPS_RCL & CROW", "CROW"])).drop("source")
 
 
 class CommonsParcels(DataFrameModel):

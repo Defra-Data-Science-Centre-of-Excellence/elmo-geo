@@ -39,7 +39,7 @@ class LivingEnglandHabitatMapPhase4Raw(DataFrameModel):
         Unclassified
 
     Attributes:
-        A_pred: Name of the most likely habitat.
+        A_pred: Name of the most likely habitats (comma separated Habitats).
         A_prob: Probability percentage of A_pred.
         B_pred: Name of the second most likely habitat.
         B_prob: Probability percentage of B_pred.
@@ -48,8 +48,8 @@ class LivingEnglandHabitatMapPhase4Raw(DataFrameModel):
 
     A_pred: str = Field(coerce=True)
     A_prob: float = Field(coerce=True, ge=0, le=100)
-    B_pred: str = Field(coerce=True)
-    B_prob: float = Field(coerce=True, ge=0, le=100)
+    B_pred: str = Field(coerce=True, nullable=True)
+    B_prob: float = Field(coerce=True, nullable=True, ge=0, le=100)
     geometry: Geometry(crs=SRID) = Field(coerce=True)
 
 
@@ -66,33 +66,14 @@ living_england_habitat_map_phase_4_raw = SourceDataset(
 class LivingEnglandHabitatMapPhase4Parcel(DataFrameModel):
     """Model for Habitat Map joined to parcels.
 
-    Habitats:
-        Acid, Calcareous, Neutral Grassland
-        Arable and Horticultural
-        Bare Ground
-        Bare Sand
-        Bog
-        Bracken
-        Broadleaved, Mixed and Yew Woodland
-        Built-up Areas and Gardens
-        Coastal Saltmarsh
-        Coastal Sand Dunes
-        Coniferous Woodland
-        Dwarf Shrub Heath
-        Fen, Marsh and Swamp
-        Improved Grassland
-        Scrub
-        Water
-        Unclassified
-
     Attributes:
         id_parcel: 11 character RPA reference parcel ID (including the sheet ID) e.g. `SE12263419`.
-        A_pred: The most likely habitat.
+        A_pred: Name of the most likely habitats.
         proportion: proportion of Parcel Geometry(crs=SRID) overlapping with feature geometry.
     """
 
     id_parcel: str = Field()
-    A_pred: bool = Field()
+    A_pred: str = Field()
     proportion: float = Field(ge=0, le=1)
 
 
