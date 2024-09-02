@@ -87,9 +87,17 @@ class Dataset(ABC):
 
     @property
     def file_matches(self) -> list[str]:
-        """List of files that match the file path but may have different dates."""
+        """List of files that match the file path but may have different dates.
+
+        Return in order of newest to oldest by the modified date of the path. Does
+        not take into account modified dates of the dataset dependencies.
+        """
         pat = re.compile(PAT_FMT.format(name=self.name, hsh=self._hash))
-        return [y.group(0) for y in [pat.fullmatch(x) for x in os.listdir(self.path_dir)] if y is not None]
+        return sorted(
+            [y.group(0) for y in [pat.fullmatch(x) for x in os.listdir(self.path_dir)] if y is not None],
+            key=lambda x: os.path.getmtime(self.path_dir + x),
+            reverse=True,
+        )
 
     @property
     def filename(self) -> str:
@@ -156,6 +164,39 @@ class Dataset(ABC):
         msg = f"'{self.name}' dataset cannot be destroyed as it doesn't exist yet."
         LOG.warning(msg)
 
+    def export(self, ext: str = "parquet") -> str:
+        """Create a copy of the dataset as a monolithic file in the /FileStore/elmo-geo-exports/ folder
+        and return a link to download the file from this location.
+
+        Parameters:
+            ext: File extension to use when saving the dataset.
+
+        Returns:
+            HTML download link for exported data.
+        """
+        fname, _ = os.path.splitext(self.filename)
+        path_exp = f"/dbfs/FileStore/elmo-geo-downloads/{fname}.{ext}"
+
+        if os.path.exists(path_exp):
+            LOG.info("Export file already exists. Returning download link.")
+            return download_link(path_exp)
+
+        LOG.info("Exporting file to FileStore/elmo-geo-downloads/.")
+        if ext == "parquet":
+            path_exp = self.path
+        elif self.is_geo:
+            if ext == "gpkg":
+                f_tmp = f"/tmp/{self.name}.{ext}"
+                self.gdf().to_file(f_tmp)
+                shutil.copy(f_tmp, path_exp)
+            else:
+                self.gdf().to_file(path_exp)
+        elif ext == "csv":
+            self.pdf().to_csv(path_exp)
+        else:
+            raise NotImplementedError(f"Requested export format '{ext}' for non-spatial data not currently supported.")
+        return download_link(path_exp)
+
     @classmethod
     def __type__(cls) -> str:
         return cls.__name__
@@ -177,6 +218,7 @@ class SourceDataset(Dataset):
     model: DataFrameModel | None = None
     partition_cols: list[str] | None = None
     is_geo: bool = True
+    layer: int | str | None = None
 
     @property
     def _new_date(self) -> str:
@@ -205,9 +247,9 @@ class SourceDataset(Dataset):
 
     def refresh(self) -> None:
         LOG.info(f"Creating '{self.name}' dataset.")
-        df = read_file(self.source_path, self.is_geo)
+        df = read_file(self.source_path, self.is_geo, self.layer)
         df = self._validate(df)
-        write_parquet(df, path=self.path, partition_cols=self.partition_cols)
+        write_parquet(df, path=self._new_path, partition_cols=self.partition_cols)
         LOG.info(f"Saved to '{self.path}'.")
 
 
