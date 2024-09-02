@@ -1,6 +1,17 @@
+import os
+
 import geopandas as gpd
 import pytest
 from shapely.geometry import Point
+
+from elmo_geo.io import read_file, write_parquet
+from elmo_geo.utils.types import GeoDataFrame, PandasDataFrame, SparkDataFrame
+from tests.test_etl import test_source_dataset, test_source_geodataset
+
+
+def _write_read_dataset(df, p, is_geo, partition_cols):
+    write_parquet(df, p, partition_cols=partition_cols)
+    return read_file(p, is_geo)
 
 
 @pytest.mark.dbr
@@ -57,3 +68,33 @@ def test_to_sf_basegeometry():
         column="geometry",
         crs=27700,
     )
+
+
+@pytest.mark.dbr
+def test_read_write_dataset_sdf():
+    p = "/dbfs/mnt/lab/unrestricted/ELM-Project/bronze/test/test_source_dataset_io_sdf.parquet"
+    df = test_source_dataset.sdf()
+    df_read = _write_read_dataset(df, p, test_source_dataset.is_geo, partition_cols=None)
+    assert not os.path.isdir(p)
+    assert type(df_read) == SparkDataFrame
+    assert (df.toPandas() == df_read).all().all()
+
+
+@pytest.mark.dbr
+def test_read_write_dataset_pdf():
+    p = "/dbfs/mnt/lab/unrestricted/ELM-Project/bronze/test/test_source_dataset_io_pdf.parquet"
+    df = test_source_dataset.pdf()
+    df_read = _write_read_dataset(df, p, test_source_dataset.is_geo, partition_cols=None)
+    assert not os.path.isdir(p)
+    assert type(df_read) == PandasDataFrame
+    assert (df == df_read).all().all()
+
+
+@pytest.mark.dbr
+def test_read_write_dataset_gdf():
+    p = "/dbfs/mnt/lab/unrestricted/ELM-Project/bronze/test/test_source_dataset_io_gdf.parquet"
+    df = test_source_geodataset.gdf()
+    df_read = _write_read_dataset(df, p, test_source_geodataset.is_geo, partition_cols=None)
+    assert os.path.isdir(p)
+    assert type(df_read) == GeoDataFrame
+    assert (df == df_read).all().all()
