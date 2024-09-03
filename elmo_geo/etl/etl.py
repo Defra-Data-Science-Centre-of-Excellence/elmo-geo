@@ -18,11 +18,11 @@ from pathlib import Path
 import geopandas as gpd
 import pandas as pd
 from pandera import DataFrameModel
-from pyspark.sql.dataframe import DataFrame as SparkDataFrame
 
 from elmo_geo.io import download_link, read_file, write_parquet
 from elmo_geo.utils.log import LOG
 from elmo_geo.utils.misc import load_sdf
+from elmo_geo.utils.types import DataFrame, GeoDataFrame, PandasDataFrame, SparkDataFrame
 
 DATE_FMT: str = r"%Y_%m_%d"
 SRC_HASH_FMT: str = r"%Y%m%d%H%M%S"
@@ -125,7 +125,7 @@ class Dataset(ABC):
         """New filepath for parquet file being created."""
         return self.path_dir + self._new_filename
 
-    def gdf(self, **kwargs) -> gpd.GeoDataFrame:
+    def gdf(self, **kwargs) -> GeoDataFrame:
         """Load the dataset as a `geopandas.GeoDataFrame`
 
         Columns and filters can be applied through `columns` and `filters` arguments, along with other options specified here:
@@ -135,7 +135,7 @@ class Dataset(ABC):
             self.refresh()
         return gpd.read_parquet(self.path, **kwargs)
 
-    def pdf(self, **kwargs) -> pd.DataFrame:
+    def pdf(self, **kwargs) -> PandasDataFrame:
         """Load the dataset as a `pandas.DataFrame`
 
         Columns and filters can be applied through `columns` and `filters` arguments, along with other options specified here:
@@ -151,7 +151,7 @@ class Dataset(ABC):
             self.refresh()
         return load_sdf(self.path, **kwargs)
 
-    def _validate(self, df: gpd.GeoDataFrame | SparkDataFrame | pd.DataFrame) -> gpd.GeoDataFrame | SparkDataFrame | pd.DataFrame:
+    def _validate(self, df: DataFrame) -> DataFrame:
         """Validate the data against a model specification if one is defined."""
         if self.model is not None:
             self.model.validate(df)
@@ -247,9 +247,16 @@ class SourceDataset(Dataset):
             date=self.date,
         )
 
-    def refresh(self) -> None:
+    def rename(self, df: DataFrame) -> DataFrame:
+        mapping = {field.alias: field.original_name for _, field in self.model.__fields__.values()}
+        if isinstance(df, SparkDataFrame):
+            return df.withColumnsRenamed(mapping)
+        else:
+            return df.rename(columns=mapping)
+
+    def refresh(self):
         LOG.info(f"Creating '{self.name}' dataset.")
-        df = read_file(self.source_path, self.is_geo)
+        df = read_file(self.source_path, self.is_geo).pipe(self.rename)
         df = self._validate(df)
         write_parquet(df, path=self._new_path, partition_cols=self.partition_cols)
         LOG.info(f"Saved to '{self.path}'.")
