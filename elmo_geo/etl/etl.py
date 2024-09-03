@@ -92,6 +92,9 @@ class Dataset(ABC):
         Return in order of newest to oldest by the modified date of the path. Does
         not take into account modified dates of the dataset dependencies.
         """
+        if not os.path.exists(self.path_dir):
+            return []
+        
         pat = re.compile(PAT_FMT.format(name=self.name, hsh=self._hash))
         return sorted(
             [y.group(0) for y in [pat.fullmatch(x) for x in os.listdir(self.path_dir)] if y is not None],
