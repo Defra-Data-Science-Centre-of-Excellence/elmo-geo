@@ -5,6 +5,7 @@ import pandas as pd
 import pytest
 
 from elmo_geo.etl import DerivedDataset, SourceDataset
+from elmo_geo.etl.transformations import pivot_long_sdf, pivot_wide_sdf
 
 test_source_dataset = SourceDataset(
     name="test_source_dataset",
@@ -43,3 +44,11 @@ def test_loads_most_recent_data():
     dataset_gm = os.path.getmtime(test_derived_dataset.path)
 
     assert all(dataset_gm >= os.path.getmtime(p) for p in paths)
+
+
+@pytest.mark.dbr
+def test_pivots():
+    sdf = spark.createDataFrame([(1, 1, 2, 3, 4, 5), (2, 6, 7, 8, 9, 10)], ["id", "a", "b", "c", "x", "y"])
+    sdf_long = pivot_long_sdf(sdf, ["x", "y"])
+    sdf_wide = pivot_wide_sdf(sdf_long)
+    assert (sdf.toPandas() == sdf_wide.toPandas()).all().all()
