@@ -3,7 +3,6 @@ import pytest
 from shapely.geometry import Point
 
 from elmo_geo.io import read_file, write_parquet
-from elmo_geo.utils.types import PandasDataFrame
 from tests.test_etl import test_source_dataset, test_source_geodataset
 
 
