@@ -256,8 +256,8 @@ class SourceDataset(Dataset):
 
     def refresh(self):
         LOG.info(f"Creating '{self.name}' dataset.")
-        df = read_file(self.source_path, self.is_geo).pipe(self.rename)
-        df = self._validate(df)
+        df = read_file(self.source_path, self.is_geo)
+        df = self._validate(df).pipe(self.rename)
         write_parquet(df, path=self._new_path, partition_cols=self.partition_cols)
         LOG.info(f"Saved to '{self.path}'.")
 
