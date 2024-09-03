@@ -14,6 +14,33 @@ from elmo_geo.utils.types import SparkDataFrame
 from .etl import Dataset, DerivedDataset
 
 
+def pivot_long_sdf(
+    sdf: SparkDataFrame,
+    columns: list[str],
+    name_col: str = "name",
+    value_col: str = "value",
+) -> SparkDataFrame:
+    other_cols = set(sdf.columns).difference(columns)
+    return sdf.selectExpr(
+        *other_cols,
+        "STACK({}, {}) AS ({}, {})".format(
+            len(columns),
+            ", ".join(f"'{col}', {col}" for col in columns),
+            name_col,
+            value_col,
+        ),
+    )
+
+
+def pivot_wide_sdf(
+    sdf: SparkDataFrame,
+    name_col: str = "name",
+    value_col: str = "value",
+) -> SparkDataFrame:
+    other_cols = set(sdf.columns).difference([name_col, value_col])
+    return sdf.groupby(*other_cols).pivot(name_col).agg(F.first(value_col))
+
+
 def combine_wide(*datasets: list[DerivedDataset], sources: list[str] | None = None) -> SparkDataFrame:
     """Join multiple DerivedDatasets together using the rpa parcel id to create a wide table.
 
