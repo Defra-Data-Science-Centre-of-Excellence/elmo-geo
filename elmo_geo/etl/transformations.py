@@ -11,7 +11,26 @@ from elmo_geo.st.geometry import load_geometry
 from elmo_geo.st.join import sjoin
 from elmo_geo.utils.types import Geometry, SparkDataFrame
 
-from .etl import Dataset
+from .etl import Dataset, DerivedDataset
+
+
+def combine_wide(*datasets: list[DerivedDataset], sources: list[str] | None = None) -> SparkDataFrame:
+    """Join multiple DerivedDatasets together using the rpa parcel id to create a wide table.
+
+    Parameters:
+        *datasets: Datasets to join together. Must contain an 'id_parcel' field.
+        sources: Dataset shorthand names. Used to rename 'proportion' fields.
+    """
+    sdf = None
+    if sources is None:
+        sources = [None] * len(datasets)
+    for dataset, source in zip(datasets, sources):
+        _sdf = dataset.sdf()
+        if source is None:
+            source = dataset.name
+        _sdf = _sdf.withColumnRenamed("proportion", f"proportion_{source}")
+        sdf = sdf.join(_sdf, on="id_parcel") if sdf else _sdf
+    return sdf.toPandas()
 
 
 def combine_long(

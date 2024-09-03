@@ -37,6 +37,7 @@ from .fc_woodland_sensitivity import (
     woodland_creation_sensitivity_var3_parcels,
     woodland_creation_sensitivity_var3_raw,
 )
+from .fr_esc_m3_trees_suitability import esc_suitability_broadleaved_raw, esc_suitability_coniferous_raw, esc_suitability_riparian_raw, esc_tree_suitability
 from .hedges import rpa_hedges_raw
 from .living_england import living_england_habitat_map_phase_4_parcel, living_england_habitat_map_phase_4_raw
 from .moor import moorline_parcel, moorline_raw
@@ -57,12 +58,27 @@ from .ons import (
     ward_raw,
 )
 from .peat import peaty_soils_parcels, peaty_soils_raw
+from .protected_areas import (
+    jncc_spa_parcels,
+    jncc_spa_raw,
+    ne_marine_conservation_zones_parcels,
+    ne_marine_conservation_zones_raw,
+    ne_nnr_parcels,
+    ne_nnr_raw,
+    ne_ramsar_parcels,
+    ne_ramsar_raw,
+    ne_sac_parcels,
+    ne_sac_raw,
+    ne_sssi_units_parcels,
+    ne_sssi_units_raw,
+    protected_areas_parcels,
+)
 from .protected_landscapes import (
     national_landscapes_raw,
     national_parks_raw,
     protected_landscapes_parcels,
     protected_landscapes_tidy,
-)
+
 from .rpa_reference_parcels import reference_parcels, reference_parcels_raw, reference_parcels_raw_no_sbi
 
 catalogue = [
@@ -76,6 +92,23 @@ catalogue = [
     country_parcels,
     cua_raw,
     cua_parcels,
+    protected_areas_parcels,
+    ne_sssi_units_raw,
+    ne_sssi_units_parcels,
+    ne_nnr_raw,
+    ne_nnr_parcels,
+    ne_sac_raw,
+    ne_sac_parcels,
+    jncc_spa_raw,
+    jncc_spa_parcels,
+    ne_ramsar_raw,
+    ne_ramsar_parcels,
+    ne_marine_conservation_zones_raw,
+    ne_marine_conservation_zones_parcels,
+    esc_suitability_broadleaved_raw,
+    esc_suitability_coniferous_raw,
+    esc_suitability_riparian_raw,
+    esc_tree_suitability,
     defra_priority_habitat_england,
     defra_priority_habitat_parcels,
     defra_heathland_proximity_parcels,
