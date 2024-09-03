@@ -94,7 +94,7 @@ class Dataset(ABC):
         """
         if not os.path.exists(self.path_dir):
             return []
-        
+
         pat = re.compile(PAT_FMT.format(name=self.name, hsh=self._hash))
         return sorted(
             [y.group(0) for y in [pat.fullmatch(x) for x in os.listdir(self.path_dir)] if y is not None],
