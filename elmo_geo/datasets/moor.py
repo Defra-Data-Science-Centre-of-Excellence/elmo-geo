@@ -44,7 +44,7 @@ moorline_raw = SourceDataset(
     level1="rpa",
     model=MoorlineRaw,
     restricted=False,
-    source_path="/dbfs/mnt/base/unrestricted/source_rpa_spatial_data_mart/dataset_lfa_and_moorland_line/format_GPKG_lfa_and_moorland_line/LATEST_lfa_and_moorland_line/lfa.gpkg",
+    source_path="/dbfs/mnt/base/unrestricted/source_rpa_spatial_data_mart/dataset_lfa_and_moorland_line/format_GEOPARQUET_lfa_and_moorland_line/LATEST_lfa_and_moorland_line/",
 )
 
 

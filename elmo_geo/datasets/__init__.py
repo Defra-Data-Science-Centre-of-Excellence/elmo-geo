@@ -124,7 +124,7 @@ catalogue = [
     living_england_habitat_map_phase_4_parcel,
     lad_raw,
     lad_parcels,
-    moorline_raw,  # GPKG
+    moorline_raw,
     moorline_parcel,
     reference_parcels_raw,
     reference_parcels_raw_no_sbi,
