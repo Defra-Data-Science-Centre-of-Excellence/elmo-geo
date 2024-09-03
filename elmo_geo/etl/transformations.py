@@ -14,7 +14,7 @@ from elmo_geo.utils.types import Geometry, SparkDataFrame
 from .etl import Dataset
 
 
-def combine(
+def combine_long(
     *datasets: list[Dataset],
     sources: list[str] | None = None,
 ) -> SparkDataFrame:

@@ -24,6 +24,7 @@ from elmo_geo.utils.log import LOG
 from elmo_geo.utils.misc import load_sdf
 from elmo_geo.utils.types import DataFrame, SparkDataFrame
 
+
 DATE_FMT: str = r"%Y_%m_%d"
 SRC_HASH_FMT: str = r"%Y%m%d%H%M%S"
 HASH_LENGTH = 8
@@ -211,30 +212,23 @@ class SourceDataset(Dataset):
             date=self.date,
         )
 
-    def rename(self, df: DataFrame) -> DataFrame:
-        mapping = {field.alias: field.original_name for _, field in self.model.__fields__.values()}
-        if isinstance(df, SparkDataFrame):
-            return df.withColumnsRenamed(mapping)
-        else:
-            return df.rename(columns=mapping)
-
     def refresh(self) -> None:
         LOG.info(f"Creating '{self.name}' dataset.")
         if self.is_geo:
-            if Path(self.source_path).suffix == ".parquet" or Path(self.source_path).is_dir():
+            if Path(self.source_path).suffix == ".parquet":
                 gdf = gpd.read_parquet(self.source_path)
             else:
                 gdf = gpd.read_file(self.source_path)
-            gdf = gdf.pipe(self._validate).pipe(self.rename)
+            gdf = self._validate(gdf)
             gpd_to_partitioned_parquet(gdf, path=self._new_path, partition_cols=self.partition_cols)
         else:
-            if Path(self.source_path).suffix == ".parquet" or Path(self.source_path).is_dir():
-                pdf = pd.read_parquet(self.source_path)
+            if Path(self.source_path).suffix == ".parquet":
+                df = pd.read_parquet(self.source_path)
             elif Path(self.source_path).suffix == ".csv":
-                pdf = pd.read_csv(self.source_path)
+                df = pd.read_csv(self.source_path)
             else:
                 raise UnknownFileExtension()
-            pdf = pdf.pipe(self._validate).pipe(self.rename)
+            df = self._validate(df)
             # TODO: to partitioned parquet
         LOG.info(f"Saved to '{self.path}'.")
 
@@ -295,6 +289,6 @@ class DerivedDataset(Dataset):
         elif isinstance(df, pd.DataFrame):
             df.to_parquet(path=self._new_path, partition_cols=self.partition_cols)
         else:
-            msg = f"Expected Spark, GeoPandas or Pandas dataframe, received {type(df)}."
+            msg = f"Expected Spark, GeoPandas or Pandas dataframe, recieved {type(df)}."
             raise TypeError(msg)
         LOG.info(f"Saved to '{self.path}'.")

@@ -13,7 +13,7 @@ from pandera.dtypes import Category
 from pandera.engines.pandas_engine import Geometry
 
 from elmo_geo.etl import SRID, DerivedDataset, SourceDataset
-from elmo_geo.etl.transformations import combine, join_parcels
+from elmo_geo.etl.transformations import combine_long, join_parcels
 
 from .rpa_reference_parcels import reference_parcels
 
@@ -83,7 +83,7 @@ protected_landscapes_tidy = DerivedDataset(
     level0="silver",
     level1="defra",
     restricted=False,
-    func=partial(combine, sources=["National Park", "National Landscape"]),
+    func=partial(combine_long, sources=["National Park", "National Landscape"]),
     dependencies=[national_parks_raw, national_landscapes_raw],
     model=ProtectedLandscapesTidy,
 )
