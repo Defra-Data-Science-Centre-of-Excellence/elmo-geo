@@ -37,7 +37,7 @@ from .fc_woodland_sensitivity import (
     woodland_creation_sensitivity_var3_parcels,
     woodland_creation_sensitivity_var3_raw,
 )
-from .hedges import rpa_hedges_parcels, rpa_hedges_raw
+from .hedges import rpa_hedges_raw
 from .living_england import living_england_habitat_map_phase_4_parcel, living_england_habitat_map_phase_4_raw
 from .moor import moorline_parcel, moorline_raw
 from .ons import (
@@ -56,8 +56,6 @@ from .ons import (
     ward_parcels,
     ward_raw,
 )
-from .os import os_ngd_raw
-from .osm import osm_parcel, osm_raw, osm_tidy
 from .peat import peaty_soils_parcels, peaty_soils_raw
 from .protected_landscapes import (
     national_landscapes_raw,
@@ -95,17 +93,12 @@ catalogue = [
     lad_parcels,
     moorline_raw,  # GPKG
     moorline_parcel,
-    # os_ngd_raw,  # multiple files and layers
-    # osm_raw,  # multiple layers
-    # osm_tidy,  # fn_osm_tidy
-    # osm_parcel,
     reference_parcels_raw,
     reference_parcels_raw_no_sbi,
     reference_parcels,
     region_raw,
     region_parcels,
     rpa_hedges_raw,
-    # rpa_hedges_parcel,  # TODO: parcel_boundary_segments
     sfi_agroforestry_raw,
     sfi_agroforestry,
     sfi_agroforestry_parcels,

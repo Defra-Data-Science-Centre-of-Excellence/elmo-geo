@@ -24,7 +24,6 @@ from elmo_geo.utils.log import LOG
 from elmo_geo.utils.misc import load_sdf
 from elmo_geo.utils.types import DataFrame, SparkDataFrame
 
-
 DATE_FMT: str = r"%Y_%m_%d"
 SRC_HASH_FMT: str = r"%Y%m%d%H%M%S"
 HASH_LENGTH = 8
