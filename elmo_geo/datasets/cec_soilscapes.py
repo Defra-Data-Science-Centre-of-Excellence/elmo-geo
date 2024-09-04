@@ -187,5 +187,5 @@ cec_soilscapes_habitats_parcels = DerivedDataset(
     func=_join_habitat_types,
 )
 """Cranfield Environment Centre (CEC) SoilScapes data joined to RPA parcels and
-to habitat types.
+to habitat types, using EVAST's soil type to habitat mapping.
 """
