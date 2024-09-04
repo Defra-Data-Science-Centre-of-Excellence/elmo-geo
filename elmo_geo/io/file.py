@@ -1,4 +1,6 @@
 import shutil
+from functools import reduce
+from glob import iglob
 from pathlib import Path
 
 import geopandas as gpd
@@ -16,6 +18,28 @@ from .convert import to_gdf
 
 class UnknownFileExtension(Exception):
     """Don't know how to read file with extension."""
+
+
+def load_sdf(path: str, **kwargs) -> SparkDataFrame:
+    """Load SparkDataFrame from glob path.
+    Automatically converts file api to spark api.
+    Automatically coerces schemas for datasets with multiple datatypes (i.e. Float>Double or Timestamp_NTZ>Timestamp).
+    """
+
+    def read(f: str) -> SparkDataFrame:
+        return spark.read.parquet(dbfs(f, True), **kwargs)
+
+    def union(x: SparkDataFrame, y: SparkDataFrame) -> SparkDataFrame:
+        return x.unionByName(y, allowMissingColumns=True)
+
+    try:
+        sdf = read(path)
+    except Exception:
+        sdf = reduce(union, [read(f) for f in iglob(path + "*")])
+
+    if "geometry" in sdf.columns:
+        sdf = sdf.withColumn("geometry", F.expr("ST_SetSRID(ST_GeomFromWKB(geometry), 27700)"))
+    return sdf
 
 
 def read_file(source_path: str, is_geo: bool, layer: int | str | None = None) -> PandasDataFrame | GeoDataFrame:
