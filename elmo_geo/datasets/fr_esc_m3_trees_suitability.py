@@ -1,11 +1,12 @@
-"""Ecological Site Classification M3 Tree Suitability.
+"""Ecological Site Classification M3 woodland type suitability aggregated to RPA parcels.
 
 This dataset is derived from Forest Research's Ecolocial Site Classification (ESC)[^1]. It
 provides a parcel level suitability score for different tree species under the Representative
-Concentration Pathway (RCP) 4.5 climate scenario.
+Concentration Pathway (RCP) 4.5 climate scenario. These scores are averaged to give a single
+suitablity score for each woodland type (broadleaved, riparian, coniferous).
 
 The ESC produced by Forest Research is an input into EVAST. The source data used here 
-was received from EVAST and has been disaggregated to parcel level from the original 
+was received from EVAST and has been aggregated to parcel level from the original 
 ESC 1km grid resolution.
 
 [^1] [Forest Research - Ecological Site Classification](https://www.forestresearch.gov.uk/tools-and-resources/fthr/ecological-site-classification)
