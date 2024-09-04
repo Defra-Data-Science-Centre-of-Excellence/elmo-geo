@@ -38,7 +38,7 @@ from pyspark.sql import functions as F
 from pyspark.sql.types import DecimalType, DoubleType, FloatType, IntegerType, LongType
 
 from elmo_geo import register
-from elmo_geo.datasets import reference_parcels, catalogue
+from elmo_geo.datasets import catalogue, reference_parcels
 from elmo_geo.plot.plotting import plot_choropleth_with_head_and_tail_bars
 
 register()
