@@ -9,6 +9,7 @@ from geopandas.io.arrow import _geopandas_to_arrow
 from pyarrow.parquet import write_to_dataset
 from pyspark.sql import functions as F
 
+from elmo_geo.utils.dbr import spark
 from elmo_geo.utils.log import LOG
 from elmo_geo.utils.misc import dbfs
 from elmo_geo.utils.types import DataFrame, GeoDataFrame, PandasDataFrame, SparkDataFrame
