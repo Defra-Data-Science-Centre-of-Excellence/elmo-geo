@@ -1,24 +1,12 @@
 import os
 import subprocess
-from datetime import datetime
 from glob import iglob
 
 from fiona import listlayers
 from fiona.errors import DriverError
-from pyspark.sql import functions as F
-from pyspark.sql import types as T
 
 from elmo_geo import LOG
-from elmo_geo.st.geometry import load_geometry
-from elmo_geo.st.index import sindex
-from elmo_geo.utils.dbr import spark
-from elmo_geo.utils.misc import dbfs, snake_case
-from elmo_geo.utils.settings import SILVER
-from elmo_geo.utils.types import (
-    SparkDataFrame,
-)
-
-from .file import write_parquet
+from elmo_geo.utils.misc import snake_case
 
 
 def list_layers(f: str) -> list[str]:
@@ -75,59 +63,3 @@ def convert_dataset(f_in: str, f_out: str):
     for f0, part, layer in get_to_convert(f_in):
         f1 = f"{f_out}/{part}"
         ogr_to_geoparquet(f0, f1, layer)
-
-
-def cast_to_project_data_type(column):
-    """Cast certain data types for compatibility across project operations.
-    Data Types: https://spark.apache.org/docs/latest/api/python/reference/pyspark.sql/data_types.html
-    Casting DecimalType to DoubleType because DecimalType is not considered a numeric value in Pandas.
-    """
-    dtype_map = {
-        T.DecimalType: T.DoubleType(),
-    }
-    dtype = dtype_map.get(type(column.dataType), column.dataType)
-    return F.col(column.name).cast(dtype).alias(column.name)
-
-
-def cast_to_project_data_types(sdf: SparkDataFrame) -> SparkDataFrame:
-    return sdf.select([cast_to_project_data_type(column) for column in sdf.schema])
-
-
-def partition_geoparquet(f_in: str, f_out: str, columns: dict) -> SparkDataFrame:
-    """Repartition vector dataset in parquet format using the chipping method at 10km"""
-    LOG.info(f"Partition: {f_in}, {f_out}")
-    sdf = spark.read.parquet(dbfs(f_in, True)).withColumn("fid", F.monotonically_increasing_id())
-    sdf.write.format("noop").mode("overwrite").save()  # miid bug
-    return (
-        sdf.withColumnsRenamed(columns)
-        .transform(cast_to_project_data_types)
-        .withColumn("geometry", load_geometry())
-        .withColumn("geometry", F.expr("EXPLODE(ST_Dump(geometry))"))
-        .transform(sindex, method="BNG", resolution="10km", index_fn="chipped_index")
-        .transform(write_parquet, f_out)
-    )
-
-
-def convert(dataset: dict) -> dict:
-    """Convert a bronze vector dataset into silver
-    Will recursively find files in the bronze area, and all their layers, these are columns in a SparkDataFrame.
-    This method also chips the dataset into 10km grid (~3,000 paritions).
-    The resulting parquet will be partitioned by file, layer, and sindex.
-    `silver/source-dataset-version.parquet/file={}/layer={}/sindex={}.parquet`
-    """
-    name = dataset["name"]
-    columns = dataset.get("columns", {})
-    LOG.info(f"Converting: {name}")
-
-    f_raw = dataset["bronze"]
-    f_tmp = f"/dbfs/tmp/{name}.parquet" if (not f_raw.endswith(".parquet") and "/format_GEOPARQUET_" not in f_raw) else f_raw
-    f_out = dataset.get("silver", f"{SILVER}/{name}.parquet")  # pre-existing silver is to be used for restricted data
-
-    if not os.path.exists(f_out):
-        if not os.path.exists(f_tmp):
-            convert_dataset(f_raw, f_tmp)
-        partition_geoparquet(f_tmp, f_out, columns)
-
-    dataset["silver"] = f_out
-    dataset["tasks"]["convert"] = datetime.today().strftime("%Y_%m_%d")
-    return dataset
