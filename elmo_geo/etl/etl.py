@@ -23,7 +23,6 @@ from elmo_geo.io import download_link, read_file, write_parquet
 from elmo_geo.utils.log import LOG
 from elmo_geo.utils.misc import load_sdf
 from elmo_geo.utils.types import DataFrame, GeoDataFrame, PandasDataFrame, SparkDataFrame
-from elmo_geo.utils.types import DataFrame, SparkDataFrame
 
 DATE_FMT: str = r"%Y_%m_%d"
 SRC_HASH_FMT: str = r"%Y%m%d%H%M%S"
@@ -152,7 +151,6 @@ class Dataset(ABC):
             self.refresh()
         return load_sdf(self.path, **kwargs)
 
-    def _validate(self, df: DataFrame) -> DataFrame:
     def _validate(self, df: DataFrame) -> DataFrame:
         """Validate the data against a model specification if one is defined."""
         if self.model is not None:
