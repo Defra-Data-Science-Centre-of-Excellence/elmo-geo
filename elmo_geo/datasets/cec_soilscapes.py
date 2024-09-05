@@ -1,8 +1,10 @@
 """Cranfield Environment Centre (CEC) SoilScapes data.
 
-The CEC SoilSacpaes dataset is a product derived from the National Soil Map. It seeks to provide a useful, concise, easily interpreted and
+The CEC SoilScapes dataset[^1] is a product derived from the National Soil Map. It seeks to provide a useful, concise, easily interpreted and
 applicable description of the soils of England and Wales. It is a simplified rendition of the national soil map and contains about
 30 distinct soil types.
+
+[^1] https://www.landis.org.uk/data/nmsoilscapes.cfm
 """
 
 from functools import partial
@@ -27,7 +29,7 @@ class CECSoilScapesRaw(DataFrameModel):
         geometry: Geometry indicating the extent of the soil type.
     """
 
-    geometry: Geometry = Field(coerce=True, nullable=False)
+    geometry: Geometry = Field(coerce=True)
 
 
 cec_soilscapes_raw = SourceDataset(
@@ -55,16 +57,14 @@ class CECSoilScapesParcels(DataFrameModel):
     """
 
     # TODO: Alias the field names. Aliasing being added in a separate PR.
-    id_parcel: str = Field(nullable=False, coerce=True)
-    unit: Category = Field(coerce=True, nullable=False, isin=set(range(1, 32)).difference([29]))
+    id_parcel: str = Field(coerce=True)
+    unit: Category = Field(coerce=True, isin=set(range(1, 32)).difference([29]))
     natural_dr: Category = Field(
         coerce=True,
-        nullable=False,
         isin=["Freely draining", "Naturally wet", " ", "Impeded drainage", "Variable", "Slightly impeded drainage", "Surface wetness"],
     )
     natural_fe: Category = Field(
         coerce=True,
-        nullable=False,
         isin=[
             "Very low",
             "Low",
@@ -97,55 +97,45 @@ cec_soilscapes_parcels = DerivedDataset(
 """Cranfield Environment Centre (CEC) SoilScapes data joined to RPA parcels.
 """
 
+ne_soilscapes_habitats_raw = SourceDataset(
+    name="ne_soilscapes_habitats_raw",
+    level0="bronze",
+    level1="ne",
+    restricted=False,
+    is_geo=False,
+    source_path="/dbfs/mnt/lab/unrestricted/elm_data/evast/habitat_stocking/EVAST_HabitatStocking_2024_08_29_SoilscapesIDlookup.csv",
+)
+"""Natural England mapping from soilscape unit to viable habitat types.
 
-def _soilscape_habitat_lookup() -> pd.DataFrame:
-    """A lookup from Soilscape soil type to habitat types.
+This dataset was provided to EVAST (CEH) by Natural England and appeared as the
+'SoilscapesIDlookup' tab of EVAST's HabitatStocking-2024_08_29.xlsx workbook.
 
-    Produced by EVAST, this is a one-to-many lookup from Soilscape soil type to
-    habitats. It indicates which habitats can occur on each soil type.
-    """
-    # TODO: Use complete lookup from soil type to habitats. Blocked by DASH data upload request.
-    code_to_name = {
-        "UHL": "Upland heathland",
-        "LHL": "Lowland heathland",
-        "LCG": "Lowland calcareous grassland",
-        "LAG": "Lowland dry acid grassland",
-        "LMW": "Lowland meadows",
-        "UHM": "Upland hay meadows",
-        "UCG": "Upland calcareous grassland",
-        "LRB": "Lowland raised bog",
-        "UFS": "Upland fens",
-        "BBG": "Blanket bog",
-        "LFN": "Lowland fens",
-        "PMG": "Purple moorgrass and rush pasture",
-    }
-    return (
-        pd.DataFrame(
-            [
-                {"unit": 1},
-                {"unit": 2, "ULH": 1, "LHL": 1, "UFS": 1},
-                {"unit": 3, "LCG": 1, "UCG": 1},
-            ],
-            columns=pd.Index(data=["unit", "UHL", "LHL", "LCG", "LAG", "LMW", "UHM", "UCG", "LRB", "UFS", "BBG", "LFN", "PMG"], name="habitat_code"),
-        )
-        .fillna(0)
+The mapping indicates which habitats can be created on different soil types.
+It is a coarse approximation, in part due to the use of coarse soil type
+categories.
+"""
+
+
+def _join_habitat_types(
+    soilscapes_parcels: DerivedDataset,
+) -> pd.DataFrame:
+    df_map = ne_soilscapes_habitats_raw.pdf()
+    habitat_abbreviation_lookup = dict(zip(df_map.columns, df_map.iloc[0]))
+    df_map = (
+        df_map.iloc[1:, 1:]
+        .rename(columns={"Unnamed: 1": "unit"})
         .set_index("unit")
         .stack()
         .reset_index()
-        .assign(habitat_name=lambda df: df.habitat_code.replace(code_to_name))
         .drop(0, axis=1)
+        .rename(columns={"level_1": "habitat_type"})
+        .assign(habitat_code=lambda df: df.habitat_type.replace(habitat_abbreviation_lookup))
     )
-
-
-def _join_habitat_types(soilscapes_parcels: DerivedDataset) -> pd.DataFrame:
-    return soilscapes_parcels.pdf().merge(_soilscape_habitat_lookup(), on="unit", how="left", validate="m:m")
+    return soilscapes_parcels.pdf().merge(df_map, on="unit", how="left", validate="m:m")
 
 
 class CECSoilScapesParcels(DataFrameModel):
     """Cranfield Environment Centre (CEC) SoilScapes data model.
-
-    Habitat types are as follows:
-
 
     Parameters:
         id_parcel: The parcel ID.
@@ -154,7 +144,7 @@ class CECSoilScapesParcels(DataFrameModel):
         habitat_name: Name of the habitat type that can exist on the soil type.
     """
 
-    id_parcel: str = Field(nullable=False, coerce=True)
+    id_parcel: str = Field(coerce=True)
     unit: Category = Field(coerce=True, nullable=True, isin=set(range(1, 32)).difference([29]))
     habitat_code: Category = Field(coerce=True, nullable=True, isin=["UHL", "LHL", "LCG", "LAG", "LMW", "UHM", "UCG", "LRB", "UFS", "BBG", "LFN", "PMG"])
     habitat_name: Category = Field(
