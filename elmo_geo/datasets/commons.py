@@ -47,7 +47,7 @@ commons_raw = SourceDataset(
 )
 
 
-def fn_conclusive(sdf: SparkDataFrame) -> SparkDataFrame:
+def fn_pre_conclusive(sdf: SparkDataFrame) -> SparkDataFrame:
     return sdf.withColumn("conclusive", F.col("source").isin(["BPS_RCL", "BPS_RCL & CROW", "CROW"])).drop("source")
 
 
@@ -61,7 +61,7 @@ class CommonsParcels(DataFrameModel):
     """
 
     id_parcel: str = Field()
-    conclusive: bool = Field()  # TODO: gdf["conclusive"] = gdf["source"].isin(['CROW', 'BPS_RCL', 'BPS_RCL & CROW'])
+    conclusive: bool = Field()
     proportion: float = Field(ge=0, le=1)
 
 
@@ -71,7 +71,7 @@ commons_parcels = DerivedDataset(
     level0="silver",
     level1="defra",
     restricted=False,
-    func=partial(join_parcels, columns=["conclusive"], fn_pre=fn_conclusive),
+    func=partial(join_parcels, columns=["conclusive"], fn_pre=fn_pre_conclusive),
     dependencies=[reference_parcels, commons_raw],
     model=CommonsParcels,
 )
