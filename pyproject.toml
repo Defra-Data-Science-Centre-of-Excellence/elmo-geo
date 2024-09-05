@@ -31,7 +31,6 @@ dev = [
     "ruff<0.2",
 ]
 old = [
-    "beautifulsoup4",
     "statsmodels",
 ]
 

@@ -14,8 +14,7 @@ attrs==23.2.0
     # via
     #   apache-sedona
     #   rasterio
-beautifulsoup4==4.12.3
-    # via elmo_geo (pyproject.toml)
+
 branca==0.7.2
     # via folium
 build==1.2.1
@@ -240,8 +239,6 @@ six==1.16.0
     #   python-dateutil
 snuggs==1.4.7
     # via rasterio
-soupsieve==2.5
-    # via beautifulsoup4
 statsmodels==0.14.2
     # via elmo_geo (pyproject.toml)
 threadpoolctl==3.5.0
