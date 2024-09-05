@@ -33,7 +33,6 @@ dev = [
 old = [
     "beautifulsoup4",
     "osmnx",
-    # "osdatahub",
     "sentinelsat",
     "statsmodels",
 ]

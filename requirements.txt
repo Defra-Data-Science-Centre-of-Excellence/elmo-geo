@@ -63,7 +63,6 @@ geographiclib==2.0
     # via geopy
 geojson==3.0.1
     # via
-    #   osdatahub
     #   sentinelsat
 geomet==1.1.0
     # via sentinelsat
@@ -136,8 +135,6 @@ numpy==2.0.0
     #   snuggs
     #   statsmodels
     #   xarray
-osdatahub==1.2.10
-    # via elmo_geo (pyproject.toml)
 osmnx==1.9.3
     # via elmo_geo (pyproject.toml)
 packaging==24.1
@@ -228,7 +225,6 @@ requests==2.31.0
     #   contextily
     #   databricks-sdk
     #   folium
-    #   osdatahub
     #   osmnx
     #   sentinelsat
 rich==13.7.1
@@ -254,7 +250,6 @@ shapely==2.0.4
     # via
     #   apache-sedona
     #   geopandas
-    #   osdatahub
     #   osmnx
     #   pandera
 six==1.16.0
@@ -276,11 +271,9 @@ tomli==2.0.1
     #   pytest
 tqdm==4.65.2
     # via
-    #   osdatahub
     #   sentinelsat
 typeguard==2.13.3
     # via
-    #   osdatahub
     #   pandera
 typing-extensions==4.12.2
     # via
