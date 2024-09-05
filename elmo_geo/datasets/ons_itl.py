@@ -60,6 +60,7 @@ itl2_boundaries_parcels = DerivedDataset(
     level0="silver",
     level1="ons",
     restricted=False,
+    is_geo=False,
     func=_join_parcels,
     dependencies=[reference_parcels, itl2_boundaries_raw],
     model=ITL2BoundariesParcels,
