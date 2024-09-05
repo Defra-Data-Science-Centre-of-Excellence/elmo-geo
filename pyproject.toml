@@ -34,7 +34,7 @@ old = [
     "beautifulsoup4",
     "fiona",
     "osmnx",
-    "osdatahub",
+    # "osdatahub",
     "sentinelsat",
     "statsmodels",
 ]
