@@ -122,7 +122,6 @@ numpy==2.0.0
     #   seaborn
     #   shapely
     #   snuggs
-    #   statsmodels
     #   xarray
 packaging==24.1
     # via
@@ -133,7 +132,6 @@ packaging==24.1
     #   pyogrio
     #   pytest
     #   rioxarray
-    #   statsmodels
     #   xarray
 pandas==2.2.2
     # via
@@ -142,12 +140,9 @@ pandas==2.2.2
     #   mapclassify
     #   pandera
     #   seaborn
-    #   statsmodels
     #   xarray
 pandera[geopandas,pyspark]==0.20.1
     # via elmo_geo (pyproject.toml)
-patsy==0.5.6
-    # via statsmodels
 pillow==10.4.0
     # via
     #   contextily
@@ -225,7 +220,6 @@ scipy==1.14.0
     # via
     #   mapclassify
     #   scikit-learn
-    #   statsmodels
 seaborn==0.13.2
     # via elmo_geo (pyproject.toml)
 shapely==2.0.4
@@ -239,8 +233,6 @@ six==1.16.0
     #   python-dateutil
 snuggs==1.4.7
     # via rasterio
-statsmodels==0.14.2
-    # via elmo_geo (pyproject.toml)
 threadpoolctl==3.5.0
     # via scikit-learn
 tomli==2.0.1

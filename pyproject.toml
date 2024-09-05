@@ -30,9 +30,6 @@ dev = [
     "pytest",
     "ruff<0.2",
 ]
-old = [
-    "statsmodels",
-]
 
 [project.urls]
 homepage = "https://github.com/Defra-Data-Science-Centre-of-Excellence/elmo-geo"
