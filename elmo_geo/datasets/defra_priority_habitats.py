@@ -11,7 +11,7 @@ import geopandas as gpd
 import pandas as pd
 from pandera import DataFrameModel, Field
 from pandera.dtypes import Category, Date
-from pandera.engines.pandas_engine import Geometry
+from pandera.engines.geopandas_engine import Geometry
 from pyspark.sql import functions as F
 
 from elmo_geo.etl import Dataset, DerivedDataset, SourceDataset

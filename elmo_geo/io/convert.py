@@ -1,9 +1,9 @@
 import os
 import subprocess
-import geopandas as gpd
 from datetime import datetime
 from glob import iglob
 
+import geopandas as gpd
 from pyspark.sql import functions as F
 from pyspark.sql import types as T
 
