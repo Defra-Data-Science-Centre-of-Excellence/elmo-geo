@@ -17,6 +17,17 @@ test_source_dataset = SourceDataset(
 """Test SourceDataset
 """
 
+test_source_geodataset = SourceDataset(
+    name="test_source_dataset",
+    level0="bronze",
+    level1="test",
+    restricted=False,
+    is_geo=True,
+    source_path="/dbfs/mnt/lab/unrestricted/elm_data/test/test_geodataset.gpkg",
+)
+"""Test SourceDataset that is geographic.
+"""
+
 
 def _make_test_dataset():
     np.random.seed(1)

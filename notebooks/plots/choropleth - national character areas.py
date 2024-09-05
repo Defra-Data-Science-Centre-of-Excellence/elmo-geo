@@ -38,44 +38,52 @@ from pyspark.sql import functions as F
 from pyspark.sql.types import DecimalType, DoubleType, FloatType, IntegerType, LongType
 
 from elmo_geo import register
-from elmo_geo.datasets.datasets import datasets, parcels
+from elmo_geo.datasets import catalogue, reference_parcels
 from elmo_geo.plot.plotting import plot_choropleth_with_head_and_tail_bars
 
 register()
 
 # COMMAND ----------
 
-names = sorted([f"{d.source}/{d.name}/{v.name}" for d in datasets for v in d.versions])
-default_name = [n for n in names if "shine" in n][0]
-dbutils.widgets.dropdown("dataset", default_name, names)
-_, name, version = dbutils.widgets.get("dataset").split("/")
-dataset = next(d for d in datasets if d.name == name)
+medallions = sorted({d.level0 for d in catalogue})
+default_medallion = medallions[0]
+dbutils.widgets.dropdown("A - Medallion", default_medallion, medallions)
 
-[print(k, v, sep=":\t") for k, v in dataset.__dict__.items()]
+# COMMAND ----------
 
-parcels_names = sorted([f"{parcels.source}/{parcels.name}/{v.name}" for v in parcels.versions])
-default_parcels = [n for n in parcels_names if "adas" in n][0]
-dbutils.widgets.dropdown("parcels", default_parcels, parcels_names)
-_, pname, pversion = dbutils.widgets.get("parcels").split("/")
-path_parcels = next(v.path_read for v in parcels.versions if v.name == pversion)
-[
-    print("\n\nname", parcels.name, sep=":\t"),
-    print("version", next(v for v in parcels.versions if v.name == pversion), sep=":\t"),
-]
+medallion = dbutils.widgets.get("A - Medallion")
+sources = sorted({d.level1 for d in catalogue if d.level0 == medallion})
+default_source = sources[0]
+dbutils.widgets.dropdown("B - Source", default_source, sources)
+
+# COMMAND ----------
+
+source = dbutils.widgets.get("B - Source")
+datasets = sorted({d.name for d in catalogue if (d.level0 == medallion) and (d.level1 == source)})
+default_dataset = datasets[0]
+dbutils.widgets.dropdown("C - Dataset", default_dataset, datasets)
+
+# COMMAND ----------
+
+dataset = dbutils.widgets.get("C - Dataset")
+dataset = next(d for d in catalogue if d.name == dataset)
+_ = [print(k, v, sep=":\t") for k, v in dataset.__dict__.items()]
+
+# COMMAND ----------
 
 # present fields of the dataset to select which to plot
-fields = spark.read.parquet(dataset.path_output.format(version=version)).schema.fields
+fields = dataset.sdf().schema.fields
 numeric_variables = [field.name for field in fields if isinstance(field.dataType, (DecimalType, DoubleType, FloatType, IntegerType, LongType))]
 dbutils.widgets.dropdown("plot variable", numeric_variables[0], numeric_variables)
 value_column = dbutils.widgets.get("plot variable")
 print(f"\nDataset variable to plot:\t{value_column}")
 
-formats = [".1%", ".0f"]
+formats = [".1%", ".0f", ".3f"]
 dbutils.widgets.dropdown("variable format", formats[0], formats)
 fmt = dbutils.widgets.get("variable format")
 
-dbutils.widgets.text("variable name", "SHINE proportion")
-dbutils.widgets.text("variable source", "Historic England SHINE dataset")
+dbutils.widgets.text("variable name", "<enter name>")
+dbutils.widgets.text("variable source", "<enter source")
 
 variable_name = dbutils.widgets.get("variable name")
 variable_source = dbutils.widgets.get("variable source")
@@ -90,22 +98,17 @@ path_nca_poly = "dbfs:/mnt/lab/unrestricted/elm/defra/national_character_areas/2
 
 # COMMAND ----------
 
-path_read = dataset.path_output.format(version=version)
+dataset.sdf().display()
 
 # COMMAND ----------
 
-spark.read.parquet(path_read).display()
-
-# COMMAND ----------
-
-df = (spark.read.parquet(path_read).groupBy("id_parcel").agg(F.sum(F.col(value_column)).alias(value_column))).toPandas()
+df = (dataset.sdf().groupBy("id_parcel").agg(F.mean(F.col(value_column)).alias(value_column))).toPandas()
 df.head()
 
 # COMMAND ----------
 
 # join to complete set of parcels
-parcels = (spark.read.format("geoparquet").load(path_parcels).select("id_parcel")).toPandas()
-df = parcels.set_index("id_parcel").join(df.set_index("id_parcel"), how="left")
+df = reference_parcels.gdf().set_index("id_parcel").join(df.set_index("id_parcel"), how="left")
 df
 
 # COMMAND ----------
@@ -141,7 +144,7 @@ df.join(df_nca.set_index("id_parcel"), how="inner").groupby("nca_name").count().
 df_all = df[[value_column]].fillna(0).join(df_nca.set_index("id_parcel"), how="inner").groupby("nca_name").mean()
 
 # with only parcels that do appear in the input dataset
-df_feature = df.dropna(subset=[value_column]).join(df_nca.set_index("id_parcel"), how="inner").groupby("nca_name").mean()
+df_feature = df[[value_column]].dropna().join(df_nca.set_index("id_parcel"), how="inner").groupby("nca_name").mean()
 
 df_feature.head(), df_all.head()
 
