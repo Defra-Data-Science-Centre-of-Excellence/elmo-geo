@@ -5,6 +5,7 @@ description = "Environmental Land Management Geospatial Analysis"
 readme = "README.md"
 dependencies = [
     "apache-sedona==1.4.1",
+    "beautifulsoup4",
     "contextily",
     "databricks-sdk<0.21",
     "folium",
