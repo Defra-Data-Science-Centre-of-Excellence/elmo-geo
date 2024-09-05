@@ -209,7 +209,7 @@ def plot_choropleth_with_head_and_tail_bars(
         ax=axbig,
     )
     axbig.set_axis_off()
-    axbig.annotate(f"All of England mean: {mean:.2%}", xy=(0.01, 0.99), fontweight="bold", xycoords="axes fraction")
+    axbig.annotate(f"All of England mean: {mean:{fmt}}", xy=(0.01, 0.99), fontweight="bold", xycoords="axes fraction")
 
     colors = [[plt.get_cmap("Reds", lut=5)(x) for x in np.linspace(0, 1, 5)][x] for x in mapclassify.Quantiles(gdf[variable_column], k=5).yb]
 
