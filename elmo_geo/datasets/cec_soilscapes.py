@@ -25,6 +25,9 @@ _join_parcels = partial(join_parcels, columns=["unit", "natural_dr", "natural_fe
 class CECSoilScapesRaw(DataFrameModel):
     """Cranfield Environment Centre (CEC) SoilScapes data model.
 
+    Dataset owner to be confirmed as part of this task:
+    https://github.com/Defra-Data-Science-Centre-of-Excellence/elmo-geo/issues/223
+
     Parameters:
         geometry: Geometry indicating the extent of the soil type.
     """
@@ -56,7 +59,8 @@ class CECSoilScapesParcels(DataFrameModel):
         proportion: Proportion of the parcel intersected by the soil type.
     """
 
-    # TODO: Alias the field names. Aliasing being added in a separate PR.
+    # TODO: Alias the field names once PR #209. Task for aliasing:
+    # https://github.com/Defra-Data-Science-Centre-of-Excellence/elmo-geo/issues/223
     id_parcel: str = Field(coerce=True)
     unit: Category = Field(coerce=True, isin=set(range(1, 32)).difference([29]))
     natural_dr: Category = Field(
