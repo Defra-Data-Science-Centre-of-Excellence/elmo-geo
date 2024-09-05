@@ -64,7 +64,6 @@ geographiclib==2.0
 geopandas==1.0.1
     # via
     #   elmo_geo (pyproject.toml)
-    #   osmnx
     #   pandera
 geopy==2.4.1
     # via contextily
@@ -105,7 +104,6 @@ mypy-extensions==1.0.0
 networkx==3.3
     # via
     #   mapclassify
-    #   osmnx
 numpy==2.0.0
     # via
     #   contourpy
@@ -113,7 +111,6 @@ numpy==2.0.0
     #   geopandas
     #   mapclassify
     #   matplotlib
-    #   osmnx
     #   pandas
     #   pandera
     #   patsy
@@ -128,8 +125,6 @@ numpy==2.0.0
     #   snuggs
     #   statsmodels
     #   xarray
-osmnx==1.9.3
-    # via elmo_geo (pyproject.toml)
 packaging==24.1
     # via
     #   build
@@ -146,7 +141,6 @@ pandas==2.2.2
     #   elmo_geo (pyproject.toml)
     #   geopandas
     #   mapclassify
-    #   osmnx
     #   pandera
     #   seaborn
     #   statsmodels
@@ -218,7 +212,6 @@ requests==2.31.0
     #   contextily
     #   databricks-sdk
     #   folium
-    #   osmnx
 rich==13.7.1
     # via elmo_geo (pyproject.toml)
 rioxarray==0.15.7
@@ -240,7 +233,6 @@ shapely==2.0.4
     # via
     #   apache-sedona
     #   geopandas
-    #   osmnx
     #   pandera
 six==1.16.0
     # via
