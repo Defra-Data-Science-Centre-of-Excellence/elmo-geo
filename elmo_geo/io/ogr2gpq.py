@@ -2,8 +2,7 @@ import os
 import subprocess
 from glob import iglob
 
-from fiona import listlayers
-from fiona.errors import DriverError
+import geopandas as gpd
 
 from elmo_geo import LOG
 from elmo_geo.utils.misc import snake_case
@@ -12,8 +11,8 @@ from elmo_geo.utils.misc import snake_case
 def list_layers(f: str) -> list[str]:
     """List layers using Fiona, but don't fail, instead return an empty list"""
     try:
-        layers = listlayers(f)
-    except DriverError:
+        layers = gpd.list_layers(f)["name"].tolist()
+    except Exception:
         layers = []
     return layers
 
