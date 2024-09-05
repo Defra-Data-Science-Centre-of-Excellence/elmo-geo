@@ -103,7 +103,7 @@ def info_sdf(sdf: SparkDataFrame, f: str = None, geometry_column: str = "geometr
 
 
 def snake_case(string: str) -> str:
-    """Convert string to snake_case
+    r"""Convert string to snake_case
     1, lowercase
     2, replace spaces with underscores
     3, remove special characters

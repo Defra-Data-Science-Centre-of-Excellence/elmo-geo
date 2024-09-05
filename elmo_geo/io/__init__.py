@@ -1,3 +1,4 @@
 from .convert import to_gdf, to_sdf
 from .download import download_link
-from .file import gpd_to_partitioned_parquet, pd_to_partitioned_parquet, to_gpq, to_parquet
+from .file import read_file, write_parquet
+from .ogr2gpq import convert_dataset as ogr2gpq

@@ -18,29 +18,20 @@ from pathlib import Path
 import geopandas as gpd
 import pandas as pd
 from pandera import DataFrameModel
-from pyspark.sql.dataframe import DataFrame as SparkDataFrame
 
-from elmo_geo.io import gpd_to_partitioned_parquet, pd_to_partitioned_parquet
-from elmo_geo.io.download import download_link
+from elmo_geo.io import download_link, read_file, write_parquet
 from elmo_geo.utils.log import LOG
 from elmo_geo.utils.misc import load_sdf
+from elmo_geo.utils.types import DataFrame, GeoDataFrame, PandasDataFrame, SparkDataFrame
 
 DATE_FMT: str = r"%Y_%m_%d"
 SRC_HASH_FMT: str = r"%Y%m%d%H%M%S"
 HASH_LENGTH = 8
 PATH_FMT: str = "/dbfs/mnt/lab/{restricted}/ELM-Project/{level0}/{level1}/"
 FILE_FMT: str = "{name}-{date}-{hsh}.parquet"
-PAT_FMT: str = "(^{name}-[\d_]+-{hsh}.parquet$)"
-PAT_DATE: str = "(?<=^{name}-)([\d_]+)(?=-{hsh}.parquet$)"
+PAT_FMT: str = r"(^{name}-[\d_]+-{hsh}.parquet$)"
+PAT_DATE: str = r"(?<=^{name}-)([\d_]+)(?=-{hsh}.parquet$)"
 SRID: int = 27700
-
-
-class NotGeoError(Exception):
-    """The dataset is not geospatial."""
-
-
-class UnknownFileExtension(Exception):
-    """Don't know how to read file with extension."""
 
 
 @dataclass
@@ -101,6 +92,9 @@ class Dataset(ABC):
         Return in order of newest to oldest by the modified date of the path. Does
         not take into account modified dates of the dataset dependencies.
         """
+        if not os.path.exists(self.path_dir):
+            return []
+
         pat = re.compile(PAT_FMT.format(name=self.name, hsh=self._hash))
         return sorted(
             [y.group(0) for y in [pat.fullmatch(x) for x in os.listdir(self.path_dir)] if y is not None],
@@ -131,7 +125,7 @@ class Dataset(ABC):
         """New filepath for parquet file being created."""
         return self.path_dir + self._new_filename
 
-    def gdf(self, **kwargs) -> gpd.GeoDataFrame:
+    def gdf(self, **kwargs) -> GeoDataFrame:
         """Load the dataset as a `geopandas.GeoDataFrame`
 
         Columns and filters can be applied through `columns` and `filters` arguments, along with other options specified here:
@@ -141,7 +135,7 @@ class Dataset(ABC):
             self.refresh()
         return gpd.read_parquet(self.path, **kwargs)
 
-    def pdf(self, **kwargs) -> pd.DataFrame:
+    def pdf(self, **kwargs) -> PandasDataFrame:
         """Load the dataset as a `pandas.DataFrame`
 
         Columns and filters can be applied through `columns` and `filters` arguments, along with other options specified here:
@@ -157,7 +151,7 @@ class Dataset(ABC):
             self.refresh()
         return load_sdf(self.path, **kwargs)
 
-    def _validate(self, df: gpd.GeoDataFrame | SparkDataFrame | pd.DataFrame) -> gpd.GeoDataFrame | SparkDataFrame | pd.DataFrame:
+    def _validate(self, df: DataFrame) -> DataFrame:
         """Validate the data against a model specification if one is defined."""
         if self.model is not None:
             self.model.validate(df)
@@ -253,24 +247,18 @@ class SourceDataset(Dataset):
             date=self.date,
         )
 
-    def refresh(self) -> None:
-        LOG.info(f"Creating '{self.name}' dataset.")
-        if self.is_geo:
-            if Path(self.source_path).suffix == ".parquet":
-                gdf = gpd.read_parquet(self.source_path)
-            else:
-                gdf = gpd.read_file(self.source_path)
-            gdf = self._validate(gdf)
-            gpd_to_partitioned_parquet(gdf, path=self._new_path, partition_cols=self.partition_cols)
+    def rename(self, df: DataFrame) -> DataFrame:
+        mapping = {field.alias: field.original_name for _, field in self.model.__fields__.values()}
+        if isinstance(df, SparkDataFrame):
+            return df.withColumnsRenamed(mapping)
         else:
-            if Path(self.source_path).suffix == ".parquet":
-                df = pd.read_parquet(self.source_path)
-            elif Path(self.source_path).suffix == ".csv":
-                df = pd.read_csv(self.source_path)
-            else:
-                raise UnknownFileExtension()
-            df = self._validate(df)
-            pd_to_partitioned_parquet(df, path=self._new_path, partition_cols=self.partition_cols)
+            return df.rename(columns=mapping)
+
+    def refresh(self):
+        LOG.info(f"Creating '{self.name}' dataset.")
+        df = read_file(self.source_path, self.is_geo)
+        df = self._validate(df).pipe(self.rename)
+        write_parquet(df, path=self._new_path, partition_cols=self.partition_cols)
         LOG.info(f"Saved to '{self.path}'.")
 
 
@@ -323,13 +311,5 @@ class DerivedDataset(Dataset):
         LOG.info(f"Creating '{self.name}' dataset.")
         df = self.func(*self.dependencies)
         df = self._validate(df)
-        if isinstance(df, SparkDataFrame):
-            df.write.format("parquet").partitionBy(self.partition_cols).formatsave(self._new_path, mode="overwrite")
-        elif isinstance(df, gpd.GeoDataFrame):
-            gpd_to_partitioned_parquet(df, path=self._new_path, partition_cols=self.partition_cols)
-        elif isinstance(df, pd.DataFrame):
-            df.to_parquet(path=self._new_path, partition_cols=self.partition_cols)
-        else:
-            msg = f"Expected Spark, GeoPandas or Pandas dataframe, recieved {type(df)}."
-            raise TypeError(msg)
+        write_parquet(df, path=self.path, partition_cols=self.partition_cols)
         LOG.info(f"Saved to '{self.path}'.")

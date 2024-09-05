@@ -22,7 +22,7 @@ from pyspark.sql import functions as F
 
 from elmo_geo import register
 from elmo_geo.datasets.catalogue import add_to_catalogue, find_datasets
-from elmo_geo.io.file import to_parquet
+from elmo_geo.io.file import write_parquet
 from elmo_geo.st.geometry import load_geometry
 from elmo_geo.utils.misc import dbfs
 from elmo_geo.utils.settings import SILVER
@@ -114,7 +114,7 @@ sdf_water = (
     .withColumn("geometry", load_geometry(encoding_fn=""))
     .withColumn("geometry", F.expr("ST_SubDivideExplode(geometry, 256)"))
     .select(F.monotonically_increasing_id().alias("fid"), "*")
-    .transform(to_parquet, dataset_water["silver"])
+    .transform(write_parquet, dataset_water["silver"])
 )
 
 
