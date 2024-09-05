@@ -2,7 +2,7 @@ import geopandas as gpd
 import pytest
 from shapely.geometry import Point
 
-from elmo_geo.io import read_file, write_parquet
+from elmo_geo.io import read_file, to_gdf, write_parquet
 from tests.test_etl import test_source_dataset, test_source_geodataset
 
 
@@ -96,7 +96,7 @@ def test_read_write_geodataset_sdf():
     f = "/dbfs/mnt/lab/unrestricted/ELM-Project/bronze/test/test_source_geodataset_io_sdf.parquet"
     df = test_source_geodataset.sdf()
     df_read = _write_read_dataset(df, f, test_source_geodataset.is_geo, partition_cols=None)
-    assert df.toPandas().equals(df_read)
+    assert to_gdf(df).equals(df_read)
 
 
 @pytest.mark.dbr
@@ -104,4 +104,4 @@ def test_read_write_geodataset_gdf():
     f = "/dbfs/mnt/lab/unrestricted/ELM-Project/bronze/test/test_source_geodataset_io_gdf.parquet"
     df = test_source_geodataset.gdf()
     df_read = _write_read_dataset(df, f, test_source_geodataset.is_geo, partition_cols=None)
-    assert df.toPandas().equals(df_read)
+    assert df.equals(df_read)
