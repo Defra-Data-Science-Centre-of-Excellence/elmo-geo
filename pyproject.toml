@@ -19,7 +19,7 @@ dependencies = [
     "rioxarray",
     "seaborn",
 ]
-requires-python = ">=3.10"
+requires-python = "==3.10.12"
 
 [tool.setuptools.packages.find]
 exclude = ["tests"]
