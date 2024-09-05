@@ -1,10 +1,9 @@
 import os
 import subprocess
+import geopandas as gpd
 from datetime import datetime
 from glob import iglob
 
-from fiona import listlayers
-from fiona.errors import DriverError
 from pyspark.sql import functions as F
 from pyspark.sql import types as T
 
@@ -71,10 +70,10 @@ def to_sdf(
 
 
 def list_layers(f: str) -> list[str]:
-    """List layers using Fiona, but don't fail, instead return an empty list"""
+    """List layers, but don't fail, instead return an empty list"""
     try:
-        layers = listlayers(f)
-    except DriverError:
+        layers = gpd.list_layers(f)["name"].tolist()
+    except Exception:
         layers = []
     return layers
 
