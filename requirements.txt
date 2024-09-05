@@ -38,7 +38,7 @@ click==8.1.7
     #   mercantile
     #   pip-tools
     #   rasterio
-    #   sentinelsat
+    #   
 click-plugins==1.1.1
     # via
     #   rasterio
@@ -61,11 +61,6 @@ fonttools==4.53.0
     # via matplotlib
 geographiclib==2.0
     # via geopy
-geojson==3.0.1
-    # via
-    #   sentinelsat
-geomet==1.1.0
-    # via sentinelsat
 geopandas==1.0.1
     # via
     #   elmo_geo (pyproject.toml)
@@ -75,8 +70,6 @@ geopy==2.4.1
     # via contextily
 google-auth==2.31.0
     # via databricks-sdk
-html2text==2024.2.26
-    # via sentinelsat
 idna==3.7
     # via requests
 iniconfig==2.0.0
@@ -226,7 +219,6 @@ requests==2.31.0
     #   databricks-sdk
     #   folium
     #   osmnx
-    #   sentinelsat
 rich==13.7.1
     # via elmo_geo (pyproject.toml)
 rioxarray==0.15.7
@@ -243,8 +235,6 @@ scipy==1.14.0
     #   scikit-learn
     #   statsmodels
 seaborn==0.13.2
-    # via elmo_geo (pyproject.toml)
-sentinelsat==1.2.1
     # via elmo_geo (pyproject.toml)
 shapely==2.0.4
     # via
@@ -269,9 +259,6 @@ tomli==2.0.1
     #   build
     #   pip-tools
     #   pytest
-tqdm==4.65.2
-    # via
-    #   sentinelsat
 typeguard==2.13.3
     # via
     #   pandera
