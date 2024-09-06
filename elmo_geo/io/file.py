@@ -7,7 +7,6 @@ import geopandas as gpd
 import pandas as pd
 from geopandas.io.arrow import _geopandas_to_arrow
 from pyarrow.parquet import write_to_dataset
-from pyspark.errors import AnalysisException
 from pyspark.sql import functions as F
 
 from elmo_geo.utils.dbr import spark
@@ -36,7 +35,7 @@ def load_sdf(path: str, **kwargs) -> SparkDataFrame:
 
     try:
         sdf = read(path)
-    except AnalysisException:
+    except Exception:  # TODO: pyspark.errors.AnalysisException, requires pyspark==3.4.1
         sdf = reduce(union, [read(f) for f in iglob(path + "*")])
 
     if "geometry" in sdf.columns:

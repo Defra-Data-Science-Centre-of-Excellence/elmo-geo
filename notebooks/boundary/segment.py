@@ -27,9 +27,8 @@ from shapely import LineString, MultiLineString, MultiPoint, Point, segmentize
 
 from elmo_geo import register
 from elmo_geo.datasets.catalogue import add_to_catalogue, find_datasets
-from elmo_geo.io import to_gdf, to_parquet
+from elmo_geo.io import load_sdf, to_gdf, to_parquet
 from elmo_geo.plot.base_map import plot_gdf
-from elmo_geo.io import load_sdf
 from elmo_geo.utils.types import SparkDataFrame
 
 register()
