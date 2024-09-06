@@ -23,9 +23,8 @@ import pandas as pd
 from pyspark.sql import functions as F
 
 from elmo_geo import register
-from elmo_geo.io import download_link, to_gdf
+from elmo_geo.io import download_link, load_sdf, to_gdf
 from elmo_geo.plot.base_map import plot_gdf
-from elmo_geo.utils.misc import load_sdf
 
 register()
 

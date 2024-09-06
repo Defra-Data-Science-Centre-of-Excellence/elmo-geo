@@ -4,7 +4,6 @@ import subprocess
 
 from pyspark.sql import functions as F
 
-from elmo_geo.utils.dbr import spark
 from elmo_geo.utils.log import LOG
 from elmo_geo.utils.types import SparkDataFrame
 
@@ -31,13 +30,6 @@ def sh_run(exc: str, **kwargs):
     out = subprocess.run(exc, **_kwargs)
     LOG.info(out.__repr__())
     return out
-
-
-def load_sdf(f: str) -> SparkDataFrame:
-    sdf = spark.read.parquet(dbfs(f, True))
-    if "geometry" in sdf.columns:
-        sdf = sdf.withColumn("geometry", F.expr("ST_SetSRID(ST_GeomFromWKB(geometry), 27700)"))
-    return sdf
 
 
 def count_parquet_files(folder):

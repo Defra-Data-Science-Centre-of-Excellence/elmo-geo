@@ -36,6 +36,7 @@ from .fc_woodland_sensitivity import (
 )
 from .fr_esc_m3_trees_suitability import esc_suitability_broadleaved_raw, esc_suitability_coniferous_raw, esc_suitability_riparian_raw, esc_tree_suitability
 from .ons_itl import itl2_boundaries_parcels, itl2_boundaries_raw
+from .os import os_ngd_raw
 from .protected_areas import (
     jncc_spa_parcels,
     jncc_spa_raw,
@@ -81,6 +82,7 @@ catalogue = [
     ewco_nature_recovery_priority_habitat_parcels,
     itl2_boundaries_raw,
     itl2_boundaries_parcels,
+    os_ngd_raw,
     reference_parcels_raw,
     reference_parcels_raw_no_sbi,
     reference_parcels,
