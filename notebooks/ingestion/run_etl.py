@@ -18,4 +18,4 @@ write_catalogue_json()
 # COMMAND ----------
 
 # use with caution
-destroy_datasets()
+#destroy_datasets() # noqa
