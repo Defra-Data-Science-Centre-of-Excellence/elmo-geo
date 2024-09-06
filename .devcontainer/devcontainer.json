@@ -1,6 +1,6 @@
 {
     "name": "elmo_geo",
-    "image": "mcr.microsoft.com/devcontainers/python:3.11",
+    "image": "mcr.microsoft.com/devcontainers/python:3.10",
     "features": {},
     "customizations": {
         "vscode": {
