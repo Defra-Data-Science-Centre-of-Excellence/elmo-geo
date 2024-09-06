@@ -7,6 +7,7 @@ import geopandas as gpd
 import pandas as pd
 from geopandas.io.arrow import _geopandas_to_arrow
 from pyarrow.parquet import write_to_dataset
+from pyspark.errors import AnalysisException
 from pyspark.sql import functions as F
 
 from elmo_geo.utils.dbr import spark
@@ -24,7 +25,7 @@ class UnknownFileExtension(Exception):
 def load_sdf(path: str, **kwargs) -> SparkDataFrame:
     """Load SparkDataFrame from glob path.
     Automatically converts file api to spark api.
-    Automatically coerces schemas for datasets with multiple datatypes (i.e. Float>Double or Timestamp_NTZ>Timestamp).
+    And catches failure to coerce schemas for datasets with multiple datatypes (i.e. Float>Double or Timestamp_NTZ>Timestamp).
     """
 
     def read(f: str) -> SparkDataFrame:
@@ -35,7 +36,7 @@ def load_sdf(path: str, **kwargs) -> SparkDataFrame:
 
     try:
         sdf = read(path)
-    except Exception:
+    except AnalysisException:
         sdf = reduce(union, [read(f) for f in iglob(path + "*")])
 
     if "geometry" in sdf.columns:
