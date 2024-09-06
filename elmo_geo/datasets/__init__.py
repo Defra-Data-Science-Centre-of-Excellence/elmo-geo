@@ -6,14 +6,36 @@ from pathlib import Path
 from elmo_geo import register
 from elmo_geo.utils.log import LOG
 
-from .commons import commons_parcels, commons_raw
-from .defra_alc import alc_parcels, alc_raw
-from .defra_flood_risk_areas import flood_risk_areas_parcels, flood_risk_areas_raw
+from .cec_soilscapes import (
+    cec_soilscapes_habitats_parcels,
+    cec_soilscapes_parcels,
+    cec_soilscapes_raw,
+    ne_soilscapes_habitats_raw,
+)
+from .commons import (
+    commons_parcels,
+    commons_raw,
+)
+from .defra_alc import (
+    alc_parcels,
+    alc_raw,
+)
+from .defra_flood_risk_areas import (
+    flood_risk_areas_parcels,
+    flood_risk_areas_raw,
+)
+from .defra_national_character_areas import (
+    nca_parcels,
+    nca_raw,
+)
 from .defra_priority_habitats import (
     defra_grassland_proximity_parcels,
     defra_heathland_proximity_parcels,
     defra_priority_habitat_england,
     defra_priority_habitat_parcels,
+    defra_priority_habitat_raw_central,
+    defra_priority_habitat_raw_north,
+    defra_priority_habitat_raw_south,
 )
 from .fc_ewco import (
     ewco_nature_recovery_priority_habitat,
@@ -37,10 +59,23 @@ from .fc_woodland_sensitivity import (
     woodland_creation_sensitivity_var3_parcels,
     woodland_creation_sensitivity_var3_raw,
 )
-from .fr_esc_m3_trees_suitability import esc_suitability_broadleaved_raw, esc_suitability_coniferous_raw, esc_suitability_riparian_raw, esc_tree_suitability
-from .hedges import rpa_hedges_raw
-from .living_england import living_england_habitat_map_phase_4_parcel, living_england_habitat_map_phase_4_raw
-from .moor import moorline_parcel, moorline_raw
+from .fr_esc_m3_trees_suitability import (
+    esc_suitability_broadleaved_raw,
+    esc_suitability_coniferous_raw,
+    esc_suitability_riparian_raw,
+    esc_tree_suitability,
+)
+from .hedges import (
+    rpa_hedges_raw,
+)
+from .living_england import (
+    living_england_habitat_map_phase_4_parcel,
+    living_england_habitat_map_phase_4_raw,
+)
+from .moor import (
+    moorline_parcel,
+    moorline_raw,
+)
 from .ons import (
     bua_parcels,
     bua_raw,
@@ -57,7 +92,10 @@ from .ons import (
     ward_parcels,
     ward_raw,
 )
-from .peat import peaty_soils_parcels, peaty_soils_raw
+from .peat import (
+    peaty_soils_parcels,
+    peaty_soils_raw,
+)
 from .protected_areas import (
     jncc_spa_parcels,
     jncc_spa_raw,
@@ -79,9 +117,22 @@ from .protected_landscapes import (
     protected_landscapes_parcels,
     protected_landscapes_tidy,
 )
-from .rpa_reference_parcels import reference_parcels, reference_parcels_raw, reference_parcels_raw_no_sbi
+from .rpa_reference_parcels import (
+    reference_parcels,
+    reference_parcels_raw,
+    reference_parcels_raw_no_sbi,
+)
 
 catalogue = [
+    cec_soilscapes_raw,
+    cec_soilscapes_habitats_parcels,
+    cec_soilscapes_parcels,
+    defra_priority_habitat_raw_central,
+    defra_priority_habitat_raw_south,
+    defra_priority_habitat_raw_north,
+    nca_raw,
+    nca_parcels,
+    ne_soilscapes_habitats_raw,
     alc_raw,
     alc_parcels,
     bua_raw,
@@ -126,6 +177,12 @@ catalogue = [
     lad_parcels,
     moorline_raw,
     moorline_parcel,
+    national_landscapes_raw,
+    national_parks_raw,
+    peaty_soils_parcels,
+    peaty_soils_raw,
+    protected_landscapes_parcels,
+    protected_landscapes_tidy,
     reference_parcels_raw,
     reference_parcels_raw_no_sbi,
     reference_parcels,
