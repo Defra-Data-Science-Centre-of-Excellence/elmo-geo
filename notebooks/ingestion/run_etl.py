@@ -14,9 +14,3 @@ register()
 
 # write the catalog to json
 write_catalogue_json()
-
-# COMMAND ----------
-
-# use with caution
-#from elmo_geo.datasets import destroy_datasets # noqa
-#destroy_datasets() # noqa
