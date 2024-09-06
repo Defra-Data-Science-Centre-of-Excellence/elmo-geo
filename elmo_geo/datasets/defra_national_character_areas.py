@@ -33,12 +33,12 @@ class NCARaw(DataFrameModel):
         geometry: NCA geometries in EPSG:27700.
     """
 
-    jcaname: str = Field(coerce=True, nullable=True, alias="Joint Character Area Name")
-    nca_name: str = Field(coerce=True, nullable=True, alias="National Character Area Name")
-    naname: str = Field(coerce=True, nullable=True, alias="Natural Area Name")
+    jcaname: str = Field(coerce=True, nullable=True)
+    nca_name: str = Field(coerce=True, nullable=True)
+    naname: str = Field(coerce=True, nullable=True)
     hotlink: str = Field(coerce=True, nullable=True)
-    alt: Category = Field(coerce=True, nullable=True, alias="Agricultural Landscape Typology")
-    blt: Category = Field(coerce=True, nullable=True, alias="Broad Landscape Typology")
+    alt: Category = Field(coerce=True, nullable=True)
+    blt: Category = Field(coerce=True, nullable=True)
     geometry: Geometry(crs=SRID) = Field(coerce=True)
 
 
@@ -61,7 +61,7 @@ class NCAParcels(DataFrameModel):
         proportion: proportion of Parcel geometry overlapping with feature geometry.
     """
 
-    id_parcel: str = Field(unique=True)
+    id_parcel: str = Field()
     blt: Category = Field()
     proportion: float = Field(ge=0, le=1)
 

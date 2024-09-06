@@ -41,7 +41,7 @@ class SpatialPriorityParcels(DataFrameModel):
         proportion: The proportion of the parcel that intersects with the spatial priority.
     """
 
-    id_parcel: str = Field(unique=True)
+    id_parcel: str = Field()
     spatial_priority: Category = Field(coerce=True)
     proportion: float = Field(ge=0, le=1)
 

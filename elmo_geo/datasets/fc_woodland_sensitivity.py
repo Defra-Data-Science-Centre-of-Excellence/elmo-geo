@@ -41,7 +41,7 @@ class WoodlandSensitivityParcels(DataFrameModel):
         proportion: The proportion of the parcel that intersects with the sensitivity classification.
     """
 
-    id_parcel: str = Field(unique=True)
+    id_parcel: str = Field()
     sensitivity: Category = Field(coerce=True, isin=["Unsuitable", "High", "Medium", "Low"])
     proportion: float = Field(ge=0, le=1)
 

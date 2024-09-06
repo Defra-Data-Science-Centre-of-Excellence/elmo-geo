@@ -72,7 +72,7 @@ class LivingEnglandHabitatMapPhase4Parcel(DataFrameModel):
         proportion: proportion of Parcel Geometry(crs=SRID) overlapping with feature geometry.
     """
 
-    id_parcel: str = Field(unique=True)
+    id_parcel: str = Field()
     A_pred: str = Field()
     proportion: float = Field(ge=0, le=1)
 

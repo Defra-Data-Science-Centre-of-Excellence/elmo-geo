@@ -135,7 +135,7 @@ class PriorityHabitatParcels(DataFrameModel):
         proportion: The proportion of the parcel that intersects with the spatial priority.
     """
 
-    id_parcel: str = Field(unique=True)
+    id_parcel: str = Field()
     Main_Habit: Category = Field(coerce=True)
     proportion: float = Field(coerce=True, ge=0, le=1)
 
@@ -150,7 +150,7 @@ class PriorityHabitatProximity(DataFrameModel):
         distance: The distance from the parcel to this type of habitat.
     """
 
-    id_parcel: str = Field(unique=True)
+    id_parcel: str = Field()
     Main_Habit: Category = Field(coerce=True)
     distance: int = Field(coerce=True)
 

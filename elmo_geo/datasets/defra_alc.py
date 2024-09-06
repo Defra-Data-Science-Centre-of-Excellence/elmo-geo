@@ -68,7 +68,7 @@ class ALCParcels(DataFrameModel):
         proportion: proportion of parcel geometry overlapping with ALC geometry, separated by alc_grade.
     """
 
-    id_parcel: str = Field(unique=True)
+    id_parcel: str = Field()
     alc_grade: str = Field()
     proportion: float = Field(ge=0, le=1)
 

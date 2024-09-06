@@ -75,7 +75,7 @@ class ESCTreeSuitabilityModel(DataFrameModel):
         n_species: The number of tree species averaged to give the suitability score
     """
 
-    id_parcel: str = Field(unique=True)
+    id_parcel: str = Field()
     nopeatArea: float = Field(coerce=True)
     period_T1_T2: Category = Field(coerce=True, isin=["2029_2036-2021_2036", "2037_2050-2021_2050", "2051_2100-2021_2100", "2021_2028-2021_2028"])
     woodland_type: Category = Field(coerce=True, isin=["coniferous", "broadleaved", "riparian"])

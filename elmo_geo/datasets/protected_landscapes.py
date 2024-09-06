@@ -98,7 +98,7 @@ class ProtectedLandscapesParcel(DataFrameModel):
         proportion: proportion of Parcel Geometry(crs=SRID) overlapping with feature geometry.
     """
 
-    id_parcel: str = Field(unique=True)
+    id_parcel: str = Field()
     conclusive: bool = Field()
     proportion: float = Field(ge=0, le=1)
 
