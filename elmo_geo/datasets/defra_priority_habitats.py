@@ -17,8 +17,8 @@ from pyspark.sql import functions as F
 from elmo_geo.etl import Dataset, DerivedDataset, SourceDataset
 from elmo_geo.etl.transformations import join_parcels
 from elmo_geo.st.geometry import load_geometry
-from elmo_geo.st.join import knn
-from elmo_geo.utils.types import PandasDataFrame, SparkDataFrame
+from elmo_geo.st.join import knn, sjoin
+from elmo_geo.utils.types import SparkDataFrame
 
 from .rpa_reference_parcels import reference_parcels
 
@@ -258,31 +258,31 @@ The following grassland habitats are included:
 
 
 def _habitat_area_within_distance(
-    sdf_parcels: SparkDataFrame, 
+    sdf_parcels: SparkDataFrame,
     sdf_phi: SparkDataFrame,
-    distance:int,
-    ) -> SparkDataFrame:
-    """Performs distance join between parcels and priority habitats and sums the habitat area per parcel.
-    """
-    return (sjoin(sdf_parcels, sdf_phi)
-            .groupby("id_parcel", "Main_Habit")
-            .agg(F.expr("SUM(ST_Area(geometry_right)) as area"))
-            .withColumn("distance", F.lit(ditance))
-            )
+    distance: int,
+) -> SparkDataFrame:
+    """Performs distance join between parcels and priority habitats and sums the habitat area per parcel."""
+    return (
+        sjoin(sdf_parcels, sdf_phi, distance=distance)
+        .groupby("id_parcel", "Main_Habit")
+        .agg(F.expr("SUM(ST_Area(geometry_right)) as area"))
+        .withColumn("distance", F.lit(distance))
+    )
+
 
 def _habitat_area_within_distances(
     parcels: Dataset,
     priority_habitats: Dataset,
-    distances:list[int] = [2_000, 5_000],
-)->SparkDataFrame:
-    """Calculates the area of priority habitat within each threshold distance to parcels.
-    """
+    distances: list[int] = [2_000, 5_000],
+) -> SparkDataFrame:
+    """Calculates the area of priority habitat within each threshold distance to parcels."""
     sdf_parcels = parcels.sdf().repartition(200)
     sdf_phi = (
         priority_habitats.sdf()
         .repartition(200)
         .withColumn("geometry", load_geometry(encoding_fn=""))
-        .withColumn("geometry", F.expr(f"ST_SubDivideExplode(geometry, 256)"))
+        .withColumn("geometry", F.expr("ST_SubDivideExplode(geometry, 256)"))
     )
 
     sdf = None
@@ -293,6 +293,7 @@ def _habitat_area_within_distances(
         else:
             sdf = sdf.unionByName(_sdf, allowMissingColumns=False)
     return sdf.toPandas()
+
 
 class PriorityHabitatArea(DataFrameModel):
     """Model describing the area of priority habitats at different
@@ -306,10 +307,11 @@ class PriorityHabitatArea(DataFrameModel):
         distance: The threshold distance in metres.
     """
 
-    id_parcel: str: Field()
+    id_parcel: str = Field()
     Main_Habit: Category = Field(coerce=True)
     area: float = Field()
     distance: int = Field(coerce=True)
+
 
 defra_habitat_area_parcels = DerivedDataset(
     name="defra_habitat_area_parcels",
@@ -332,6 +334,3 @@ habitat types, which could overly bias habitat creation classification towards m
 habitats. Using a second 2km threshold allows checking for nearby rarer habitats before moving to
 more common habitats. 
 """
-
-
-
