@@ -58,10 +58,10 @@ class NCAParcels(DataFrameModel):
     Attributes:
         id_parcel: 11 character RPA reference parcel ID (including the sheet ID) e.g. `SE12263419`.
         blt: Broad Landscape Typology
-        geometry: NCA geometries in EPSG:27700.
+        proportion: proportion of Parcel geometry overlapping with feature geometry.
     """
 
-    id_parcel: str = Field()
+    id_parcel: str = Field(unique=True)
     blt: Category = Field()
     proportion: float = Field(ge=0, le=1)
 

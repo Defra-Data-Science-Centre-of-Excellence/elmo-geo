@@ -4,7 +4,9 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from elmo_geo.etl import DerivedDataset, SourceDataset
+from elmo_geo import datasets
+from elmo_geo.datasets import catalogue
+from elmo_geo.etl import Dataset, DerivedDataset, SourceDataset
 
 test_source_dataset = SourceDataset(
     name="test_source_dataset",
@@ -54,3 +56,13 @@ def test_loads_most_recent_data():
     dataset_gm = os.path.getmtime(test_derived_dataset.path)
 
     assert all(dataset_gm >= os.path.getmtime(p) for p in paths)
+
+
+def test_dataset_catalogue():
+    """Tests that datasets imported to the datasets module are also added to the
+    elmo_geo.datasets.catalogue list.
+    """
+    init_datasets = [(name, cls) for name, cls in datasets.__dict__.items() if isinstance(cls, Dataset)]
+    not_in_catalogue = [i for i in init_datasets if i[1] not in catalogue]
+    names = "\n".join(i[0] for i in not_in_catalogue)
+    assert len(not_in_catalogue) == 0, f"The following datasets are imported to elmo_geo.datasets but not added to the catalogue:\n{names}"

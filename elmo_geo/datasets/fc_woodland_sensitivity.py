@@ -41,7 +41,7 @@ class WoodlandSensitivityParcels(DataFrameModel):
         proportion: The proportion of the parcel that intersects with the sensitivity classification.
     """
 
-    id_parcel: str = Field()
+    id_parcel: str = Field(unique=True)
     sensitivity: Category = Field(coerce=True, isin=["Unsuitable", "High", "Medium", "Low"])
     proportion: float = Field(ge=0, le=1)
 
@@ -200,6 +200,7 @@ sfi_agroforestry_parcels = DerivedDataset(
     func=_join_parcels,
     dependencies=[reference_parcels, sfi_agroforestry],
     model=WoodlandSensitivityParcels,
+    is_geo=False,
 )
 """Definition for Forestry Commission's SFI Agroforestry dataset joined to RPA Parcels."""
 
@@ -211,6 +212,7 @@ woodland_creation_sensitivity_parcels = DerivedDataset(
     func=_join_parcels,
     dependencies=[reference_parcels, woodland_creation_sensitivity],
     model=WoodlandSensitivityParcels,
+    is_geo=False,
 )
 """Definition for the Forestry Commission's England Woodland Creation Full Sensitivity Map joined to RPA Parcels."""
 
@@ -222,6 +224,7 @@ woodland_creation_sensitivity_var1_parcels = DerivedDataset(
     func=_join_parcels,
     dependencies=[reference_parcels, woodland_creation_sensitivity_var1],
     model=WoodlandSensitivityParcels,
+    is_geo=False,
 )
 """Definition for the Forestry Commission's England Woodland Creation Full Sensitivity Map Variant 1 joined to RPA Parcels."""
 
@@ -233,6 +236,7 @@ woodland_creation_sensitivity_var2_parcels = DerivedDataset(
     func=_join_parcels,
     dependencies=[reference_parcels, woodland_creation_sensitivity_var2],
     model=WoodlandSensitivityParcels,
+    is_geo=False,
 )
 """Definition for the Forestry Commission's England Woodland Creation Full Sensitivity Map Variant 2 joined to RPA Parcels."""
 
@@ -244,5 +248,6 @@ woodland_creation_sensitivity_var3_parcels = DerivedDataset(
     func=_join_parcels,
     dependencies=[reference_parcels, woodland_creation_sensitivity_var3],
     model=WoodlandSensitivityParcels,
+    is_geo=False,
 )
 """Definition for the Forestry Commission's England Woodland Creation Full Sensitivity Map Variant 3 joined to RPA Parcels."""

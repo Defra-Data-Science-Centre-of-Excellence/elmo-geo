@@ -54,8 +54,8 @@ class PeatySoilsParcels(DataFrameModel):
         proportion: proportion of Parcel Geometry(crs=SRID) overlapping with feature geometry.
     """
 
-    id_parcel: str = Field()
-    group: bool = Field()
+    id_parcel: str = Field(unique=True)
+    group: str = Field()
     proportion: float = Field(ge=0, le=1)
 
 

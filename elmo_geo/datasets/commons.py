@@ -57,10 +57,10 @@ class CommonsParcels(DataFrameModel):
     Attributes:
         id_parcel: 11 character RPA reference parcel ID (including the sheet ID) e.g. `SE12263419`.
         conclusive: Is this area conclusively common land, or only suggested by historic data sources.
-        proportion: proportion of Parcel Geometry(crs=SRID) overlapping with feature geometry.
+        proportion: proportion of Parcel geometry overlapping with feature geometry.
     """
 
-    id_parcel: str = Field()
+    id_parcel: str = Field(unique=True)
     conclusive: bool = Field()
     proportion: float = Field(ge=0, le=1)
 

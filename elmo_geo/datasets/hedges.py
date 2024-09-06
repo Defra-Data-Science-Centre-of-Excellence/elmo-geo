@@ -13,6 +13,8 @@ class RPAHedgesRaw(DataFrameModel):
     """Model for RPA Hedges dataset.
 
     Attributes:
+        sheet_id, parcel_ref: Concatenate to make id_parcel
+        adj_*: If not null identified adjacency, if a hedge is shared with another parcel, or wholly within one.
         geometry: geometries in EPSG:27700.
     """
 

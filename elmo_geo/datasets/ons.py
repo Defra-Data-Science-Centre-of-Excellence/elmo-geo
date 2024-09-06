@@ -84,7 +84,7 @@ class CountryParcels(DataFrameModel):
         proportion: The proportion of the parcel that intersects with feature.
     """
 
-    id_parcel: str = Field()
+    id_parcel: str = Field(unique=True)
     fid: str = Field()
     name: str = Field()
     proportion: float = Field(ge=0, le=1)
@@ -137,7 +137,7 @@ class RegionParcels(DataFrameModel):
         proportion: The proportion of the parcel that intersects with feature.
     """
 
-    id_parcel: str = Field()
+    id_parcel: str = Field(unique=True)
     fid: str = Field()
     name: str = Field()
     proportion: float = Field(ge=0, le=1)
@@ -190,7 +190,7 @@ class ITL2Parcels(DataFrameModel):
         proportion: The proportion of the parcel that intersects with the itl2 boundary.
     """
 
-    id_parcel: str = Field()
+    id_parcel: str = Field(unique=True)
     fid: str = Field()
     name: str = Field()
     proportion: float = Field(ge=0, le=1)
@@ -243,7 +243,7 @@ class CUAParcels(DataFrameModel):
         proportion: The proportion of the parcel that intersects with feature.
     """
 
-    id_parcel: str = Field()
+    id_parcel: str = Field(unique=True)
     fid: str = Field()
     name: str = Field()
     proportion: float = Field(ge=0, le=1)
@@ -296,7 +296,7 @@ class LADParcels(DataFrameModel):
         proportion: The proportion of the parcel that intersects with feature.
     """
 
-    id_parcel: str = Field()
+    id_parcel: str = Field(unique=True)
     fid: str = Field()
     name: str = Field()
     proportion: float = Field(ge=0, le=1)
@@ -349,7 +349,7 @@ class WardParcels(DataFrameModel):
         proportion: The proportion of the parcel that intersects with feature.
     """
 
-    id_parcel: str = Field()
+    id_parcel: str = Field(unique=True)
     fid: str = Field()
     name: str = Field()
     proportion: float = Field(ge=0, le=1)
@@ -402,7 +402,7 @@ class BUAParcels(DataFrameModel):
         proportion: The proportion of the parcel that intersects with feature.
     """
 
-    id_parcel: str = Field()
+    id_parcel: str = Field(unique=True)
     fid: str = Field()
     name: str = Field()
     proportion: float = Field(ge=0, le=1)

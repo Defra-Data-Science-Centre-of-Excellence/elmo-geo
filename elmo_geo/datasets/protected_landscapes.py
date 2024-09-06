@@ -74,7 +74,7 @@ class ProtectedLandscapesTidy(DataFrameModel):
 
     source: Category = Field(isin=["National Park", "National Landscape"])
     name: str = Field()
-    proportion: float = Field(ge=0, le=1)
+    geometry: Geometry(crs=SRID) = Field(coerce=True)
 
 
 protected_landscapes_tidy = DerivedDataset(
@@ -98,7 +98,7 @@ class ProtectedLandscapesParcel(DataFrameModel):
         proportion: proportion of Parcel Geometry(crs=SRID) overlapping with feature geometry.
     """
 
-    id_parcel: str = Field()
+    id_parcel: str = Field(unique=True)
     conclusive: bool = Field()
     proportion: float = Field(ge=0, le=1)
 

@@ -44,10 +44,10 @@ class FloodRiskAreasParcels(DataFrameModel):
 
     Attributes:
         id_parcel: 11 character RPA reference parcel ID (including the sheet ID) e.g. `SE12263419`.
-        geometry: Flood Risk Area geometries in EPSG:27700.
+        proportion: proportion of Parcel geometry overlapping with feature geometry.
     """
 
-    id_parcel: str = Field()
+    id_parcel: str = Field(unique=True)
     proportion: float = Field(ge=0, le=1)
 
 
