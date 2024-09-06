@@ -1,7 +1,7 @@
-"""Ordnance Survery Datasets, provided by DASH.
-- National Geographic Database, is the single store of all Ordnance Survey’s authoritative data.
-- Open Greenspace
-- Mastermap Highways Network Roads Prem
+"""Ordnance Survey Datasets, provided by DASH.
+- National Geographic Database, is the single store of all Ordnance Survey's authoritative data.
+- Open GreenSpace
+- MasterMap Highways Network Roads Prem
 
 [^os]: https://www.ordnancesurvey.co.uk/products/os-ngd
 [^dash]: https://app.powerbi.com/Redirect?action=OpenReport&appId=5762de14-3aa8-4a83-92b3-045cc953e30c&reportObjectId=c8802134-4f3b-484e-bf14-1ed9f8881450&ctid=770a2450-0227-4c62-90c7-4e38537f1102&reportPage=ReportSectionff2a0c223272005d9b10&pbi_source=appShareLink&portalSessionId=f7a19b52-4676-43dd-9f13-d1084081a8f2
