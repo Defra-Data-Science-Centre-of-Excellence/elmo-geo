@@ -82,7 +82,8 @@ def sjoin_and_proportion(
         return max(0, min(1, (geometry_intersection.area / geometry_left_first.area)))
 
     return (
-        sdf_features.repartition(200).transform(fn_pre)
+        sdf_features.repartition(200)
+        .transform(fn_pre)
         .transform(lambda sdf: sjoin(sdf_parcels.repartition(200), sdf, **sjoin_kwargs))
         .withColumn("geometry_left", F.expr("ST_AsBinary(geometry_left)"))
         .withColumn("geometry_right", F.expr("ST_AsBinary(geometry_right)"))

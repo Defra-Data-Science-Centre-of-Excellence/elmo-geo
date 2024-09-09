@@ -1,4 +1,6 @@
 import shutil
+from functools import reduce
+from glob import iglob
 from pathlib import Path
 
 import geopandas as gpd
@@ -7,6 +9,7 @@ from geopandas.io.arrow import _geopandas_to_arrow
 from pyarrow.parquet import write_to_dataset
 from pyspark.sql import functions as F
 
+from elmo_geo.utils.dbr import spark
 from elmo_geo.utils.log import LOG
 from elmo_geo.utils.misc import dbfs
 from elmo_geo.utils.types import DataFrame, GeoDataFrame, PandasDataFrame, SparkDataFrame
@@ -16,6 +19,28 @@ from .convert import to_gdf
 
 class UnknownFileExtension(Exception):
     """Don't know how to read file with extension."""
+
+
+def load_sdf(path: str, **kwargs) -> SparkDataFrame:
+    """Load SparkDataFrame from glob path.
+    Automatically converts file api to spark api.
+    And catches failure to coerce schemas for datasets with multiple datatypes (i.e. Float>Double or Timestamp_NTZ>Timestamp).
+    """
+
+    def read(f: str) -> SparkDataFrame:
+        return spark.read.parquet(dbfs(f, True), **kwargs)
+
+    def union(x: SparkDataFrame, y: SparkDataFrame) -> SparkDataFrame:
+        return x.unionByName(y, allowMissingColumns=True)
+
+    try:
+        sdf = read(path)
+    except Exception:  # TODO: pyspark.errors.AnalysisException, requires pyspark==3.4.1
+        sdf = reduce(union, [read(f) for f in iglob(path + "*")])
+
+    if "geometry" in sdf.columns:
+        sdf = sdf.withColumn("geometry", F.expr("ST_SetSRID(ST_GeomFromWKB(geometry), 27700)"))
+    return sdf
 
 
 def read_file(source_path: str, is_geo: bool, layer: int | str | None = None) -> PandasDataFrame | GeoDataFrame:
