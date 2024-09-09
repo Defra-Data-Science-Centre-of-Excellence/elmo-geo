@@ -74,7 +74,7 @@ def _overlap(pdf: PandasDataFrame, columns: list[str]) -> PandasDataFrame:
     geometry_intersection = geometry_left_first.intersection(geometry_right_union)
     proportion = geometry_intersection.area / geometry_left_first.area
     proportion_clipped = min(max(proportion, 0), 1)
-    return pdf.iloc[:1][columns].assign(proportion = proportion_clipped)
+    return pdf.iloc[:1][columns].assign(proportion=proportion_clipped)
 
 
 def sjoin_and_proportion(
