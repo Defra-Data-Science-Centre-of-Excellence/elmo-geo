@@ -9,7 +9,7 @@ from pyspark.sql import types as T
 
 from elmo_geo.st.geometry import load_geometry
 from elmo_geo.st.join import sjoin
-from elmo_geo.utils.types import Geometry, SparkDataFrame
+from elmo_geo.utils.types import SparkDataFrame
 
 from .etl import Dataset, DerivedDataset
 
@@ -75,15 +75,15 @@ def sjoin_and_proportion(
         columns = []
 
     @F.pandas_udf(T.DoubleType(), F.PandasUDFType.GROUPED_AGG)
-    def _udf_overlap(geometry_left: Geometry, geometry_right: Geometry) -> float:
+    def _udf_overlap(geometry_left, geometry_right) -> float:
         geometry_left_first = gpd.GeoSeries.from_wkb(geometry_left)[0]  # since grouping by id_parcel, selecting first g_left gives the parcel geom.
         geometry_right_union = gpd.GeoSeries.from_wkb(geometry_right).union_all(method="unary")  # combine intersecting feature geometries into single geom.
         geometry_intersection = geometry_left_first.intersection(geometry_right_union)
         return max(0, min(1, (geometry_intersection.area / geometry_left_first.area)))
 
     return (
-        sdf_features.transform(fn_pre)
-        .transform(lambda sdf: sjoin(sdf_parcels, sdf, **sjoin_kwargs))
+        sdf_features.repartition(200).transform(fn_pre)
+        .transform(lambda sdf: sjoin(sdf_parcels.repartition(200), sdf, **sjoin_kwargs))
         .withColumn("geometry_left", F.expr("ST_AsBinary(geometry_left)"))
         .withColumn("geometry_right", F.expr("ST_AsBinary(geometry_right)"))
         .groupby(["id_parcel", *columns])

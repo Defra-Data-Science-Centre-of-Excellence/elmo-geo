@@ -62,7 +62,7 @@ class NCAParcels(DataFrameModel):
     """
 
     id_parcel: str = Field()
-    blt: Category = Field()
+    blt: str = Field(nullable=True)
     proportion: float = Field(ge=0, le=1)
 
 
