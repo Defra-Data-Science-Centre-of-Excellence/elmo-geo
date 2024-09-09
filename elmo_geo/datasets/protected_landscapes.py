@@ -94,12 +94,12 @@ class ProtectedLandscapesParcel(DataFrameModel):
 
     Attributes:
         id_parcel: 11 character RPA reference parcel ID (including the sheet ID) e.g. `SE12263419`.
-        source: Is this area conclusively common land, or only suggested by historic data sources.
+        source: Either a "National Park" or "National Landscape".
         proportion: proportion of Parcel Geometry(crs=SRID) overlapping with feature geometry.
     """
 
     id_parcel: str = Field()
-    conclusive: bool = Field()
+    source: str = Field()
     proportion: float = Field(ge=0, le=1)
 
 

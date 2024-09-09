@@ -17,7 +17,7 @@ from .etl import Dataset
 def combine_wide(
     *datasets: list[Dataset],
     sources: list[str] | None = None,
-    keys:list[str] = ["id_parcel"],
+    keys: list[str] = ["id_parcel"],
     rename_cols: list[str] = ["proportion"],
 ) -> SparkDataFrame:
     """Join multiple Datasets together to create a wide table.
