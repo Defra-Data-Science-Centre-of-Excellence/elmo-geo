@@ -31,5 +31,5 @@ rpa_hedges_raw = SourceDataset(
     level1="rpa",
     model=RPAHedgesRaw,
     restricted=False,
-    source_path="/dbfs/mnt/base/unrestricted/source_rpa_spatial_data_mart/dataset_efa_control_layer/format_GEOPARQUET_efa_control_layer/LATEST_efa_control_layer/",
+    source_path="/dbfs/mnt/base/unrestricted/source_rpa_spatial_data_mart/dataset_efa_control_layer/format_GEOPARQUET_efa_control_layer/SNAPSHOT_2024_08_07_efa_control_layer/",  # BUG: lastest is a zipped parquet
 )
