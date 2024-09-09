@@ -11,25 +11,29 @@ from elmo_geo.st.geometry import load_geometry
 from elmo_geo.st.join import sjoin
 from elmo_geo.utils.types import SparkDataFrame
 
-from .etl import Dataset, DerivedDataset
+from .etl import Dataset
 
 
-def combine_wide(*datasets: list[DerivedDataset], sources: list[str] | None = None) -> SparkDataFrame:
-    """Join multiple DerivedDatasets together using the rpa parcel id to create a wide table.
+def combine_wide(
+    *datasets: list[Dataset],
+    sources: list[str] | None = None,
+    keys:list[str] = ["id_parcel"],
+    rename_cols: list[str] = ["proportion"],
+) -> SparkDataFrame:
+    """Join multiple Datasets together to create a wide table.
 
     Parameters:
-        *datasets: Datasets to join together. Must contain an 'id_parcel' field.
-        sources: Dataset shorthand names. Used to rename 'proportion' fields.
+        *datasets: Datasets to join together.
+        sources: Dataset shorthand names.
+        keys: used to group on.
+        rename_cols: to be renamed with "{col}_{source}".
     """
     sdf = None
-    if sources is None:
-        sources = [None] * len(datasets)
+    sources = sources or [None] * len(datasets)
     for dataset, source in zip(datasets, sources):
-        _sdf = dataset.sdf()
-        if source is None:
-            source = dataset.name
-        _sdf = _sdf.withColumnRenamed("proportion", f"proportion_{source}")
-        sdf = sdf.join(_sdf, on="id_parcel") if sdf else _sdf
+        source = source or dataset.name
+        _sdf = dataset.sdf().withColumnsRenamed({col: f"{col}_{source}" for col in rename_cols})
+        sdf = sdf.join(_sdf, on=keys) if sdf else _sdf
     return sdf.toPandas()
 
 
@@ -37,16 +41,18 @@ def combine_long(
     *datasets: list[Dataset],
     sources: list[str] | None = None,
 ) -> SparkDataFrame:
+    """Join multiple Datasets together using the rpa parcel id to create a wide table.
+
+    Parameters:
+        *datasets: Datasets to join together. Must contain an 'id_parcel' field.
+        sources: Dataset shorthand names. Used to rename 'proportion' fields.
+    """
     sdf = None
+    sources = sources or [None] * len(datasets)
     for dataset, source in zip(datasets, sources):
-        _sdf = dataset.sdf()
-        if source is None:
-            source = dataset.name
-        _sdf = _sdf.withColumn("source", F.lit(source))
-        if sdf is None:
-            sdf = _sdf
-        else:
-            sdf.unionByName(_sdf, allowMissingColumns=True)
+        source = source or dataset.name
+        _sdf = dataset.sdf().withColumn("source", F.lit(source))
+        sdf = sdf.unionByName(_sdf, allowMissingColumns=True) if sdf else _sdf
     return sdf
 
 

@@ -72,7 +72,7 @@ class ProtectedLandscapesTidy(DataFrameModel):
         geometry: (Multi)Polygon geometries in EPSG:27700.
     """
 
-    source: Category = Field(isin=["National Park", "National Landscape"])
+    source: Category = Field(coerce=True, isin=["National Park", "National Landscape"])
     name: str = Field()
     geometry: Geometry(crs=SRID) = Field(coerce=True)
 
