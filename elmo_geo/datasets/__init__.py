@@ -6,6 +6,9 @@ from pathlib import Path
 from elmo_geo import register
 from elmo_geo.utils.log import LOG
 
+from .boundary import (
+    boundary_segments,
+)
 from .cec_soilscapes import (
     cec_soilscapes_habitats_parcels,
     cec_soilscapes_parcels,
@@ -127,6 +130,7 @@ from .rpa_reference_parcels import (
 catalogue = [
     alc_raw,
     alc_parcels,
+    boundary_segments,
     bua_raw,
     bua_parcels,
     cec_soilscapes_raw,
