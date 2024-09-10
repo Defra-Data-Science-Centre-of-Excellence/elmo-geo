@@ -23,17 +23,17 @@ class UnknownFileExtension(Exception):
 
 
 def memsize_sdf(sdf: SparkDataFrame) -> int:
-  "Collect the approximate in-memory size of a SparkDataFrame."
-  rdd = sdf.rdd._reserialize(AutoBatchedSerializer(PickleSerializer()))
-  JavaObj = rdd.ctx._jvm.org.apache.spark.mllib.api.python.SerDe.pythonToJava(rdd._jrdd, True)
-  return spark._jvm.org.apache.spark.util.SizeEstimator.estimate(JavaObj)
+    "Collect the approximate in-memory size of a SparkDataFrame."
+    rdd = sdf.rdd._reserialize(AutoBatchedSerializer(PickleSerializer()))
+    JavaObj = rdd.ctx._jvm.org.apache.spark.mllib.api.python.SerDe.pythonToJava(rdd._jrdd, True)
+    return spark._jvm.org.apache.spark.util.SizeEstimator.estimate(JavaObj)
 
 
 def auto_repartition(
     sdf: SparkDataFrame,
     partitionBy: str = None,
     count_ratio: float = 1e-6,
-    mem_ratio: float = 1/1024**2,
+    mem_ratio: float = 1 / 1024**2,
     thread_ratio: float = 1.5,
     jobs_cap: int = 100_000,
 ) -> SparkDataFrame:
@@ -46,11 +46,11 @@ def auto_repartition(
         partitionBy: is a column to repartition along, with less partitions than unique values, some will be grouped together.
         count_ratio: with default value attempts to repartition* every 1 million rows.
         mem_ratio: * every 1MiB.
-        thread_ratio: * 1.5 tasks per thread. 
+        thread_ratio: * 1.5 tasks per thread.
         jobs_cap: limits the maximum number of jobs to fit within Spark's job limit.
     """
     partitioners = (
-        round(sdf.rdd.countApprox(800, .8) * count_ratio),
+        round(sdf.rdd.countApprox(800, 0.8) * count_ratio),
         round(memsize_sdf(sdf) * mem_ratio),
         round(spark.sparkContext.defaultParallelism * thread_ratio),
     )
