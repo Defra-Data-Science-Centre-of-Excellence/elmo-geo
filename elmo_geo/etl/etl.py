@@ -310,7 +310,8 @@ class DerivedDataset(Dataset):
         LOG.info(f"Creating '{self.name}' dataset.")
         df = self.func(*self.dependencies)
         if isinstance(df, SparkDataFrame):
-            _df = to_gdf(df.limit(10_000)) if self.is_geo else df.limit(10_000).toPandas()
+            LIMIT_SDF: int = 100_000
+            _df = to_gdf(df.limit(LIMIT_SDF)) if self.is_geo else df.limit(LIMIT_SDF).toPandas()
             self._validate(_df)
         else:
             self._validate(df)
