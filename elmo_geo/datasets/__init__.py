@@ -6,11 +6,36 @@ from pathlib import Path
 from elmo_geo import register
 from elmo_geo.utils.log import LOG
 
+from .cec_soilscapes import (
+    cec_soilscapes_habitats_parcels,
+    cec_soilscapes_parcels,
+    cec_soilscapes_raw,
+    ne_soilscapes_habitats_raw,
+)
+from .commons import (
+    commons_parcels,
+    commons_raw,
+)
+from .defra_alc import (
+    alc_parcels,
+    alc_raw,
+)
+from .defra_flood_risk_areas import (
+    flood_risk_areas_parcels,
+    flood_risk_areas_raw,
+)
+from .defra_national_character_areas import (
+    nca_parcels,
+    nca_raw,
+)
 from .defra_priority_habitats import (
     defra_grassland_proximity_parcels,
     defra_heathland_proximity_parcels,
     defra_priority_habitat_england,
     defra_priority_habitat_parcels,
+    defra_priority_habitat_raw_central,
+    defra_priority_habitat_raw_north,
+    defra_priority_habitat_raw_south,
 )
 from .fc_ewco import (
     ewco_nature_recovery_priority_habitat,
@@ -34,9 +59,44 @@ from .fc_woodland_sensitivity import (
     woodland_creation_sensitivity_var3_parcels,
     woodland_creation_sensitivity_var3_raw,
 )
-from .fr_esc_m3_trees_suitability import esc_suitability_broadleaved_raw, esc_suitability_coniferous_raw, esc_suitability_riparian_raw, esc_tree_suitability
-from .ons_itl import itl2_boundaries_parcels, itl2_boundaries_raw
+from .fr_esc_m3_trees_suitability import (
+    esc_suitability_broadleaved_raw,
+    esc_suitability_coniferous_raw,
+    esc_suitability_riparian_raw,
+    esc_tree_suitability,
+)
+from .hedges import (
+    rpa_hedges_raw,
+)
+from .living_england import (
+    living_england_habitat_map_phase_4_parcel,
+    living_england_habitat_map_phase_4_raw,
+)
+from .moor import (
+    moorline_parcel,
+    moorline_raw,
+)
+from .ons import (
+    bua_parcels,
+    bua_raw,
+    country_parcels,
+    country_raw,
+    cua_parcels,
+    cua_raw,
+    itl2_parcels,
+    itl2_raw,
+    lad_parcels,
+    lad_raw,
+    region_parcels,
+    region_raw,
+    ward_parcels,
+    ward_raw,
+)
 from .os import os_ngd_raw
+from .peat import (
+    peaty_soils_parcels,
+    peaty_soils_raw,
+)
 from .protected_areas import (
     jncc_spa_parcels,
     jncc_spa_raw,
@@ -52,43 +112,90 @@ from .protected_areas import (
     ne_sssi_units_raw,
     protected_areas_parcels,
 )
-from .rpa_reference_parcels import reference_parcels, reference_parcels_raw, reference_parcels_raw_no_sbi
+from .protected_landscapes import (
+    national_landscapes_raw,
+    national_parks_raw,
+    protected_landscapes_parcels,
+    protected_landscapes_tidy,
+)
+from .rpa_reference_parcels import (
+    reference_parcels,
+    reference_parcels_raw,
+    reference_parcels_raw_no_sbi,
+)
 
 catalogue = [
-    protected_areas_parcels,
-    ne_sssi_units_raw,
-    ne_sssi_units_parcels,
-    ne_nnr_raw,
-    ne_nnr_parcels,
-    ne_sac_raw,
-    ne_sac_parcels,
-    jncc_spa_raw,
-    jncc_spa_parcels,
-    ne_ramsar_raw,
-    ne_ramsar_parcels,
-    ne_marine_conservation_zones_raw,
-    ne_marine_conservation_zones_parcels,
-    esc_suitability_broadleaved_raw,
-    esc_suitability_coniferous_raw,
-    esc_suitability_riparian_raw,
-    esc_tree_suitability,
+    alc_raw,
+    alc_parcels,
+    bua_raw,
+    bua_parcels,
+    cec_soilscapes_raw,
+    cec_soilscapes_habitats_parcels,
+    cec_soilscapes_parcels,
+    commons_raw,  # GPKG
+    commons_parcels,
+    country_raw,
+    country_parcels,
+    cua_raw,
+    cua_parcels,
+    defra_priority_habitat_raw_central,
+    defra_priority_habitat_raw_south,
+    defra_priority_habitat_raw_north,
     defra_priority_habitat_england,
     defra_priority_habitat_parcels,
     defra_heathland_proximity_parcels,
     defra_grassland_proximity_parcels,
-    ewco_nature_recovery_priority_habitat_parcels,
+    esc_suitability_broadleaved_raw,
+    esc_suitability_coniferous_raw,
+    esc_suitability_riparian_raw,
+    esc_tree_suitability,
     ewco_nature_recovery_priority_habitat_raw,
     ewco_nature_recovery_priority_habitat,
     ewco_nature_recovery_priority_habitat_parcels,
-    itl2_boundaries_raw,
-    itl2_boundaries_parcels,
+    flood_risk_areas_raw,
+    flood_risk_areas_parcels,
+    itl2_raw,
+    itl2_parcels,
+    jncc_spa_raw,
+    jncc_spa_parcels,
+    living_england_habitat_map_phase_4_raw,
+    living_england_habitat_map_phase_4_parcel,
+    lad_raw,
+    lad_parcels,
+    moorline_raw,
+    moorline_parcel,
+    nca_raw,
+    nca_parcels,
+    ne_nnr_raw,
+    ne_nnr_parcels,
+    ne_ramsar_raw,
+    ne_ramsar_parcels,
+    ne_sac_raw,
+    ne_sac_parcels,
+    ne_soilscapes_habitats_raw,
+    ne_sssi_units_raw,
+    ne_sssi_units_parcels,
+    ne_marine_conservation_zones_raw,
+    ne_marine_conservation_zones_parcels,
+    peaty_soils_raw,
+    peaty_soils_parcels,
+    protected_areas_parcels,
+    national_landscapes_raw,
+    national_parks_raw,
+    protected_landscapes_tidy,
+    protected_landscapes_parcels,
     os_ngd_raw,
     reference_parcels_raw,
     reference_parcels_raw_no_sbi,
     reference_parcels,
+    region_raw,
+    region_parcels,
+    rpa_hedges_raw,
     sfi_agroforestry_raw,
     sfi_agroforestry,
     sfi_agroforestry_parcels,
+    ward_raw,
+    ward_parcels,
     woodland_creation_sensitivity_raw,
     woodland_creation_sensitivity,
     woodland_creation_sensitivity_parcels,
