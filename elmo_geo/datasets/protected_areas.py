@@ -70,7 +70,7 @@ class NESSSIUnitsParcels(DataFrameModel):
         proportion: The proportion of the parcel that intersects with the sssi units
     """
 
-    id_parcel: str = Field(coerce=True)
+    id_parcel: str = Field(unique=True)
     proportion: float = Field(ge=0, le=1)
 
 
@@ -117,7 +117,7 @@ class NESSSINNRParcels(DataFrameModel):
         proportion: The proportion of the parcel that intersects with the National Nature Reserves.
     """
 
-    id_parcel: str = Field(coerce=True)
+    id_parcel: str = Field(unique=True)
     proportion: float = Field(ge=0, le=1)
 
 
@@ -165,7 +165,7 @@ class NESACParcels(DataFrameModel):
         proportion: The proportion of the parcel that intersects with the Special Areas of Conservation.
     """
 
-    id_parcel: str = Field(coerce=True)
+    id_parcel: str = Field(unique=True)
     proportion: float = Field(ge=0, le=1)
 
 
@@ -212,7 +212,7 @@ class JNCCSPARParcels(DataFrameModel):
         proportion: The proportion of the parcel that intersects with the Special Protection Areas.
     """
 
-    id_parcel: str = Field(coerce=True)
+    id_parcel: str = Field(unique=True)
     proportion: float = Field(ge=0, le=1)
 
 
@@ -259,7 +259,7 @@ class NERamsarParcels(DataFrameModel):
         proportion: The proportion of the parcel that intersects with the Ramsar sites.
     """
 
-    id_parcel: str = Field(coerce=True)
+    id_parcel: str = Field(unique=True)
     proportion: float = Field(ge=0, le=1)
 
 
@@ -343,7 +343,7 @@ class ProtectedAreasParcels(DataFrameModel):
         proportion_ramsar: The proportion of the parcel that intersects with ramsar sites.
         proportion_mcz: The proportion of the parcel that intersects with mcz sites."""
 
-    id_parcel: str = Field(coerce=True)
+    id_parcel: str = Field(unique=True)
     proportion_sssi: float = Field(ge=0, le=1)
     proportion_nnr: float = Field(ge=0, le=1)
     proportion_sac: float = Field(ge=0, le=1)

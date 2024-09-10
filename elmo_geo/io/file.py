@@ -1,124 +1,105 @@
+import shutil
+from functools import reduce
+from glob import iglob
+from pathlib import Path
+
 import geopandas as gpd
 import pandas as pd
-import pyarrow as pa
-import pyarrow.parquet as pq
-from geopandas.io.arrow import SUPPORTED_VERSIONS, _geopandas_to_arrow
+from geopandas.io.arrow import _geopandas_to_arrow
+from pyarrow.parquet import write_to_dataset
 from pyspark.sql import functions as F
 
-from elmo_geo.st.index import centroid_index, sindex
-from elmo_geo.utils.misc import dbfs, info_sdf, sh_run
-from elmo_geo.utils.types import SparkDataFrame
+from elmo_geo.utils.dbr import spark
+from elmo_geo.utils.log import LOG
+from elmo_geo.utils.misc import dbfs
+from elmo_geo.utils.types import DataFrame, GeoDataFrame, PandasDataFrame, SparkDataFrame
+
+from .convert import to_gdf
 
 
-def convert_file(f_in: str, f_out: str):
-    sh_run(["./elmo_geo/io/ogr2gpq.sh", f_in, f_out], shell=False)
+class UnknownFileExtension(Exception):
+    """Don't know how to read file with extension."""
 
 
-def repartitonBy(sdf: SparkDataFrame, by: str) -> SparkDataFrame:
-    n = sdf.select(by).distinct().count()
-    return sdf.repartition(n, by)
-
-
-def to_parquet(sdf: SparkDataFrame, f: str, geometry_column: str = "geometry", sindex_column: str | None = "sindex", **kwargs):
-    """SparkDataFrame to Parquet with WKB encoding by without metadata, partitioned by "sindex"
-    This assumes a indexing method has been used externally.
+def load_sdf(path: str, **kwargs) -> SparkDataFrame:
+    """Load SparkDataFrame from glob path.
+    Automatically converts file api to spark api.
+    And catches failure to coerce schemas for datasets with multiple datatypes (i.e. Float>Double or Timestamp_NTZ>Timestamp).
     """
-    _sdf = sdf
-    if sindex_column is not None:
-        _sdf = _sdf.transform(repartitonBy, sindex_column)
-    if geometry_column is not None:
-        _sdf = _sdf.withColumn(geometry_column, F.expr(f"ST_AsBinary({geometry_column})"))
-    _sdf.write.parquet(dbfs(f, True), partitionBy=sindex_column, **kwargs)
-    info_sdf(sdf, f)
+
+    def read(f: str) -> SparkDataFrame:
+        return spark.read.parquet(dbfs(f, True), **kwargs)
+
+    def union(x: SparkDataFrame, y: SparkDataFrame) -> SparkDataFrame:
+        return x.unionByName(y, allowMissingColumns=True)
+
+    try:
+        sdf = read(path)
+    except Exception:  # TODO: pyspark.errors.AnalysisException, requires pyspark==3.4.1
+        sdf = reduce(union, [read(f) for f in iglob(path + "*")])
+
+    if "geometry" in sdf.columns:
+        sdf = sdf.withColumn("geometry", F.expr("ST_SetSRID(ST_GeomFromWKB(geometry), 27700)"))
     return sdf
 
 
-def to_geoparquet_partitioned(sdf: SparkDataFrame, f: str, **kwargs):
-    """SparkDataFrame to GeoParquet, partitioned by BNG index"""
-    sdf = sdf.transform(sindex).transform(repartitonBy, "sindex")
-    sdf.write.format("geoparquet").save(dbfs(f, True), partitionBy="sindex", **kwargs)
-    info_sdf(sdf, f)
-    return sdf
+def read_file(source_path: str, is_geo: bool, layer: int | str | None = None) -> PandasDataFrame | GeoDataFrame:
+    path = Path(source_path)
+    if is_geo:
+        if path.suffix == ".parquet" or path.is_dir():
+            df = gpd.read_parquet(path)
+        else:
+            layers = gpd.list_layers(path)["name"]
+            if layer is None and 1 < len(layers):
+                df = gpd.GeoDataFrame(pd.concat((gpd.read_file(path, layer=layer).assign(layer=layer) for layer in layers), ignore_index=True))
+            else:
+                df = gpd.read_file(path, layer=layer)
+    else:
+        if path.suffix == ".parquet" or path.is_dir():
+            df = pd.read_parquet(path)
+        elif path.suffix == ".csv":
+            df = pd.read_csv(path)
+        else:
+            raise UnknownFileExtension()
+    return df
 
 
-def pd_to_partitioned_parquet(
-    df: pd.DataFrame,
-    path: str,
-    index: bool | None = None,
-    compression: str = "snappy",
-    partition_cols: list[str] | None = None,
-    use_deprecated_int96_timestamps: bool = True,
-    **kwargs,
-) -> None:
-    table = pa.Table.from_pandas(df)
-    pq.write_to_dataset(
-        table,
-        path,
-        compression=compression,
-        partition_cols=partition_cols,
-        use_deprecated_int96_timestamps=use_deprecated_int96_timestamps,
-        **kwargs,
-    )
+def write_parquet(df: DataFrame, path: str, partition_cols: list[str] | None = None):
+    """Write a DataFrame to parquet and partition.
+    Takes in Spark, Pandas, or GeoPandas dataframe, remove any already written data, and writes a new dataframe.
 
-
-def gpd_to_partitioned_parquet(
-    gdf: gpd.GeoDataFrame,
-    path: str,
-    index: bool | None = None,
-    geometry_encoding: str = "wkb",
-    write_covering_bbox: bool = False,
-    compression: str = "snappy",
-    partition_cols: list[str] | None = None,
-    use_deprecated_int96_timestamps: bool = True,
-    **kwargs,
-) -> None:
-    """`geopandas.GeoDataFrame` to partitioned parquet.
-
-    Note:
-        We want to use the experimental geoparquet 1.1 here which saves as geoarrow
-        instead of WKB and adds a bounding box column for predicate pushdown.
-        See geopandas docs for more info, but have left the default of WKB for now
-        to avoid potential incompatibility.
-        https://geopandas.org/en/stable/docs/reference/api/geopandas.GeoDataFrame.to_parquet.html#geopandas.GeoDataFrame.to_parquet
+    Parameters:
+        df: Dataframe to be written as (geo)parquet.
+        path: Output path to write the data into.
+        partition_cols: Column to write the output as separate files.
     """
-    schema_version = SUPPORTED_VERSIONS[-1]
-    table = _geopandas_to_arrow(gdf, index=index, schema_version=schema_version)
-    pq.write_to_dataset(
-        table,
-        path,
-        compression=compression,
-        partition_cols=partition_cols,
-        use_deprecated_int96_timestamps=use_deprecated_int96_timestamps,
-        **kwargs,
-    )
+    if partition_cols is None:
+        partition_cols = []
 
+    def to_gpqs(df):
+        "GeoPandas writer as partial function."
+        table = _geopandas_to_arrow(to_gdf(df))
+        write_to_dataset(table, path, partition_cols=partition_cols)
+        return pd.DataFrame([])
 
-def to_parquet_partitioned(sdf: SparkDataFrame, f: str, **kwargs):
-    """SparkDataFrame to Parquet, partitioned by BNG index"""
-    sdf = sdf.transform(sindex).transform(repartitonBy, "sindex")
-    sdf.withColumn("geometry", F.expr("ST_AsBinary(geometry)")).write.parquet(dbfs(f, True), partitionBy="sindex", **kwargs)
-    info_sdf(sdf, f)
-    return sdf
+    path = Path(path)
+    if path.exists():
+        LOG.warning(f"Replacing Dataset: {path}")
+        if path.is_dir():
+            shutil.rmtree(path)
+        else:
+            path.unlink()
 
+    path.parent.mkdir(parents=True, exist_ok=True)
 
-def to_geoparquet_sorted(sdf: SparkDataFrame, f: str, **kwargs):
-    """SparkDataFrame to GeoParquet, sorted by BNG index"""
-    sdf = sdf.transform(centroid_index, resolution="1km").sort("sindex")
-    sdf.write.format("geoparquet").save(dbfs(f, True), **kwargs)
-    info_sdf(sdf, f)
-    return sdf
-
-
-def to_geoparquet_zsorted(sdf: SparkDataFrame, f: str, **kwargs):
-    """SparkDataFrame to GeoParquet, sorted by geohash index"""
-    sdf = (
-        sdf.transform(sindex, resolution="1km", index_fn="chipped_index")
-        .withColumn("geohash", F.expr('ST_GeoHash(ST_FlipCoordinates(ST_Transform(geometry, "EPSG:27700", "EPSG:4326")))'))
-        .sort("geohash")
-    )
-    sdf.write.format("geoparquet").save(dbfs(f, True), **kwargs)
-    info_sdf(sdf, f)
-    return sdf
-
-
-to_gpq = to_geoparquet_partitioned
+    if isinstance(df, SparkDataFrame):
+        if "geometry" in df.columns:
+            df.withColumn("geometry", F.expr("ST_AsBinary(geometry)")).groupby(partition_cols).applyInPandas(to_gpqs, "col struct<>").collect()
+        else:
+            df.write.parquet(dbfs(str(path), True), partitionBy=partition_cols)
+    elif isinstance(df, GeoDataFrame):
+        to_gpqs(df)
+    elif isinstance(df, PandasDataFrame):
+        df.to_parquet(path, partition_cols=partition_cols)
+    else:
+        raise TypeError(f"Expected Spark, GeoPandas or Pandas dataframe, received {type(df)}.")

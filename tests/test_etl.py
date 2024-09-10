@@ -1,12 +1,17 @@
 import os
+from glob import iglob
+from importlib import import_module
 
 import numpy as np
 import pandas as pd
 import pytest
 
-from elmo_geo.etl import DerivedDataset, SourceDataset
+from elmo_geo import datasets
+from elmo_geo.datasets import catalogue
+from elmo_geo.etl import Dataset, DerivedDataset, SourceDataset
 from elmo_geo.etl.transformations import pivot_long_sdf, pivot_wide_sdf
 from elmo_geo.utils.dbr import spark
+
 
 test_source_dataset = SourceDataset(
     name="test_source_dataset",
@@ -17,6 +22,17 @@ test_source_dataset = SourceDataset(
     source_path="/dbfs/mnt/lab/unrestricted/elm_data/test/test_dataset.parquet",
 )
 """Test SourceDataset
+"""
+
+test_source_geodataset = SourceDataset(
+    name="test_source_dataset",
+    level0="bronze",
+    level1="test",
+    restricted=False,
+    is_geo=True,
+    source_path="/dbfs/mnt/lab/unrestricted/elm_data/test/test_geodataset.gpkg",
+)
+"""Test SourceDataset that is geographic.
 """
 
 
@@ -67,3 +83,25 @@ def test_pivots():
     pdf_wide = sdf_wide.toPandas()
     pdf_wide_sorted = pdf_wide.sort_values("id", ignore_index=True)[pdf.columns]  # Spark partitions are async so this needs sorting.
     assert pdf.equals(pdf_wide_sorted)
+
+    
+def test_dataset_imports():
+    """Tests that datasets imported to the datasets module are also added.
+    Test 1 to elmo_geo.datasets.catalogue.
+    Test 2 to elmo_geo.datasets.__init__.
+    """
+    catalogue_datasets = {y.name for y in catalogue}
+    init_datasets = {y.name for y in datasets.__dict__.values() if isinstance(y, Dataset)}
+    submodule_datasets = {
+        y.name
+        for f in iglob("elmo_geo/datasets/*.py", recursive=True)
+        if not f.endswith("__init__.py")
+        for y in import_module(f[:-3].replace("/", ".")).__dict__.values()
+        if isinstance(y, Dataset)
+    }
+
+    catalogue_diff = init_datasets - catalogue_datasets
+    assert catalogue_diff == set(), f"The following datasets are imported but not added to the catalogue:\n{catalogue_diff}"
+
+    init_diff = submodule_datasets - init_datasets
+    assert init_diff == set(), f"The following datasets are created but not added to the __init__:\n{init_diff}"
