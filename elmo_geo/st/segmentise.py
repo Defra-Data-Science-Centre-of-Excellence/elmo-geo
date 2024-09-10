@@ -34,12 +34,32 @@ def segmentise_with_tolerance(geometry: LineString, tolerance: float = 10, lengt
     """
     Segments a LineString into smaller segments based on tolerance and length limit.
     Uses segment on each vertex methodology, but adds a tolerance to create longer segments.
-    Args:
+
+    Arguments:
         geometry (LineString): The input LineString geometry.
         tolerance (float): The tolerance used for simplification.
         length (float): The maximum length of each segment.
     Returns:
         MultiLineString: The segmented LineString.
+
+    Visual Demonstration:
+    ```
+    *----.     .--*  Original Input
+         |    /      LineString, "." means interior node, "*" means end node.
+         .---.
+
+    *----*     *--*  Simplied and segmented at nodes.
+          \   /      MultiLineString, with different geometry.
+           *
+
+    *----.     .--*  Segmentation at length
+         |    /      MultiLineString, but split not at a node.
+         .-*-.
+
+    *----*    .--*  Segment with tolerance
+         |    /     MutliLineString, returns the original geometry, but split at nodes.
+         *---.
+    ```
     """
     original = linear_to_multipoint(segmentize(geometry, length))
     simplified = linear_to_multipoint(segmentize(geometry.simplify(tolerance), length))
