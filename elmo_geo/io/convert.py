@@ -14,38 +14,6 @@ from elmo_geo.utils.types import (
 )
 
 
-def to_pdf(
-    x: Union[DataFrame, Geometry],
-    limit_sdf: int | None = None,
-    column: str | None = "geometry",
-    crs: Union[int, str] = 27700,
-) -> PandasDataFrame | GeoDataFrame:
-    """Convert a SparkDataFrame to Pandas or Geo DataFrame, or return a dataframe as it.
-    Suitable for dataframes with and without geovector data.
-
-    Parameters:
-        x: Is some sort of DataFrame, or supported by to_gdf.
-        limit_sdf: is used to limit a SparkDataFrame in case it's very large.
-        column: is the geometry column, if there is no geometry column use None.
-        crs: is the coordinate reference system, recommended is EPSG:27700 (BNG).
-    """
-    if isinstance(x, GeoDataFrame):
-        return x
-    elif isinstance(x, PandasDataFrame):
-        if column in x.columns:
-            return to_gdf(x, column=column, crs=crs)
-        else:
-            return x
-    elif isinstance(x, SparkDataFrame):
-        x = x.limit(limit_sdf) if limit_sdf else x
-        if column in x.columns:
-            return to_gdf(x, column=column, crs=crs)
-        else:
-            return x.toPandas()
-    else:
-        to_gdf(x, column=column, crs=crs)
-
-
 def to_gdf(
     x: Union[DataFrame, Geometry],
     column: str = "geometry",
