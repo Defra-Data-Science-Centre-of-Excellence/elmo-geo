@@ -309,7 +309,10 @@ class DerivedDataset(Dataset):
         """Populate the cache with a fresh version of this dataset."""
         LOG.info(f"Creating '{self.name}' dataset.")
         df = self.func(*self.dependencies)
-        _df = to_gdf(df.limit(10_000)) if self.is_geo else df.limit(10_000).toPandas()
-        self._validate(_df)
+        if isinstance(df, SparkDataFrame):
+            _df = to_gdf(df.limit(10_000)) if self.is_geo else df.limit(10_000).toPandas()
+            self._validate(_df)
+        else:
+            self._validate(df)
         write_parquet(df, path=self._new_path, partition_cols=self.partition_cols)
         LOG.info(f"Saved to '{self.path}'.")
