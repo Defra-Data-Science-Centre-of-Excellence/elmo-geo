@@ -41,7 +41,7 @@ def combine_long(
     *datasets: list[Dataset],
     sources: list[str] | None = None,
 ) -> SparkDataFrame:
-    """Join multiple Datasets together using the rpa parcel id to create a wide table.
+    """Append multiple Datasets together to create a long table.
 
     Parameters:
         *datasets: Datasets to join together. Must contain an 'id_parcel' field.

@@ -19,7 +19,7 @@ import geopandas as gpd
 import pandas as pd
 from pandera import DataFrameModel
 
-from elmo_geo.io import download_link, load_sdf, read_file, to_gdf, write_parquet
+from elmo_geo.io import download_link, load_sdf, read_file, to_pdf, write_parquet
 from elmo_geo.utils.log import LOG
 from elmo_geo.utils.types import DataFrame, GeoDataFrame, PandasDataFrame, SparkDataFrame
 
@@ -309,11 +309,7 @@ class DerivedDataset(Dataset):
         """Populate the cache with a fresh version of this dataset."""
         LOG.info(f"Creating '{self.name}' dataset.")
         df = self.func(*self.dependencies)
-        if isinstance(df, SparkDataFrame):
-            _df = df.limit(10_000).toPandas()
-            _df = to_gdf(_df) if self.is_geo else _df
-            self._validate(_df)
-        else:
-            self._validate(df)
+        df = to_pdf(df, limit_sdf=10_000)
+        self._validate(df)
         write_parquet(df, path=self._new_path, partition_cols=self.partition_cols)
         LOG.info(f"Saved to '{self.path}'.")
