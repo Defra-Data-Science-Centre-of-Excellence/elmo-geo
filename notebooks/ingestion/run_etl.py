@@ -1,7 +1,7 @@
 # Databricks notebook source
 """Demo notebook for new ETL catalog."""
 from elmo_geo import register
-from elmo_geo.datasets import destroy_datasets, write_catalogue_json
+from elmo_geo.datasets import write_catalogue_json
 
 register()
 
@@ -14,8 +14,3 @@ register()
 
 # write the catalog to json
 write_catalogue_json()
-
-# COMMAND ----------
-
-# use with caution
-destroy_datasets()
