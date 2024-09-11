@@ -28,11 +28,11 @@ _join_parcels = partial(join_parcels, columns=["Main_Habit"])
 
 def _combine(south: Dataset, central: Dataset, north: Dataset) -> gpd.GeoDataFrame:
     """Union the priority habitats datasets for different regions into a single dataset."""
-    simplify_tolerence = 1
+    simplify_tolerance = 1
     sdf = None
     for ds in [south, central, north]:
         # Clean geometries to 1m resolution.
-        sdf_part = ds.sdf().withColumn("geometry", load_geometry("geometry", encoding_fn="", simplify_tolerence=simplify_tolerence))
+        sdf_part = ds.sdf().withColumn("geometry", load_geometry("geometry", encoding_fn="", simplify_tolerance=simplify_tolerance))
         if sdf is None:
             sdf = sdf_part
         else:
@@ -54,10 +54,10 @@ def _habitat_proximity(parcels: Dataset, habitats: Dataset, habitat_filter_expr:
         parcels: The parcels dataset.
         habitats: The habitats dataset.
         habitat_filter_exr: SQL expression for filtering the habitats dataset.
-        max_vertices: Max number of habitat geometries veritices. Geoometries exceeding this threshol are split.
+        max_vertices: Max number of habitat geometries vertices. Geometries exceeding this threshold are split.
 
     Returns:
-        DataFrame of parel id to nearest habitat and the associated distance.
+        DataFrame of parcel id to nearest habitat and the associated distance.
     """
     sdf_habitat = (
         habitats.sdf()
@@ -99,7 +99,7 @@ class DefraPriorityHabitatsRaw(DataFrameModel):
         geometry: The sensitivity classification's geospatial extent (polygons).
     """
 
-    Main_Habit: str = Field(nullable=False)
+    Main_Habit: str = Field()
     Confidence: str = Field(nullable=True)
     Source1: str = Field(nullable=True)
     S1Date: str = Field(nullable=True, coerce=True)
@@ -122,9 +122,9 @@ class DefraPriorityHabitatsRaw(DataFrameModel):
     LastModDat: Date = Field(nullable=True, coerce=True)
     ModReason: str = Field(nullable=True)
     Mod_by: str = Field(nullable=True)
-    Area_Ha: float = Field(nullable=False)
-    URN: str = Field(nullable=False)
-    geometry: Geometry = Field(coerce=True, nullable=False)
+    Area_Ha: float = Field()
+    URN: str = Field()
+    geometry: Geometry = Field(coerce=True)
 
 
 class PriorityHabitatParcels(DataFrameModel):
@@ -136,7 +136,7 @@ class PriorityHabitatParcels(DataFrameModel):
         proportion: The proportion of the parcel that intersects with the spatial priority.
     """
 
-    id_parcel: str
+    id_parcel: str = Field()
     Main_Habit: Category = Field(coerce=True)
     proportion: float = Field(coerce=True, ge=0, le=1)
 
@@ -151,7 +151,7 @@ class PriorityHabitatProximity(DataFrameModel):
         distance: The distance from the parcel to this type of habitat.
     """
 
-    id_parcel: str
+    id_parcel: str = Field()
     Main_Habit: Category = Field(coerce=True)
     distance: int = Field(coerce=True)
 

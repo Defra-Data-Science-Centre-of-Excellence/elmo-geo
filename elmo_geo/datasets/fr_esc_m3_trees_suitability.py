@@ -1,11 +1,12 @@
-"""Ecological Site Classification M3 Tree Suitability.
+"""Ecological Site Classification M3 woodland type suitability aggregated to RPA parcels.
 
-This dataset is derived from Forest Research's Ecolocial Site Classification (ESC)[^1]. It
+This dataset is derived from Forest Research's Ecological Site Classification (ESC)[^1]. It
 provides a parcel level suitability score for different tree species under the Representative
-Concentration Pathway (RCP) 4.5 climate scenario.
+Concentration Pathway (RCP) 4.5 climate scenario. These scores are averaged to give a single
+suitablity score for each woodland type (broadleaved, riparian, coniferous).
 
 The ESC produced by Forest Research is an input into EVAST. The source data used here 
-was received from EVAST and has been disaggregated to parcel level from the original 
+was received from EVAST and has been aggregated to parcel level from the original 
 ESC 1km grid resolution.
 
 [^1] [Forest Research - Ecological Site Classification](https://www.forestresearch.gov.uk/tools-and-resources/fthr/ecological-site-classification)
@@ -75,18 +76,16 @@ class ESCTreeSuitabilityModel(DataFrameModel):
         n_species: The number of tree species averaged to give the suitability score
     """
 
-    id_parcel: str = Field(coerce=True, nullable=False)
-    nopeatArea: float = Field(coerce=True, nullable=False)
-    period_T1_T2: Category = Field(
-        coerce=True, nullable=False, isin=["2029_2036-2021_2036", "2037_2050-2021_2050", "2051_2100-2021_2100", "2021_2028-2021_2028"]
-    )
-    woodland_type: Category = Field(coerce=True, nullable=False, isin=["coniferous", "broadleaved", "riparian"])
-    suitability: float = Field(coerce=True, nullable=False)
-    n_species: int = Field(coerce=True, nullable=False)
+    id_parcel: str = Field()
+    nopeatArea: float = Field(coerce=True)
+    period_T1_T2: Category = Field(coerce=True, isin=["2029_2036-2021_2036", "2037_2050-2021_2050", "2051_2100-2021_2100", "2021_2028-2021_2028"])
+    woodland_type: Category = Field(coerce=True, isin=["coniferous", "broadleaved", "riparian"])
+    suitability: float = Field(coerce=True)
+    n_species: int = Field(coerce=True)
 
 
 def _convert_to_long_format(sdf: SparkDataFrame) -> SparkDataFrame:
-    """Select the area, sutability, and yield_class variables for a single
+    """Select the area, suitability, and yield_class variables for a single
     species at a time and concatenate into a long format dataframe. Facilitates
     more convenient calculation of average suitability across species.
     """
@@ -138,7 +137,7 @@ def _transform(
     ):
         drop_cols = []
         if woodland_type == "coniferous":
-            # Coniferious dataset has incorrect values in the RC columns. Drop these
+            # Coniferous dataset has incorrect values in the RC columns. Drop these
             # TODO: Update with corrected coniferous dataset
             drop_cols = ["RC_area", "RC_suitability", "RC_yield_class"]
 
@@ -151,7 +150,7 @@ def _transform(
         else:
             sdf_all = sdf_all.unionByName(sdf, allowMissingColumns=False)
 
-    # Return woodland type suitablity
+    # Return woodland type suitability
     return (
         sdf_all.transform(_calculate_mean_suitability)
         .withColumn("period_T1_T2", F.expr("CONCAT(period_AA_T1, '-', period_T2)"))
