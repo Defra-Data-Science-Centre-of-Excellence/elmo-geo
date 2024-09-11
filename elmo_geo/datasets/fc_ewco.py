@@ -1,6 +1,6 @@
 """England Woodland Creation Offer (EWCO) datasets from Forestry Commission.
 
-[A guide to Forestry Commission’s sensitivity maps for woodland creation](https://www.gov.uk/guidance/a-guide-to-forestry-commissions-sensitivity-maps-for-woodland-creation)
+[A guide to Forestry Commission's sensitivity maps for woodland creation](https://www.gov.uk/guidance/a-guide-to-forestry-commissions-sensitivity-maps-for-woodland-creation)
 
 The low sensitivity areas have fewest identified constraints to address,
 and it should be easier to agree creating new woodland here than in other areas.
@@ -41,7 +41,7 @@ class SpatialPriorityParcels(DataFrameModel):
         proportion: The proportion of the parcel that intersects with the spatial priority.
     """
 
-    id_parcel: str
+    id_parcel: str = Field()
     spatial_priority: Category = Field(coerce=True)
     proportion: float = Field(ge=0, le=1)
 
@@ -93,5 +93,6 @@ ewco_nature_recovery_priority_habitat_parcels = DerivedDataset(
     func=_join_parcels,
     dependencies=[reference_parcels, ewco_nature_recovery_priority_habitat],
     model=SpatialPriorityParcels,
+    is_geo=False,
 )
 """Definition for Forestry Commission's SFI Agroforestry dataset joined to RPA Parcels."""

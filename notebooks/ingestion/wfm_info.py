@@ -12,7 +12,7 @@ from pyspark.sql import functions as F
 
 from elmo_geo import register
 from elmo_geo.datasets.catalogue import add_to_catalogue, find_datasets
-from elmo_geo.utils.misc import load_sdf
+from elmo_geo.io import load_sdf
 
 register()
 

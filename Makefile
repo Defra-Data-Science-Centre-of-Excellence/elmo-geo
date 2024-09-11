@@ -30,3 +30,6 @@ verify:
 	ruff check .
 	ruff format . --check
 	PYTHONDONTWRITEBYTECODE=1 pytest .
+
+latest_clusters_log:
+	find /dbfs/cluster-logs/ -type f -name "*.stderr.log" | awk -F/ '{print $NF, $0}' | sort | awk '{print $2}' | tail -n1 | xargs cat
