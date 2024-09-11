@@ -2,8 +2,9 @@
 
 These datasets are the outputs of Forest Research's Ecolocial Site Classification (ESC)[^1]
 tree suitability and yield class models. They provide suitability suitability scores for different
-tree species under four Representative Concentration Pathway (RCP) climate scenarios and four
-time periods. These outputs are reported for 1km Ordnance Survey GB grid cells.
+tree species in 16 different scenarios (defined by four Representative Concentration Pathway (RCP)
+climate scenarios and four time periods). The outputs are reported at 1km resolution corresponding to
+the Ordnance Survey National Grid reference system.
 
 This module also defines derived datasets that aggregate the 1km grid ESC trees outputs to RPA
 parcels.
@@ -14,12 +15,12 @@ Full ESC scenaios documentation is available on SharePoint: [EVAST M3 Woodland S
 The following paraphrases this document.
 
 There are two components to the outputs:
-- tree suitability and yield scores (produce by ESC)
+- tree suitability and yield scores (produced by ESC)
 - carbon storage (produced by the CARBINE model)
 
-Tree suitability and yeild class scores are modelled based on CHESS-SCAPE UKCP18 future climate projections
-(RCP scenarios 2.6, 4.5, 6.0 and 8.5). A single score for each is given for each 20 time period from 1980-2000 to
-2060-2080.
+Tree suitability and yeild class scores are modelled based on CHESS-SCAPE UKCP18 forecasts under different
+climate scenarios (RCP scenarios 2.6, 4.5, 6.0 and 8.5). A single score for each is given for each 20 year
+time period from 1980-2000 to 2060-2080.
 
 ESC suitability and yield class values for each species are used to simulate forest management scenarios, and model
 tree and stand growth with CARBINE. There are four time periods over which change in carbon stored is modelled,
@@ -86,13 +87,13 @@ class ESCM3WoodlandScenariosRaw(DataFrameModel):
     T2_grass_wood: Carbon stored in trees, litter, deadwood, soil & harvested wood products,
     cumulative sum of T1 carbon values over time period (period_T2), previous land use grassland
     T2_crop_wood: Carbon stored in trees, litter, deadwood, soil & harvested wood products,
-    # cumulative sum of T1 carbon values over time period (period_T2), previous land use cropland
-    # tree_carbon: carbon sequestered into standing trees tCO2/ha average over period AA T1
-    # litter_carbon: carbon sequestered into litter tCO2/ha average over period AA T1
-    # deadwood_carbon: carbon sequestered into deadwood tCO2/ha average over period AA T1
-    # grass_soil_carbon: carbon sequestered into soil (previously land use grassland) tCO2/ha average over period AA T1
-    # crop_soil_carbon: carbon sequestered into soil (previous land use cropland) tCO2/ha average over period AA T1
-    # wood_product_carbon_ipcc: carbon sequestered into wood products tCO2/ha average over period AA T1
+    cumulative sum of T1 carbon values over time period (period_T2), previous land use cropland
+    tree_carbon: carbon sequestered into standing trees tCO2/ha average over period AA T1
+    litter_carbon: carbon sequestered into litter tCO2/ha average over period AA T1
+    deadwood_carbon: carbon sequestered into deadwood tCO2/ha average over period AA T1
+    grass_soil_carbon: carbon sequestered into soil (previously land use grassland) tCO2/ha average over period AA T1
+    crop_soil_carbon: carbon sequestered into soil (previous land use cropland) tCO2/ha average over period AA T1
+    wood_product_carbon_ipcc: carbon sequestered into wood products tCO2/ha average over period AA T1
     """
 
     X_BNG: int = Field()
@@ -161,7 +162,7 @@ for wt, rcp in itertools.product(woodland_types, rcps):
     esc_native_broadleaved_26_raw,
     esc_native_broadleaved_45_raw,
     esc_native_broadleaved_60_raw,
-    esc_native_broadleaved_85_raw,
+    esc_native_broadleaved_85_raw,  # TODO: Not fresh due to missing 'tree_carbon' field. #868
     esc_productive_conifer_26_raw,
     esc_productive_conifer_45_raw,
     esc_productive_conifer_60_raw,
@@ -174,7 +175,7 @@ for wt, rcp in itertools.product(woodland_types, rcps):
     esc_silvoarable_45_raw,
     esc_silvoarable_60_raw,
     esc_silvoarable_85_raw,
-    esc_wood_pasture_26_raw,
+    esc_wood_pasture_26_raw,  # TODO: Not fresh due to missing 'tree_carbon' field. #868
     esc_wood_pasture_45_raw,
     esc_wood_pasture_60_raw,
     esc_wood_pasture_85_raw,
