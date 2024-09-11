@@ -31,7 +31,6 @@ def memsize_sdf(sdf: SparkDataFrame) -> int:
 
 def auto_repartition(
     sdf: SparkDataFrame,
-    partitionBy: str = None,
     count_ratio: float = 1e-6,
     mem_ratio: float = 1 / 1024**2,
     thread_ratio: float = 1.5,
@@ -43,7 +42,6 @@ def auto_repartition(
     These default parameters have been experimentally chosen.
 
     Parameters:
-        partitionBy: is a column to repartition along, with less partitions than unique values, some will be grouped together.
         count_ratio: with default value attempts to repartition* every 1 million rows.
         mem_ratio: * every 1MiB.
         thread_ratio: * 1.5 tasks per thread.
@@ -58,7 +56,7 @@ def auto_repartition(
     if partitions <= sdf.rdd.getNumPartitions():
         return sdf
     else:
-        return sdf.repartition(partitions, partitionBy)
+        return sdf.repartition(partitions)
 
 
 def load_sdf(path: str, **kwargs) -> SparkDataFrame:
