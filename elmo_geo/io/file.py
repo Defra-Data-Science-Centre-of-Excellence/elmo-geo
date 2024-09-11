@@ -7,6 +7,7 @@ import geopandas as gpd
 import pandas as pd
 from geopandas.io.arrow import _geopandas_to_arrow
 from pyarrow.parquet import write_to_dataset
+from pyspark.serializers import AutoBatchedSerializer, PickleSerializer
 from pyspark.sql import functions as F
 
 from elmo_geo.utils.dbr import spark
@@ -19,6 +20,43 @@ from .convert import to_gdf
 
 class UnknownFileExtension(Exception):
     """Don't know how to read file with extension."""
+
+
+def memsize_sdf(sdf: SparkDataFrame) -> int:
+    "Collect the approximate in-memory size of a SparkDataFrame."
+    rdd = sdf.rdd._reserialize(AutoBatchedSerializer(PickleSerializer()))
+    JavaObj = rdd.ctx._jvm.org.apache.spark.mllib.api.python.SerDe.pythonToJava(rdd._jrdd, True)
+    return spark._jvm.org.apache.spark.util.SizeEstimator.estimate(JavaObj)
+
+
+def auto_repartition(
+    sdf: SparkDataFrame,
+    count_ratio: float = 1e-6,
+    mem_ratio: float = 1 / 1024**2,
+    thread_ratio: float = 1.5,
+    jobs_cap: int = 100_000,
+) -> SparkDataFrame:
+    """Auto repartitioning tool for SparkDataFrames.
+    This uses row count, memory size, and number of JVMs to run tasks to chose the optimal partitioning.
+    If the dataset is already repartitioned higher, this method doesn't coalesce those partitions.
+    These default parameters have been experimentally chosen.
+
+    Parameters:
+        count_ratio: with default value attempts to repartition* every 1 million rows.
+        mem_ratio: * every 1MiB.
+        thread_ratio: * 1.5 tasks per thread.
+        jobs_cap: limits the maximum number of jobs to fit within Spark's job limit.
+    """
+    partitioners = (
+        round(sdf.rdd.countApprox(800, 0.8) * count_ratio),
+        round(memsize_sdf(sdf) * mem_ratio),
+        round(spark.sparkContext.defaultParallelism * thread_ratio),
+    )
+    partitions = int(min(max(partitioners), jobs_cap))
+    if partitions <= sdf.rdd.getNumPartitions():
+        return sdf
+    else:
+        return sdf.repartition(partitions)
 
 
 def load_sdf(path: str, **kwargs) -> SparkDataFrame:
@@ -40,7 +78,7 @@ def load_sdf(path: str, **kwargs) -> SparkDataFrame:
 
     if "geometry" in sdf.columns:
         sdf = sdf.withColumn("geometry", F.expr("ST_SetSRID(ST_GeomFromWKB(geometry), 27700)"))
-    return sdf
+    return sdf.transform(auto_repartition)
 
 
 def read_file(source_path: str, is_geo: bool, layer: int | str | None = None) -> PandasDataFrame | GeoDataFrame:
