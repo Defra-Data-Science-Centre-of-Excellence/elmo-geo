@@ -91,11 +91,11 @@ from .hedges import (
     rpa_hedges_raw,
 )
 from .living_england import (
-    living_england_habitat_map_phase_4_parcel,
+    living_england_habitat_map_phase_4_parcels,
     living_england_habitat_map_phase_4_raw,
 )
 from .moor import (
-    moorline_parcel,
+    moorline_parcels,
     moorline_raw,
 )
 from .ons import (
@@ -218,11 +218,11 @@ catalogue = [
     jncc_spa_raw,
     jncc_spa_parcels,
     living_england_habitat_map_phase_4_raw,
-    living_england_habitat_map_phase_4_parcel,
+    living_england_habitat_map_phase_4_parcels,
     lad_raw,
     lad_parcels,
     moorline_raw,
-    moorline_parcel,
+    moorline_parcels,
     nca_raw,
     nca_parcels,
     ne_nnr_raw,

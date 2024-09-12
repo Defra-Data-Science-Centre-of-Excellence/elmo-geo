@@ -77,7 +77,7 @@ class LivingEnglandHabitatMapPhase4Parcel(DataFrameModel):
     proportion: float = Field(ge=0, le=1)
 
 
-living_england_habitat_map_phase_4_parcel = DerivedDataset(
+living_england_habitat_map_phase_4_parcels = DerivedDataset(
     is_geo=False,
     name="living_england_habitat_map_phase_4_parcel",
     level0="silver",

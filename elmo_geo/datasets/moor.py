@@ -62,9 +62,9 @@ class MoorlineParcel(DataFrameModel):
     proportion: float = Field(ge=0, le=1)
 
 
-moorline_parcel = DerivedDataset(
+moorline_parcels = DerivedDataset(
     is_geo=False,
-    name="moorline_parcel",
+    name="moorline_parcels",
     level0="silver",
     level1="rpa",
     restricted=False,
