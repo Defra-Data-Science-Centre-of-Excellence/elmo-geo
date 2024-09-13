@@ -7,16 +7,14 @@ The data is not a exhaustive survey of habitat locations but is the best availab
 """
 from functools import partial
 
-import geopandas as gpd
 import pandas as pd
 from pandera import DataFrameModel, Field
-from pandera.dtypes import Category, Date
+from pandera.dtypes import Category
 from pandera.engines.pandas_engine import Geometry
 from pyspark.sql import functions as F
 
 from elmo_geo.etl import Dataset, DerivedDataset, SourceDataset
 from elmo_geo.etl.transformations import join_parcels
-from elmo_geo.st.geometry import load_geometry
 from elmo_geo.st.join import knn
 
 from .rpa_reference_parcels import reference_parcels
@@ -124,7 +122,9 @@ defra_priority_habitat_england_raw = SourceDataset(
     level0="bronze",
     level1="defra",
     restricted=False,
-    source_path = "/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_priority_habitats_inventory_eng/format_GEOPARQUET_priority_habitats_inventory_eng/LATEST_priority_habitats_inventory_eng/ne_priority_habitat_inventory_england.parquet",
+    source_path = ("/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/"
+                   "dataset_priority_habitats_inventory_eng/format_GEOPARQUET_priority_habitats_inventory_eng/"
+                   "LATEST_priority_habitats_inventory_eng/ne_priority_habitat_inventory_england.parquet"),
     model=PHIEnglandRawModel,
 )
 """Definition for Defra Priority Habitats source data."""
