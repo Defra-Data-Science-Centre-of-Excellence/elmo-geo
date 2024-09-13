@@ -30,6 +30,7 @@ from .defra_national_character_areas import (
 )
 from .defra_priority_habitats import (
     defra_grassland_proximity_parcels,
+    defra_habitat_area_parcels,
     defra_heathland_proximity_parcels,
     defra_priority_habitat_england,
     defra_priority_habitat_parcels,
@@ -58,6 +59,10 @@ from .fc_woodland_sensitivity import (
     woodland_creation_sensitivity_var3,
     woodland_creation_sensitivity_var3_parcels,
     woodland_creation_sensitivity_var3_raw,
+)
+from .fcp_habitat_classification import (
+    evast_habitat_mapping_raw,
+    fcp_habitat_creation_type_parcel,
 )
 from .fr_esc_m3_trees import (
     esc_native_broadleaved_26_raw,
@@ -184,6 +189,7 @@ catalogue = [
     esc_suitability_coniferous_raw,
     esc_suitability_riparian_raw,
     esc_tree_suitability,
+    evast_habitat_mapping_raw,
     alc_raw,
     alc_parcels,
     bua_raw,
@@ -204,6 +210,7 @@ catalogue = [
     defra_priority_habitat_parcels,
     defra_heathland_proximity_parcels,
     defra_grassland_proximity_parcels,
+    defra_habitat_area_parcels,
     esc_suitability_broadleaved_raw,
     esc_suitability_coniferous_raw,
     esc_suitability_riparian_raw,
@@ -211,6 +218,7 @@ catalogue = [
     ewco_nature_recovery_priority_habitat_raw,
     ewco_nature_recovery_priority_habitat,
     ewco_nature_recovery_priority_habitat_parcels,
+    fcp_habitat_creation_type_parcel,
     flood_risk_areas_raw,
     flood_risk_areas_parcels,
     itl2_raw,
