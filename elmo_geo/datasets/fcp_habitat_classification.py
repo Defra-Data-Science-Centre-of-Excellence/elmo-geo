@@ -23,8 +23,9 @@ management action.
 
 
 Currently the assignment process uses Soilscapes (with addition habitat lookup) and Priority Habitat Inventory Datasets.
-The habitat categories in these datasets do not map to all of the required habitat types listed above. The 'upland_acid_gr'
-and 'lowland_acid_gr' species-rich grassland habitat types are not represented in these datasets.
+The habitat categories in these datasets do not map to all of the required habitat types listed above. The 'upland_acid_gr',
+'lowland_acid_gr' and 'upland_meadow' species-rich grassland habitat types are not represented in these datasets. Additionally,
+only the 'fen' type wetland habitat is assigned to parcels, with no parcels being assigned the 'bog' type habitat.
 
 To resolved this issues, the CEH Land Cover Map dataset needs to be integrated into the assignment process.
 # TODO: https://github.com/Defra-Data-Science-Centre-of-Excellence/elm_modelling_strategy/issues/887
@@ -217,22 +218,24 @@ def _transform(
 ):
     """Assign a habitat creation habitat type to each parcel.
 
-    For each habitat creation action, create wetalnd, create species-rich grassland, create heathland,
-    this function assigns parcels with a habitat type that will be created.
+    For each habitat creation action, create wetland, create species-rich grassland, create heathland,
+    this function assigns parcels with the habitat type that will be created.
 
     The assignment works as follows:
 
-    1. Based on the Natmap Scoilscape soiltype of the parcel identify which habitat can potential occur on the parcel.
-    These are termed the 'candidate' habitats.
+    1. Based on the Natmap Scoilscape soil type of the parcel identify which habitats can potentially occur on the parcel.
     2. Filter this list to only include candidate habitats which correspond to the upland/lowland classification of the parcel.
+    These are termed the 'candidate' habitats.
     3. Further filter the candidates to only assign habitats where an instance of the habitat exists within a threshold distance
     of the parcel according to the Priority Habitat Inventory (PHI). Where multiple such candidates exist assign the habitat with the
-    largest area in the PHI
+    largest area in the PHI.
 
     The threshold distance used depends on the habitat type. The function first tries to assign rarer habitat types using a 2km distance
     threshold and then all habitat types using a 5km distance threshold. This is because rarer habitats will have lower area coverage, so
     may consistently not be assigned at the 5km threshold distance.
     """
+
+    # Get candidate habitats based on soil type and upland/lowland classification
     sdf_candidates = _get_parcel_candidate_habitates(
         reference_parcels,
         moorline_parcels,
@@ -240,24 +243,15 @@ def _transform(
         evast_habitat_mapping_raw,
     )
 
-    # Add in a count of the number of habitats per percel
-    sdf_counts = sdf_candidates.groupby(["id_parcel", "action_group"]).agg(F.expr("COUNT(DISTINCT(action_habitat)) as action_habitat_count"))
-    sdf_candidates = sdf_candidates.join(sdf_counts, on=["id_parcel", "action_group"], how="left")
-
-    # Now select parcels which are matched to a single action habitat within an action_group
-    # these do not need further processing
-    sdf_done1 = sdf_candidates.filter(F.expr("action_habitat_count = 1")).select("id_parcel", "action_group", "action_habitat")
-
-    # The remaining parcels will be joined to a datasets of nearby priority habitats in order to select which
+    # Now joined to a dataset of nearby priority habitats in order to select which
     # action habitat to apply to that parcel
-    sdf_refine = sdf_candidates.filter(F.expr("action_habitat_count != 1"))
-    sdf_done2 = _filter_candidates_by_phi(
-        sdf_refine,
+    sdf_done = _filter_candidates_by_phi(
+        sdf_candidates,
         defra_habitat_area_parcels,
         evast_habitat_mapping_raw,
     )
 
-    return sdf_done1.unionByName(sdf_done2.withColumnsRenamed({"action_group_phi": "action_group", "action_habitat_phi": "action_habitat"}))
+    return sdf_done.withColumnsRenamed({"action_group_phi": "action_group", "action_habitat_phi": "action_habitat"})
 
 
 class HabitatCreationTypeParcelModel(DataFrameModel):
