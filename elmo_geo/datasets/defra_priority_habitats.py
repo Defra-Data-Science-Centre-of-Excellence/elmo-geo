@@ -72,6 +72,7 @@ _grassland_habitat_proximity = partial(
     ),
 )
 
+
 class PHIEnglandRawModel(DataFrameModel):
     """Data model for all England source PHI dataset.
 
@@ -82,12 +83,14 @@ class PHIEnglandRawModel(DataFrameModel):
         uid: Identified for habitat
         geometry: Habitat geometry
     """
-    mainhabs:str=Field()
-    habcodes:str=Field()
-    areaha:float=Field()
-    version:str=Field()
-    uid:str=Field()
-    geometry:Geometry=Field()
+
+    mainhabs: str = Field()
+    habcodes: str = Field()
+    areaha: float = Field()
+    version: str = Field()
+    uid: str = Field()
+    geometry: Geometry = Field()
+
 
 class PriorityHabitatParcels(DataFrameModel):
     """Model describing the Defra Priority Habitats data join to RPA parcels.
@@ -117,14 +120,17 @@ class PriorityHabitatProximity(DataFrameModel):
     mainhabs: Category = Field(coerce=True)
     distance: int = Field(coerce=True)
 
+
 defra_priority_habitat_england_raw = SourceDataset(
     name="defra_priority_habitat_england_raw",
     level0="bronze",
     level1="defra",
     restricted=False,
-    source_path = ("/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/"
-                   "dataset_priority_habitats_inventory_eng/format_GEOPARQUET_priority_habitats_inventory_eng/"
-                   "LATEST_priority_habitats_inventory_eng/ne_priority_habitat_inventory_england.parquet"),
+    source_path=(
+        "/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/"
+        "dataset_priority_habitats_inventory_eng/format_GEOPARQUET_priority_habitats_inventory_eng/"
+        "LATEST_priority_habitats_inventory_eng/ne_priority_habitat_inventory_england.parquet"
+    ),
     model=PHIEnglandRawModel,
 )
 """Definition for Defra Priority Habitats source data."""
