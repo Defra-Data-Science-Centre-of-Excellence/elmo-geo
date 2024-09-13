@@ -66,7 +66,6 @@ class CECSoilScapesParcels(DataFrameModel):
     natural_dr: Category = Field(
         coerce=True,
         isin=["Freely draining", "Naturally wet", " ", "Impeded drainage", "Variable", "Slightly impeded drainage", "Surface wetness"],
-        alias = "drainage_class",
     )
     natural_fe: Category = Field(
         coerce=True,
@@ -85,7 +84,6 @@ class CECSoilScapesParcels(DataFrameModel):
             "Low to moderate",
             "Mixed, lime-rich to low",
         ],
-        alias = "fertility_class"
     )
     proportion: float = Field(coerce=True, ge=0, le=1)
 
