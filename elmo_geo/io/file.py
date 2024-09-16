@@ -137,7 +137,10 @@ def write_parquet(df: DataFrame, path: str, partition_cols: list[str] | None = N
 
     if isinstance(df, SparkDataFrame):
         if "geometry" in df.columns:
-            df.withColumn("geometry", F.expr("ST_AsBinary(geometry)")).groupby(partition_cols).applyInPandas(to_gpqs, "col struct<>").collect()
+            if partition_cols:
+                df.withColumn("geometry", F.expr("ST_AsBinary(geometry)")).groupby(partition_cols).applyInPandas(to_gpqs, "col struct<>").collect()
+            else:
+                df.withColumn("geometry", F.expr("ST_AsBinary(geometry)")).mapInPandas(to_gpqs, "col struct<>").collect()
         else:
             df.write.parquet(dbfs(str(path), True), partitionBy=partition_cols)
     elif isinstance(df, GeoDataFrame):
