@@ -1,7 +1,7 @@
 """Parcel level habitat creation and management classifications.
 
 Habitat creation ELM actions require specifying the most suitable habitats to
-create on a parcel. Similarly, habitat management actions require specifying which prioirty habitats already exist on each
+create on a parcel. Similarly, habitat management actions require specifying which priority habitats already exist on each
 parcel.
 
 In both cases the habitat type assigned needs to be one of the following used by EVAST, grouped by the habitat creation/
@@ -22,7 +22,7 @@ management action.
 |Create Heathland              | upland              | Upland heathland
 
 
-Currently the assignment process uses Soilscapes (with addition habitat lookup) and Priority Habitat Inventory Datasets.
+Currently the assignment process uses Soilscapes (with additional habitat lookup) and Priority Habitat Inventory datasets.
 The habitat categories in these datasets do not map to all of the required habitat types listed above. The 'upland_acid_gr',
 'lowland_acid_gr' and 'upland_meadow' species-rich grassland habitat types are not represented in these datasets. Additionally,
 only the 'fen' type wetland habitat is assigned to parcels, with no parcels being assigned the 'bog' type habitat.
@@ -56,8 +56,8 @@ class EVASTHabitatsMappingModel(DataFrameModel):
        is_upland: Boolean indicating whether the habitat type is above the moorland line (True)
               or not (False) or can be both (None).
        habitat_name: Corresponding habitat name in alternative source.
-       habitat_code_soilscapes: Corresponding habitat code in alternative source (only soilscape habitats have a code).
-       source: The alternative habtiat dataset that is being mapped to the create habitat action habitat types. Either
+       habitat_code_soilscapes: Corresponding habitat code in alternative source (only soilscapes habitats have a code).
+       source: The alternative habitat dataset that is being mapped to the create habitat action habitat types. Either
             soilscapes, phi (priority habitat inventory), lcm (CEH land cover map), or aes (from agri-environment scheme
             uptake data).
     """
@@ -148,33 +148,26 @@ def _classify_parcel_habitat_by_phi_area(df: PandasDataFrame) -> PandasDataFrame
     (wetland, species-rich grassland, heathland).
 
     Filters by area of priority habitat inventory habitats within either a 2km or 5km
-    distance. The 2km distance is used for rarer habitats, to avoid more common
-    habitats only being selected.
+    distance. The 2km distance is used to first check for nearby matching habitats.
+    If no matching habitats are found at the 2km threshold, matching habitats as the
+    5km threshold are used.
 
     Parameters:
         df: Dataframe of candidate habitat types and nearby phi habitats for a single parcel.
     """
     df_out = pd.DataFrame(columns=["action_group_phi", "action_habitat_phi"], data=[])
 
-    # first check for rare habitats within 2km
-    rare_habitats = [
-        "Lowland Raised Bog",
-        "Upland Fen",
-        "Purple Moor Grass & Rush Pasture",
-        "Lowland dry acid grassland",
-        "Upland calcareous grassland",
-        "Upland hay meadows",
-    ]
-    df_rare = df.loc[df["Main_Habit"].isin(rare_habitats) & (df["distance"] == 2_000)]
-    if df_rare.shape[0] > 0:
-        df_rare = df_rare.groupby("action_group_phi").apply(lambda df: df.sort_values(by="area", ascending=False).iloc[:1])
-        df_out = pd.concat([df_out, df_rare]).reset_index()
+    # first check for matching habitats within 2km
+    df_2km = df.loc[df["distance"] == 2_000]
+    if df_2km.shape[0] > 0:
+        df_2km = df_2km.groupby("action_group_phi").apply(lambda df: df.sort_values(by="area", ascending=False).iloc[:1])
+        df_out = pd.concat([df_out, df_2km]).reset_index()
 
-    # then check for all habitats within 5km
-    df_all = df.loc[df["distance"] == 5_000]
-    if df_all.shape[0] > 0:
-        df_all = df_all.groupby("action_group_phi").apply(lambda df: df.sort_values(by="area", ascending=False).iloc[:1])
-        df_out = pd.concat([df_out, df_all]).reset_index()
+    # then check for matching habitats within 5km
+    df_5km = df.loc[df["distance"] == 5_000]
+    if df_5km.shape[0] > 0:
+        df_5km = df_5km.groupby("action_group_phi").apply(lambda df: df.sort_values(by="area", ascending=False).iloc[:1])
+        df_out = pd.concat([df_out, df_5km]).reset_index()
 
     # Combine, keeping the rare habitat classifications as 1st priority
     return df_out[["id_parcel", "action_group_phi", "action_habitat_phi"]].drop_duplicates(subset="action_group_phi", keep="first")
@@ -230,9 +223,9 @@ def _transform(
     of the parcel according to the Priority Habitat Inventory (PHI). Where multiple such candidates exist assign the habitat with the
     largest area in the PHI.
 
-    The threshold distance used depends on the habitat type. The function first tries to assign rarer habitat types using a 2km distance
-    threshold and then all habitat types using a 5km distance threshold. This is because rarer habitats will have lower area coverage, so
-    may consistently not be assigned at the 5km threshold distance.
+    The threshold distance used depends on the habitat type. The function first tries to assign habitat types using a 2km distance
+    threshold and then a 5km distance threshold. This is to prioritise nearby habitats where they match to the soilscapes habitat
+    type, but permit a larger distance threshold where no match is found nearby.
     """
 
     # Get candidate habitats based on soil type and upland/lowland classification
@@ -258,7 +251,7 @@ class HabitatCreationTypeParcelModel(DataFrameModel):
     """Datamodel for the habitat creation type dataset.
 
     Attributes:
-        id_parcel: The aprcel ID.
+        id_parcel: The parcel ID.
         action_group: The type of habitat creation action. Either 'Create Wetland',
             'Create SRG', or 'Create Heathland'.
         action_habitat: The specific habitat type assigned to this parcel. This indicates
@@ -304,9 +297,9 @@ fcp_habitat_creation_type_parcel = DerivedDataset(
 """Estimates which type of habitat will be created for each habitat creation action.
 
 This parcel level dataset models which habitat type will be created under each of the ELM/EVAST
-habitat creation actions: create wetland, create species-rich grassland, and creat heathland.
+habitat creation actions: create wetland, create species-rich grassland, and create heathland.
 
 The dataset is created through a combination of Natmap Soilscapes and Priority Habitats Inventory
 geometries joined to parcels. To map between the different habitat names used in these datasets
-a lookup table provided by evast is used.
+a lookup table provided by EVAST is used.
 """
