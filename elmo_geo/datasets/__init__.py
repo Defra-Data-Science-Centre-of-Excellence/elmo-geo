@@ -7,7 +7,11 @@ from elmo_geo import register
 from elmo_geo.utils.log import LOG
 
 from .boundary import (
+    adjacent_boundaries,
     boundary_segments,
+    hedge_boundaries,
+    wall_boundaries,
+    water_boundaries,
 )
 from .cec_soilscapes import (
     cec_soilscapes_habitats_parcels,
@@ -150,6 +154,10 @@ from .rpa_reference_parcels import (
 )
 
 catalogue = [
+    boundary_segments,
+    adjacent_boundaries,
+    hedge_boundaries,
+    water_boundaries,
     protected_areas_parcels,
     ne_sssi_units_raw,
     ne_sssi_units_parcels,
@@ -189,7 +197,6 @@ catalogue = [
     esc_tree_suitability,
     alc_raw,
     alc_parcels,
-    boundary_segments,
     bua_raw,
     bua_parcels,
     cec_soilscapes_raw,
