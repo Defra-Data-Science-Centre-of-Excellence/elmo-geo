@@ -56,7 +56,7 @@ def auto_repartition(
         round(spark.sparkContext.defaultParallelism * thread_ratio),
     )
     suggested_partitions = int(min(max(partitioners), jobs_cap))
-    current_partitions = sdf.rdd.getNumPartition()
+    current_partitions = sdf.rdd.getNumPartitions()
     ratio = abs(suggested_partitions - current_partitions) / current_partitions
     if acceptance_ratio < ratio:
         return sdf.repartition(suggested_partitions)
