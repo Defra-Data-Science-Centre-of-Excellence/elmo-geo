@@ -142,7 +142,7 @@ def write_parquet(df: DataFrame, path: str, partition_cols: list[str] | None = N
             else:
                 df.withColumn("geometry", F.expr("ST_AsBinary(geometry)")).transform(auto_repartition).mapInPandas(to_gpqs, "col struct<>").collect()
         else:
-            df.write.parquet(dbfs(str(path), True), partitionBy=partition_cols)
+            df.transform(auto_repartition).write.parquet(dbfs(str(path), True), partitionBy=partition_cols)
     elif isinstance(df, GeoDataFrame):
         to_gpqs(df)
     elif isinstance(df, PandasDataFrame):
