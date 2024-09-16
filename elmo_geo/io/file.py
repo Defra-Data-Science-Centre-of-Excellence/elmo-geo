@@ -35,7 +35,7 @@ def auto_repartition(
     mem_ratio: float = 1 / 1024**2,
     thread_ratio: float = 1.5,
     jobs_cap: int = 100_000,
-    acceptance_ratio: float = 0.5,
+    acceptance_ratio: float = 0.8,
 ) -> SparkDataFrame:
     """Auto repartitioning tool for SparkDataFrames.
     This uses row count, memory size, and number of JVMs to run tasks to chose the optimal partitioning.
@@ -58,7 +58,7 @@ def auto_repartition(
     suggested_partitions = int(min(max(partitioners), jobs_cap))
     current_partitions = sdf.rdd.getNumPartition()
     ratio = abs(suggested_partitions - current_partitions) / current_partitions
-    if ratio < acceptance_ratio:
+    if acceptance_ratio < ratio:
         return sdf.repartition(suggested_partitions)
     else:
         return sdf
@@ -140,7 +140,7 @@ def write_parquet(df: DataFrame, path: str, partition_cols: list[str] | None = N
             if partition_cols:
                 df.withColumn("geometry", F.expr("ST_AsBinary(geometry)")).groupby(partition_cols).applyInPandas(to_gpqs, "col struct<>").collect()
             else:
-                df.withColumn("geometry", F.expr("ST_AsBinary(geometry)")).mapInPandas(to_gpqs, "col struct<>").collect()
+                df.withColumn("geometry", F.expr("ST_AsBinary(geometry)")).transform(auto_repartition).mapInPandas(to_gpqs, "col struct<>").collect()
         else:
             df.write.parquet(dbfs(str(path), True), partitionBy=partition_cols)
     elif isinstance(df, GeoDataFrame):
