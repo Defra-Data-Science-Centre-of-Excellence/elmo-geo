@@ -9,7 +9,7 @@ from pyspark.sql import types as T
 
 from elmo_geo.st.geometry import load_geometry
 from elmo_geo.st.join import sjoin
-from elmo_geo.utils.types import SparkDataFrame
+from elmo_geo.utils.types import PandasDataFrame, SparkDataFrame
 
 from .etl import Dataset
 
@@ -82,8 +82,8 @@ def sjoin_and_proportion(
 
     @F.pandas_udf(T.DoubleType(), F.PandasUDFType.GROUPED_AGG)
     def _udf_overlap(geometry_left, geometry_right) -> float:
-        geometry_left_first = gpd.GeoSeries.from_wkb(geometry_left)[0]  # since grouping by id_parcel, selecting first g_left gives the parcel geom.
-        geometry_right_union = gpd.GeoSeries.from_wkb(geometry_right).union_all(method="unary")  # combine intersecting feature geometries into single geom.
+        geometry_left_first = gpd.GeoSeries.from_wkb(geometry_left)[0]
+        geometry_right_union = gpd.GeoSeries.from_wkb(geometry_right).union_all(method="unary")
         geometry_intersection = geometry_left_first.intersection(geometry_right_union)
         return max(0, min(1, (geometry_intersection.area / geometry_left_first.area)))
 
@@ -117,4 +117,61 @@ def join_parcels(parcels: Dataset, features: Dataset, **kwargs) -> pd.DataFrame:
         .withColumn("geometry", F.expr("ST_SubDivideExplode(geometry, 256)"))
         .transform(lambda sdf: sjoin_and_proportion(parcels.sdf(), sdf, **kwargs))
         .toPandas()
+    )
+
+
+def _st_union(pdf: PandasDataFrame) -> PandasDataFrame:
+    "Select first row with the union of geometry_right."
+    return pdf.iloc[:1].assign(geometry_right=gpd.GeoSeries.from_wkb(pdf["geometry_right"]).union_all().wkb)
+
+
+def sjoin_boundary(
+    boundary_segments: Dataset,
+    feature: Dataset,
+    columns: list[str] = [],
+    buffers: list[float] = [0, 2, 8, 12, 24],
+    fn_pre: callable = fn_pass,
+    fn_post: callable = fn_pass,
+):
+    """Spatially Join parcel boundary segments to another dataset,
+    and calculate the proportional overlap at different buffers.
+
+    Parameters:
+        boundary_segments: the boundary dataset.
+        features: the other dataset to be joined.
+        buffers: different buffers of the feature geometry to calculate proportion at.
+        columns: to union the features geometries along.
+    """
+    return (
+        feature.sdf()
+        .transform(fn_pre)
+        .transform(lambda sdf: sjoin(boundary_segments.sdf(), sdf, distance=max(buffers)))
+        .selectExpr(
+            "id_boundary",
+            "id_parcel",
+            "m",
+            *columns,
+            "ST_AsBinary(geometry_left) AS geometry_left",
+            "ST_AsBinary(geometry_right) AS geometry_right",
+        )
+        .transform(lambda sdf: (sdf.groupby("id_boundary", "id_parcel", "m", *columns).applyInPandas(_st_union, sdf.schema)))
+        .selectExpr(
+            "id_boundary",
+            "id_parcel",
+            "m",
+            *columns,
+            "ST_GeomFromWKB(geometry_left) AS geometry_left",
+            "ST_GeomFromWKB(geometry_right) AS geometry_right",
+        )
+        .transform(fn_post)
+        .selectExpr(
+            "id_boundary",
+            "id_parcel",
+            "m",
+            *columns,
+            *[
+                f"LEAST(GREATEST(ST_Length(ST_Intersection(geometry_left, ST_Buffer(geometry_right, {buf}))) / m, 0), 1) AS proportion_{buf}m"
+                for buf in buffers
+            ],
+        )
     )
