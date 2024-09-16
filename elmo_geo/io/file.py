@@ -35,6 +35,7 @@ def auto_repartition(
     mem_ratio: float = 1 / 1024**2,
     thread_ratio: float = 1.5,
     jobs_cap: int = 100_000,
+    acceptance_ratio: float = 0.8,
 ) -> SparkDataFrame:
     """Auto repartitioning tool for SparkDataFrames.
     This uses row count, memory size, and number of JVMs to run tasks to chose the optimal partitioning.
@@ -42,21 +43,25 @@ def auto_repartition(
     These default parameters have been experimentally chosen.
 
     Parameters:
+        sdf: dataframe to repartition.
         count_ratio: with default value attempts to repartition* every 1 million rows.
         mem_ratio: * every 1MiB.
         thread_ratio: * 1.5 tasks per thread.
         jobs_cap: limits the maximum number of jobs to fit within Spark's job limit.
+        acceptance_ratio: don't repartition unless it exceeds this ratio.
     """
     partitioners = (
-        round(sdf.rdd.countApprox(800, 0.8) * count_ratio),
+        round(sdf.rdd.countApprox(1000, 0.8) * count_ratio),  # 1s wait or 80% accurate.
         round(memsize_sdf(sdf) * mem_ratio),
         round(spark.sparkContext.defaultParallelism * thread_ratio),
     )
-    partitions = int(min(max(partitioners), jobs_cap))
-    if partitions <= sdf.rdd.getNumPartitions():
-        return sdf
+    suggested_partitions = int(min(max(partitioners), jobs_cap))
+    current_partitions = sdf.rdd.getNumPartition()
+    ratio = abs(suggested_partitions - current_partitions) / current_partitions
+    if acceptance_ratio < ratio:
+        return sdf.repartition(suggested_partitions)
     else:
-        return sdf.repartition(partitions)
+        return sdf
 
 
 def load_sdf(path: str, **kwargs) -> SparkDataFrame:
@@ -132,9 +137,15 @@ def write_parquet(df: DataFrame, path: str, partition_cols: list[str] | None = N
 
     if isinstance(df, SparkDataFrame):
         if "geometry" in df.columns:
-            df.withColumn("geometry", F.expr("ST_AsBinary(geometry)")).groupby(partition_cols).applyInPandas(to_gpqs, "col struct<>").collect()
+            if partition_cols:
+                df.withColumn("geometry", F.expr("ST_AsBinary(geometry)")).groupby(partition_cols).applyInPandas(to_gpqs, "col struct<>").collect()
+            else:
+                df.withColumn("geometry", F.expr("ST_AsBinary(geometry)")).transform(auto_repartition).mapInPandas(to_gpqs, "col struct<>").collect()
         else:
-            df.write.parquet(dbfs(str(path), True), partitionBy=partition_cols)
+            if partition_cols:
+                df.write.parquet(dbfs(str(path), True), partitionBy=partition_cols)
+            else:
+                df.transform(auto_repartition).write.parquet(dbfs(str(path), True))
     elif isinstance(df, GeoDataFrame):
         to_gpqs(df)
     elif isinstance(df, PandasDataFrame):
