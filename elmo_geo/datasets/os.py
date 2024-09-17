@@ -78,3 +78,32 @@ os_ngd_raw = SourceGlobDataset(
     source_path=None,
     glob_path="/dbfs/mnt/base/restricted/source_ordnance_survey_data_hub/dataset_ngd*/format_GPKG*/LATEST_*/*.gpkg",
 )
+
+
+class OSBNGModel(DataFrameModel):
+    """OS British National Grid grid reference
+    dataset data model.
+
+    Attributes:
+        tile_name: Name of the grid reference tile.
+        layer: Resolution of the grid reference tile. Either
+            1km_grid, 5km_grid, 10km_grid, 20km_grid, 50km_grid,
+            100km_grid.
+        geometry: Geometry of the tile.
+    """
+
+    tile_name: str = Field()
+    layer: str = Field()
+    geometry: Geometry = Field()
+
+
+os_bng_raw = SourceDataset(
+    name="os_bng_raw",
+    level0="bronze",
+    level1="os",
+    restricted=False,
+    source_path="/dbfs/mnt/lab/unrestricted/ELM-Project/raw/os_bng_grids.gpkg",
+    model=OSBNGModel,
+    partition_cols=["layer"],
+)
+"""OS British National Grid grid reference geometries."""

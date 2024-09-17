@@ -114,7 +114,10 @@ from .ons import (
     ward_parcels,
     ward_raw,
 )
-from .os import os_ngd_raw
+from .os import (
+    os_bng_raw,
+    os_ngd_raw,
+)
 from .peat import (
     peaty_soils_parcels,
     peaty_soils_raw,
@@ -244,6 +247,7 @@ catalogue = [
     protected_landscapes_tidy,
     protected_landscapes_parcels,
     os_ngd_raw,
+    os_bng_raw,
     reference_parcels_raw,
     reference_parcels_raw_no_sbi,
     reference_parcels,
