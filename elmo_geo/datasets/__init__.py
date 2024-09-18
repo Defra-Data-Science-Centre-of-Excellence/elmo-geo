@@ -10,7 +10,6 @@ from .boundary import (
     adjacent_boundaries,
     boundary_segments,
     hedge_boundaries,
-    wall_boundaries,
     water_boundaries,
 )
 from .cec_soilscapes import (

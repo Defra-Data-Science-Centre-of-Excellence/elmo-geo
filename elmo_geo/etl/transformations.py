@@ -142,33 +142,25 @@ def sjoin_boundary(
         buffers: different buffers of the feature geometry to calculate proportion at.
         columns: to union the features geometries along.
     """
+    cols = ["id_boundary", "id_parcel", "m", *columns]
     return (
         feature.sdf()
         .transform(fn_pre)
         .transform(lambda sdf: sjoin(boundary_segments.sdf(), sdf, distance=max(buffers)))
         .selectExpr(
-            "id_boundary",
-            "id_parcel",
-            "m",
-            *columns,
+            *cols,
             "ST_AsBinary(geometry_left) AS geometry_left",
             "ST_AsBinary(geometry_right) AS geometry_right",
         )
-        .transform(lambda sdf: (sdf.groupby("id_boundary", "id_parcel", "m", *columns).applyInPandas(_st_union, sdf.schema)))
+        .transform(lambda sdf: sdf.groupby(*cols).applyInPandas(_st_union, sdf.schema))
         .selectExpr(
-            "id_boundary",
-            "id_parcel",
-            "m",
-            *columns,
+            *cols,
             "ST_GeomFromWKB(geometry_left) AS geometry_left",
             "ST_GeomFromWKB(geometry_right) AS geometry_right",
         )
         .transform(fn_post)
         .selectExpr(
-            "id_boundary",
-            "id_parcel",
-            "m",
-            *columns,
+            *cols,
             *[
                 f"LEAST(GREATEST(ST_Length(ST_Intersection(geometry_left, ST_Buffer(geometry_right, {buf}))) / m, 0), 1) AS proportion_{buf}m"
                 for buf in buffers

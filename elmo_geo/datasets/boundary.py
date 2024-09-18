@@ -39,6 +39,7 @@ from pyspark.sql import functions as F
 
 from elmo_geo.etl import SRID, Dataset, DerivedDataset
 from elmo_geo.etl.transformations import sjoin_boundary
+from elmo_geo.io.file import auto_repartition
 from elmo_geo.st.segmentise import segmentise_with_tolerance, st_udf
 from elmo_geo.utils.types import SparkDataFrame
 
@@ -93,10 +94,6 @@ boundary_segments = DerivedDataset(
 
 
 # Adjacency
-def fn_post_adj(sdf):
-    return sdf.filter("id_parcel != id_parcel_right")
-
-
 class SjoinBoundaries(DataFrameModel):
     """Model for hedgerow boundaries.
 
@@ -106,11 +103,15 @@ class SjoinBoundaries(DataFrameModel):
     id_boundary: int = Field(unique=True)
     id_parcel: str = Field()
     m: float = Field()
-    proportion_0m: float = Field(gt=0, lt=1)
-    proportion_2m: float = Field(gt=0, lt=1)
-    proportion_8m: float = Field(gt=0, lt=1)
-    proportion_12m: float = Field(gt=0, lt=1)
-    proportion_24m: float = Field(gt=0, lt=1)
+    proportion_0m: float = Field(ge=0, le=1)
+    proportion_2m: float = Field(ge=0, le=1)
+    proportion_8m: float = Field(ge=0, le=1)
+    proportion_12m: float = Field(ge=0, le=1)
+    proportion_24m: float = Field(ge=0, le=1)
+
+
+def fn_post_adj(sdf):
+    return sdf.filter("id_parcel != id_parcel_right").transform(auto_repartition)
 
 
 adjacent_boundaries = DerivedDataset(
@@ -140,7 +141,7 @@ hedge_boundaries = DerivedDataset(
 
 # Water
 def fn_pre_water(sdf: SparkDataFrame) -> SparkDataFrame:
-    return sdf.filter("theme = 'Water' AND description NOT LIKE '% Catchment'")
+    return sdf.filter("theme = 'Water' AND description NOT LIKE '% Catchment'").transform(auto_repartition)
 
 
 water_boundaries = DerivedDataset(
