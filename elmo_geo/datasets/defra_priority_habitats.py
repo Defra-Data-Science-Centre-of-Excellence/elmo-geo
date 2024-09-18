@@ -94,7 +94,7 @@ class PHIEnglandRawModel(DataFrameModel):
             separated by a comma.
         habcodes: Habitata type code
         areaha: Habitat area in hectares
-        uid: Identified for habitat
+        fid: Identifier for habitat
         geometry: Habitat geometry
     """
 
