@@ -60,8 +60,8 @@ from .fc_woodland_sensitivity import (
     woodland_creation_sensitivity_var3_raw,
 )
 from .fr_esc_m3_trees import (
-    esc_m3_geo,
     esc_m3_raw,
+    esc_m3_geo,
 )
 from .fr_esc_m3_trees_suitability import (
     esc_suitability_broadleaved_raw,
