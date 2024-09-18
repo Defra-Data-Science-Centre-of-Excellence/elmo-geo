@@ -7,10 +7,15 @@
 [^dash]: https://app.powerbi.com/Redirect?action=OpenReport&appId=5762de14-3aa8-4a83-92b3-045cc953e30c&reportObjectId=c8802134-4f3b-484e-bf14-1ed9f8881450&ctid=770a2450-0227-4c62-90c7-4e38537f1102&reportPage=ReportSectionff2a0c223272005d9b10&pbi_source=appShareLink&portalSessionId=f7a19b52-4676-43dd-9f13-d1084081a8f2
 """
 
+from functools import partial
+
 from pandera import DataFrameModel, Field
 from pandera.engines.pandas_engine import Geometry
 
-from elmo_geo.etl.etl import SRID, SourceDataset, SourceGlobDataset
+from elmo_geo.etl.etl import SRID, DerivedDataset, SourceDataset, SourceGlobDataset
+from elmo_geo.etl.transformations import join_parcels
+
+from .rpa_reference_parcels import reference_parcels
 
 
 class OSNGDRaw(DataFrameModel):
@@ -70,3 +75,36 @@ os_bng_raw = SourceDataset(
     partition_cols=["layer"],
 )
 """OS British National Grid grid reference geometries."""
+
+
+class OSBNGParcelsModel(DataFrameModel):
+    """OS British National Grid grid reference joined to parcels
+    data model.
+
+    Attributes:
+        id_parcel: RPA reference parcels ID
+        tile_name: Name of the grid reference tile.
+        layer: Resolution of the grid reference tile. Either
+            1km_grid, 5km_grid, 10km_grid, 20km_grid, 50km_grid,
+            100km_grid.
+        proportion: Proportion of the parcel intersected by the tile.
+    """
+
+    id_parcel: str = Field(coerce=True)
+    tile_name: str = Field(coerce=True)
+    layer: str = Field(coerce=True)
+    proportion: float = Field(coerce=True, ge=0, le=1)
+
+
+os_bng_parcels = DerivedDataset(
+    name="os_bng_parcels",
+    level0="silver",
+    level1="os",
+    restricted=False,
+    is_geo=False,
+    model=OSBNGParcelsModel,
+    func=partial(join_parcels, columns=["layer", "tile_name"]),
+    dependencies=[reference_parcels, os_bng_raw],
+    partition_cols=["layer"],
+)
+"""OS British National Grid grid reference geometries joined to parcels."""
