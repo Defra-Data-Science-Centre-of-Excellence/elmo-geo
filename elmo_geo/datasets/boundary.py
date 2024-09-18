@@ -110,8 +110,12 @@ class SjoinBoundaries(DataFrameModel):
     proportion_24m: float = Field(ge=0, le=1)
 
 
-def fn_post_adj(sdf):
-    return sdf.filter("id_parcel != id_parcel_right").transform(auto_repartition)
+def fn_pre_adj(sdf: SparkDataFrame) -> SparkDataFrame:
+    return sdf.selectExpr("id_parcel AS id_parcel_right", "geometry").transform(auto_repartition)
+
+
+def fn_post_adj(sdf: SparkDataFrame) -> SparkDataFrame:
+    return sdf.filter("id_parcel != id_parcel_right")
 
 
 adjacent_boundaries = DerivedDataset(
@@ -120,7 +124,7 @@ adjacent_boundaries = DerivedDataset(
     level1="elmo_geo",
     model=SjoinBoundaries,
     restricted=True,
-    func=partial(sjoin_boundary, columns=["id_parcel_right"], fn_post=fn_post_adj),
+    func=partial(sjoin_boundary, columns=["id_parcel_right"], fn_pre=fn_pre_adj, fn_post=fn_post_adj),
     dependencies=[boundary_segments, boundary_segments],
     is_geo=False,
 )
