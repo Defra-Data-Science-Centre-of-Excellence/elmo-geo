@@ -207,8 +207,10 @@ def _habitat_area_within_distance(
     return (
         sjoin(sdf_parcels, sdf_phi, distance=distance)
         .groupby("id_parcel", "habitat_name")
-        .agg(F.expr("SUM(ST_Area(geometry_right)) as area"))
-        .withColumn("distance", F.lit(distance))
+        .agg(F.expr("SUM(ST_Area(geometry_right)) AS area"),
+             F.expr("CAST(ROUND(MIN(distance),0) AS int) AS minimum_distance"),
+             )
+        .withColumn("distance_threshold", F.lit(distance))
     )
 
 
@@ -218,10 +220,9 @@ def _habitat_area_within_distances(
     distances: list[int] = [2_000, 5_000],
 ) -> SparkDataFrame:
     """Calculates the area of priority habitat within each threshold distance to parcels."""
-    sdf_parcels = parcels.sdf().repartition(200)
+    sdf_parcels = parcels.sdf()
     sdf_phi = (
         priority_habitats.sdf()
-        .repartition(200)
         .withColumn("geometry", load_geometry(encoding_fn=""))
         .withColumn("geometry", F.expr("ST_SubDivideExplode(geometry, 256)"))
     )
@@ -245,13 +246,15 @@ class PriorityHabitatArea(DataFrameModel):
         habitat_name: The name of the priority habitat.
         area: The area of priority habitat geometries that are within the threshold distance. The area
         of the whole geometry is given, even if only part of the geometry is within the threshold.
-        distance: The threshold distance in metres.
+        minimum_distance: Minimum distance to this type of habitat.
+        distance_threshold: The threshold distance in metres.
     """
 
     id_parcel: str = Field(coerce=True)
     habitat_name: Category = Field(coerce=True)
     area: float = Field(coerce=True)
-    distance: int = Field(coerce=True)
+    minimum_distance: int = Field(coerce=True)
+    distance_threshold: int = Field(coerce=True)
 
 
 defra_habitat_area_parcels = DerivedDataset(
