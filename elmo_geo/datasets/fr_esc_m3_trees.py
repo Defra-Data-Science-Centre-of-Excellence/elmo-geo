@@ -40,15 +40,13 @@ sequestration and positive values net emissions.
 [^1] [Forest Research - Ecological Site Classification](https://www.forestresearch.gov.uk/tools-and-resources/fthr/ecological-site-classification)
 """
 
-import itertools
 
 import pyspark.sql.functions as F
 from pandera import DataFrameModel, Field
 from pandera.dtypes import Category
 from pandera.engines.pandas_engine import Geometry
 
-from elmo_geo.etl import DerivedDataset, SourceDataset, SourceGlobDataset
-from elmo_geo.etl.transformations import combine_long
+from elmo_geo.etl import DerivedDataset, SourceGlobDataset
 from elmo_geo.st.join import sjoin
 
 from .os import os_bng_raw
@@ -156,6 +154,7 @@ csv files, each containing model outputs for a different woodland type and repre
 concentration pathway (RCP).
 """
 
+
 def _transform(os_bng_raw, esc_m3_raw):
     """Joins source ESC data to the BNG 1km grid to provide a geometry for the ESC outputs.
 
@@ -211,6 +210,7 @@ class ESCCombinedModel(DataFrameModel):
     rcp: Category = Field(isin=["26", "45", "60", "85"], coerce=True)
     tile_name: str = Field()
     geometry: Geometry = Field()
+
 
 esc_m3_geo = DerivedDataset(
     name="esc_m3_geo",
