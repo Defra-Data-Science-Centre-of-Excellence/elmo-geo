@@ -80,3 +80,9 @@ def test_dataset_imports():
 
     init_diff = submodule_datasets - init_datasets
     assert init_diff == set(), f"The following datasets are created but not added to the __init__:\n{init_diff}"
+
+
+@pytest.mark.dbr
+def test_all_fresh():
+    "Test all datasets are fresh."
+    assert all(dataset.is_fresh for dataset in catalogue)
