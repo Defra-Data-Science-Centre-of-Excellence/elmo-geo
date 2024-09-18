@@ -41,15 +41,9 @@ sequestration and positive values net emissions.
 """
 
 
-import pyspark.sql.functions as F
 from pandera import DataFrameModel, Field
-from pandera.dtypes import Category
-from pandera.engines.pandas_engine import Geometry
 
-from elmo_geo.etl import DerivedDataset, SourceGlobDataset
-from elmo_geo.st.join import sjoin
-
-from .os import os_bng_raw
+from elmo_geo.etl import SourceGlobDataset
 
 
 class ESCM3WoodlandScenariosRaw(DataFrameModel):
@@ -149,76 +143,7 @@ esc_m3_raw = SourceGlobDataset(
     name="esc_m3_raw",
     glob_path="/dbfs/mnt/lab/unrestricted/elm_data/evast/M3_trees_1km/EVAST_M3_*_rcp*.csv",
 )
-"""ESC M£ Trees raw dataset. Uses the SourceGlobDataset class to load and union multiple
+"""ESC M3 Trees raw dataset. Uses the SourceGlobDataset class to load and union multiple
 csv files, each containing model outputs for a different woodland type and representative
 concentration pathway (RCP).
 """
-
-
-def _transform(os_bng_raw, esc_m3_raw):
-    """Joins source ESC data to the BNG 1km grid to provide a geometry for the ESC outputs.
-
-    Also extracts woodland type and rcp values from the _path field.
-    """
-    sdf_esc = (
-        esc_m3_raw.sdf()
-        .withColumn("name", F.expr("split(_path, '/')[8]"))
-        .withColumn("woodland_type", F.expr("SUBSTRING(name, 10, LENGTH(name)-19)"))
-        .withColumn("rcp", F.expr("LEFT(RIGHT(name, 6),2)"))
-        .drop("name", "_path")
-    )
-
-    # Get lookup from esc coordinate to grid cell geometry
-    # displace ESC coordinates by +1 in xy position to move coordinate off bottom left corner
-    sdf_lu = (
-        sdf_esc.selectExpr("XY_BNG", "ST_Point(X_BNG+1, Y_BNG+1) as geometry")
-        .dropDuplicates()
-        .transform(sjoin, os_bng_raw.sdf().filter(F.expr("layer='1km_grid'")))
-        .drop("geometry_left")
-        .withColumnRenamed("geometry_right", "geometry")
-    )
-
-    # Check lookup
-    assert not sdf_lu.select("tile_name").toPandas()["tile_name"].duplicated().any()
-
-    return sdf_esc.join(sdf_lu, on="XY_BNG", how="left")
-
-
-class ESCCombinedModel(DataFrameModel):
-    """ESC M3 Trees model outputs combined data model.
-
-    Data model only validates the additional columns produced by combining
-    the source datasets and joining grid tile geometries.
-
-    Attributes:
-        woodland_type: The type of woodland being modelled.
-        rcp: The Representative Concentration Pathway being modelled.
-        tile_name: Name of the grid reference tile.
-        geometry: Geometry of the tile.
-    """
-
-    woodland_type: Category = Field(
-        coerce=True,
-        isin=[
-            "native_broadleaved",
-            "productive_conifer",
-            "wood_pasture",
-            "riparian",
-            "silvoarable",
-        ],
-    )
-    rcp: Category = Field(isin=["26", "45", "60", "85"], coerce=True)
-    tile_name: str = Field()
-    geometry: Geometry = Field()
-
-
-esc_m3_geo = DerivedDataset(
-    name="esc_m3_geo",
-    level0="silver",
-    level1="forest_research",
-    restricted=False,
-    dependencies=[os_bng_raw, esc_m3_raw],
-    func=_transform,
-    model=ESCCombinedModel,
-    partition_cols=["woodland_type", "rcp", "period_T2"],
-)

@@ -60,7 +60,6 @@ from .fc_woodland_sensitivity import (
     woodland_creation_sensitivity_var3_raw,
 )
 from .fr_esc_m3_trees import (
-    esc_m3_geo,
     esc_m3_raw,
 )
 from .fr_esc_m3_trees_suitability import (
@@ -97,7 +96,6 @@ from .ons import (
     ward_raw,
 )
 from .os import (
-    os_bng_raw,
     os_ngd_raw,
 )
 from .peat import (
@@ -146,7 +144,6 @@ catalogue = [
     ne_marine_conservation_zones_raw,
     ne_marine_conservation_zones_parcels,
     esc_m3_raw,
-    esc_m3_geo,
     esc_suitability_broadleaved_raw,
     esc_suitability_coniferous_raw,
     esc_suitability_riparian_raw,
@@ -211,7 +208,6 @@ catalogue = [
     protected_landscapes_tidy,
     protected_landscapes_parcels,
     os_ngd_raw,
-    os_bng_raw,
     reference_parcels_raw,
     reference_parcels_raw_no_sbi,
     reference_parcels,
