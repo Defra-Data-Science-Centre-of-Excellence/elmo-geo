@@ -206,7 +206,7 @@ def _habitat_area_within_distance(
     """Performs distance join between parcels and priority habitats and sums the habitat area per parcel."""
     return (
         sjoin(sdf_parcels, sdf_phi, distance=distance)
-        .groupby("id_parcel", "Main_Habit")
+        .groupby("id_parcel", "habitat_name")
         .agg(F.expr("SUM(ST_Area(geometry_right)) as area"))
         .withColumn("distance", F.lit(distance))
     )
@@ -242,15 +242,15 @@ class PriorityHabitatArea(DataFrameModel):
 
     Parameters:
         id_parcel: 11 character RPA reference parcel ID (including the sheet ID) e.g. `SE12263419`.
-        Main_Habit: The name of the priority habitat.
+        habitat_name: The name of the priority habitat.
         area: The area of priority habitat geometries that are within the threshold distance. The area
         of the whole geometry is given, even if only part of the geometry is within the threshold.
         distance: The threshold distance in metres.
     """
 
-    id_parcel: str = Field()
-    Main_Habit: Category = Field(coerce=True)
-    area: float = Field()
+    id_parcel: str = Field(coerce=True)
+    habitat_name: Category = Field(coerce=True)
+    area: float = Field(coerce=True)
     distance: int = Field(coerce=True)
 
 
@@ -261,7 +261,7 @@ defra_habitat_area_parcels = DerivedDataset(
     restricted=False,
     is_geo=False,
     func=_habitat_area_within_distances,
-    dependencies=[reference_parcels, defra_priority_habitat_england],
+    dependencies=[reference_parcels, defra_priority_habitat_england_raw],
     model=PriorityHabitatArea,
 )
 """Area of Defra Priority Habitats within 2km and 5km of a parcel.
