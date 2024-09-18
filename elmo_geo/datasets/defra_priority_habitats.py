@@ -13,14 +13,26 @@ from pandera.dtypes import Category
 from pandera.engines.pandas_engine import Geometry
 from pyspark.sql import functions as F
 
-from elmo_geo.etl import Dataset, DerivedDataset, SourceDataset
+from elmo_geo.etl import SRID, Dataset, DerivedDataset, SourceDataset
 from elmo_geo.etl.transformations import join_parcels
 from elmo_geo.st.join import knn
+from elmo_geo.utils.types import SparkDataFrame
 
 from .rpa_reference_parcels import reference_parcels
 
 DISTANCE_THRESHOLD = 5_000
-_join_parcels = partial(join_parcels, columns=["mainhabs"])
+
+
+def split_mainhabs(sdf: SparkDataFrame) -> SparkDataFrame:
+    """Splits the mainhabs field into a row for each habitat type.
+
+    Creates new habitat_name column for the split habitats
+    and drops the original column.
+    """
+    return sdf.withColumn("habitat_name", F.expr("EXPLODE(SPLIT(mainhabs, ','))")).drop("mainhabs")
+
+
+_join_parcels = partial(join_parcels, columns=["habitat_name"], fn_pre=split_mainhabs)
 
 
 def _habitat_proximity(parcels: Dataset, habitats: Dataset, habitat_filter_expr: str, max_vertices: int = 256) -> pd.DataFrame:
@@ -42,23 +54,24 @@ def _habitat_proximity(parcels: Dataset, habitats: Dataset, habitat_filter_expr:
     """
     sdf_habitat = (
         habitats.sdf()
+        .transform(split_mainhabs)
         .filter(F.expr(habitat_filter_expr))
-        .select("mainhabs", "geometry")
+        .select("habitat_name", "geometry")
         .withColumn("geometry", F.expr(f"ST_SubdivideExplode(geometry, {max_vertices})"))
     )
 
     sdf_parcels = parcels.sdf().select("id_parcel", "geometry")
 
-    sdf_knn = knn(sdf_parcels, sdf_habitat, id_left="id_parcel", id_right="mainhabs", k=1, distance_threshold=DISTANCE_THRESHOLD).drop("rank")
+    sdf_knn = knn(sdf_parcels, sdf_habitat, id_left="id_parcel", id_right="habitat_name", k=1, distance_threshold=DISTANCE_THRESHOLD).drop("rank")
 
     # Aggregate to return dataset with single row per parcel, closest habitat and corresponding distance.
     return sdf_knn.join(sdf_knn.groupBy("id_parcel").agg(F.min("distance").alias("distance")), on=["id_parcel", "distance"], how="inner").toPandas()
 
 
-_heathland_habitat_proximity = partial(_habitat_proximity, habitat_filter_expr="mainhabs like '%heath%'")
+_heathland_habitat_proximity = partial(_habitat_proximity, habitat_filter_expr="habitat_name like '%heath%'")
 _grassland_habitat_proximity = partial(
     _habitat_proximity,
-    habitat_filter_expr="mainhabs in ('{}')".format(
+    habitat_filter_expr="habitat_name in ('{}')".format(
         "','".join(
             [
                 "Lowland calcareous grassland",
@@ -77,19 +90,20 @@ class PHIEnglandRawModel(DataFrameModel):
     """Data model for all England source PHI dataset.
 
     Attributes:
-        mainhabs: Habitat type name
+        mainhabs: Habitat names corresponding to the geometry, concatenated together
+            separated by a comma.
         habcodes: Habitata type code
         areaha: Habitat area in hectares
         uid: Identified for habitat
         geometry: Habitat geometry
     """
 
-    mainhabs: str = Field()
-    habcodes: str = Field()
-    areaha: float = Field()
-    version: str = Field()
-    uid: str = Field()
-    geometry: Geometry = Field()
+    mainhabs: str = Field(coerce=True)
+    habcodes: str = Field(coerce=True)
+    areaha: float = Field(coerce=True)
+    version: str = Field(coerce=True)
+    fid: str = Field(coerce=True, unique=True, alias="uid")
+    geometry: Geometry(crs=SRID) = Field(coerce=True)
 
 
 class PriorityHabitatParcels(DataFrameModel):
@@ -97,12 +111,12 @@ class PriorityHabitatParcels(DataFrameModel):
 
     Parameters:
         id_parcel: 11 character RPA reference parcel ID (including the sheet ID) e.g. `SE12263419`.
-        mainhabs: The name of the priority habitat.
+        habitat_name: The name of the priority habitat.
         proportion: The proportion of the parcel that intersects with the spatial priority.
     """
 
     id_parcel: str = Field()
-    mainhabs: Category = Field(coerce=True)
+    habitat_name: Category = Field(coerce=True)
     proportion: float = Field(coerce=True, ge=0, le=1)
 
 
@@ -112,12 +126,12 @@ class PriorityHabitatProximity(DataFrameModel):
 
     Parameters:
         id_parcel: 11 character RPA reference parcel ID (including the sheet ID) e.g. `SE12263419`.
-        mainhabs: The name of the priority habitat.
+        habitat_name: The name of the priority habitat.
         distance: The distance from the parcel to this type of habitat.
     """
 
     id_parcel: str = Field()
-    mainhabs: Category = Field(coerce=True)
+    habitat_name: Category = Field(coerce=True)
     distance: int = Field(coerce=True)
 
 
