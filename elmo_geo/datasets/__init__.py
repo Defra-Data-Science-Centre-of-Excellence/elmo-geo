@@ -31,11 +31,8 @@ from .defra_national_character_areas import (
 from .defra_priority_habitats import (
     defra_grassland_proximity_parcels,
     defra_heathland_proximity_parcels,
-    defra_priority_habitat_england,
+    defra_priority_habitat_england_raw,
     defra_priority_habitat_parcels,
-    defra_priority_habitat_raw_central,
-    defra_priority_habitat_raw_north,
-    defra_priority_habitat_raw_south,
 )
 from .fc_ewco import (
     ewco_nature_recovery_priority_habitat,
@@ -161,10 +158,7 @@ catalogue = [
     country_parcels,
     cua_raw,
     cua_parcels,
-    defra_priority_habitat_raw_central,
-    defra_priority_habitat_raw_south,
-    defra_priority_habitat_raw_north,
-    defra_priority_habitat_england,
+    defra_priority_habitat_england_raw,
     defra_priority_habitat_parcels,
     defra_heathland_proximity_parcels,
     defra_grassland_proximity_parcels,
