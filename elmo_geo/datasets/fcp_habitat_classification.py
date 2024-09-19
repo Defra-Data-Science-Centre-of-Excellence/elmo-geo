@@ -50,11 +50,12 @@ class EVASTHabitatsMappingModel(DataFrameModel):
     """EVAST's mapping between different habitat classification model.
 
     Parameters:
-       action_group: The type of habitat creation action the habitats correspond to.
+       action_group: The type of habitat creation action the habitats correspond to. Is either "Create Heathland",
+            "Create Wetland", "Create SRG". SRG stands for species-rich grassland.
        action_habitat: The habitat type created by the habitat creation action. Referred to as the 'factor_level' by EVAST.
-       BIMLA_model_grouping: Habitat type used by EVASTs BIMLA model.
+       bimla_habitat: Habitat type used by EVASTs BIMLA model.
        is_upland: Boolean indicating whether the habitat type is above the moorland line (True)
-              or not (False) or can be both (None).
+            or not (False) or can be both (None).
        habitat_name: Corresponding habitat name in alternative source.
        habitat_code_soilscapes: Corresponding habitat code in alternative source (only soilscapes habitats have a code).
        source: The alternative habitat dataset that is being mapped to the create habitat action habitat types. Either
@@ -63,9 +64,15 @@ class EVASTHabitatsMappingModel(DataFrameModel):
     """
 
     action_group: Category = Field(coerce=True, isin=["Create Heathland", "Create Wetland", "Create SRG"])
-    action_habitat: str = Field()
+    action_habitat: Category = Field(coerce=True, isin=[
+        "upland","lowland","fen","bog","upland_acid_gr","lowland_acid_gr","lowland_dry_acid_gr",
+        "lowland_calc_gr","lowland_meadow","upland_calc_gr","upland_meadow",
+    ])
     is_upland: bool = Field(coerce=True, nullable=True)
-    BIMLA_model_grouping: str = Field()
+    bimla_habitat: Category = Field(alias = "BIMLA_model_grouping", coerce=True, isin=[
+        "cvr_upland_heathland", "cvr_lowland_heathland","cvr_bog","cvr_fen",
+        "cvr_lowland_calc_gr","cvr_lowland_semi_natural","cvr_upland_semi_nat_gr",
+    ])
     habitat_name: str = Field(nullable=True)
     habitat_code: str = Field(nullable=True)
     source: str = Field(nullable=True)
@@ -89,9 +96,8 @@ habitat creation groups (Create Wetland, Create Species-rich
 Grassland, Create Heathland) and sub-groups within these.
 
 This dataset was provided in the ''M2 habitat create Classificatn'
-tab of EVASTs [Habitat Stocking](
-    https://defra.sharepoint.com/:x:/r/teams/Team1645/_layouts/15/Doc.aspx?sourcedoc=%7B305701D9-E8E2-424B-8B3F-837B876133B6%7D&file=EVAST_HabitatStocking-2024_08_29.xlsx
-    ) workbook but has been reformatted to a 'long' format to align with the analysis pipeline used here.
+tab of EVASTs [Habitat Stocking]:https://defra.sharepoint.com/:x:/r/teams/Team1645/_layouts/15/Doc.aspx?sourcedoc=%7B305701D9-E8E2-424B-8B3F-837B876133B6%7D&file=EVAST_HabitatStocking-2024_08_29.xlsx
+workbook but has been reformatted to a 'long' format to align with the analysis pipeline used here.
 """
 
 
@@ -111,14 +117,13 @@ def _get_parcel_candidate_habitates(
     sdf_isupland = (
         reference_parcels.sdf()
         .select("id_parcel")
-        .join(moorline_parcels.sdf().filter(F.expr(f"proportion>{threshold}")), on="id_parcel", how="left")
+        .join(moorline_parcels.sdf().filter(f"{threshold} < proportion"), on="id_parcel", how="left")
         .selectExpr("id_parcel", "COALESCE(name in ('MD', 'MS'), FALSE) as is_upland")
     )
 
     sdf_ss = (
         cec_soilscapes_habitats_parcels.sdf()
         .filter(F.expr(f"proportion>{threshold}"))
-        .withColumnRenamed("proportion", "proportion_soilscapes")
         .select("id_parcel", "unit", "habitat_code", "habitat_type")
     )
 
@@ -132,7 +137,7 @@ def _get_parcel_candidate_habitates(
     # idenfity candidate habitats that can be created on parcels based on the parcel soil type
     # and whether the parcel is upland or lowland.
     return (
-        sdf_isupland.join(sdf_ss, on="id_parcel", how="outer")
+        sdf_isupland.join(sdf_ss, on="id_parcel", how="left")
         .join(sdf_habitat_mapping, on="habitat_code", how="left")
         .filter(F.expr("(is_upland_map is NULL) OR (is_upland=is_upland_map)"))
         .select("id_parcel", "action_group", "action_habitat")
@@ -182,14 +187,14 @@ def _filter_candidates_by_phi(
     sdf_habitat_mapping = (
         evast_habitat_mapping_raw.sdf()
         .filter(F.expr("source = 'phi'"))
-        .selectExpr("action_group as action_group_phi", "action_habitat as action_habitat_phi", "habitat_name as Main_Habit")
+        .selectExpr("action_group as action_group_phi", "action_habitat as action_habitat_phi", "habitat_name")
     )
 
     # join in nearby phi habitats and filter to where the phi action habitat type
     # matches a soilscape based action habitat
     sdf_refine = (
         sdf_refine.join(defra_habitat_area_parcels.sdf(), on="id_parcel", how="outer")
-        .join(sdf_habitat_mapping, on="Main_Habit", how="left")
+        .join(sdf_habitat_mapping, on="habitat_name", how="left")
         .filter(F.expr("action_habitat = action_habitat_phi"))
     )
 
