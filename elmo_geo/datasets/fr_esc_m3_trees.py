@@ -149,7 +149,7 @@ esc_m3_raw = SourceGlobDataset(
     name="esc_m3_raw",
     glob_path="/dbfs/mnt/lab/unrestricted/elm_data/evast/M3_trees_1km/EVAST_M3_*_rcp*.csv",
 )
-"""ESC M£ Trees raw dataset. Uses the SourceGlobDataset class to load and union multiple
+"""ESC M3 Trees raw dataset. Uses the SourceGlobDataset class to load and union multiple
 csv files, each containing model outputs for a different woodland type and representative
 concentration pathway (RCP).
 """

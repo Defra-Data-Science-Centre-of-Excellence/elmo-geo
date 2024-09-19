@@ -295,8 +295,8 @@ class SourceGlobDataset(SourceDataset):
     @property
     def dict(self) -> dict:
         """A dictionary representation of the dataset."""
-        d = super.dict()
-        d["blog_path"] = self.glob_path
+        d = super().dict
+        d["glob_path"] = self.glob_path
         return d
 
     @property
@@ -321,7 +321,7 @@ class SourceGlobDataset(SourceDataset):
             def union(x: SparkDataFrame, y: SparkDataFrame) -> SparkDataFrame:
                 return x.unionByName(y, allowMissingColumns=True)
 
-            _sdfs = [(spark.createDataFrame(read_file(f, self.is_geo)).withColumn("_path", F.lit(f))) for f in iglob(self.glob_path)]
+            _sdfs = [spark.createDataFrame(read_file(f, self.is_geo)).withColumn("_path", F.lit(f)) for f in iglob(self.glob_path)]
             sdf = reduce(union, _sdfs)
             df_sample = sdf.limit(10_000).toPandas()
             self._validate(df_sample)
