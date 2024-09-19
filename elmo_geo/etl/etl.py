@@ -321,7 +321,7 @@ class SourceGlobDataset(SourceDataset):
             def union(x: SparkDataFrame, y: SparkDataFrame) -> SparkDataFrame:
                 return x.unionByName(y, allowMissingColumns=True)
 
-            _sdfs = [(spark.createDataFrame(read_file(f, self.is_geo)).withColumn("_path", F.lit(f))) for f in iglob(self.glob_path)]
+            _sdfs = [spark.createDataFrame(read_file(f, self.is_geo)).withColumn("_path", F.lit(f)) for f in iglob(self.glob_path)]
             sdf = reduce(union, _sdfs)
             df_sample = sdf.limit(10_000).toPandas()
             self._validate(df_sample)
