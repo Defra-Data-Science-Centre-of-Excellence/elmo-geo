@@ -184,7 +184,7 @@ def _transform(os_bng_raw, esc_m3_raw):
     return sdf_esc.join(sdf_lu, on="XY_BNG", how="left")
 
 
-class ESCCombinedModel(DataFrameModel):
+class ESCGeoModel(DataFrameModel):
     """ESC M3 Trees model outputs combined data model.
 
     Data model only validates the additional columns produced by combining
@@ -219,6 +219,6 @@ esc_m3_geo = DerivedDataset(
     restricted=False,
     dependencies=[os_bng_raw, esc_m3_raw],
     func=_transform,
-    model=ESCCombinedModel,
+    model=ESCGeoModel,
     partition_cols=["woodland_type", "rcp", "period_T2"],
 )
