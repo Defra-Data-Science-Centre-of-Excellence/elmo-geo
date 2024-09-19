@@ -6,8 +6,8 @@ Objective is to create a dataset of linear features which are likely to represen
 Segmentation can be done at each node, it can also be done to split 2 points at a maximum length.  However, this can create very short segments
 (especially along bends and corners), and such simplification is also utilised to merge shorter segments together.
 
-| Parameter  | Value |   |
-| ---------- | ----- |---|
+| Parameter  | Value |     |
+| ---------- | ----- | --- |
 | Tolerance  |   10m | Collects nearby nodes to a single segment.  Higher means less segments.
 | Max Length |   50m | Splits long lengths between 2 nodes.  Lower means more segments.
 
@@ -95,12 +95,18 @@ boundary_segments = DerivedDataset(
 
 # Adjacency
 class SjoinBoundaries(DataFrameModel):
-    """Model for hedgerow boundaries.
+    """Model for features joined to boundaries.
 
     Attributes:
+        id_boundary: boundary id, unique id there are no grouping columns.
+        id_parcel: parcel id in which that boundary came from.
+        m: length of the boundary geometry.
+        *columns: any columns from the features dataset grouped by.
+        proportion_*m: the proportion of the boundary segment intersecting with the feature gemetry buffered at "*"
+
     """
 
-    id_boundary: int = Field(unique=True)
+    id_boundary: int = Field()
     id_parcel: str = Field()
     m: float = Field()
     proportion_0m: float = Field(ge=0, le=1)
