@@ -64,15 +64,36 @@ class EVASTHabitatsMappingModel(DataFrameModel):
     """
 
     action_group: Category = Field(coerce=True, isin=["Create Heathland", "Create Wetland", "Create SRG"])
-    action_habitat: Category = Field(coerce=True, isin=[
-        "upland","lowland","fen","bog","upland_acid_gr","lowland_acid_gr","lowland_dry_acid_gr",
-        "lowland_calc_gr","lowland_meadow","upland_calc_gr","upland_meadow",
-    ])
+    action_habitat: Category = Field(
+        coerce=True,
+        isin=[
+            "upland",
+            "lowland",
+            "fen",
+            "bog",
+            "upland_acid_gr",
+            "lowland_acid_gr",
+            "lowland_dry_acid_gr",
+            "lowland_calc_gr",
+            "lowland_meadow",
+            "upland_calc_gr",
+            "upland_meadow",
+        ],
+    )
     is_upland: bool = Field(coerce=True, nullable=True)
-    bimla_habitat: Category = Field(alias = "BIMLA_model_grouping", coerce=True, isin=[
-        "cvr_upland_heathland", "cvr_lowland_heathland","cvr_bog","cvr_fen",
-        "cvr_lowland_calc_gr","cvr_lowland_semi_natural","cvr_upland_semi_nat_gr",
-    ])
+    bimla_habitat: Category = Field(
+        alias="BIMLA_model_grouping",
+        coerce=True,
+        isin=[
+            "cvr_upland_heathland",
+            "cvr_lowland_heathland",
+            "cvr_bog",
+            "cvr_fen",
+            "cvr_lowland_calc_gr",
+            "cvr_lowland_semi_natural",
+            "cvr_upland_semi_nat_gr",
+        ],
+    )
     habitat_name: str = Field(nullable=True)
     habitat_code: str = Field(nullable=True)
     source: str = Field(nullable=True)
@@ -121,11 +142,7 @@ def _get_parcel_candidate_habitates(
         .selectExpr("id_parcel", "COALESCE(name in ('MD', 'MS'), FALSE) as is_upland")
     )
 
-    sdf_ss = (
-        cec_soilscapes_habitats_parcels.sdf()
-        .filter(F.expr(f"proportion>{threshold}"))
-        .select("id_parcel", "unit", "habitat_code", "habitat_type")
-    )
+    sdf_ss = cec_soilscapes_habitats_parcels.sdf().filter(F.expr(f"proportion>{threshold}")).select("id_parcel", "unit", "habitat_code", "habitat_type")
 
     # select lookup to action habitats for soilscapes habitats
     sdf_habitat_mapping = (

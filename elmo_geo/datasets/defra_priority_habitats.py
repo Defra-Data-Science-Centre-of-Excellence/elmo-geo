@@ -207,9 +207,10 @@ def _habitat_area_within_distance(
     return (
         sjoin(sdf_parcels, sdf_phi, distance=distance)
         .groupby("id_parcel", "habitat_name")
-        .agg(F.expr("SUM(ST_Area(geometry_right)) AS area"),
-             F.expr("CAST(ROUND(MIN(distance),0) AS int) AS minimum_distance"),
-             )
+        .agg(
+            F.expr("SUM(ST_Area(geometry_right)) AS area"),
+            F.expr("CAST(ROUND(MIN(distance),0) AS int) AS minimum_distance"),
+        )
         .withColumn("distance_threshold", F.lit(distance))
     )
 
@@ -221,11 +222,7 @@ def _habitat_area_within_distances(
 ) -> SparkDataFrame:
     """Calculates the area of priority habitat within each threshold distance to parcels."""
     sdf_parcels = parcels.sdf()
-    sdf_phi = (
-        priority_habitats.sdf()
-        .withColumn("geometry", load_geometry(encoding_fn=""))
-        .withColumn("geometry", F.expr("ST_SubDivideExplode(geometry, 256)"))
-    )
+    sdf_phi = priority_habitats.sdf().withColumn("geometry", load_geometry(encoding_fn="")).withColumn("geometry", F.expr("ST_SubDivideExplode(geometry, 256)"))
 
     sdf = None
     for distance in distances:
