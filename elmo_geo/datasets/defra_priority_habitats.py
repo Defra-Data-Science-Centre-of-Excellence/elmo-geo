@@ -197,27 +197,33 @@ The following grassland habitats are included:
 def _habitat_area_within_distance(
     sdf_parcels: SparkDataFrame,
     sdf_phi: SparkDataFrame,
-    distance: int,
+    distance_threshold: int,
 ) -> SparkDataFrame:
     """Performs distance join between parcels and priority habitats and sums the habitat area per parcel."""
     return (
-        sjoin(sdf_parcels, sdf_phi, distance=distance)
+        sjoin(sdf_parcels, sdf_phi, distance=distance_threshold)
+        .withColumn("distance", F.expr("ST_Distance(geometry_left, geometry_right)"))
         .groupby("id_parcel", "habitat_name")
         .agg(
             F.expr("SUM(ST_Area(geometry_right)) AS area"),
             F.expr("CAST(ROUND(MIN(distance),0) AS int) AS minimum_distance"),
         )
-        .withColumn("distance_threshold", F.lit(distance))
+        .withColumn("distance_threshold", F.lit(distance_threshold))
     )
 
 
 def _habitat_area_within_distances(
     parcels: Dataset,
-    priority_habitats: Dataset,
+    priority_habitats_raw: Dataset,
     distances: list[int] = [2_000, 5_000],
 ) -> SparkDataFrame:
     """Calculates the area of priority habitat within each threshold distance to parcels."""
-    sdf_phi = priority_habitats.sdf().withColumn("geometry", load_geometry(encoding_fn="")).withColumn("geometry", F.expr("ST_SubDivideExplode(geometry, 256)"))
+    sdf_phi = (
+        priority_habitats_raw.sdf()
+        .withColumn("geometry", load_geometry(encoding_fn=""))
+        .withColumn("geometry", F.expr("ST_SubDivideExplode(geometry, 256)"))
+        .transform(split_mainhabs)
+    )
 
     def union(sdf1: SparkDataFrame, sdf2: SparkDataFrame) -> SparkDataFrame:
         return sdf1.unionByName(sdf2, allowMissingColumns=False)
