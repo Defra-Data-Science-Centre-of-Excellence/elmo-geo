@@ -295,8 +295,8 @@ class SourceGlobDataset(SourceDataset):
     @property
     def dict(self) -> dict:
         """A dictionary representation of the dataset."""
-        d = super.dict()
-        d["blog_path"] = self.glob_path
+        d = super().dict
+        d["glob_path"] = self.glob_path
         return d
 
     @property
