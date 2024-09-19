@@ -67,7 +67,8 @@ def auto_repartition(
 def load_sdf(path: str, **kwargs) -> SparkDataFrame:
     """Load SparkDataFrame from glob path.
     Automatically converts file api to spark api.
-    And catches failure to coerce schemas for datasets with multiple datatypes (i.e. Float>Double or Timestamp_NTZ>Timestamp).
+    And catches failure to coerce schemas for datasets with multiple datatypes
+    (i.e. Float>Double or Timestamp_NTZ>Timestamp) that differ between partitions.
     """
 
     def read(f: str) -> SparkDataFrame:

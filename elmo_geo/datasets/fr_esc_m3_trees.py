@@ -40,11 +40,10 @@ sequestration and positive values net emissions.
 [^1] [Forest Research - Ecological Site Classification](https://www.forestresearch.gov.uk/tools-and-resources/fthr/ecological-site-classification)
 """
 
-import itertools
 
 from pandera import DataFrameModel, Field
 
-from elmo_geo.etl import SourceDataset
+from elmo_geo.etl import SourceGlobDataset
 
 
 class ESCM3WoodlandScenariosRaw(DataFrameModel):
@@ -135,48 +134,16 @@ class ESCM3WoodlandScenariosRaw(DataFrameModel):
     wood_product_carbon_ipcc: float = Field(coerce=True)
 
 
-source_dir = "/dbfs/mnt/lab/unrestricted/elm_data/evast/M3_trees_1km/"
-esc_source_kwargs = {
-    "level0": "bronze",
-    "level1": "forest_research",
-    "restricted": False,
-    "is_geo": False,
-    "model": ESCM3WoodlandScenariosRaw,
-}
-
-# Loop through combinations of woodland type and rcp scenario and create source datasets
-woodland_types = ["native_broadleaved", "productive_conifer", "riparian", "silvoarable", "wood_pasture"]
-rcps = ["26", "45", "60", "85"]
-esc_source_datasets = []
-for wt, rcp in itertools.product(woodland_types, rcps):
-    source_dataset = SourceDataset(
-        **esc_source_kwargs,
-        name=f"esc_{wt}_rcp{rcp}_raw",
-        source_path=source_dir + f"EVAST_M3_{wt}_rcp{rcp}.csv",
-    )
-    f"""ESC {wt.replace("_", " ")} dataset for the RCP {int(rcp)/10} scenario."""
-    esc_source_datasets.append(source_dataset)
-
-# unpack source datasets
-(
-    esc_native_broadleaved_26_raw,
-    esc_native_broadleaved_45_raw,
-    esc_native_broadleaved_60_raw,
-    esc_native_broadleaved_85_raw,  # TODO: Not fresh due to missing 'tree_carbon' field. #868
-    esc_productive_conifer_26_raw,
-    esc_productive_conifer_45_raw,
-    esc_productive_conifer_60_raw,
-    esc_productive_conifer_85_raw,
-    esc_riparian_26_raw,
-    esc_riparian_45_raw,
-    esc_riparian_60_raw,
-    esc_riparian_85_raw,
-    esc_silvoarable_26_raw,
-    esc_silvoarable_45_raw,
-    esc_silvoarable_60_raw,
-    esc_silvoarable_85_raw,
-    esc_wood_pasture_26_raw,  # TODO: Not fresh due to missing 'tree_carbon' field. #868
-    esc_wood_pasture_45_raw,
-    esc_wood_pasture_60_raw,
-    esc_wood_pasture_85_raw,
-) = esc_source_datasets
+esc_m3_raw = SourceGlobDataset(
+    level0="bronze",
+    level1="forest_research",
+    restricted=False,
+    is_geo=False,
+    model=ESCM3WoodlandScenariosRaw,
+    name="esc_m3_raw",
+    glob_path="/dbfs/mnt/lab/unrestricted/elm_data/evast/M3_trees_1km/EVAST_M3_*_rcp*.csv",
+)
+"""ESC M3 Trees raw dataset. Uses the SourceGlobDataset class to load and union multiple
+csv files, each containing model outputs for a different woodland type and representative
+concentration pathway (RCP).
+"""

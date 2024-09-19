@@ -6,48 +6,11 @@
 [^os]: https://www.ordnancesurvey.co.uk/products/os-ngd
 [^dash]: https://app.powerbi.com/Redirect?action=OpenReport&appId=5762de14-3aa8-4a83-92b3-045cc953e30c&reportObjectId=c8802134-4f3b-484e-bf14-1ed9f8881450&ctid=770a2450-0227-4c62-90c7-4e38537f1102&reportPage=ReportSectionff2a0c223272005d9b10&pbi_source=appShareLink&portalSessionId=f7a19b52-4676-43dd-9f13-d1084081a8f2
 """
-import os.path
-import time
-from dataclasses import dataclass
-from glob import iglob
-from hashlib import sha256
 
 from pandera import DataFrameModel, Field
 from pandera.engines.pandas_engine import Geometry
 
-from elmo_geo.etl.etl import HASH_LENGTH, SRC_HASH_FMT, SRID, SourceDataset
-from elmo_geo.io import load_sdf, ogr_to_geoparquet, to_gdf
-from elmo_geo.utils.log import LOG
-
-
-@dataclass
-class SourceGlobDataset(SourceDataset):
-    """SourceGlobDataset is to ingest multiple files using a glob path.
-    - This is better suited for ingesting very large files, as it uses ogr2ogr.
-    - This does not support aliasing/renaming, as it writes before validating.
-
-    Attributes:
-        glob_path: The glob path to the data.
-        source_path: Is required to identified last time modified.
-    """
-
-    glob_path: str = None
-
-    @property
-    def _hash(self) -> str:
-        """Return the last-modified date of the source file."""
-        mtimes = [os.path.getmtime(f) for f in iglob(self.glob_path)]
-        mtime = sum(mtimes) / len(mtimes)
-        date = time.strftime(SRC_HASH_FMT, time.gmtime(mtime))
-        return sha256(date.encode()).hexdigest()[:HASH_LENGTH]
-
-    def refresh(self):
-        LOG.info(f"Creating '{self.name}' dataset.")
-        new_path = self._new_path
-        ogr_to_geoparquet(self.glob_path, new_path)
-        df_sample = to_gdf(load_sdf(new_path).limit(10_000))
-        self._validate(df_sample)
-        LOG.info(f"Saved to '{self.path}'.")
+from elmo_geo.etl.etl import SRID, SourceGlobDataset
 
 
 class OSNGDRaw(DataFrameModel):

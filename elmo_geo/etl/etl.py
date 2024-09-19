@@ -12,14 +12,17 @@ from abc import ABC, abstractmethod, abstractproperty
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime
+from functools import reduce
+from glob import iglob
 from hashlib import sha256
 from pathlib import Path
 
 import geopandas as gpd
 import pandas as pd
+import pyspark.sql.functions as F
 from pandera import DataFrameModel
 
-from elmo_geo.io import download_link, load_sdf, read_file, to_gdf, write_parquet
+from elmo_geo.io import download_link, load_sdf, ogr_to_geoparquet, read_file, to_gdf, write_parquet
 from elmo_geo.utils.log import LOG
 from elmo_geo.utils.types import DataFrame, GeoDataFrame, PandasDataFrame, SparkDataFrame
 
@@ -258,6 +261,71 @@ class SourceDataset(Dataset):
         df = read_file(self.source_path, self.is_geo)
         df = self._validate(df).pipe(self.rename)
         write_parquet(df, path=self._new_path, partition_cols=self.partition_cols)
+        LOG.info(f"Saved to '{self.path}'.")
+
+
+@dataclass
+class SourceGlobDataset(SourceDataset):
+    """SourceGlobDataset is to ingest multiple files using a glob path.
+    - This is better suited for ingesting very large geographic file, as it uses ogr2ogr.
+    - This does not support aliasing/renaming, as it writes before validating.
+
+    For non-geographic data, each path in the glob path is loaded with pandas, then converted
+    to a SparkDataFrame and unioned together. A '_path' column is added, so that data belonging
+    to different paths can be identified.
+
+    Defines new _new_date() and _hash() methods that are based on the glob path rather
+    than source path.
+
+    Attributes:
+        glob_path: The glob path to the data.
+    """
+
+    glob_path: str = None
+    source_path: str = None
+
+    @property
+    def _new_date(self) -> str:
+        """Return the mean of last-modified dates of the files
+        contain in the glob path ISO string format."""
+        mtimes = [os.path.getmtime(f) for f in iglob(self.glob_path)]
+        mtime = sum(mtimes) / len(mtimes)
+        return time.strftime(DATE_FMT, time.gmtime(mtime))
+
+    @property
+    def dict(self) -> dict:
+        """A dictionary representation of the dataset."""
+        d = super().dict
+        d["glob_path"] = self.glob_path
+        return d
+
+    @property
+    def _hash(self) -> str:
+        """Return a hash calculated from of last-modified dates of the files
+        contain in the glob."""
+        mtimes = [os.path.getmtime(f) for f in iglob(self.glob_path)]
+        mtime = sum(mtimes) / len(mtimes)
+        date = time.strftime(SRC_HASH_FMT, time.gmtime(mtime))
+        return sha256(date.encode()).hexdigest()[:HASH_LENGTH]
+
+    def refresh(self):
+        LOG.info(f"Creating '{self.name}' dataset.")
+        new_path = self._new_path
+        if self.is_geo:
+            ogr_to_geoparquet(self.glob_path, new_path)
+            df_sample = to_gdf(load_sdf(new_path).limit(10_000))
+            self._validate(df_sample)
+        else:
+            from elmo_geo.utils.dbr import spark
+
+            def union(x: SparkDataFrame, y: SparkDataFrame) -> SparkDataFrame:
+                return x.unionByName(y, allowMissingColumns=True)
+
+            _sdfs = [spark.createDataFrame(read_file(f, self.is_geo)).withColumn("_path", F.lit(f)) for f in iglob(self.glob_path)]
+            sdf = reduce(union, _sdfs)
+            df_sample = sdf.limit(10_000).toPandas()
+            self._validate(df_sample)
+            write_parquet(sdf, path=self._new_path, partition_cols=self.partition_cols)
         LOG.info(f"Saved to '{self.path}'.")
 
 
