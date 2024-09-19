@@ -222,3 +222,5 @@ esc_m3_geo = DerivedDataset(
     model=ESCGeoModel,
     partition_cols=["woodland_type", "rcp", "period_T2"],
 )
+"""ESC M3 Trees model outputs joined to 1km OS BNG tile geometries.
+"""

@@ -8,6 +8,7 @@
 """
 
 from functools import partial
+
 from pandera import DataFrameModel, Field
 from pandera.engines.pandas_engine import Geometry
 
