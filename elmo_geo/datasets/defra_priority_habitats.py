@@ -5,7 +5,7 @@ is a spatial dataset indicating the locations and extents of habitat of 'princip
 
 The data is not a exhaustive survey of habitat locations but is the best available indication of the locations of specific habitat types.
 """
-from functools import partial
+from functools import partial, reduce
 
 import pandas as pd
 from pandera import DataFrameModel, Field
@@ -221,17 +221,12 @@ def _habitat_area_within_distances(
     distances: list[int] = [2_000, 5_000],
 ) -> SparkDataFrame:
     """Calculates the area of priority habitat within each threshold distance to parcels."""
-    sdf_parcels = parcels.sdf()
     sdf_phi = priority_habitats.sdf().withColumn("geometry", load_geometry(encoding_fn="")).withColumn("geometry", F.expr("ST_SubDivideExplode(geometry, 256)"))
 
-    sdf = None
-    for distance in distances:
-        _sdf = _habitat_area_within_distance(sdf_parcels, sdf_phi, distance)
-        if sdf is None:
-            sdf = _sdf
-        else:
-            sdf = sdf.unionByName(_sdf, allowMissingColumns=False)
-    return sdf.toPandas()
+    def union(sdf1: SparkDataFrame, sdf2: SparkDataFrame) -> SparkDataFrame:
+        return sdf1.unionByName(sdf2, allowMissingColumns=False)
+
+    return reduce(union, [_habitat_area_within_distance(parcels.sdf(), sdf_phi, distance) for distance in distances])
 
 
 class PriorityHabitatArea(DataFrameModel):

@@ -35,6 +35,7 @@ To resolved this issues, the CEH Land Cover Map dataset needs to be integrated i
 import pandas as pd
 from pandera import DataFrameModel, Field
 from pandera.dtypes import Category
+from pyspark.sql import Window
 from pyspark.sql import functions as F
 
 from elmo_geo.etl import DerivedDataset, SourceDataset
@@ -145,7 +146,7 @@ def _get_parcel_candidate_habitates(
     sdf_ss = cec_soilscapes_habitats_parcels.sdf().filter(F.expr(f"proportion>{threshold}")).select("id_parcel", "unit", "habitat_code", "habitat_type")
 
     # select lookup to action habitats for soilscapes habitats
-    sdf_habitat_mapping = (
+    sdf_habitat_lu = (
         evast_habitat_mapping_raw.sdf()
         .filter(F.expr("source = 'soilscapes'"))
         .selectExpr("action_group", "action_habitat", "is_upland as is_upland_map", "habitat_code")
@@ -155,7 +156,7 @@ def _get_parcel_candidate_habitates(
     # and whether the parcel is upland or lowland.
     return (
         sdf_isupland.join(sdf_ss, on="id_parcel", how="left")
-        .join(sdf_habitat_mapping, on="habitat_code", how="left")
+        .join(sdf_habitat_lu, on="habitat_code", how="left")
         .filter(F.expr("(is_upland_map is NULL) OR (is_upland=is_upland_map)"))
         .select("id_parcel", "action_group", "action_habitat")
         .dropDuplicates()
@@ -196,31 +197,38 @@ def _classify_parcel_habitat_by_phi_area(df: PandasDataFrame) -> PandasDataFrame
 
 
 def _filter_candidates_by_phi(
-    sdf_refine: SparkDataFrame,
+    sdf_candidates: SparkDataFrame,
     defra_habitat_area_parcels: DerivedDataset,
     evast_habitat_mapping_raw: DerivedDataset,
 ) -> SparkDataFrame:
-    # Get habitat mapping for phi habitat names
-    sdf_habitat_mapping = (
+    """Join candidate parcels to habitat type lookup to a dataset of nearby priority habitats
+    in order to select which action habitat to apply to that parcel.
+
+    Parameters:
+        sdf_candidates: Lookup from parcel ID to candidate habitats to assign to that parcel.
+        defra_habitat_area_parcels: Dataset of area of priority habitats withing different threshold
+            distances from each parcel.
+        evast_habitat_mapping_raw: Lookup between habitat names used in the priority habitats inventory (PHI)
+            and EVAST.
+    """
+    # Get habitat lookup for phi habitat names
+    sdf_habitat_lu = (
         evast_habitat_mapping_raw.sdf()
         .filter(F.expr("source = 'phi'"))
         .selectExpr("action_group as action_group_phi", "action_habitat as action_habitat_phi", "habitat_name")
     )
 
-    # join in nearby phi habitats and filter to where the phi action habitat type
-    # matches a soilscape based action habitat
-    sdf_refine = (
-        sdf_refine.join(defra_habitat_area_parcels.sdf(), on="id_parcel", how="outer")
-        .join(sdf_habitat_mapping, on="habitat_name", how="left")
-        .filter(F.expr("action_habitat = action_habitat_phi"))
-    )
-
-    # Now select which habitat to assign to each parcel based on the one with the most
-    # area in either a 2km radius (for rare habitats) or 5km (for all habitiats)
+    # join in nearby phi habitats and filter to where the phi action habitat type matches a soilscape based action habitat
+    # Then select which habitat to assign to each parcel based on distance and area ranking
+    window = Window.partitionBy("id_parcel", "action_group_phi").orderBy(F.col("distance").asc(), F.col("area").desc())
     return (
-        sdf_refine.repartition(200, "id_parcel")
-        .groupby("id_parcel")
-        .applyInPandas(_classify_parcel_habitat_by_phi_area, schema="id_parcel string, action_group_phi string, action_habitat_phi string")
+        sdf_candidates.join(defra_habitat_area_parcels.sdf(), on="id_parcel", how="outer")
+        .join(sdf_habitat_lu, on="habitat_name", how="left")
+        .filter(F.expr("action_habitat = action_habitat_phi"))
+        .filter(F.row_number().over(window) == 1)
+        # .repartition(200, "id_parcel")
+        # .groupby("id_parcel")
+        # .applyInPandas(_classify_parcel_habitat_by_phi_area, schema="id_parcel string, action_group_phi string, action_habitat_phi string")
     )
 
 
@@ -250,23 +258,16 @@ def _transform(
     type, but permit a larger distance threshold where no match is found nearby.
     """
 
-    # Get candidate habitats based on soil type and upland/lowland classification
-    sdf_candidates = _get_parcel_candidate_habitates(
-        reference_parcels,
-        moorline_parcels,
-        cec_soilscapes_habitats_parcels,
-        evast_habitat_mapping_raw,
+    return (
+        _get_parcel_candidate_habitates(
+            reference_parcels,
+            moorline_parcels,
+            cec_soilscapes_habitats_parcels,
+            evast_habitat_mapping_raw,
+        )
+        .transform(_filter_candidates_by_phi, defra_habitat_area_parcels, evast_habitat_mapping_raw)
+        .withColumnsRenamed({"action_group_phi": "action_group", "action_habitat_phi": "action_habitat"})
     )
-
-    # Now joined to a dataset of nearby priority habitats in order to select which
-    # action habitat to apply to that parcel
-    sdf_done = _filter_candidates_by_phi(
-        sdf_candidates,
-        defra_habitat_area_parcels,
-        evast_habitat_mapping_raw,
-    )
-
-    return sdf_done.withColumnsRenamed({"action_group_phi": "action_group", "action_habitat_phi": "action_habitat"})
 
 
 class HabitatCreationTypeParcelModel(DataFrameModel):
