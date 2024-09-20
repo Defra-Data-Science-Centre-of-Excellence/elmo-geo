@@ -43,7 +43,7 @@ To contribute your work will be validated using Ruff and pytest.
 ![test_notebook](https://github.com/Defra-Data-Science-Centre-of-Excellence/elmo-geo/assets/81236667/3277e5a3-d632-4fc5-a758-e929dffc4be2)
 - Before submitting a PR lint your work by opening a GitHub codespace, changing to your branch, and running `make verify_gh` to format+lint+verify your contributions.  
   _`pytest.marks.dbr` are avoided by `make verify_gh`, as they can only be run on Databricks, e.g. those that require spark or data._
-  ~_For more information on using pytest with Databricks see https://docs.databricks.com/en/notebooks/testing.html_
+  ~_For more information on using pytest with Databricks see https://docs.databricks.com/en/notebooks/testing.html_  
 ![codespaces](https://github.com/Defra-Data-Science-Centre-of-Excellence/elmo-geo/assets/81236667/9e8493e8-3712-4236-b2ad-f1bce0156837)
 
 
