@@ -158,8 +158,11 @@ class Dataset(ABC):
         if self.model is not None:
             if isinstance(df, SparkDataFrame):
                 LIMIT_SDF: int = 100_000
-                df = to_gdf(df.limit(LIMIT_SDF)) if self.is_geo else df.limit(LIMIT_SDF).toPandas()
-            self.model.validate(df)  # TODO: remove coerces, as it can't be used for sdfs.
+                _df = to_gdf(df.limit(LIMIT_SDF)) if self.is_geo else df.limit(LIMIT_SDF).toPandas()
+                self.model.validate(_df)
+            else:
+                df = self.model.validate(df)
+        return df
 
     def destroy(self) -> None:
         """Delete the cached dataset at `self.path`."""
@@ -315,8 +318,8 @@ class SourceGlobDataset(SourceDataset):
         new_path = self._new_path
         if self.is_geo:
             ogr_to_geoparquet(self.glob_path, new_path)
-            sdf = load_sdf(new_path)
-            self._validate(sdf)
+            df = load_sdf(new_path)
+            df = self._validate(df)
         else:
             from elmo_geo.utils.dbr import spark
 
@@ -324,9 +327,9 @@ class SourceGlobDataset(SourceDataset):
                 return x.unionByName(y, allowMissingColumns=True)
 
             gen_sdfs = (spark.createDataFrame(read_file(f, self.is_geo)).withColumn("_path", F.lit(f)) for f in iglob(self.glob_path))
-            sdf = reduce(union, gen_sdfs)
-            self._validate(sdf)
-            write_parquet(sdf, path=self._new_path, partition_cols=self.partition_cols)
+            df = reduce(union, gen_sdfs)
+            df = self._validate(df)
+            write_parquet(df, path=self._new_path, partition_cols=self.partition_cols)
         LOG.info(f"Saved to '{self.path}'.")
 
 
@@ -378,6 +381,6 @@ class DerivedDataset(Dataset):
         """Populate the cache with a fresh version of this dataset."""
         LOG.info(f"Creating '{self.name}' dataset.")
         df = self.func(*self.dependencies)
-        self._validate(df)
+        df = self._validate(df)
         write_parquet(df, path=self._new_path, partition_cols=self.partition_cols)
         LOG.info(f"Saved to '{self.path}'.")
