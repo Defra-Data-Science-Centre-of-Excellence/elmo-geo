@@ -6,6 +6,13 @@ from pathlib import Path
 from elmo_geo import register
 from elmo_geo.utils.log import LOG
 
+from .boundary import (
+    boundary_adjacencies,
+    boundary_hedgerows,
+    boundary_segments,
+    boundary_walls,
+    boundary_water,
+)
 from .cec_soilscapes import (
     cec_soilscapes_habitats_parcels,
     cec_soilscapes_parcels,
