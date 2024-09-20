@@ -120,11 +120,6 @@ def join_parcels(parcels: Dataset, features: Dataset, **kwargs) -> pd.DataFrame:
     )
 
 
-def _st_union(pdf: PandasDataFrame) -> PandasDataFrame:
-    "Select first row with the union of geometry_right."
-    return pdf.iloc[:1].assign(geometry_right=gpd.GeoSeries.from_wkb(pdf["geometry_right"]).union_all().wkb)
-
-
 def sjoin_boundary(
     boundary_segments: Dataset,
     feature: Dataset,
@@ -166,4 +161,86 @@ def sjoin_boundary(
                 for buf in buffers
             ],
         )
+    )
+
+
+
+def _st_union_right(pdf: PandasDataFrame) -> PandasDataFrame:
+    "Select first row with the union of geometry_right."
+    return pdf.iloc[:1].assign(geometry_right=gpd.GeoSeries.from_wkb(pdf["geometry_right"]).union_all().wkb)
+
+
+def sjoin_parcels(
+    parcels: Dataset,
+    feature: Dataset,
+    columns: list[str] = [],
+    fn_pre: callable = fn_pass,
+    fn_post: callable = fn_pass,
+    **kwargs,
+):
+    """Spatially join features dataset to parcels and groups.
+    Returns a geospatial dataframe; id_parcel, *columns, geometry_left, geometry_right.
+    
+    Parameters:
+        parcels: dataset containing rpa reference parcels.
+        feature: dataset is assumed to be a source dataset in EPSG:27700 without any geometry tidying.
+        columns: from the feature dataset to keep, and group by.
+        fn_pre: transforms sdf_feature after it is loaded, and before joined with parcels, used for filtering and renaming.
+        fn_post: transforms sdf output after grouping by, used for filtering and renaming columns.
+        **kwargs: passed to elmo_geo.st.sjoin, used for distance joins.
+    """
+    cols = ["id_parcel", *columns]
+    return (
+        feature.sdf()
+        # I believe this should be part of source dataset ingestion
+        .transform(auto_repartition)
+        .withColumn("geometry", load_geometry(encoding_fn=""))
+        .withColumn("geometry", F.expr("ST_SubDivideExplode(geometry, 256)"))
+        # ^
+        .transform(fn_pre)
+        .transform(lambda sdf: sjoin(parcels.sdf(), sdf, **kwargs))
+        .selectExpr(
+            *cols,
+            "ST_AsBinary(geometry_left) AS geometry_left",
+            "ST_AsBinary(geometry_right) AS geometry_right",
+        )
+        .transform(lambda sdf: sdf.groupby(*cols).applyInPandas(_st_union_right, sdf.schema))
+        .selectExpr(
+            *cols,
+            "ST_GeomFromWKB(geometry_left) AS geometry_left",
+            "ST_GeomFromWKB(geometry_right) AS geometry_right",
+        )
+        .transform(fn_post)
+    )
+
+def sjoin_parcel_proportion(
+    parcel: Dataset,
+    features: Dataset,
+    **kwargs,
+):
+    "Spatially joins datasets, groups, and calculates the proportional overlap, returning a non-geospatial dataframe."
+    expr = "ST_Intersection(geometry_left, geometry_right) / geometry_left"
+    expr = f"GREATEST(LEAST({expr}, 0), 1)"
+    return (
+        sjoin_parcels(parcel, features, **kwargs)
+        .withColumn("proportion", F.expr(expr))
+        .drop("geometry_left", "geometry_right")
+    )
+
+
+def sjoin_boundary_proportion(
+    boundary_segments: Dataset,
+    parcel: Dataset,
+    features: Dataset,
+    buffers: list[float] = [0, 2, 8, 12, 24],
+    **kwargs,
+):
+    "Spatially joins with parcels, groups, key joins with boundaries, calculating proportional overlap for multiple buffer distances, returning a non-geospatial dataframe."
+    expr = "ST_Intersection(geometry, ST_Buffer(geometry_right, {})) / geometry"
+    expr = f"GREATEST(LEAST({expr}, 0), 1)"
+    return (
+        sjoin_parcels(parcel, features, distance=max(buffers), **kwargs)
+        .join(boundary_segments.sdf(), on="id_parcel")
+        .withColumns({f"proportion_{buf}m": F.expr(expr.format(buf)) for buf in buffers})
+        .drop("geometry", "geometry_left", "geometry_right")
     )
