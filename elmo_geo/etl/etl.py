@@ -156,8 +156,12 @@ class Dataset(ABC):
     def _validate(self, df: DataFrame) -> DataFrame:
         """Validate the data against a model specification if one is defined."""
         if self.model is not None:
-            self.model.validate(df)
-        return df
+            if isinstance(df, SparkDataFrame):
+                LIMIT_SDF: int = 100_000
+                _df = to_gdf(df.limit(LIMIT_SDF)) if self.is_geo else df.limit(LIMIT_SDF).toPandas()
+            else:
+                _df = df
+            self.model.validate(_df)  # TODO: remove coerce it isn't used.
 
     def destroy(self) -> None:
         """Delete the cached dataset at `self.path`."""
@@ -377,11 +381,6 @@ class DerivedDataset(Dataset):
         """Populate the cache with a fresh version of this dataset."""
         LOG.info(f"Creating '{self.name}' dataset.")
         df = self.func(*self.dependencies)
-        if isinstance(df, SparkDataFrame):
-            LIMIT_SDF: int = 100_000
-            _df = to_gdf(df.limit(LIMIT_SDF)) if self.is_geo else df.limit(LIMIT_SDF).toPandas()
-            self._validate(_df)
-        else:
-            self._validate(df)
+        self._validate(df)
         write_parquet(df, path=self._new_path, partition_cols=self.partition_cols)
         LOG.info(f"Saved to '{self.path}'.")

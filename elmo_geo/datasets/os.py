@@ -43,7 +43,7 @@ os_ngd_raw = SourceGlobDataset(
     level1="os",
     model=OSNGDRaw,
     restricted=True,
-    source_path=None,
+    source_path="/dbfs/mnt/base/restricted/source_ordnance_survey_data_hub/",
     glob_path="/dbfs/mnt/base/restricted/source_ordnance_survey_data_hub/dataset_ngd*/format_GPKG*/LATEST_*/*.gpkg",
 )
 
