@@ -60,6 +60,7 @@ from .fc_woodland_sensitivity import (
 from .fcp_habitat_classification import (
     evast_habitat_mapping_raw,
     fcp_habitat_creation_type_parcel,
+    fcp_habitat_management_type_parcel,
 )
 from .fr_esc_m3_trees import (
     esc_native_broadleaved_26_raw,
@@ -213,6 +214,7 @@ catalogue = [
     ewco_nature_recovery_priority_habitat,
     ewco_nature_recovery_priority_habitat_parcels,
     fcp_habitat_creation_type_parcel,
+    fcp_habitat_management_type_parcel,
     flood_risk_areas_raw,
     flood_risk_areas_parcels,
     itl2_raw,

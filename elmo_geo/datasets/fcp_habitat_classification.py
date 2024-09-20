@@ -326,3 +326,90 @@ The dataset is created through a combination of Natmap Soilscapes and Priority H
 geometries joined to parcels. To map between the different habitat names used in these datasets
 a lookup table provided by EVAST is used.
 """
+
+
+def _habitat_management_classification(
+    reference_parcels: DerivedDataset,
+    defra_habitat_area_parcels: DerivedDataset,
+    evast_habitat_mapping_raw: DerivedDataset,
+):
+    """Assign a habitat management habitat type to each parcel.
+
+    Assignment is based on the proportion of priority habitat inventory (PHI)
+    geometries overlapping the parcel. Where a PHI geometry corresponding to a
+    habitat that is covered by a habitat management action, that parcel is assigned
+    that habitat type. If multiple habitats overlap the parcel, the habitat with the
+    greatest overlap is used.
+    """
+    # Get habitat lookup for phi habitat names
+    sdf_habitat_lu = (
+        evast_habitat_mapping_raw.sdf()
+        .filter(F.expr("source = 'phi'"))
+        .selectExpr("action_group", "action_habitat", "habitat_name")
+    )
+
+    return (reference_parcels.sdf()
+            .join(defra_habitat_area_parcels.sdf(), on="id_parcel", how="inner")
+            .join(evast_habitat_mapping_raw.sdf(), on="habitat_name", how="inner")
+            .selectExpr("id_parcel", "action_group", "action_habitat", "proportion", "area_ha*proportion as area_ha")
+    )
+
+
+class HabitatManagementTypeParcelModel(DataFrameModel):
+    """Datamodel for the habitat creation type dataset.
+
+    Attributes:
+        id_parcel: The parcel ID.
+        action_group: The type of habitat creation action. Either 'Create Wetland',
+            'Create SRG', or 'Create Heathland'.
+        action_habitat: The specific habitat type assigned to this parcel. This indicates
+            what type of habitat is created on the parcel under the habitat creation action.
+        proportion: Proportion of parcel intersected by this habitat.
+        area_ha: Area of parcel interected by this habitat in hectares.
+    """
+
+    id_parcel: str = Field()
+    action_group: Category = Field(coerce=True, isin=["Create Heathland", "Create Wetland", "Create SRG"])
+    action_habitat: Category = Field(
+        coerce=True,
+        isin=[
+            "lowland",
+            "lowland_meadow",
+            "upland_meadow",
+            "lowland_dry_acid_gr",
+            "fen",
+            "lowland_calc_gr",
+            "lowland_acid_gr",
+            "upland_acid_gr",
+            "upland_calc_gr",
+            "bog",
+            "upland",
+        ],
+    )
+    proportion:float=Field(coerce=True)
+    area_ha:float=Field(coerce=True)
+
+fcp_habitat_management_type_parcel = DerivedDataset(
+    name="fcp_habitat_management_type_parcel",
+    level0="silver",
+    level1="fcp",
+    restricted=False,
+    is_geo=False,
+    func=_habitat_management_classification,
+    dependencies=[
+        reference_parcels,
+        defra_habitat_area_parcels,
+        evast_habitat_mapping_raw,
+    ],
+    model=HabitatCreationTypeParcelModel,
+)
+"""Applies the EVAST habitat name lookup dataset to assign an EVAST habitat type
+(a.k.a factor level) to parcels based on whether they intersect priority habitat
+inventory (PHI) geometries.
+
+This is used to model which parcels are eligible for habitat management actions.
+Comparison to actual agreements show that parcels which do not intersect priority
+habitats do also successfully claim for habitat management actions. Due to the low
+coverage of PHI data we expect this dataset greatly underestimates the area eligible
+for habitat maintenance actions.
+"""
