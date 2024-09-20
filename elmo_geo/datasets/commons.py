@@ -32,9 +32,9 @@ class CommonsRaw(DataFrameModel):
         geometry: Polygon geometries in EPSG:27700.
     """
 
-    name: str = Field(coerce=True)
-    source: Category = Field(coerce=True, isin=["BPS_RCL", "BPS_RCL & CROW", "CROW", "HISTORIC2001?"])
-    geometry: Geometry(crs=SRID) = Field(coerce=True)
+    name: str = Field()
+    source: Category = Field(isin=["BPS_RCL", "BPS_RCL & CROW", "CROW", "HISTORIC2001?"])
+    geometry: Geometry(crs=SRID) = Field()
 
 
 commons_raw = SourceDataset(

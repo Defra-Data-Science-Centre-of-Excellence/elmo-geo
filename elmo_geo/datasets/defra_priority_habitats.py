@@ -98,12 +98,12 @@ class PHIEnglandRawModel(DataFrameModel):
         geometry: Habitat geometry
     """
 
-    mainhabs: str = Field(coerce=True)
-    habcodes: str = Field(coerce=True)
-    areaha: float = Field(coerce=True)
-    version: str = Field(coerce=True)
-    fid: str = Field(coerce=True, unique=True, alias="uid")
-    geometry: Geometry(crs=SRID) = Field(coerce=True)
+    mainhabs: str = Field()
+    habcodes: str = Field()
+    areaha: float = Field()
+    version: str = Field()
+    fid: str = Field(unique=True, alias="uid")
+    geometry: Geometry(crs=SRID) = Field()
 
 
 class PriorityHabitatParcels(DataFrameModel):
@@ -116,8 +116,8 @@ class PriorityHabitatParcels(DataFrameModel):
     """
 
     id_parcel: str = Field()
-    habitat_name: Category = Field(coerce=True)
-    proportion: float = Field(coerce=True, ge=0, le=1)
+    habitat_name: Category = Field()
+    proportion: float = Field(ge=0, le=1)
 
 
 class PriorityHabitatProximity(DataFrameModel):
@@ -131,8 +131,8 @@ class PriorityHabitatProximity(DataFrameModel):
     """
 
     id_parcel: str = Field()
-    habitat_name: Category = Field(coerce=True)
-    distance: int = Field(coerce=True)
+    habitat_name: Category = Field()
+    distance: int = Field()
 
 
 defra_priority_habitat_england_raw = SourceDataset(
