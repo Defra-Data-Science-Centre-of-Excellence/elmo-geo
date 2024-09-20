@@ -43,7 +43,7 @@ commons_raw = SourceDataset(
     level1="defra",
     model=CommonsRaw,
     restricted=False,
-    source_path="/dbfs/mnt/base/unrestricted/source_rpa_spatial_data_mart/dataset_common_land_amalgamation/format_GPKG_common_land_amalgamation/LATEST_common_land_amalgamation/refdata_owner.common_land_amalgamation.zip/refdata_owner.common_land_amalgamation/refdata_owner.common_land_amalgamation.gpkg",
+    source_path="/dbfs/mnt/base/unrestricted/source_rpa_spatial_data_mart/dataset_common_land_amalgamation/format_GEOPARQUET_common_land_amalgamation/LATEST_common_land_amalgamation/refdata_owner/refdata_owner_common_land_amalgamation_polygon.parquet",
 )
 
 

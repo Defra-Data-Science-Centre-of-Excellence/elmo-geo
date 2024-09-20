@@ -121,6 +121,11 @@ from .ons import (
     ward_raw,
 )
 from .os import os_ngd_raw
+from .osm import (
+    osm_parcels,
+    osm_raw,
+    osm_tidy,
+)
 from .peat import (
     peaty_soils_parcels,
     peaty_soils_raw,
@@ -163,7 +168,7 @@ catalogue = [
     cec_soilscapes_parcels,
     cec_soilscapes_raw,
     commons_parcels,
-    commons_raw,  # GPKG
+    commons_raw,
     country_parcels,
     country_raw,
     cua_parcels,
@@ -231,6 +236,9 @@ catalogue = [
     ne_sssi_units_parcels,
     ne_sssi_units_raw,
     os_ngd_raw,
+    osm_parcels,
+    osm_raw,
+    osm_tidy,
     peaty_soils_parcels,
     peaty_soils_raw,
     protected_areas_parcels,
