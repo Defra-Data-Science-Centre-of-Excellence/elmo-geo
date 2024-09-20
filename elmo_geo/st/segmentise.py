@@ -30,8 +30,7 @@ def closest_point_index(point: Point, points: MultiPoint) -> int:
 
 
 def segmentise_with_tolerance(geometry: LineString, tolerance: float = 10, length: float = 50) -> MultiLineString:
-    """
-    Segments a LineString into smaller segments based on tolerance and length limit.
+    r"""Segments a LineString into smaller segments based on tolerance and length limit.
     Uses segment on each vertex methodology, but adds a tolerance to create longer segments.
     Arguments:
         geometry (LineString): The input LineString geometry.
