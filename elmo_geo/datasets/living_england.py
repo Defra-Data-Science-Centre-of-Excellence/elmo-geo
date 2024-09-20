@@ -8,7 +8,7 @@ Note: Comes in 3 parquet parts, and such reading the folder combines them.
 from functools import partial
 
 from pandera import DataFrameModel, Field
-from pandera.engines.pandas_engine import Geometry
+from pandera.engines.geopandas_engine import Geometry
 
 from elmo_geo.etl import SRID, DerivedDataset, SourceDataset
 from elmo_geo.etl.transformations import join_parcels

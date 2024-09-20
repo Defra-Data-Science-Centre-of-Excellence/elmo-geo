@@ -44,7 +44,7 @@ sequestration and positive values net emissions.
 import pyspark.sql.functions as F
 from pandera import DataFrameModel, Field
 from pandera.dtypes import Category
-from pandera.engines.pandas_engine import Geometry
+from pandera.engines.geopandas_engine import Geometry
 
 from elmo_geo.etl import DerivedDataset, SourceGlobDataset
 from elmo_geo.st.join import sjoin

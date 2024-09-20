@@ -7,7 +7,7 @@ however to claim CS you need an SBI so unsure here at present.
 import geopandas as gpd
 import pandas as pd
 from pandera import DataFrameModel, Field
-from pandera.engines.pandas_engine import Geometry
+from pandera.engines.geopandas_engine import Geometry
 
 from elmo_geo.etl import SRID, Dataset, DerivedDataset, SourceDataset
 

@@ -4,7 +4,8 @@ version = "0.1"
 description = "Environmental Land Management Geospatial Analysis"
 readme = "README.md"
 dependencies = [
-    "apache-sedona==1.4.1",
+    "apache-sedona==1.6.1",
+    "beautifulsoup4",
     "contextily",
     "databricks-sdk<0.21",
     "folium",
@@ -13,13 +14,13 @@ dependencies = [
     "pandas",
     "pandera[geopandas,pyspark]",
     "pyarrow",
-    "pyspark==3.3.2",
+    "pyspark==3.5",
     "python-dotenv",
     "rich",
     "rioxarray",
     "seaborn",
 ]
-requires-python = "==3.10"
+requires-python = "==3.11"
 
 [tool.setuptools.packages.find]
 exclude = ["tests"]
@@ -29,14 +30,6 @@ dev = [
     "pip-tools",
     "pytest",
     "ruff<0.2",
-]
-old = [
-    "beautifulsoup4",
-    "fiona",
-    "osmnx",
-    "osdatahub",
-    "sentinelsat",
-    "statsmodels",
 ]
 
 [project.urls]
