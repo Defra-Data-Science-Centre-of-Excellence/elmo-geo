@@ -32,7 +32,7 @@ class CECSoilScapesRaw(DataFrameModel):
         geometry: Geometry indicating the extent of the soil type.
     """
 
-    geometry: Geometry = Field(coerce=True)
+    geometry: Geometry = Field()
 
 
 cec_soilscapes_raw = SourceDataset(
@@ -61,14 +61,12 @@ class CECSoilScapesParcels(DataFrameModel):
 
     # TODO: Alias the field names once PR #209. Task for aliasing:
     # https://github.com/Defra-Data-Science-Centre-of-Excellence/elmo-geo/issues/223
-    id_parcel: str = Field(coerce=True)
-    unit: Category = Field(coerce=True, isin=set(range(1, 32)).difference([29]))
+    id_parcel: str = Field()
+    unit: Category = Field(isin=set(range(1, 32)).difference([29]))
     natural_dr: Category = Field(
-        coerce=True,
         isin=["Freely draining", "Naturally wet", " ", "Impeded drainage", "Variable", "Slightly impeded drainage", "Surface wetness"],
     )
     natural_fe: Category = Field(
-        coerce=True,
         isin=[
             "Very low",
             "Low",
@@ -85,7 +83,7 @@ class CECSoilScapesParcels(DataFrameModel):
             "Mixed, lime-rich to low",
         ],
     )
-    proportion: float = Field(coerce=True, ge=0, le=1)
+    proportion: float = Field(ge=0, le=1)
 
 
 cec_soilscapes_parcels = DerivedDataset(
@@ -148,11 +146,10 @@ class CECSoilScapesParcels(DataFrameModel):
         habitat_name: Name of the habitat type that can exist on the soil type.
     """
 
-    id_parcel: str = Field(coerce=True)
-    unit: Category = Field(coerce=True, nullable=True, isin=set(range(1, 32)).difference([29]))
-    habitat_code: Category = Field(coerce=True, nullable=True, isin=["UHL", "LHL", "LCG", "LAG", "LMW", "UHM", "UCG", "LRB", "UFS", "BBG", "LFN", "PMG"])
+    id_parcel: str = Field()
+    unit: Category = Field(nullable=True, isin=set(range(1, 32)).difference([29]))
+    habitat_code: Category = Field(nullable=True, isin=["UHL", "LHL", "LCG", "LAG", "LMW", "UHM", "UCG", "LRB", "UFS", "BBG", "LFN", "PMG"])
     habitat_name: Category = Field(
-        coerce=True,
         nullable=True,
         isin=[
             "Upland heathland",

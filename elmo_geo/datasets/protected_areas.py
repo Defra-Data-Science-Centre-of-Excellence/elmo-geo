@@ -56,10 +56,10 @@ class NESSSIUnitsRaw(DataFrameModel):
        geometry: Geospatial polygons in EPSG:27700
     """
 
-    sssi_name: str = Field(coerce=True)
-    id: float = Field(coerce=True)
-    condition: str = Field(coerce=True, nullable=True)
-    geometry: Geometry(crs=SRID) = Field(coerce=True)
+    sssi_name: str = Field()
+    id: float = Field()
+    condition: str = Field(nullable=True)
+    geometry: Geometry(crs=SRID) = Field()
 
 
 class NESSSIUnitsParcels(DataFrameModel):
@@ -104,9 +104,9 @@ class NENNRRaw(DataFrameModel):
        geometry: Geospatial polygons in EPSG:27700
     """
 
-    nnr_name: str = Field(coerce=True)
-    reference: str = Field(coerce=True)
-    geometry: Geometry(crs=SRID) = Field(coerce=True)
+    nnr_name: str = Field()
+    reference: str = Field()
+    geometry: Geometry(crs=SRID) = Field()
 
 
 class NESSSINNRParcels(DataFrameModel):
@@ -152,9 +152,9 @@ class NESACRaw(DataFrameModel):
         geometry: Geospatial polygons in EPSG:27700
     """
 
-    sac_name: str = Field(coerce=True)
-    sac_code: str = Field(coerce=True)
-    geometry: Geometry(crs=SRID) = Field(coerce=True)
+    sac_name: str = Field()
+    sac_code: str = Field()
+    geometry: Geometry(crs=SRID) = Field()
 
 
 class NESACParcels(DataFrameModel):
@@ -200,9 +200,9 @@ class JNCCSPARaw(DataFrameModel):
         geometry: Geospatial polygons in EPSG:27700
     """
 
-    spa_name: str = Field(coerce=True)
-    spa_code: str = Field(coerce=True)
-    geometry: Geometry(crs=SRID) = Field(coerce=True)
+    spa_name: str = Field()
+    spa_code: str = Field()
+    geometry: Geometry(crs=SRID) = Field()
 
 
 class JNCCSPARParcels(DataFrameModel):
@@ -247,9 +247,9 @@ class NERamsarRaw(DataFrameModel):
         geometry: Geospatial polygons in EPSG:27700
     """
 
-    name: str = Field(coerce=True)
-    code: str = Field(coerce=True)
-    geometry: Geometry(crs=SRID) = Field(coerce=True)
+    name: str = Field()
+    code: str = Field()
+    geometry: Geometry(crs=SRID) = Field()
 
 
 class NERamsarParcels(DataFrameModel):
@@ -294,9 +294,9 @@ class NEMarineConservationZonesRaw(DataFrameModel):
         geometry: Geospatial polygons in EPSG:27700
     """
 
-    MCZ_NAME: str = Field(coerce=True)
-    MCZ_CODE: str = Field(coerce=True)
-    geometry: Geometry(crs=SRID) = Field(coerce=True)
+    MCZ_NAME: str = Field()
+    MCZ_CODE: str = Field()
+    geometry: Geometry(crs=SRID) = Field()
 
 
 class NEMarineConservationZonesParcels(DataFrameModel):
@@ -306,7 +306,7 @@ class NEMarineConservationZonesParcels(DataFrameModel):
         proportion: The proportion of the parcel that intersects with MCZ sites.
     """
 
-    id_parcel: str = Field(coerce=True)
+    id_parcel: str = Field()
     proportion: float = Field(ge=0, le=1)
 
 

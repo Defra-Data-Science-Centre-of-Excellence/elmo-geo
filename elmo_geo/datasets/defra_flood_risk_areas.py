@@ -22,11 +22,11 @@ class FloodRiskAreasRaw(DataFrameModel):
         geometry: Flood Risk Area geometries in EPSG:27700.
     """
 
-    fra_id: str = Field(coerce=True, unique=False)
-    fra_name: str = Field(coerce=True)
-    frr_cycle: int = Field(coerce=True)
-    flood_sour: str = Field(coerce=True)
-    geometry: Geometry(crs=SRID) = Field(coerce=True)
+    fra_id: str = Field(unique=False)
+    fra_name: str = Field()
+    frr_cycle: int = Field()
+    flood_sour: str = Field()
+    geometry: Geometry(crs=SRID) = Field()
 
 
 flood_risk_areas_raw = SourceDataset(

@@ -30,9 +30,9 @@ class PeatySoilsRaw(DataFrameModel):
         geometry: Polygon geometries in EPSG:27700.
     """
 
-    fid: int = Field(coerce=True, unique=True, alias="objectid")
-    group: Category = Field(coerce=True, alias="pclassdesc", isin=["Deep Peaty Soils", "Shallow Peaty Soils", "Soils with Peaty Pockets"])
-    geometry: Geometry(crs=SRID) = Field(coerce=True)
+    fid: int = Field(unique=True, alias="objectid")
+    group: Category = Field(alias="pclassdesc", isin=["Deep Peaty Soils", "Shallow Peaty Soils", "Soils with Peaty Pockets"])
+    geometry: Geometry(crs=SRID) = Field()
 
 
 peaty_soils_raw = SourceDataset(

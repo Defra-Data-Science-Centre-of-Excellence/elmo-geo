@@ -26,8 +26,8 @@ class NationalParksRaw(DataFrameModel):
         geometry: Polygon geometries in EPSG:27700.
     """
 
-    name: str = Field(coerce=True)
-    geometry: Geometry(crs=SRID) = Field(coerce=True)
+    name: str = Field()
+    geometry: Geometry(crs=SRID) = Field()
 
 
 national_parks_raw = SourceDataset(
@@ -49,8 +49,8 @@ class NationalLandscapesRaw(DataFrameModel):
         geometry: (Multi)Polygon geometries in EPSG:27700.
     """
 
-    name: str = Field(coerce=True)
-    geometry: Geometry(crs=SRID) = Field(coerce=True)
+    name: str = Field()
+    geometry: Geometry(crs=SRID) = Field()
 
 
 national_landscapes_raw = SourceDataset(
@@ -72,9 +72,9 @@ class ProtectedLandscapesTidy(DataFrameModel):
         geometry: (Multi)Polygon geometries in EPSG:27700.
     """
 
-    source: Category = Field(coerce=True, isin=["National Park", "National Landscape"])
+    source: Category = Field(isin=["National Park", "National Landscape"])
     name: str = Field()
-    geometry: Geometry(crs=SRID) = Field(coerce=True)
+    geometry: Geometry(crs=SRID) = Field()
 
 
 protected_landscapes_tidy = DerivedDataset(
