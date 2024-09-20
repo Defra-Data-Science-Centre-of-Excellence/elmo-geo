@@ -36,7 +36,7 @@ def test_st_union():
 
 
 def prep_data(parcel_geoms: list[str], feature_geoms: list[str]) -> bool:
-    ids = list(range(len(parcel_geoms)))
+    ids = [str(i) for i in range(len(parcel_geoms))]
     gdf = gpd.GeoDataFrame({"id_parcel": ids}, geometry=gpd.GeoSeries.from_wkt(parcel_geoms))
     sdf_parcels = to_sdf(gdf)
 
