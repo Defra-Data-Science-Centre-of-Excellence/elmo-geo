@@ -41,14 +41,14 @@ from pandera import DataFrameModel, Field
 from pandera.engines.geopandas_engine import Geometry
 
 from elmo_geo.etl import SRID, DerivedDataset, SourceDataset
-from elmo_geo.etl.transformations import combine_wide, join_parcels
+from elmo_geo.etl.transformations import combine_wide, sjoin_parcel_proportion
 
 from .rpa_reference_parcels import reference_parcels
 
 
 # Sites of Scientific Interest (SSSI)
 class NESSSIUnitsRaw(DataFrameModel):
-    """Model for Natural England Sites of Special Sscientific Interest (SSSI) units dataset.
+    """Model for Natural England Sites of Special Scientific Interest (SSSI) units dataset.
     Attributes:
        sssi_name: Name of the SSSI
        id: Reference id for the SSSI unit
@@ -89,13 +89,13 @@ ne_sssi_units_parcels = DerivedDataset(
     level0="silver",
     level1="ne",
     restricted=False,
-    func=join_parcels,
+    func=sjoin_parcel_proportion,
     dependencies=[reference_parcels, ne_sssi_units_raw],
     model=NESSSIUnitsParcels,
 )
 
 
-# National Naruture Reserves (NNR)
+# National Nature Reserves (NNR)
 class NENNRRaw(DataFrameModel):
     """Model for Natural England National Nature Reserves (NNR) dataset.
     Attributes:
@@ -137,7 +137,7 @@ ne_nnr_parcels = DerivedDataset(
     level0="silver",
     level1="ne",
     restricted=False,
-    func=join_parcels,
+    func=sjoin_parcel_proportion,
     dependencies=[reference_parcels, ne_nnr_raw],
     model=NESSSINNRParcels,
 )
@@ -160,7 +160,7 @@ class NESACRaw(DataFrameModel):
 class NESACParcels(DataFrameModel):
     """Model for Natural England Special Areas of Conservation (SAC) dataset joined with Rural Payment Agency parcel dataset.
 
-    Parame"ters:
+    Parameters:
         id_parcel: 11 character RPA reference parcel ID (including the sheet ID) e.g. `SE12263419`.
         proportion: The proportion of the parcel that intersects with the Special Areas of Conservation.
     """
@@ -185,7 +185,7 @@ ne_sac_parcels = DerivedDataset(
     level0="silver",
     level1="ne",
     restricted=False,
-    func=join_parcels,
+    func=sjoin_parcel_proportion,
     dependencies=[reference_parcels, ne_sac_raw],
     model=NESACParcels,
 )
@@ -232,7 +232,7 @@ jncc_spa_parcels = DerivedDataset(
     level0="silver",
     level1="jncc",
     restricted=False,
-    func=join_parcels,
+    func=sjoin_parcel_proportion,
     dependencies=[reference_parcels, jncc_spa_raw],
     model=JNCCSPARParcels,
 )
@@ -279,7 +279,7 @@ ne_ramsar_parcels = DerivedDataset(
     level0="silver",
     level1="ne",
     restricted=False,
-    func=join_parcels,
+    func=sjoin_parcel_proportion,
     dependencies=[reference_parcels, ne_ramsar_raw],
     model=NERamsarParcels,
 )
@@ -326,14 +326,14 @@ ne_marine_conservation_zones_parcels = DerivedDataset(
     level0="silver",
     level1="ne",
     restricted=False,
-    func=join_parcels,
+    func=sjoin_parcel_proportion,
     dependencies=[reference_parcels, ne_marine_conservation_zones_raw],
     model=NEMarineConservationZonesParcels,
 )
 
 
 class ProtectedAreasParcels(DataFrameModel):
-    """Model for one wide table that pulls together the proportion fields for each protected area dervived dataset linked to parcels.
+    """Model for one wide table that pulls together the proportion fields for each protected area derived dataset linked to parcels.
     Attributes:
         id_parcel: 11 character RPA reference parcel ID (including the sheet ID) e.g. `SE12263419`.
         proportion_sssi: The proportion of the parcel that intersects with sssi sites.
