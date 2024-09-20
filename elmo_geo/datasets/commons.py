@@ -8,7 +8,7 @@ from functools import partial
 
 from pandera import DataFrameModel, Field
 from pandera.dtypes import Category
-from pandera.engines.pandas_engine import Geometry
+from pandera.engines.geopandas_engine import Geometry
 from pyspark.sql import functions as F
 
 from elmo_geo.etl import SRID, DerivedDataset, SourceDataset

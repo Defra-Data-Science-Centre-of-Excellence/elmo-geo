@@ -10,7 +10,7 @@
 from functools import partial
 
 from pandera import DataFrameModel, Field
-from pandera.engines.pandas_engine import Geometry
+from pandera.engines.geopandas_engine import Geometry
 
 from elmo_geo.etl.etl import SRID, DerivedDataset, SourceDataset, SourceGlobDataset
 from elmo_geo.etl.transformations import join_parcels
