@@ -41,7 +41,7 @@ from pandera import DataFrameModel, Field
 from pandera.engines.pandas_engine import Geometry
 
 from elmo_geo.etl import SRID, DerivedDataset, SourceDataset
-from elmo_geo.etl.transformations import combine_wide, join_parcels
+from elmo_geo.etl.transformations import combine_wide, sjoin_parcel_proportion
 
 from .rpa_reference_parcels import reference_parcels
 
@@ -89,7 +89,7 @@ ne_sssi_units_parcels = DerivedDataset(
     level0="silver",
     level1="ne",
     restricted=False,
-    func=join_parcels,
+    func=sjoin_parcel_proportion,
     dependencies=[reference_parcels, ne_sssi_units_raw],
     model=NESSSIUnitsParcels,
 )
@@ -137,7 +137,7 @@ ne_nnr_parcels = DerivedDataset(
     level0="silver",
     level1="ne",
     restricted=False,
-    func=join_parcels,
+    func=sjoin_parcel_proportion,
     dependencies=[reference_parcels, ne_nnr_raw],
     model=NESSSINNRParcels,
 )
@@ -185,7 +185,7 @@ ne_sac_parcels = DerivedDataset(
     level0="silver",
     level1="ne",
     restricted=False,
-    func=join_parcels,
+    func=sjoin_parcel_proportion,
     dependencies=[reference_parcels, ne_sac_raw],
     model=NESACParcels,
 )
@@ -232,7 +232,7 @@ jncc_spa_parcels = DerivedDataset(
     level0="silver",
     level1="jncc",
     restricted=False,
-    func=join_parcels,
+    func=sjoin_parcel_proportion,
     dependencies=[reference_parcels, jncc_spa_raw],
     model=JNCCSPARParcels,
 )
@@ -279,7 +279,7 @@ ne_ramsar_parcels = DerivedDataset(
     level0="silver",
     level1="ne",
     restricted=False,
-    func=join_parcels,
+    func=sjoin_parcel_proportion,
     dependencies=[reference_parcels, ne_ramsar_raw],
     model=NERamsarParcels,
 )
@@ -326,7 +326,7 @@ ne_marine_conservation_zones_parcels = DerivedDataset(
     level0="silver",
     level1="ne",
     restricted=False,
-    func=join_parcels,
+    func=sjoin_parcel_proportion,
     dependencies=[reference_parcels, ne_marine_conservation_zones_raw],
     model=NEMarineConservationZonesParcels,
 )

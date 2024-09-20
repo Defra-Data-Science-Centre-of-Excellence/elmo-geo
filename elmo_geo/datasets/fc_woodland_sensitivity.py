@@ -13,11 +13,11 @@ from pandera.dtypes import Category
 from pandera.engines.pandas_engine import Geometry
 
 from elmo_geo.etl import SRID, Dataset, DerivedDataset, SourceDataset
-from elmo_geo.etl.transformations import join_parcels
+from elmo_geo.etl.transformations import sjoin_parcel_proportion
 
 from .rpa_reference_parcels import reference_parcels
 
-_join_parcels = partial(join_parcels, columns=["sensitivity"])
+_sjoin_parcel_proportion = partial(sjoin_parcel_proportion, columns=["sensitivity"])
 
 
 class WoodlandSensitivityClean(DataFrameModel):
@@ -197,7 +197,7 @@ sfi_agroforestry_parcels = DerivedDataset(
     level0="silver",
     level1="forestry_commission",
     restricted=False,
-    func=_join_parcels,
+    func=_sjoin_parcel_proportion,
     dependencies=[reference_parcels, sfi_agroforestry],
     model=WoodlandSensitivityParcels,
     is_geo=False,
@@ -209,7 +209,7 @@ woodland_creation_sensitivity_parcels = DerivedDataset(
     level0="silver",
     level1="forestry_commission",
     restricted=False,
-    func=_join_parcels,
+    func=_sjoin_parcel_proportion,
     dependencies=[reference_parcels, woodland_creation_sensitivity],
     model=WoodlandSensitivityParcels,
     is_geo=False,
@@ -221,7 +221,7 @@ woodland_creation_sensitivity_var1_parcels = DerivedDataset(
     level0="silver",
     level1="forestry_commission",
     restricted=False,
-    func=_join_parcels,
+    func=_sjoin_parcel_proportion,
     dependencies=[reference_parcels, woodland_creation_sensitivity_var1],
     model=WoodlandSensitivityParcels,
     is_geo=False,
@@ -233,7 +233,7 @@ woodland_creation_sensitivity_var2_parcels = DerivedDataset(
     level0="silver",
     level1="forestry_commission",
     restricted=False,
-    func=_join_parcels,
+    func=_sjoin_parcel_proportion,
     dependencies=[reference_parcels, woodland_creation_sensitivity_var2],
     model=WoodlandSensitivityParcels,
     is_geo=False,
@@ -245,7 +245,7 @@ woodland_creation_sensitivity_var3_parcels = DerivedDataset(
     level0="silver",
     level1="forestry_commission",
     restricted=False,
-    func=_join_parcels,
+    func=_sjoin_parcel_proportion,
     dependencies=[reference_parcels, woodland_creation_sensitivity_var3],
     model=WoodlandSensitivityParcels,
     is_geo=False,

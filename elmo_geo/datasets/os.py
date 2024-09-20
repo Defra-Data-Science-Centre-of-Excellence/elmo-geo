@@ -13,7 +13,7 @@ from pandera import DataFrameModel, Field
 from pandera.engines.pandas_engine import Geometry
 
 from elmo_geo.etl.etl import SRID, DerivedDataset, SourceDataset, SourceGlobDataset
-from elmo_geo.etl.transformations import join_parcels
+from elmo_geo.etl.transformations import sjoin_parcel_proportion
 
 from .rpa_reference_parcels import reference_parcels
 

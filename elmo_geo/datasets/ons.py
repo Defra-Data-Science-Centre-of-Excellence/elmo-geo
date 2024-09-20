@@ -44,7 +44,7 @@ from pandera import DataFrameModel, Field
 from pandera.engines.pandas_engine import Geometry
 
 from elmo_geo.etl import SRID, DerivedDataset, SourceDataset
-from elmo_geo.etl.transformations import join_parcels
+from elmo_geo.etl.transformations import sjoin_parcel_proportion
 
 from .rpa_reference_parcels import reference_parcels
 
@@ -96,7 +96,7 @@ country_parcels = DerivedDataset(
     level0="silver",
     level1="ons",
     restricted=False,
-    func=partial(join_parcels, columns=["fid", "name"]),
+    func=partial(sjoin_parcel_proportion, columns=["fid", "name"]),
     dependencies=[reference_parcels, country_raw],
     model=CountryParcels,
 )
@@ -149,7 +149,7 @@ region_parcels = DerivedDataset(
     level0="silver",
     level1="ons",
     restricted=False,
-    func=partial(join_parcels, columns=["fid", "name"]),
+    func=partial(sjoin_parcel_proportion, columns=["fid", "name"]),
     dependencies=[reference_parcels, region_raw],
     model=RegionParcels,
 )
@@ -202,7 +202,7 @@ itl2_parcels = DerivedDataset(
     level0="silver",
     level1="ons",
     restricted=False,
-    func=partial(join_parcels, columns=["fid", "name"]),
+    func=partial(sjoin_parcel_proportion, columns=["fid", "name"]),
     dependencies=[reference_parcels, itl2_raw],
     model=ITL2Parcels,
 )
@@ -255,7 +255,7 @@ cua_parcels = DerivedDataset(
     level0="silver",
     level1="ons",
     restricted=False,
-    func=partial(join_parcels, columns=["fid", "name"]),
+    func=partial(sjoin_parcel_proportion, columns=["fid", "name"]),
     dependencies=[reference_parcels, cua_raw],
     model=CUAParcels,
 )
@@ -308,7 +308,7 @@ lad_parcels = DerivedDataset(
     level0="silver",
     level1="ons",
     restricted=False,
-    func=partial(join_parcels, columns=["fid", "name"]),
+    func=partial(sjoin_parcel_proportion, columns=["fid", "name"]),
     dependencies=[reference_parcels, lad_raw],
     model=LADParcels,
 )
@@ -414,7 +414,7 @@ bua_parcels = DerivedDataset(
     level0="silver",
     level1="ons",
     restricted=False,
-    func=partial(join_parcels, columns=["fid", "name"]),
+    func=partial(sjoin_parcel_proportion, columns=["fid", "name"]),
     dependencies=[reference_parcels, bua_raw],
     model=BUAParcels,
 )

@@ -15,11 +15,9 @@ from pandera.dtypes import Category
 from pandera.engines.pandas_engine import Geometry
 
 from elmo_geo.etl import DerivedDataset, SourceDataset
-from elmo_geo.etl.transformations import join_parcels
+from elmo_geo.etl.transformations import sjoin_parcel_proportion
 
 from .rpa_reference_parcels import reference_parcels
-
-_join_parcels = partial(join_parcels, columns=["unit", "natural_dr", "natural_fe"])
 
 
 class CECSoilScapesRaw(DataFrameModel):
@@ -94,7 +92,7 @@ cec_soilscapes_parcels = DerivedDataset(
     is_geo=False,
     model=CECSoilScapesParcels,
     dependencies=[reference_parcels, cec_soilscapes_raw],
-    func=_join_parcels,
+    func=partial(sjoin_parcel_proportion, columns=["unit", "natural_dr", "natural_fe"]),
 )
 """Cranfield Environment Centre (CEC) SoilScapes data joined to RPA parcels.
 """
