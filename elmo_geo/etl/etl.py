@@ -158,10 +158,8 @@ class Dataset(ABC):
         if self.model is not None:
             if isinstance(df, SparkDataFrame):
                 LIMIT_SDF: int = 100_000
-                _df = to_gdf(df.limit(LIMIT_SDF)) if self.is_geo else df.limit(LIMIT_SDF).toPandas()
-            else:
-                _df = df
-            self.model.validate(_df)  # TODO: remove coerce it isn't used.
+                df = to_gdf(df.limit(LIMIT_SDF)) if self.is_geo else df.limit(LIMIT_SDF).toPandas()
+            self.model.validate(df)  # TODO: remove coerces, as it can't be used for sdfs.
 
     def destroy(self) -> None:
         """Delete the cached dataset at `self.path`."""
