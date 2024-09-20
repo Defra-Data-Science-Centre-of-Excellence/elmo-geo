@@ -111,7 +111,8 @@ def sjoin_parcel_proportion(
     **kwargs,
 ):
     "Spatially joins datasets, groups, and calculates the proportional overlap, returning a non-geospatial dataframe."
-    expr = "ST_Intersection(geometry_left, geometry_right) / geometry_left"
+    expr = "ST_Intersection(geometry_left, geometry_right)"
+    expr = f"ST_Area({expr}) / ST_Area(geometry_left)"
     expr = f"GREATEST(LEAST({expr}, 0), 1)"
     return sjoin_parcels(parcel, features, **kwargs).withColumn("proportion", F.expr(expr)).drop("geometry_left", "geometry_right")
 
@@ -126,7 +127,8 @@ def sjoin_boundary_proportion(
     """Spatially joins with parcels, groups, key joins with boundaries, calculating proportional overlap for multiple buffer distances.
     Returns a non-geospatial dataframe.
     """
-    expr = "ST_Intersection(geometry, ST_Buffer(geometry_right, {})) / geometry"
+    expr = "ST_Intersection(geometry, ST_Buffer(geometry_right, {}))"
+    expr = f"ST_Length({expr}) / ST_Length(geometry)"
     expr = f"GREATEST(LEAST({expr}, 0), 1)"
     return (
         sjoin_parcels(parcel, features, distance=max(buffers), **kwargs)

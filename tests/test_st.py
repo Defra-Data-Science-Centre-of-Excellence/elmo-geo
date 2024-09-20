@@ -1,7 +1,7 @@
 import geopandas as gpd
 import pytest
 
-from elmo_geo.etl.transformations import sjoin_and_proportion
+from elmo_geo.etl.transformations import sjoin_parcel_proportion
 from elmo_geo.io.convert import to_sdf
 from elmo_geo.st.udf import st_union
 from elmo_geo.utils.register import register
@@ -9,7 +9,7 @@ from elmo_geo.utils.register import register
 
 @pytest.mark.dbr
 def test_to_sdf():
-    """Test convertion to SparkDataFrame is successful"""
+    """Test conversion to SparkDataFrame is successful"""
     register()
     test = "ST_AsText(geometry) = 'LINESTRING (0 0, 1 1)'"
     g = ["LineString(0 0, 1 1)"]
@@ -52,7 +52,7 @@ def test_sjoin_polygon_types():
     register()
     parcel_geoms = ["Polygon((0 0, 0 1, 1 1, 1 0, 0 0))"]
     feature_geoms = ["LineString(0 1, 1 1)", "Polygon((0 0, 0 0.5, 0.5 0.5, 0.5 0, 0 0))"]
-    df = sjoin_and_proportion(
+    df = sjoin_parcel_proportion(
         *prep_data(parcel_geoms, feature_geoms),
         columns=["class"],
     ).toPandas()
@@ -67,7 +67,7 @@ def test_sjoin_multipolygon_types():
     parcel_geoms = ["MultiPolygon(((0 0, 0 1, 1 1, 1 0, 0 0)), ((2 2, 2 3, 3 3, 3 2, 2 2)))"]
     feature_geoms = ["LineString(0 1, 1 1)", "Polygon((0 0, 0 0.5, 0.5 0.5, 0.5 0, 0 0))"]
 
-    df = sjoin_and_proportion(
+    df = sjoin_parcel_proportion(
         *prep_data(parcel_geoms, feature_geoms),
         columns=["class"],
     ).toPandas()
@@ -82,7 +82,7 @@ def test_sjoin_multipolygon_types2():
     parcel_geoms = ["MultiPolygon(((0 0, 0 1, 1 1, 1 0, 0 0)), ((2 2, 2 3, 3 3, 3 2, 2 2)))"]
     feature_geoms = ["LineString(1 1, 2 2)", "Polygon((0 0, 0 0.5, 0.5 0.5, 0.5 0, 0 0))"]
 
-    df = sjoin_and_proportion(
+    df = sjoin_parcel_proportion(
         *prep_data(parcel_geoms, feature_geoms),
         columns=["class"],
     ).toPandas()
@@ -98,7 +98,7 @@ def test_sjoin_multipolygon_types3():
     parcel_geoms = ["MultiPolygon(((0 0, 0 1, 1 1, 1 0, 0 0)), ((2 2, 2 3, 3 3, 3 2, 2 2)))"]
     feature_geoms = ["LineString(1 1, 2 2)", "Polygon((0 0, 0 0.5, 0.5 0.5, 0.5 0, 0 0))"]
 
-    df = sjoin_and_proportion(
+    df = sjoin_parcel_proportion(
         *prep_data(parcel_geoms, feature_geoms),
         columns=["class"],
     ).toPandas()
@@ -119,7 +119,7 @@ def test_sjoin_multipolygon_types4():
         "MultiPolygon(((2 2, 2 2.5, 3 2.5, 3 2, 2 2)), ((4 4, 4 5, 5 5, 5 4, 4 4)))",
     ]
 
-    df = sjoin_and_proportion(
+    df = sjoin_parcel_proportion(
         *prep_data(parcel_geoms, feature_geoms),
         columns=["class"],
     ).toPandas()
