@@ -103,8 +103,9 @@ os_bng_parcels = DerivedDataset(
     restricted=False,
     is_geo=False,
     model=OSBNGParcelsModel,
-    func=partial(join_parcels, columns=["layer", "tile_name"]),
+    func=partial(sjoin_parcel_proportion, columns=["layer", "tile_name"]),
     dependencies=[reference_parcels, os_bng_raw],
     partition_cols=["layer"],
 )
+
 """OS British National Grid grid reference geometries joined to parcels."""

@@ -361,7 +361,7 @@ ward_parcels = DerivedDataset(
     level0="silver",
     level1="ons",
     restricted=False,
-    func=partial(join_parcels, columns=["fid", "name"]),
+    func=partial(sjoin_parcel_proportion, columns=["fid", "name"]),
     dependencies=[reference_parcels, ward_raw],
     model=WardParcels,
 )
