@@ -1,7 +1,7 @@
 """Reference Parcels from Rural Payments Agency.
 
 The parcels came in two files - one with SBIs and one without.
-It is unclear why a parcel would not have an SBI - purhaps they are non-agricultural,
+It is unclear why a parcel would not have an SBI - perhaps they are non-agricultural,
 however to claim CS you need an SBI so unsure here at present.
 """
 import geopandas as gpd
@@ -61,7 +61,7 @@ def _combine_and_clean_parcels(parcels_sbi: Dataset, parcels_nosbi: Dataset) -> 
         - Rename PARCEL_ID to id_parcel to align to our modelling standards
         - Make the geometries valid
         - Explode the geometries to unpack them as they are all MultiPolygons
-        - Filter out some Linestrings to keep only Polygons
+        - Filter out some LineStrings to keep only Polygons
         - Remove any polygons less than 50m2. There are some erroneous shapes in there. This won't remove parcels as the smallest parcel is 100m2.
         - Dissolve to join any parcels that are MultiPolygons back together. There is only one MultiPolygon (TL86476269).
         - Simplify the geometries to 1m resolution to reduce the mean coordinates from 92 per parcel to 21.
@@ -70,7 +70,7 @@ def _combine_and_clean_parcels(parcels_sbi: Dataset, parcels_nosbi: Dataset) -> 
         - Make the geometries valid again.
 
     Note:
-        Simplification effects at different tolerences:
+        Simplification effects at different tolerances:
 
         - Before: mean points=92, total area= 9,780,243 ha
         - **1m simplification: mean points=21, total area= 9,779,732 ha**

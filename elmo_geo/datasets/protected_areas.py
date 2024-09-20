@@ -70,7 +70,7 @@ class NESSSIUnitsParcels(DataFrameModel):
         proportion: The proportion of the parcel that intersects with the sssi units
     """
 
-    id_parcel: str = Field(coerce=True)
+    id_parcel: str = Field(unique=True)
     proportion: float = Field(ge=0, le=1)
 
 
@@ -80,7 +80,7 @@ ne_sssi_units_raw = SourceDataset(
     level1="ne",
     model=NESSSIUnitsRaw,
     restricted=False,
-    source_path="/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_sites_of_special_scientific_interest_units/format_GEOPARQUET_sites_of_special_scientific_interest_units/LATEST_sites_of_special_scientific_interest_units/Sites_of_Special_Scientific_Interest_Units_England.parquet",
+    source_path="/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_sites_of_special_scientific_interest_units/format_GEOPARQUET_sites_of_special_scientific_interest_units/LATEST_sites_of_special_scientific_interest_units/",
 )
 
 ne_sssi_units_parcels = DerivedDataset(
@@ -117,7 +117,7 @@ class NESSSINNRParcels(DataFrameModel):
         proportion: The proportion of the parcel that intersects with the National Nature Reserves.
     """
 
-    id_parcel: str = Field(coerce=True)
+    id_parcel: str = Field(unique=True)
     proportion: float = Field(ge=0, le=1)
 
 
@@ -127,7 +127,7 @@ ne_nnr_raw = SourceDataset(
     level1="ne",
     model=NENNRRaw,
     restricted=False,
-    source_path="/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_national_nature_reserves/format_GEOPARQUET_national_nature_reserves/LATEST_national_nature_reserves/National_Nature_Reserves_England.parquet",
+    source_path="/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_national_nature_reserves/format_GEOPARQUET_national_nature_reserves/LATEST_national_nature_reserves/",
 )
 
 
@@ -165,7 +165,7 @@ class NESACParcels(DataFrameModel):
         proportion: The proportion of the parcel that intersects with the Special Areas of Conservation.
     """
 
-    id_parcel: str = Field(coerce=True)
+    id_parcel: str = Field(unique=True)
     proportion: float = Field(ge=0, le=1)
 
 
@@ -175,7 +175,7 @@ ne_sac_raw = SourceDataset(
     level1="ne",
     model=NESACRaw,
     restricted=False,
-    source_path="/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_special_areas_for_conservation/format_GEOPARQUET_special_areas_for_conservation/LATEST_special_areas_for_conservation/Special_Areas_of_Conservation_England.parquet",
+    source_path="/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_special_areas_for_conservation/format_GEOPARQUET_special_areas_for_conservation/LATEST_special_areas_for_conservation/",
 )
 
 
@@ -212,7 +212,7 @@ class JNCCSPARParcels(DataFrameModel):
         proportion: The proportion of the parcel that intersects with the Special Protection Areas.
     """
 
-    id_parcel: str = Field(coerce=True)
+    id_parcel: str = Field(unique=True)
     proportion: float = Field(ge=0, le=1)
 
 
@@ -222,7 +222,7 @@ jncc_spa_raw = SourceDataset(
     level1="jncc",
     model=JNCCSPARaw,
     restricted=False,
-    source_path="/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_special_protection_areas/format_GEOPARQUET_special_protection_areas/LATEST_special_protection_areas/Special_Protection_Areas_England.parquet",
+    source_path="/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_special_protection_areas/format_GEOPARQUET_special_protection_areas/LATEST_special_protection_areas/",
 )
 
 
@@ -259,7 +259,7 @@ class NERamsarParcels(DataFrameModel):
         proportion: The proportion of the parcel that intersects with the Ramsar sites.
     """
 
-    id_parcel: str = Field(coerce=True)
+    id_parcel: str = Field(unique=True)
     proportion: float = Field(ge=0, le=1)
 
 
@@ -269,7 +269,7 @@ ne_ramsar_raw = SourceDataset(
     level1="ne",
     model=NERamsarRaw,
     restricted=False,
-    source_path="/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_ramsar/format_GEOPARQUET_ramsar/LATEST_ramsar/Ramsar_England.parquet",
+    source_path="/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_ramsar/format_GEOPARQUET_ramsar/LATEST_ramsar/",
 )
 
 
@@ -316,7 +316,7 @@ ne_marine_conservation_zones_raw = SourceDataset(
     level1="ne",
     model=NEMarineConservationZonesRaw,
     restricted=False,
-    source_path="/dbfs/mnt/base/unrestricted/source_natural_england_open_data_geoportal/dataset_marine_conservation_zones/format_GEOPARQUET_marine_conservation_zones/LATEST_marine_conservation_zones/Marine_Conservation_Zones___Natural_England_and_JNCC.parquet",
+    source_path="/dbfs/mnt/base/unrestricted/source_natural_england_open_data_geoportal/dataset_marine_conservation_zones/format_GEOPARQUET_marine_conservation_zones/LATEST_marine_conservation_zones/",
 )
 
 
@@ -343,7 +343,7 @@ class ProtectedAreasParcels(DataFrameModel):
         proportion_ramsar: The proportion of the parcel that intersects with ramsar sites.
         proportion_mcz: The proportion of the parcel that intersects with mcz sites."""
 
-    id_parcel: str = Field(coerce=True)
+    id_parcel: str = Field(unique=True)
     proportion_sssi: float = Field(ge=0, le=1)
     proportion_nnr: float = Field(ge=0, le=1)
     proportion_sac: float = Field(ge=0, le=1)

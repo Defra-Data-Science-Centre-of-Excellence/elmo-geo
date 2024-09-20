@@ -1,12 +1,16 @@
 import shutil
+from functools import reduce
+from glob import iglob
 from pathlib import Path
 
 import geopandas as gpd
 import pandas as pd
 from geopandas.io.arrow import _geopandas_to_arrow
 from pyarrow.parquet import write_to_dataset
+from pyspark.serializers import AutoBatchedSerializer, PickleSerializer
 from pyspark.sql import functions as F
 
+from elmo_geo.utils.dbr import spark
 from elmo_geo.utils.log import LOG
 from elmo_geo.utils.misc import dbfs
 from elmo_geo.utils.types import DataFrame, GeoDataFrame, PandasDataFrame, SparkDataFrame
@@ -16,6 +20,71 @@ from .convert import to_gdf
 
 class UnknownFileExtension(Exception):
     """Don't know how to read file with extension."""
+
+
+def memsize_sdf(sdf: SparkDataFrame) -> int:
+    "Collect the approximate in-memory size of a SparkDataFrame."
+    rdd = sdf.rdd._reserialize(AutoBatchedSerializer(PickleSerializer()))
+    JavaObj = rdd.ctx._jvm.org.apache.spark.mllib.api.python.SerDe.pythonToJava(rdd._jrdd, True)
+    return spark._jvm.org.apache.spark.util.SizeEstimator.estimate(JavaObj)
+
+
+def auto_repartition(
+    sdf: SparkDataFrame,
+    count_ratio: float = 1e-6,
+    mem_ratio: float = 1 / 1024**2,
+    thread_ratio: float = 1.5,
+    jobs_cap: int = 100_000,
+    acceptance_ratio: float = 0.8,
+) -> SparkDataFrame:
+    """Auto repartitioning tool for SparkDataFrames.
+    This uses row count, memory size, and number of JVMs to run tasks to chose the optimal partitioning.
+    If the dataset is already repartitioned higher, this method doesn't coalesce those partitions.
+    These default parameters have been experimentally chosen.
+
+    Parameters:
+        sdf: dataframe to repartition.
+        count_ratio: with default value attempts to repartition* every 1 million rows.
+        mem_ratio: * every 1MiB.
+        thread_ratio: * 1.5 tasks per thread.
+        jobs_cap: limits the maximum number of jobs to fit within Spark's job limit.
+        acceptance_ratio: don't repartition unless it exceeds this ratio.
+    """
+    partitioners = (
+        round(sdf.rdd.countApprox(1000, 0.8) * count_ratio),  # 1s wait or 80% accurate.
+        round(memsize_sdf(sdf) * mem_ratio),
+        round(spark.sparkContext.defaultParallelism * thread_ratio),
+    )
+    suggested_partitions = int(min(max(partitioners), jobs_cap))
+    current_partitions = sdf.rdd.getNumPartitions()
+    ratio = abs(suggested_partitions - current_partitions) / current_partitions
+    if acceptance_ratio < ratio:
+        return sdf.repartition(suggested_partitions)
+    else:
+        return sdf
+
+
+def load_sdf(path: str, **kwargs) -> SparkDataFrame:
+    """Load SparkDataFrame from glob path.
+    Automatically converts file api to spark api.
+    And catches failure to coerce schemas for datasets with multiple datatypes
+    (i.e. Float>Double or Timestamp_NTZ>Timestamp) that differ between partitions.
+    """
+
+    def read(f: str) -> SparkDataFrame:
+        return spark.read.parquet(dbfs(f, True), **kwargs)
+
+    def union(x: SparkDataFrame, y: SparkDataFrame) -> SparkDataFrame:
+        return x.unionByName(y, allowMissingColumns=True)
+
+    try:
+        sdf = read(path)
+    except Exception:  # TODO: pyspark.errors.AnalysisException, requires pyspark==3.4.1
+        sdf = reduce(union, [read(f) for f in iglob(path + "*")])
+
+    if "geometry" in sdf.columns:
+        sdf = sdf.withColumn("geometry", F.expr("ST_SetSRID(ST_GeomFromWKB(geometry), 27700)"))
+    return sdf
 
 
 def read_file(source_path: str, is_geo: bool, layer: int | str | None = None) -> PandasDataFrame | GeoDataFrame:
@@ -69,9 +138,15 @@ def write_parquet(df: DataFrame, path: str, partition_cols: list[str] | None = N
 
     if isinstance(df, SparkDataFrame):
         if "geometry" in df.columns:
-            df.withColumn("geometry", F.expr("ST_AsBinary(geometry)")).groupby(partition_cols).applyInPandas(to_gpqs, "col struct<>").collect()
+            if partition_cols:
+                df.withColumn("geometry", F.expr("ST_AsBinary(geometry)")).groupby(partition_cols).applyInPandas(to_gpqs, "col struct<>").collect()
+            else:
+                df.withColumn("geometry", F.expr("ST_AsBinary(geometry)")).transform(auto_repartition).mapInPandas(to_gpqs, "col struct<>").collect()
         else:
-            df.write.parquet(dbfs(str(path), True), partitionBy=partition_cols)
+            if partition_cols:
+                df.write.parquet(dbfs(str(path), True), partitionBy=partition_cols)
+            else:
+                df.transform(auto_repartition).write.parquet(dbfs(str(path), True))
     elif isinstance(df, GeoDataFrame):
         to_gpqs(df)
     elif isinstance(df, PandasDataFrame):

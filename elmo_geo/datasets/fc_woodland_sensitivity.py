@@ -1,6 +1,6 @@
-"""England Woodland Creation Full Sensitivity Map and it's varients from Forestry Commission.
+"""England Woodland Creation Full Sensitivity Map and it's variants from Forestry Commission.
 
-[A guide to Forestry Commission’s sensitivity maps for woodland creation](https://www.gov.uk/guidance/a-guide-to-forestry-commissions-sensitivity-maps-for-woodland-creation)
+[A guide to Forestry Commission's sensitivity maps for woodland creation](https://www.gov.uk/guidance/a-guide-to-forestry-commissions-sensitivity-maps-for-woodland-creation)
 
 The low sensitivity areas have fewest identified constraints to address,
 and it should be easier to agree creating new woodland here than in other areas.
@@ -24,12 +24,12 @@ class WoodlandSensitivityClean(DataFrameModel):
     """Model describing the Forestry Commission's England Woodland Creation Sensitivity Maps.
 
     Attributes:
-        geometry: The sensitivity classification's geospatial extent (polygons).
         sensitivity: The sensitivity classification, one of `{Unsuitable, High, Medium, Low}`.
+        geometry: The sensitivity classification's geospatial extent (polygons).
     """
 
+    sensitivity: Category = Field(coerce=True, isin=["Unsuitable", "High", "Medium", "Low"])
     geometry: Geometry(crs=SRID) = Field(coerce=True)
-    sensitivity: Category = Field(coerce=True)
 
 
 class WoodlandSensitivityParcels(DataFrameModel):
@@ -41,8 +41,8 @@ class WoodlandSensitivityParcels(DataFrameModel):
         proportion: The proportion of the parcel that intersects with the sensitivity classification.
     """
 
-    id_parcel: str
-    sensitivity: Category = Field(coerce=True)
+    id_parcel: str = Field()
+    sensitivity: Category = Field(coerce=True, isin=["Unsuitable", "High", "Medium", "Low"])
     proportion: float = Field(ge=0, le=1)
 
 
@@ -133,7 +133,7 @@ sfi_agroforestry = DerivedDataset(
 )
 """Definition for the cleaned version of Forestry Commission's SFI Agroforestry dataset.
 
-Columns have been renamed and dropped from the daw-version but the data/rows remain consistant.
+Columns have been renamed and dropped from the daw-version but the data/rows remain consistent.
 """
 
 woodland_creation_sensitivity = DerivedDataset(
@@ -147,7 +147,7 @@ woodland_creation_sensitivity = DerivedDataset(
 )
 """Definition for the cleaned version of Forestry Commission's England Woodland Creation Full Sensitivity Map.
 
-Columns have been renamed and dropped from the raw-version but the data/rows remain consistant.
+Columns have been renamed and dropped from the raw-version but the data/rows remain consistent.
 """
 
 woodland_creation_sensitivity_var1 = DerivedDataset(
@@ -161,7 +161,7 @@ woodland_creation_sensitivity_var1 = DerivedDataset(
 )
 """Definition for the cleaned version of Forestry Commission's England Woodland Creation Full Sensitivity Map Variant 1.
 
-Columns have been renamed and dropped from the raw-version but the data/rows remain consistant.
+Columns have been renamed and dropped from the raw-version but the data/rows remain consistent.
 """
 
 woodland_creation_sensitivity_var2 = DerivedDataset(
@@ -175,7 +175,7 @@ woodland_creation_sensitivity_var2 = DerivedDataset(
 )
 """Definition for the cleaned version of Forestry Commission's England Woodland Creation Full Sensitivity Map Variant 2.
 
-Columns have been renamed and dropped from the raw-version but the data/rows remain consistant.
+Columns have been renamed and dropped from the raw-version but the data/rows remain consistent.
 """
 
 woodland_creation_sensitivity_var3 = DerivedDataset(
@@ -189,7 +189,7 @@ woodland_creation_sensitivity_var3 = DerivedDataset(
 )
 """Definition for the cleaned version of Forestry Commission's England Woodland Creation Full Sensitivity Map Variant 3.
 
-Columns have been renamed and dropped from the raw-version but the data/rows remain consistant.
+Columns have been renamed and dropped from the raw-version but the data/rows remain consistent.
 """
 
 sfi_agroforestry_parcels = DerivedDataset(
@@ -200,6 +200,7 @@ sfi_agroforestry_parcels = DerivedDataset(
     func=_join_parcels,
     dependencies=[reference_parcels, sfi_agroforestry],
     model=WoodlandSensitivityParcels,
+    is_geo=False,
 )
 """Definition for Forestry Commission's SFI Agroforestry dataset joined to RPA Parcels."""
 
@@ -211,6 +212,7 @@ woodland_creation_sensitivity_parcels = DerivedDataset(
     func=_join_parcels,
     dependencies=[reference_parcels, woodland_creation_sensitivity],
     model=WoodlandSensitivityParcels,
+    is_geo=False,
 )
 """Definition for the Forestry Commission's England Woodland Creation Full Sensitivity Map joined to RPA Parcels."""
 
@@ -222,6 +224,7 @@ woodland_creation_sensitivity_var1_parcels = DerivedDataset(
     func=_join_parcels,
     dependencies=[reference_parcels, woodland_creation_sensitivity_var1],
     model=WoodlandSensitivityParcels,
+    is_geo=False,
 )
 """Definition for the Forestry Commission's England Woodland Creation Full Sensitivity Map Variant 1 joined to RPA Parcels."""
 
@@ -233,6 +236,7 @@ woodland_creation_sensitivity_var2_parcels = DerivedDataset(
     func=_join_parcels,
     dependencies=[reference_parcels, woodland_creation_sensitivity_var2],
     model=WoodlandSensitivityParcels,
+    is_geo=False,
 )
 """Definition for the Forestry Commission's England Woodland Creation Full Sensitivity Map Variant 2 joined to RPA Parcels."""
 
@@ -244,5 +248,6 @@ woodland_creation_sensitivity_var3_parcels = DerivedDataset(
     func=_join_parcels,
     dependencies=[reference_parcels, woodland_creation_sensitivity_var3],
     model=WoodlandSensitivityParcels,
+    is_geo=False,
 )
 """Definition for the Forestry Commission's England Woodland Creation Full Sensitivity Map Variant 3 joined to RPA Parcels."""
