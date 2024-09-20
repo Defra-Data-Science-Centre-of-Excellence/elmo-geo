@@ -28,13 +28,13 @@ class OSNGDRaw(DataFrameModel):
         geometry: Any type geometries in EPSG:27700.
     """
 
-    fid: int = Field(coerce=True, unique=True)
-    osid: str = Field(coerce=True, unique=True)
-    toid: str = Field(coerce=True)
-    theme: str = Field(coerce=True)
-    description: str = Field(coerce=True)
-    layer: str = Field(coerce=True)
-    geometry: Geometry(crs=SRID) = Field(coerce=True)
+    fid: int = Field(unique=True)
+    osid: str = Field(unique=True)
+    toid: str = Field()
+    theme: str = Field()
+    description: str = Field()
+    layer: str = Field()
+    geometry: Geometry(crs=SRID) = Field()
 
 
 os_ngd_raw = SourceGlobDataset(
@@ -43,7 +43,6 @@ os_ngd_raw = SourceGlobDataset(
     level1="os",
     model=OSNGDRaw,
     restricted=True,
-    source_path=None,
     glob_path="/dbfs/mnt/base/restricted/source_ordnance_survey_data_hub/dataset_ngd*/format_GPKG*/LATEST_*/*.gpkg",
 )
 
@@ -90,10 +89,10 @@ class OSBNGParcelsModel(DataFrameModel):
         proportion: Proportion of the parcel intersected by the tile.
     """
 
-    id_parcel: str = Field(coerce=True)
-    tile_name: str = Field(coerce=True)
-    layer: str = Field(coerce=True)
-    proportion: float = Field(coerce=True, ge=0, le=1)
+    id_parcel: str = Field()
+    tile_name: str = Field()
+    layer: str = Field()
+    proportion: float = Field(ge=0, le=1)
 
 
 os_bng_parcels = DerivedDataset(

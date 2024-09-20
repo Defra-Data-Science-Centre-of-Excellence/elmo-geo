@@ -34,8 +34,8 @@ class ALCRaw(DataFrameModel):
         geometry: ALC geometries in EPSG:27700.
     """
 
-    alc_grade: str = Field(coerce=True)
-    geometry: Geometry(crs=SRID) = Field(coerce=True)
+    alc_grade: str = Field()
+    geometry: Geometry(crs=SRID) = Field()
 
 
 alc_raw = SourceDataset(

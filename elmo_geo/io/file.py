@@ -95,9 +95,9 @@ def read_file(source_path: str, is_geo: bool, layer: int | str | None = None) ->
         else:
             layers = gpd.list_layers(path)["name"]
             if layer is None and 1 < len(layers):
-                df = gpd.GeoDataFrame(pd.concat((gpd.read_file(path, layer=layer).assign(layer=layer) for layer in layers), ignore_index=True))
+                df = gpd.GeoDataFrame(pd.concat((gpd.read_file(path, layer=layer, use_arrow=True).assign(layer=layer) for layer in layers), ignore_index=True))
             else:
-                df = gpd.read_file(path, layer=layer)
+                df = gpd.read_file(path, layer=layer, use_arrow=True)
     else:
         if path.suffix == ".parquet" or path.is_dir():
             df = pd.read_parquet(path)

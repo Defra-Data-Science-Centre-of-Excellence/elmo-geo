@@ -109,7 +109,7 @@ class ESCM3WoodlandScenariosRaw(DataFrameModel):
     area_1: float = Field(ge=0, le=1)
     area_2: float = Field(ge=0, le=1)
     area_3: float = Field(ge=0, le=1)
-    open_space: float = Field(ge=0, le=1, coerce=True)
+    open_space: float = Field(ge=0, le=1)
     yield_class_1: float = Field(nullable=True)
     yield_class_2: float = Field(nullable=True)
     yield_class_3: float = Field(nullable=True)
@@ -137,7 +137,7 @@ class ESCM3WoodlandScenariosRaw(DataFrameModel):
     deadwood_carbon: float = Field()
     grass_soil_carbon: float = Field()
     crop_soil_carbon: float = Field()
-    wood_product_carbon_ipcc: float = Field(coerce=True)
+    wood_product_carbon_ipcc: float = Field()
 
 
 esc_m3_raw = SourceGlobDataset(
@@ -198,7 +198,6 @@ class ESCGeoModel(DataFrameModel):
     """
 
     woodland_type: Category = Field(
-        coerce=True,
         isin=[
             "native_broadleaved",
             "productive_conifer",
@@ -207,7 +206,7 @@ class ESCGeoModel(DataFrameModel):
             "silvoarable",
         ],
     )
-    rcp: Category = Field(isin=["26", "45", "60", "85"], coerce=True)
+    rcp: Category = Field(isin=["26", "45", "60", "85"])
     tile_name: str = Field()
     geometry: Geometry = Field()
 

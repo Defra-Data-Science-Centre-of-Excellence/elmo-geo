@@ -34,8 +34,8 @@ class MoorlineRaw(DataFrameModel):
         geometry: (Multi)Polygon geometries in EPSG:27700.
     """
 
-    name: Category = Field(coerce=True, isin=["D", "S", "MD", "MS"])
-    geometry: Geometry(crs=SRID) = Field(coerce=True)
+    name: Category = Field(isin=["D", "S", "MD", "MS"])
+    geometry: Geometry(crs=SRID) = Field()
 
 
 moorline_raw = SourceDataset(

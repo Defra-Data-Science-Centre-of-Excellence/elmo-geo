@@ -59,9 +59,9 @@ class CountryRaw(DataFrameModel):
         geometry: 4 MultiPolygons in EPSG:27700 at BFE.
     """
 
-    fid: str = Field(coerce=True, unique=True, alias="CTRY23CD")
-    name: str = Field(coerce=True, alias="CTRY23NM")
-    geometry: Geometry(crs=SRID) = Field(coerce=True)
+    fid: str = Field(unique=True, alias="CTRY23CD")
+    name: str = Field(alias="CTRY23NM")
+    geometry: Geometry(crs=SRID) = Field()
 
 
 country_raw = SourceDataset(
@@ -112,9 +112,9 @@ class RegionRaw(DataFrameModel):
         geometry: 9 (Multi)Polygons in EPSG:27700 at BFE.
     """
 
-    fid: str = Field(coerce=True, unique=True, alias="RGN23CD")
-    name: str = Field(coerce=True, alias="RGN23NM")
-    geometry: Geometry(crs=SRID) = Field(coerce=True)
+    fid: str = Field(unique=True, alias="RGN23CD")
+    name: str = Field(alias="RGN23NM")
+    geometry: Geometry(crs=SRID) = Field()
 
 
 region_raw = SourceDataset(
@@ -165,9 +165,9 @@ class ITL2Raw(DataFrameModel):
         geometry: MultiPolygons in EPSG:27700 at BGC.
     """
 
-    fid: str = Field(coerce=True, unique=True, alias="ITL221CD")
-    name: str = Field(coerce=True, alias="ITL221NM")
-    geometry: Geometry(crs=SRID) = Field(coerce=True)
+    fid: str = Field(unique=True, alias="ITL221CD")
+    name: str = Field(alias="ITL221NM")
+    geometry: Geometry(crs=SRID) = Field()
 
 
 itl2_raw = SourceDataset(
@@ -218,9 +218,9 @@ class CUARaw(DataFrameModel):
         geometry: (Multi)Polygons in EPSG:27700 at BFE.
     """
 
-    fid: str = Field(coerce=True, unique=True, alias="CTYUA23CD")
-    name: str = Field(coerce=True, alias="CTYUA23NM")
-    geometry: Geometry(crs=SRID) = Field(coerce=True)
+    fid: str = Field(unique=True, alias="CTYUA23CD")
+    name: str = Field(alias="CTYUA23NM")
+    geometry: Geometry(crs=SRID) = Field()
 
 
 cua_raw = SourceDataset(
@@ -271,9 +271,9 @@ class LADRaw(DataFrameModel):
         geometry: (Multi)Polygons in EPSG:27700 at BFE.
     """
 
-    fid: str = Field(coerce=True, unique=True, alias="LAD23CD")
-    name: str = Field(coerce=True, alias="LAD23NM")
-    geometry: Geometry(crs=SRID) = Field(coerce=True)
+    fid: str = Field(unique=True, alias="LAD23CD")
+    name: str = Field(alias="LAD23NM")
+    geometry: Geometry(crs=SRID) = Field()
 
 
 lad_raw = SourceDataset(
@@ -324,9 +324,9 @@ class WardRaw(DataFrameModel):
         geometry: (Multi)Polygons in EPSG:27700 at BFE.
     """
 
-    fid: str = Field(coerce=True, unique=True, alias="WD23CD")
-    name: str = Field(coerce=True, alias="WD23NM")
-    geometry: Geometry(crs=SRID) = Field(coerce=True)
+    fid: str = Field(unique=True, alias="WD23CD")
+    name: str = Field(alias="WD23NM")
+    geometry: Geometry(crs=SRID) = Field()
 
 
 ward_raw = SourceDataset(
@@ -377,9 +377,9 @@ class BUARaw(DataFrameModel):
         geometry: (Multi)Polygons in EPSG:27700 at BGG.
     """
 
-    fid: str = Field(coerce=True, unique=True, alias="BUA22CD")
-    name: str = Field(coerce=True, alias="BUA22NM")
-    geometry: Geometry(crs=SRID) = Field(coerce=True)
+    fid: str = Field(unique=True, alias="BUA22CD")
+    name: str = Field(alias="BUA22NM")
+    geometry: Geometry(crs=SRID) = Field()
 
 
 bua_raw = SourceDataset(

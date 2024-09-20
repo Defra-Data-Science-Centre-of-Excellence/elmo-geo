@@ -28,8 +28,8 @@ class WoodlandSensitivityClean(DataFrameModel):
         geometry: The sensitivity classification's geospatial extent (polygons).
     """
 
-    sensitivity: Category = Field(coerce=True, isin=["Unsuitable", "High", "Medium", "Low"])
-    geometry: Geometry(crs=SRID) = Field(coerce=True)
+    sensitivity: Category = Field(isin=["Unsuitable", "High", "Medium", "Low"])
+    geometry: Geometry(crs=SRID) = Field()
 
 
 class WoodlandSensitivityParcels(DataFrameModel):
@@ -42,7 +42,7 @@ class WoodlandSensitivityParcels(DataFrameModel):
     """
 
     id_parcel: str = Field()
-    sensitivity: Category = Field(coerce=True, isin=["Unsuitable", "High", "Medium", "Low"])
+    sensitivity: Category = Field(isin=["Unsuitable", "High", "Medium", "Low"])
     proportion: float = Field(ge=0, le=1)
 
 

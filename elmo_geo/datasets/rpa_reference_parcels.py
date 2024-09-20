@@ -21,7 +21,7 @@ class ReferenceParcelsRaw(DataFrameModel):
         geometry: The parcel geospatial polygons in EPSG:27700.
     """
 
-    geometry: Geometry(crs=SRID) = Field(coerce=True)
+    geometry: Geometry(crs=SRID) = Field()
 
 
 class ReferenceParcelsRawNoSBI(DataFrameModel):
@@ -33,7 +33,7 @@ class ReferenceParcelsRawNoSBI(DataFrameModel):
         geometry: The parcel geospatial polygons in EPSG:27700.
     """
 
-    geometry: Geometry(crs=SRID) = Field(coerce=True, nullable=True)
+    geometry: Geometry(crs=SRID) = Field(nullable=True)
 
 
 class ReferenceParcels(DataFrameModel):
@@ -46,10 +46,10 @@ class ReferenceParcels(DataFrameModel):
         geometry: The parcel geospatial polygons in EPSG:27700.
     """
 
-    id_parcel: str = Field(coerce=True, str_matches=r"(^[A-Z]{2}[\d]{8}$)", unique=True)
-    sbi: str = Field(coerce=True, str_matches=r"(^[\d]{9}$)", nullable=True)
-    area_ha: float = Field(coerce=True, gt=0)
-    geometry: Geometry(crs=SRID) = Field(coerce=True)
+    id_parcel: str = Field(str_matches=r"(^[A-Z]{2}[\d]{8}$)", unique=True)
+    sbi: str = Field(str_matches=r"(^[\d]{9}$)", nullable=True)
+    area_ha: float = Field(gt=0)
+    geometry: Geometry(crs=SRID) = Field()
 
 
 def _combine_and_clean_parcels(parcels_sbi: Dataset, parcels_nosbi: Dataset) -> gpd.GeoDataFrame:
