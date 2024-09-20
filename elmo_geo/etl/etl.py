@@ -315,18 +315,17 @@ class SourceGlobDataset(SourceDataset):
         new_path = self._new_path
         if self.is_geo:
             ogr_to_geoparquet(self.glob_path, new_path)
-            df_sample = to_gdf(load_sdf(new_path).limit(10_000))
-            self._validate(df_sample)
+            sdf = load_sdf(new_path)
+            self._validate(sdf)
         else:
             from elmo_geo.utils.dbr import spark
 
             def union(x: SparkDataFrame, y: SparkDataFrame) -> SparkDataFrame:
                 return x.unionByName(y, allowMissingColumns=True)
 
-            _sdfs = [spark.createDataFrame(read_file(f, self.is_geo)).withColumn("_path", F.lit(f)) for f in iglob(self.glob_path)]
-            sdf = reduce(union, _sdfs)
-            df_sample = sdf.limit(10_000).toPandas()
-            self._validate(df_sample)
+            gen_sdfs = (spark.createDataFrame(read_file(f, self.is_geo)).withColumn("_path", F.lit(f)) for f in iglob(self.glob_path))
+            sdf = reduce(union, gen_sdfs)
+            self._validate(sdf)
             write_parquet(sdf, path=self._new_path, partition_cols=self.partition_cols)
         LOG.info(f"Saved to '{self.path}'.")
 
