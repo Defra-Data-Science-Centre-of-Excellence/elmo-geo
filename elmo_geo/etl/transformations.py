@@ -5,8 +5,8 @@ For use in `elmo.etl.DerivedDataset.func`.
 import geopandas as gpd
 from pyspark.sql import functions as F
 
-from elmo_geo.io.file import auto_repartition
-from elmo_geo.st.geometry import load_geometry
+from elmo_geo.io.file import auto_repartition  # noqa:F401
+from elmo_geo.st.geometry import load_geometry  # noqa:F401
 from elmo_geo.st.join import sjoin
 from elmo_geo.utils.types import PandasDataFrame, SparkDataFrame
 
@@ -114,8 +114,9 @@ def sjoin_parcels(
     sdf_feature = feature if isinstance(feature, SparkDataFrame) else feature.sdf()
     sdf_parcels = parcels if isinstance(parcels, SparkDataFrame) else parcels.sdf()
     return (
-        sdf_feature.transform(auto_repartition)  # TODO: move to SourceDataset, DerivedDatasets should be well partitioned/
-        .withColumn("geometry", load_geometry(encoding_fn="", subdivide=True))  # TODO: ^
+        sdf_feature
+        # .transform(auto_repartition)  # TODO: move to SourceDataset, DerivedDatasets should be well partitioned.
+        # .withColumn("geometry", load_geometry(encoding_fn="", subdivide=True))  # TODO: This doesn't work for tests, due to precision 1.
         .transform(fn_pre)
         .transform(lambda sdf: sjoin(sdf_parcels, sdf, **kwargs))
         .selectExpr(
@@ -139,9 +140,10 @@ def sjoin_parcel_proportion(
     **kwargs,
 ):
     "Spatially joins datasets, groups, and calculates the proportional overlap, returning a non-geospatial dataframe."
-    expr = "ST_Intersection(geometry_left, geometry_right)"
+    expr = "ST_CollectionExtract(geometry_right, 3)"  # DONE: ST_Area fails on GeometryCollections
+    expr = f"ST_Intersection(geometry_left, {expr})"
     expr = f"ST_Area({expr}) / ST_Area(geometry_left)"
-    expr = f"GREATEST(LEAST({expr}, 0), 1)"
+    expr = f"LEAST(GREATEST({expr}, 0), 1)"  # DONE: I'm bad at maths.
     return sjoin_parcels(parcel, features, **kwargs).withColumn("proportion", F.expr(expr)).drop("geometry_left", "geometry_right")
 
 
@@ -155,9 +157,10 @@ def sjoin_boundary_proportion(
     """Spatially joins with parcels, groups, key joins with boundaries, calculating proportional overlap for multiple buffer distances.
     Returns a non-geospatial dataframe.
     """
-    expr = "ST_Intersection(geometry, ST_Buffer(geometry_right, {}))"
+    expr = "ST_Buffer(geometry_right, {})"  # This feels nicer, I don't know what happens with geometry collections.
+    expr = f"ST_Intersection(geometry, {expr})"
     expr = f"ST_Length({expr}) / ST_Length(geometry)"
-    expr = f"GREATEST(LEAST({expr}, 0), 1)"
+    expr = f"LEAST(GREATEST({expr}, 0), 1)"
     return (
         sjoin_parcels(parcel, features, distance=max(buffers), **kwargs)
         .join(boundary_segments.sdf(), on="id_parcel")
