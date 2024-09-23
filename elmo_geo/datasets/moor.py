@@ -12,12 +12,14 @@ In combination this defines "uplands", as either Less Favourable Areas (LFA) are
 
 from functools import partial
 
+import pyspark.sql.functions as F
 from pandera import DataFrameModel, Field
 from pandera.dtypes import Category
 from pandera.engines.geopandas_engine import Geometry
 
 from elmo_geo.etl import SRID, DerivedDataset, SourceDataset
 from elmo_geo.etl.transformations import join_parcels
+from elmo_geo.utils.types import PandasDataFrame
 
 from .rpa_reference_parcels import reference_parcels
 
@@ -62,13 +64,50 @@ class MoorlineParcel(DataFrameModel):
     proportion: float = Field(ge=0, le=1)
 
 
-moorline_parcel = DerivedDataset(
+moorline_parcels = DerivedDataset(
     is_geo=False,
-    name="moorline_parcel",
+    name="moorline_parcels",
     level0="silver",
     level1="rpa",
     restricted=False,
     func=partial(join_parcels, columns=["name"]),
     dependencies=[reference_parcels, moorline_raw],
     model=MoorlineParcel,
+)
+
+
+class IsUplandParcel(DataFrameModel):
+    """Model for 'is upland' parcel classification..
+
+    Attributes:
+        id_parcel: 11 character RPA reference parcel ID (including the sheet ID) e.g. `SE12263419`.
+        is_upland: Boolean indicating whether largest intersecting lfa feature is moorland.
+    """
+
+    id_parcel: str = Field()
+    is_upland: bool = Field()
+
+
+def _is_upland(reference_parcels: DerivedDataset, moorline_parcels: DerivedDataset) -> PandasDataFrame:
+    """Classify each parcel as upland or not."""
+    return (
+        reference_parcels.sdf()
+        .select("id_parcel")
+        .join(moorline_parcels.sdf(), on="id_parcel", how="left")
+        .orderBy("proportion", ascending=False)
+        .groupby("id_parcel")
+        .agg(F.expr("FIRST(name) as name"))
+        .selectExpr("id_parcel", "COALESCE(name in ('MD', 'MS'), FALSE) AS is_upland")
+    ).toPandas()
+
+
+is_upland_parcels = DerivedDataset(
+    is_geo=False,
+    name="is_upland_parcels",
+    level0="silver",
+    level1="rpa",
+    restricted=False,
+    func=_is_upland,
+    dependencies=[reference_parcels, moorline_parcels],
+    model=IsUplandParcel,
 )
