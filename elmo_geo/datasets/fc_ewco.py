@@ -10,7 +10,7 @@ from functools import partial
 import geopandas as gpd
 from pandera import DataFrameModel, Field
 from pandera.dtypes import Category
-from pandera.engines.pandas_engine import Geometry
+from pandera.engines.geopandas_engine import Geometry
 
 from elmo_geo.etl import SRID, Dataset, DerivedDataset, SourceDataset
 from elmo_geo.etl.transformations import join_parcels
@@ -28,8 +28,8 @@ class EwcoClean(DataFrameModel):
         spatial_priority: The spatial priority, one of `{'Premium', 'High', 'Lower'}`.
     """
 
-    geometry: Geometry(crs=SRID) = Field(coerce=True)
-    spatial_priority: Category = Field(coerce=True, isin=["Premium", "High", "Lower"])
+    geometry: Geometry(crs=SRID) = Field()
+    spatial_priority: Category = Field(isin=["Premium", "High", "Lower"])
 
 
 class SpatialPriorityParcels(DataFrameModel):
@@ -42,7 +42,7 @@ class SpatialPriorityParcels(DataFrameModel):
     """
 
     id_parcel: str = Field()
-    spatial_priority: Category = Field(coerce=True)
+    spatial_priority: Category = Field()
     proportion: float = Field(ge=0, le=1)
 
 

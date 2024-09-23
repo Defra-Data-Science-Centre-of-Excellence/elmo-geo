@@ -7,7 +7,7 @@
 from functools import partial
 
 from pandera import DataFrameModel, Field
-from pandera.engines.pandas_engine import Geometry
+from pandera.engines.geopandas_engine import Geometry
 
 from elmo_geo.etl import SRID, DerivedDataset, SourceDataset
 from elmo_geo.etl.transformations import join_parcels
@@ -34,8 +34,8 @@ class ALCRaw(DataFrameModel):
         geometry: ALC geometries in EPSG:27700.
     """
 
-    alc_grade: str = Field(coerce=True)
-    geometry: Geometry(crs=SRID) = Field(coerce=True)
+    alc_grade: str = Field()
+    geometry: Geometry(crs=SRID) = Field()
 
 
 alc_raw = SourceDataset(

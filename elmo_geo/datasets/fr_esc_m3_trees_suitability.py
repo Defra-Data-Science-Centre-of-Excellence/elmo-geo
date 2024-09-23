@@ -77,11 +77,11 @@ class ESCTreeSuitabilityModel(DataFrameModel):
     """
 
     id_parcel: str = Field()
-    nopeatArea: float = Field(coerce=True)
-    period_T1_T2: Category = Field(coerce=True, isin=["2029_2036-2021_2036", "2037_2050-2021_2050", "2051_2100-2021_2100", "2021_2028-2021_2028"])
-    woodland_type: Category = Field(coerce=True, isin=["coniferous", "broadleaved", "riparian"])
-    suitability: float = Field(coerce=True)
-    n_species: int = Field(coerce=True)
+    nopeatArea: float = Field()
+    period_T1_T2: Category = Field(isin=["2029_2036-2021_2036", "2037_2050-2021_2050", "2051_2100-2021_2100", "2021_2028-2021_2028"])
+    woodland_type: Category = Field(isin=["coniferous", "broadleaved", "riparian"])
+    suitability: float = Field()
+    n_species: int = Field()
 
 
 def _convert_to_long_format(sdf: SparkDataFrame) -> SparkDataFrame:

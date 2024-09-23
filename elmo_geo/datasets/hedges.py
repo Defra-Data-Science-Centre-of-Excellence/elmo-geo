@@ -4,7 +4,7 @@
 """
 
 from pandera import DataFrameModel, Field
-from pandera.engines.pandas_engine import Geometry
+from pandera.engines.geopandas_engine import Geometry
 
 from elmo_geo.etl import SRID, SourceDataset
 
@@ -18,11 +18,11 @@ class RPAHedgesRaw(DataFrameModel):
         geometry: geometries in EPSG:27700.
     """
 
-    sheet_id: str = Field(coerce=True, alias="REF_PARCEL_SHEET_ID")
-    parcel_ref: str = Field(coerce=True, alias="REF_PARCEL_PARCEL_ID")
-    adj_sheet_id: str = Field(coerce=True, nullable=True, alias="ADJACENT_PARCEL_SHEET_ID")
-    adj_parcel_ref: str = Field(coerce=True, nullable=True, alias="ADJACENT_PARCEL_PARCEL_ID")
-    geometry: Geometry(crs=SRID) = Field(coerce=True, alias="GEOM")
+    sheet_id: str = Field(alias="REF_PARCEL_SHEET_ID")
+    parcel_ref: str = Field(alias="REF_PARCEL_PARCEL_ID")
+    adj_sheet_id: str = Field(nullable=True, alias="ADJACENT_PARCEL_SHEET_ID")
+    adj_parcel_ref: str = Field(nullable=True, alias="ADJACENT_PARCEL_PARCEL_ID")
+    geometry: Geometry(crs=SRID) = Field(alias="GEOM")
 
 
 rpa_hedges_raw = SourceDataset(
