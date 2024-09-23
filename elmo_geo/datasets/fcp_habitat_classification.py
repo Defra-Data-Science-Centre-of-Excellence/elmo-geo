@@ -186,7 +186,7 @@ def _filter_candidates_by_phi(
     sdf_phi_lu = (
         evast_habitat_mapping_raw.sdf()
         .filter(F.expr("source = 'phi'"))
-        .selectExpr("action_group", "action_habitat", "habitat_name", "is_upland AS is_upland_lu")
+        .selectExpr("action_group", "action_habitat", "habitat_name")
         .dropDuplicates()
         .join(defra_habitat_area_parcels.sdf().filter(F.col("distance_threshold").isin(threshold_distances)), on="habitat_name", how="left")
         .withColumn("nearby_rare_habitat", F.col("habitat_name").isin(rare_habitats) & (F.col("distance_threshold") == min(threshold_distances)))
@@ -200,7 +200,6 @@ def _filter_candidates_by_phi(
     )
     return (
         sdf_candidates.join(sdf_phi_lu, on=["id_parcel", "action_group", "action_habitat"], how="inner")
-        .filter(F.expr("(is_upland_lu is NULL) OR (is_upland=is_upland_lu)"))
         .withColumn("row_number", F.row_number().over(window))
         .filter("row_number=1")
         .select("id_parcel", "action_group", "action_habitat")
