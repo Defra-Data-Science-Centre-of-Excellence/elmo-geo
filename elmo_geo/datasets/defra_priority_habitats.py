@@ -238,7 +238,7 @@ class PriorityHabitatArea(DataFrameModel):
     Parameters:
         id_parcel: 11 character RPA reference parcel ID (including the sheet ID) e.g. `SE12263419`.
         habitat_name: The name of the priority habitat.
-        area: The area of priority habitat geometries that are within the threshold distance. The area
+        area: The area of priority habitat geometries that are within the threshold distance, in m2. The area
         of the whole geometry is given, even if only part of the geometry is within the threshold.
         minimum_distance: Minimum distance to this type of habitat.
         distance_threshold: The threshold distance in metres.
