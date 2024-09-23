@@ -215,7 +215,7 @@ def _habitat_area_within_distance(
 def _habitat_area_within_distances(
     parcels: Dataset,
     priority_habitats_raw: Dataset,
-    distances: list[int] = [2_000, 5_000],
+    distances: list[int] = [1_000, 2_000, 3_000, 5_000],
 ) -> SparkDataFrame:
     """Calculates the area of priority habitat within each threshold distance to parcels."""
     sdf_phi = (
