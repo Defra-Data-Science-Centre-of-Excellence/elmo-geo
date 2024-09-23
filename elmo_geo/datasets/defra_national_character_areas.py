@@ -8,7 +8,7 @@ from functools import partial
 
 from pandera import DataFrameModel, Field
 from pandera.dtypes import Category
-from pandera.engines.pandas_engine import Geometry
+from pandera.engines.geopandas_engine import Geometry
 
 from elmo_geo.etl import SRID, DerivedDataset, SourceDataset
 from elmo_geo.etl.transformations import join_parcels
@@ -33,13 +33,13 @@ class NCARaw(DataFrameModel):
         geometry: NCA geometries in EPSG:27700.
     """
 
-    jcaname: str = Field(coerce=True, nullable=True)
-    nca_name: str = Field(coerce=True, nullable=True)
-    naname: str = Field(coerce=True, nullable=True)
-    hotlink: str = Field(coerce=True, nullable=True)
-    alt: Category = Field(coerce=True, nullable=True)
-    blt: Category = Field(coerce=True, nullable=True)
-    geometry: Geometry(crs=SRID) = Field(coerce=True)
+    jcaname: str = Field(nullable=True)
+    nca_name: str = Field(nullable=True)
+    naname: str = Field(nullable=True)
+    hotlink: str = Field(nullable=True)
+    alt: Category = Field(nullable=True)
+    blt: Category = Field(nullable=True)
+    geometry: Geometry(crs=SRID) = Field()
 
 
 nca_raw = SourceDataset(

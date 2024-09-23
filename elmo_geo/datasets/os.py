@@ -6,48 +6,16 @@
 [^os]: https://www.ordnancesurvey.co.uk/products/os-ngd
 [^dash]: https://app.powerbi.com/Redirect?action=OpenReport&appId=5762de14-3aa8-4a83-92b3-045cc953e30c&reportObjectId=c8802134-4f3b-484e-bf14-1ed9f8881450&ctid=770a2450-0227-4c62-90c7-4e38537f1102&reportPage=ReportSectionff2a0c223272005d9b10&pbi_source=appShareLink&portalSessionId=f7a19b52-4676-43dd-9f13-d1084081a8f2
 """
-import os.path
-import time
-from dataclasses import dataclass
-from glob import iglob
-from hashlib import sha256
+
+from functools import partial
 
 from pandera import DataFrameModel, Field
-from pandera.engines.pandas_engine import Geometry
+from pandera.engines.geopandas_engine import Geometry
 
-from elmo_geo.etl.etl import HASH_LENGTH, SRC_HASH_FMT, SRID, SourceDataset
-from elmo_geo.io import load_sdf, ogr_to_geoparquet, to_gdf
-from elmo_geo.utils.log import LOG
+from elmo_geo.etl.etl import SRID, DerivedDataset, SourceDataset, SourceGlobDataset
+from elmo_geo.etl.transformations import join_parcels
 
-
-@dataclass
-class SourceGlobDataset(SourceDataset):
-    """SourceGlobDataset is to ingest multiple files using a glob path.
-    - This is better suited for ingesting very large files, as it uses ogr2ogr.
-    - This does not support aliasing/renaming, as it writes before validating.
-
-    Attributes:
-        glob_path: The glob path to the data.
-        source_path: Is required to identified last time modified.
-    """
-
-    glob_path: str = None
-
-    @property
-    def _hash(self) -> str:
-        """Return the last-modified date of the source file."""
-        mtimes = [os.path.getmtime(f) for f in iglob(self.glob_path)]
-        mtime = sum(mtimes) / len(mtimes)
-        date = time.strftime(SRC_HASH_FMT, time.gmtime(mtime))
-        return sha256(date.encode()).hexdigest()[:HASH_LENGTH]
-
-    def refresh(self):
-        LOG.info(f"Creating '{self.name}' dataset.")
-        new_path = self._new_path
-        ogr_to_geoparquet(self.glob_path, new_path)
-        df_sample = to_gdf(load_sdf(new_path).limit(10_000))
-        self._validate(df_sample)
-        LOG.info(f"Saved to '{self.path}'.")
+from .rpa_reference_parcels import reference_parcels
 
 
 class OSNGDRaw(DataFrameModel):
@@ -60,13 +28,13 @@ class OSNGDRaw(DataFrameModel):
         geometry: Any type geometries in EPSG:27700.
     """
 
-    fid: int = Field(coerce=True, unique=True)
-    osid: str = Field(coerce=True, unique=True)
-    toid: str = Field(coerce=True)
-    theme: str = Field(coerce=True)
-    description: str = Field(coerce=True)
-    layer: str = Field(coerce=True)
-    geometry: Geometry(crs=SRID) = Field(coerce=True)
+    fid: int = Field(unique=True)
+    osid: str = Field(unique=True)
+    toid: str = Field()
+    theme: str = Field()
+    description: str = Field()
+    layer: str = Field()
+    geometry: Geometry(crs=SRID) = Field()
 
 
 os_ngd_raw = SourceGlobDataset(
@@ -75,6 +43,67 @@ os_ngd_raw = SourceGlobDataset(
     level1="os",
     model=OSNGDRaw,
     restricted=True,
-    source_path=None,
     glob_path="/dbfs/mnt/base/restricted/source_ordnance_survey_data_hub/dataset_ngd*/format_GPKG*/LATEST_*/*.gpkg",
 )
+
+
+class OSBNGModel(DataFrameModel):
+    """OS British National Grid grid reference
+    dataset data model.
+
+    Attributes:
+        tile_name: Name of the grid reference tile.
+        layer: Resolution of the grid reference tile. Either
+            1km_grid, 5km_grid, 10km_grid, 20km_grid, 50km_grid,
+            100km_grid.
+        geometry: Geometry of the tile.
+    """
+
+    tile_name: str = Field()
+    layer: str = Field()
+    geometry: Geometry = Field()
+
+
+os_bng_raw = SourceDataset(
+    name="os_bng_raw",
+    level0="bronze",
+    level1="os",
+    restricted=False,
+    source_path="/dbfs/mnt/lab/unrestricted/ELM-Project/raw/os_bng_grids.gpkg",
+    model=OSBNGModel,
+    partition_cols=["layer"],
+)
+"""OS British National Grid grid reference geometries."""
+
+
+class OSBNGParcelsModel(DataFrameModel):
+    """OS British National Grid grid reference joined to parcels
+    data model.
+
+    Attributes:
+        id_parcel: RPA reference parcels ID
+        tile_name: Name of the grid reference tile.
+        layer: Resolution of the grid reference tile. Either
+            1km_grid, 5km_grid, 10km_grid, 20km_grid, 50km_grid,
+            100km_grid.
+        proportion: Proportion of the parcel intersected by the tile.
+    """
+
+    id_parcel: str = Field()
+    tile_name: str = Field()
+    layer: str = Field()
+    proportion: float = Field(ge=0, le=1)
+
+
+os_bng_parcels = DerivedDataset(
+    name="os_bng_parcels",
+    level0="silver",
+    level1="os",
+    restricted=False,
+    is_geo=False,
+    model=OSBNGParcelsModel,
+    func=partial(join_parcels, columns=["layer", "tile_name"]),
+    dependencies=[reference_parcels, os_bng_raw],
+    partition_cols=["layer"],
+)
+"""OS British National Grid grid reference geometries joined to parcels."""

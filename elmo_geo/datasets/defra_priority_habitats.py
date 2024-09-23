@@ -10,7 +10,7 @@ from functools import partial, reduce
 import pandas as pd
 from pandera import DataFrameModel, Field
 from pandera.dtypes import Category
-from pandera.engines.pandas_engine import Geometry
+from pandera.engines.geopandas_engine import Geometry
 from pyspark.sql import functions as F
 
 from elmo_geo.etl import SRID, Dataset, DerivedDataset, SourceDataset
@@ -99,12 +99,12 @@ class PHIEnglandRawModel(DataFrameModel):
         geometry: Habitat geometry
     """
 
-    mainhabs: str = Field(coerce=True)
-    habcodes: str = Field(coerce=True)
-    areaha: float = Field(coerce=True)
-    version: str = Field(coerce=True)
-    fid: str = Field(coerce=True, unique=True, alias="uid")
-    geometry: Geometry(crs=SRID) = Field(coerce=True)
+    mainhabs: str = Field()
+    habcodes: str = Field()
+    areaha: float = Field()
+    version: str = Field()
+    fid: str = Field(unique=True, alias="uid")
+    geometry: Geometry(crs=SRID) = Field()
 
 
 class PriorityHabitatParcels(DataFrameModel):
@@ -117,8 +117,8 @@ class PriorityHabitatParcels(DataFrameModel):
     """
 
     id_parcel: str = Field()
-    habitat_name: Category = Field(coerce=True)
-    proportion: float = Field(coerce=True, ge=0, le=1)
+    habitat_name: Category = Field()
+    proportion: float = Field(ge=0, le=1)
 
 
 class PriorityHabitatProximity(DataFrameModel):
@@ -132,8 +132,8 @@ class PriorityHabitatProximity(DataFrameModel):
     """
 
     id_parcel: str = Field()
-    habitat_name: Category = Field(coerce=True)
-    distance: int = Field(coerce=True)
+    habitat_name: Category = Field()
+    distance: int = Field()
 
 
 defra_priority_habitat_england_raw = SourceDataset(
@@ -215,7 +215,7 @@ def _habitat_area_within_distance(
 def _habitat_area_within_distances(
     parcels: Dataset,
     priority_habitats_raw: Dataset,
-    distances: list[int] = [2_000, 5_000],
+    distances: list[int] = [1_000, 2_000, 3_000, 5_000],
 ) -> SparkDataFrame:
     """Calculates the area of priority habitat within each threshold distance to parcels."""
     sdf_phi = (
@@ -238,7 +238,7 @@ class PriorityHabitatArea(DataFrameModel):
     Parameters:
         id_parcel: 11 character RPA reference parcel ID (including the sheet ID) e.g. `SE12263419`.
         habitat_name: The name of the priority habitat.
-        area: The area of priority habitat geometries that are within the threshold distance. The area
+        area: The area of priority habitat geometries that are within the threshold distance, in m2. The area
         of the whole geometry is given, even if only part of the geometry is within the threshold.
         minimum_distance: Minimum distance to this type of habitat.
         distance_threshold: The threshold distance in metres.

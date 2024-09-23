@@ -8,7 +8,7 @@ from functools import partial
 
 from pandera import DataFrameModel, Field
 from pandera.dtypes import Category
-from pandera.engines.pandas_engine import Geometry
+from pandera.engines.geopandas_engine import Geometry
 from pyspark.sql import functions as F
 
 from elmo_geo.etl import SRID, DerivedDataset, SourceDataset
@@ -32,9 +32,9 @@ class CommonsRaw(DataFrameModel):
         geometry: Polygon geometries in EPSG:27700.
     """
 
-    name: str = Field(coerce=True)
-    source: Category = Field(coerce=True, isin=["BPS_RCL", "BPS_RCL & CROW", "CROW", "HISTORIC2001?"])
-    geometry: Geometry(crs=SRID) = Field(coerce=True)
+    name: str = Field()
+    source: Category = Field(isin=["BPS_RCL", "BPS_RCL & CROW", "CROW", "HISTORIC2001?"])
+    geometry: Geometry(crs=SRID) = Field()
 
 
 commons_raw = SourceDataset(

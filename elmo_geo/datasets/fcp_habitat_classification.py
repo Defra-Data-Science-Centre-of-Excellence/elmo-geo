@@ -31,20 +31,17 @@ To resolved this issues, the CEH Land Cover Map dataset needs to be integrated i
 # TODO: https://github.com/Defra-Data-Science-Centre-of-Excellence/elm_modelling_strategy/issues/887
 """
 
-
-import pandas as pd
 from pandera import DataFrameModel, Field
 from pandera.dtypes import Category
 from pyspark.sql import Window
 from pyspark.sql import functions as F
 
 from elmo_geo.etl import DerivedDataset, SourceDataset
-from elmo_geo.utils.types import PandasDataFrame, SparkDataFrame
+from elmo_geo.utils.types import SparkDataFrame
 
 from .cec_soilscapes import cec_soilscapes_habitats_parcels
 from .defra_priority_habitats import defra_habitat_area_parcels
-from .moor import moorline_parcels
-from .rpa_reference_parcels import reference_parcels
+from .moor import is_upland_parcels
 
 
 class EVASTHabitatsMappingModel(DataFrameModel):
@@ -123,9 +120,9 @@ workbook but has been reformatted to a 'long' format to align with the analysis 
 """
 
 
-def _get_parcel_candidate_habitates(
-    reference_parcels: DerivedDataset,
-    moorline_parcels: DerivedDataset,
+
+def _get_parcel_candidate_habitats(
+    is_upland_parcels: DerivedDataset,
     cec_soilscapes_habitats_parcels: DerivedDataset,
     evast_habitat_mapping_raw: DerivedDataset,
 ) -> SparkDataFrame:
@@ -134,75 +131,38 @@ def _get_parcel_candidate_habitates(
     Use soilscapes soil type and moorland line (upland/lowland classification)
     to get candidate habitat types for each parcel.
     """
-    threshold = 0.1
 
-    sdf_isupland = (
-        reference_parcels.sdf()
-        .select("id_parcel")
-        .join(moorline_parcels.sdf().filter(f"{threshold} < proportion"), on="id_parcel", how="left")
-        .selectExpr("id_parcel", "COALESCE(name in ('MD', 'MS'), FALSE) as is_upland")
-    )
-
-    sdf_ss = cec_soilscapes_habitats_parcels.sdf().filter(F.expr(f"proportion>{threshold}")).select("id_parcel", "unit", "habitat_code", "habitat_type")
+    sdf_ss = cec_soilscapes_habitats_parcels.sdf().filter(F.expr("proportion>0.1")).select("id_parcel", "unit", "habitat_code", "habitat_type")
 
     # select lookup to action habitats for soilscapes habitats
     sdf_habitat_lu = (
         evast_habitat_mapping_raw.sdf()
         .filter(F.expr("source = 'soilscapes'"))
-        .selectExpr("action_group", "action_habitat", "is_upland as is_upland_map", "habitat_code")
+        .selectExpr("action_group", "action_habitat", "is_upland as is_upland_lu", "habitat_code")
     )
 
     # idenfity candidate habitats that can be created on parcels based on the parcel soil type
     # and whether the parcel is upland or lowland.
     return (
-        sdf_isupland.join(sdf_ss, on="id_parcel", how="left")
+        is_upland_parcels.sdf()
+        .join(sdf_ss, on="id_parcel", how="left")
         .join(sdf_habitat_lu, on="habitat_code", how="left")
-        .filter(F.expr("(is_upland_map is NULL) OR (is_upland=is_upland_map)"))
-        .select("id_parcel", "action_group", "action_habitat")
+        .filter(F.expr("(is_upland_lu is NULL) OR (is_upland=is_upland_lu)"))
+        .select("id_parcel", "action_group", "action_habitat", "is_upland")
         .dropDuplicates()
     )
 
-
-def _classify_parcel_habitat_by_phi_area(df: PandasDataFrame) -> PandasDataFrame:
-    """Identifies a habitat creation type for a parcel based on PHI area.
-
-    Takes an input dataframe with a single parcel id and multiple habitat
-    types and returns a dataframe with a single habitat type per habitat group
-    (wetland, species-rich grassland, heathland).
-
-    Filters by area of priority habitat inventory habitats within either a 2km or 5km
-    distance. The 2km distance is used to first check for nearby matching habitats.
-    If no matching habitats are found at the 2km threshold, matching habitats as the
-    5km threshold are used.
-
-    Parameters:
-        df: Dataframe of candidate habitat types and nearby phi habitats for a single parcel.
-    """
-    df_out = pd.DataFrame(columns=["action_group_phi", "action_habitat_phi"], data=[])
-
-    # first check for matching habitats within 2km
-    df_2km = df.loc[df["distance"] == 2_000]
-    if df_2km.shape[0] > 0:
-        df_2km = df_2km.groupby("action_group_phi").apply(lambda df: df.sort_values(by="area", ascending=False).iloc[:1])
-        df_out = pd.concat([df_out, df_2km]).reset_index()
-
-    # then check for matching habitats within 5km
-    df_5km = df.loc[df["distance"] == 5_000]
-    if df_5km.shape[0] > 0:
-        df_5km = df_5km.groupby("action_group_phi").apply(lambda df: df.sort_values(by="area", ascending=False).iloc[:1])
-        df_out = pd.concat([df_out, df_5km]).reset_index()
-
-    # Combine, keeping the rare habitat classifications as 1st priority
-    return df_out[["id_parcel", "action_group_phi", "action_habitat_phi"]].drop_duplicates(subset="action_group_phi", keep="first")
-
-
 def _filter_candidates_by_phi(
-    sdf_candidates: SparkDataFrame,
-    defra_habitat_area_parcels: DerivedDataset,
-    evast_habitat_mapping_raw: DerivedDataset,
+    sdf_candidates: SparkDataFrame, defra_habitat_area_parcels: DerivedDataset, evast_habitat_mapping_raw: DerivedDataset, threshold_distances=[1_000, 3_000]
 ) -> SparkDataFrame:
-    """Join candidate parcels to habitat type lookup to a dataset of nearby priority habitats
+    """Join candidate parcel habitat types to a dataset of nearby priority habitats
     in order to select which action habitat to apply to that parcel.
+
+    Biases assignment of rare habitats where they are founds within the minimum threshold distance (1km by deafault). This
+    is because rare habitats will typically have a smaller area and so could be underassigned by an area based assignment.
+
+    The assignments is based on ranking habitats by threshold distance, the 'nearby_rare_habitat' flag, and PHI habitat area. This
+    approximates a distance weighted area based assignment, with priority for rare habitats that are found within the minimum distance threshold.
 
     Parameters:
         sdf_candidates: Lookup from parcel ID to candidate habitats to assign to that parcel.
@@ -211,30 +171,42 @@ def _filter_candidates_by_phi(
         evast_habitat_mapping_raw: Lookup between habitat names used in the priority habitats inventory (PHI)
             and EVAST.
     """
-    # Get habitat lookup for phi habitat names
-    sdf_habitat_lu = (
+    rare_habitats = [
+        "Lowland Raised Bog",
+        "Upland Fen",
+        "Purple Moor Grass & Rush Pasture",
+        "Lowland dry acid grassland",
+        "Upland calcareous grassland",
+        "Upland hay meadows",
+    ]
+
+    # Get habitat lookup for phi habitat names.
+    # Create boolean nearby_rare_habitats to bias assignment of rare habitats.
+    sdf_phi_lu = (
         evast_habitat_mapping_raw.sdf()
         .filter(F.expr("source = 'phi'"))
-        .selectExpr("action_group as action_group_phi", "action_habitat as action_habitat_phi", "habitat_name")
+        .selectExpr("action_group", "action_habitat", "habitat_name")
+        .dropDuplicates()
+        .join(defra_habitat_area_parcels.sdf().filter(F.col("distance_threshold").isin(threshold_distances)), on="habitat_name", how="left")
+        .withColumn("nearby_rare_habitat", F.col("habitat_name").isin(rare_habitats) & (F.col("distance_threshold") == min(threshold_distances)))
     )
 
-    # join in nearby phi habitats and filter to where the phi action habitat type matches a soilscape based action habitat
-    # Then select which habitat to assign to each parcel based on distance and area ranking
-    window = Window.partitionBy("id_parcel", "action_group_phi").orderBy(F.col("distance").asc(), F.col("area").desc())
+    # Join nearby PHI habitats to the parcels. This links each parcel to a multiple soilscapes habitats and PHI habitats.
+    # Filter this down to where there is aggrement between the soilscapes habitat and the PHI habitat by inner joining to the habitat lookup.
+    # Finally, select one habitat per action group by ranking on distance and area.
+    window = Window.partitionBy("id_parcel", "action_group").orderBy(
+        F.col("distance_threshold").asc(), F.col("nearby_rare_habitat").desc(), F.col("area").desc()
+    )
     return (
-        sdf_candidates.join(defra_habitat_area_parcels.sdf(), on="id_parcel", how="outer")
-        .join(sdf_habitat_lu, on="habitat_name", how="left")
-        .filter(F.expr("action_habitat = action_habitat_phi"))
-        .filter(F.row_number().over(window) == 1)
-        # .repartition(200, "id_parcel")
-        # .groupby("id_parcel")
-        # .applyInPandas(_classify_parcel_habitat_by_phi_area, schema="id_parcel string, action_group_phi string, action_habitat_phi string")
+        sdf_candidates.join(sdf_phi_lu, on=["id_parcel", "action_group", "action_habitat"], how="inner")
+        .withColumn("row_number", F.row_number().over(window))
+        .filter("row_number=1")
+        .select("id_parcel", "action_group", "action_habitat")
     )
 
 
-def _transform(
-    reference_parcels: DerivedDataset,
-    moorline_parcels: DerivedDataset,
+def _assign_habitat(
+    is_upland_parcels: DerivedDataset,
     cec_soilscapes_habitats_parcels: DerivedDataset,
     evast_habitat_mapping_raw: DerivedDataset,
     defra_habitat_area_parcels: DerivedDataset,
@@ -251,23 +223,26 @@ def _transform(
     These are termed the 'candidate' habitats.
     3. Further filter the candidates to only assign habitats where an instance of the habitat exists within a threshold distance
     of the parcel according to the Priority Habitat Inventory (PHI). Where multiple such candidates exist assign the habitat with the
-    largest area in the PHI.
+    largest area in the PHI. Rare habitats are prioristised if they are found within the minimum threshold distance of a parcel.
 
-    The threshold distance used depends on the habitat type. The function first tries to assign habitat types using a 2km distance
-    threshold and then a 5km distance threshold. This is to prioritise nearby habitats where they match to the soilscapes habitat
+    Rare habitats (from EVAST):
+    - Lowland Raised Bog
+    - Upland Fen
+    - Purple Moor Grass & Rush Pasture
+    - Lowland dry acid grassland
+    - Upland calcareous grassland
+    - Upland hay meadows
+
+    The threshold distance used depends on the habitat type. The function first tries to assign habitat types using a 1km distance
+    threshold and then a 3km distance threshold. This is to prioritise nearby habitats where they match to the soilscapes habitat
     type, but permit a larger distance threshold where no match is found nearby.
     """
 
-    return (
-        _get_parcel_candidate_habitates(
-            reference_parcels,
-            moorline_parcels,
-            cec_soilscapes_habitats_parcels,
-            evast_habitat_mapping_raw,
-        )
-        .transform(_filter_candidates_by_phi, defra_habitat_area_parcels, evast_habitat_mapping_raw)
-        .withColumnsRenamed({"action_group_phi": "action_group", "action_habitat_phi": "action_habitat"})
-    )
+    return _get_parcel_candidate_habitats(
+        is_upland_parcels,
+        cec_soilscapes_habitats_parcels,
+        evast_habitat_mapping_raw,
+    ).transform(_filter_candidates_by_phi, defra_habitat_area_parcels, evast_habitat_mapping_raw)
 
 
 class HabitatCreationTypeParcelModel(DataFrameModel):
@@ -307,10 +282,9 @@ fcp_habitat_creation_type_parcel = DerivedDataset(
     level1="fcp",
     restricted=False,
     is_geo=False,
-    func=_transform,
+    func=_assign_habitat,
     dependencies=[
-        reference_parcels,
-        moorline_parcels,
+        is_upland_parcels,
         cec_soilscapes_habitats_parcels,
         evast_habitat_mapping_raw,
         defra_habitat_area_parcels,
@@ -326,7 +300,6 @@ The dataset is created through a combination of Natmap Soilscapes and Priority H
 geometries joined to parcels. To map between the different habitat names used in these datasets
 a lookup table provided by EVAST is used.
 """
-
 
 def _habitat_management_classification(
     reference_parcels: DerivedDataset,

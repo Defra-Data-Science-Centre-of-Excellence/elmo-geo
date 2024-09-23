@@ -67,7 +67,8 @@ def auto_repartition(
 def load_sdf(path: str, **kwargs) -> SparkDataFrame:
     """Load SparkDataFrame from glob path.
     Automatically converts file api to spark api.
-    And catches failure to coerce schemas for datasets with multiple datatypes (i.e. Float>Double or Timestamp_NTZ>Timestamp).
+    And catches failure to coerce schemas for datasets with multiple datatypes
+    (i.e. Float>Double or Timestamp_NTZ>Timestamp) that differ between partitions.
     """
 
     def read(f: str) -> SparkDataFrame:
@@ -94,9 +95,9 @@ def read_file(source_path: str, is_geo: bool, layer: int | str | None = None) ->
         else:
             layers = gpd.list_layers(path)["name"]
             if layer is None and 1 < len(layers):
-                df = gpd.GeoDataFrame(pd.concat((gpd.read_file(path, layer=layer).assign(layer=layer) for layer in layers), ignore_index=True))
+                df = gpd.GeoDataFrame(pd.concat((gpd.read_file(path, layer=layer, use_arrow=True).assign(layer=layer) for layer in layers), ignore_index=True))
             else:
-                df = gpd.read_file(path, layer=layer)
+                df = gpd.read_file(path, layer=layer, use_arrow=True)
     else:
         if path.suffix == ".parquet" or path.is_dir():
             df = pd.read_parquet(path)

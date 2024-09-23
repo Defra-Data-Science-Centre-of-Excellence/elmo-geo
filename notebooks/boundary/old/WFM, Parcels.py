@@ -5,7 +5,6 @@
 
 import geopandas as gpd
 from cdap_geo import read_gpkg
-from fiona import listlayers
 from pyspark.sql import functions as F
 
 # COMMAND ----------
@@ -17,7 +16,7 @@ sf_wfm = "dbfs:/mnt/lab/unrestricted/elm/wfm/v3.parquet"
 
 # COMMAND ----------
 
-layers = listlayers(f_parcels_base)
+layers = gpd.list_layers(f_parcels_base)["name"].tolist()
 print(layers)
 assert len(layers) == 1  # If not we need to repeat this for each layer
 

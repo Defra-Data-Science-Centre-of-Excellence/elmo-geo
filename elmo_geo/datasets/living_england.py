@@ -8,7 +8,7 @@ Note: Comes in 3 parquet parts, and such reading the folder combines them.
 from functools import partial
 
 from pandera import DataFrameModel, Field
-from pandera.engines.pandas_engine import Geometry
+from pandera.engines.geopandas_engine import Geometry
 
 from elmo_geo.etl import SRID, DerivedDataset, SourceDataset
 from elmo_geo.etl.transformations import join_parcels
@@ -46,11 +46,11 @@ class LivingEnglandHabitatMapPhase4Raw(DataFrameModel):
         geometry: (Multi)Polygon geometries in EPSG:27700.
     """
 
-    A_pred: str = Field(coerce=True)
-    A_prob: float = Field(coerce=True, ge=0, le=100)
-    B_pred: str = Field(coerce=True, nullable=True)
-    B_prob: float = Field(coerce=True, nullable=True, ge=0, le=100)
-    geometry: Geometry(crs=SRID) = Field(coerce=True)
+    A_pred: str = Field()
+    A_prob: float = Field(ge=0, le=100)
+    B_pred: str = Field(nullable=True)
+    B_prob: float = Field(nullable=True, ge=0, le=100)
+    geometry: Geometry(crs=SRID) = Field()
 
 
 living_england_habitat_map_phase_4_raw = SourceDataset(
