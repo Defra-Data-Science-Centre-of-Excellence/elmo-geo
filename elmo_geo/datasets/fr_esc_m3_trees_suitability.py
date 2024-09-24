@@ -15,7 +15,6 @@ import re
 
 import pandas as pd
 from pandera import DataFrameModel, Field
-from pandera.dtypes import Category
 from pyspark.sql import functions as F
 
 from elmo_geo.etl import Dataset, DerivedDataset, SourceDataset
@@ -78,8 +77,8 @@ class ESCTreeSuitabilityModel(DataFrameModel):
 
     id_parcel: str = Field()
     nopeatArea: float = Field()
-    period_T1_T2: Category = Field(isin=["2029_2036-2021_2036", "2037_2050-2021_2050", "2051_2100-2021_2100", "2021_2028-2021_2028"])
-    woodland_type: Category = Field(isin=["coniferous", "broadleaved", "riparian"])
+    period_T1_T2: str = Field(isin=["2029_2036-2021_2036", "2037_2050-2021_2050", "2051_2100-2021_2100", "2021_2028-2021_2028"])
+    woodland_type: str = Field(isin=["coniferous", "broadleaved", "riparian"])
     suitability: float = Field()
     n_species: int = Field()
 

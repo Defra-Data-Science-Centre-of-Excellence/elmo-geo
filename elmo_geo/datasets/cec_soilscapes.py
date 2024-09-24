@@ -11,7 +11,6 @@ from functools import partial
 
 import pandas as pd
 from pandera import DataFrameModel, Field
-from pandera.dtypes import Category
 from pandera.engines.geopandas_engine import Geometry
 
 from elmo_geo.etl import DerivedDataset, SourceDataset
@@ -62,11 +61,11 @@ class CECSoilScapesParcels(DataFrameModel):
     # TODO: Alias the field names once PR #209. Task for aliasing:
     # https://github.com/Defra-Data-Science-Centre-of-Excellence/elmo-geo/issues/223
     id_parcel: str = Field()
-    unit: Category = Field(isin=set(range(1, 32)).difference([29]))
-    natural_dr: Category = Field(
+    unit: int = Field(isin=set(range(1, 32)).difference([29]))
+    natural_dr: str = Field(
         isin=["Freely draining", "Naturally wet", " ", "Impeded drainage", "Variable", "Slightly impeded drainage", "Surface wetness"],
     )
-    natural_fe: Category = Field(
+    natural_fe: str = Field(
         isin=[
             "Very low",
             "Low",
@@ -148,9 +147,9 @@ class CECSoilScapesHabitatsParcels(DataFrameModel):
     """
 
     id_parcel: str = Field()
-    unit: Category = Field(nullable=True, isin=set(range(1, 32)).difference([29]))
-    habitat_code: Category = Field(nullable=True, isin=["UHL", "LHL", "LCG", "LAG", "LMW", "UHM", "UCG", "LRB", "UFS", "BBG", "LFN", "PMG"])
-    habitat_name: Category = Field(
+    unit: int = Field(nullable=True, isin=set(range(1, 32)).difference([29]))
+    habitat_code: str = Field(nullable=True, isin=["UHL", "LHL", "LCG", "LAG", "LMW", "UHM", "UCG", "LRB", "UFS", "BBG", "LFN", "PMG"])
+    habitat_name: str = Field(
         nullable=True,
         isin=[
             "Upland heathland",

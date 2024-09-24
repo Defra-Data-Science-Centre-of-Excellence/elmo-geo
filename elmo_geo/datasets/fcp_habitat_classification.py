@@ -33,7 +33,6 @@ To resolved this issues, the CEH Land Cover Map dataset needs to be integrated i
 
 
 from pandera import DataFrameModel, Field
-from pandera.dtypes import Category
 from pyspark.sql import Window
 from pyspark.sql import functions as F
 
@@ -62,8 +61,8 @@ class EVASTHabitatsMappingModel(DataFrameModel):
             uptake data).
     """
 
-    action_group: Category = Field(coerce=True, isin=["Create Heathland", "Create Wetland", "Create SRG"])
-    action_habitat: Category = Field(
+    action_group: str = Field(coerce=True, isin=["Create Heathland", "Create Wetland", "Create SRG"])
+    action_habitat: str = Field(
         coerce=True,
         isin=[
             "upland",
@@ -80,7 +79,7 @@ class EVASTHabitatsMappingModel(DataFrameModel):
         ],
     )
     is_upland: bool = Field(coerce=True, nullable=True)
-    bimla_habitat: Category = Field(
+    bimla_habitat: str = Field(
         alias="BIMLA_model_grouping",
         coerce=True,
         isin=[
@@ -258,8 +257,8 @@ class HabitatCreationTypeParcelModel(DataFrameModel):
     """
 
     id_parcel: str = Field()
-    action_group: Category = Field(coerce=True, isin=["Create Heathland", "Create Wetland", "Create SRG"])
-    action_habitat: Category = Field(
+    action_group: str = Field(coerce=True, isin=["Create Heathland", "Create Wetland", "Create SRG"])
+    action_habitat: str = Field(
         coerce=True,
         isin=[
             "lowland",

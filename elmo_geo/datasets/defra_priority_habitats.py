@@ -9,7 +9,6 @@ from functools import partial, reduce
 
 import pandas as pd
 from pandera import DataFrameModel, Field
-from pandera.dtypes import Category
 from pandera.engines.geopandas_engine import Geometry
 from pyspark.sql import functions as F
 
@@ -117,7 +116,7 @@ class PriorityHabitatParcels(DataFrameModel):
     """
 
     id_parcel: str = Field()
-    habitat_name: Category = Field()
+    habitat_name: str = Field()
     proportion: float = Field(ge=0, le=1)
 
 
@@ -132,7 +131,7 @@ class PriorityHabitatProximity(DataFrameModel):
     """
 
     id_parcel: str = Field()
-    habitat_name: Category = Field()
+    habitat_name: str = Field()
     distance: int = Field()
 
 
@@ -245,7 +244,7 @@ class PriorityHabitatArea(DataFrameModel):
     """
 
     id_parcel: str = Field(coerce=True)
-    habitat_name: Category = Field(coerce=True)
+    habitat_name: str = Field(coerce=True)
     area: float = Field(coerce=True)
     minimum_distance: int = Field(coerce=True)
     distance_threshold: int = Field(coerce=True)

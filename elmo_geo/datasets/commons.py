@@ -7,7 +7,6 @@ Common Land Amalgamation merges Registered Common Land (BPS Layer), CRoW Act 200
 from functools import partial
 
 from pandera import DataFrameModel, Field
-from pandera.dtypes import Category
 from pandera.engines.geopandas_engine import Geometry
 from pyspark.sql import functions as F
 
@@ -33,7 +32,7 @@ class CommonsRaw(DataFrameModel):
     """
 
     name: str = Field()
-    source: Category = Field(isin=["BPS_RCL", "BPS_RCL & CROW", "CROW", "HISTORIC2001?"])
+    source: str = Field(isin=["BPS_RCL", "BPS_RCL & CROW", "CROW", "HISTORIC2001?"])
     geometry: Geometry(crs=SRID) = Field()
 
 

@@ -9,7 +9,6 @@ from functools import partial
 
 import geopandas as gpd
 from pandera import DataFrameModel, Field
-from pandera.dtypes import Category
 from pandera.engines.geopandas_engine import Geometry
 
 from elmo_geo.etl import SRID, Dataset, DerivedDataset, SourceDataset
@@ -28,7 +27,7 @@ class WoodlandSensitivityClean(DataFrameModel):
         geometry: The sensitivity classification's geospatial extent (polygons).
     """
 
-    sensitivity: Category = Field(isin=["Unsuitable", "High", "Medium", "Low"])
+    sensitivity: str = Field(isin=["Unsuitable", "High", "Medium", "Low"])
     geometry: Geometry(crs=SRID) = Field()
 
 
@@ -42,7 +41,7 @@ class WoodlandSensitivityParcels(DataFrameModel):
     """
 
     id_parcel: str = Field()
-    sensitivity: Category = Field(isin=["Unsuitable", "High", "Medium", "Low"])
+    sensitivity: str = Field(isin=["Unsuitable", "High", "Medium", "Low"])
     proportion: float = Field(ge=0, le=1)
 
 
