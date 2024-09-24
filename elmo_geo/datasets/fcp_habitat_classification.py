@@ -31,7 +31,6 @@ To resolved this issues, the CEH Land Cover Map dataset needs to be integrated i
 # TODO: https://github.com/Defra-Data-Science-Centre-of-Excellence/elm_modelling_strategy/issues/887
 """
 
-
 from pandera import DataFrameModel, Field
 from pandera.dtypes import Category
 from pyspark.sql import Window
@@ -41,8 +40,9 @@ from elmo_geo.etl import DerivedDataset, SourceDataset
 from elmo_geo.utils.types import SparkDataFrame
 
 from .cec_soilscapes import cec_soilscapes_habitats_parcels
-from .defra_priority_habitats import defra_habitat_area_parcels
+from .defra_priority_habitats import defra_habitat_area_parcels, defra_priority_habitat_parcels
 from .moor import is_upland_parcels
+from .rpa_reference_parcels import reference_parcels
 
 
 class EVASTHabitatsMappingModel(DataFrameModel):
@@ -206,7 +206,7 @@ def _filter_candidates_by_phi(
     )
 
 
-def _assign_habitat(
+def _habitat_creation_classification(
     is_upland_parcels: DerivedDataset,
     cec_soilscapes_habitats_parcels: DerivedDataset,
     evast_habitat_mapping_raw: DerivedDataset,
@@ -239,11 +239,15 @@ def _assign_habitat(
     type, but permit a larger distance threshold where no match is found nearby.
     """
 
-    return _get_parcel_candidate_habitats(
-        is_upland_parcels,
-        cec_soilscapes_habitats_parcels,
-        evast_habitat_mapping_raw,
-    ).transform(_filter_candidates_by_phi, defra_habitat_area_parcels, evast_habitat_mapping_raw)
+    return (
+        _get_parcel_candidate_habitats(
+            is_upland_parcels,
+            cec_soilscapes_habitats_parcels,
+            evast_habitat_mapping_raw,
+        )
+        .transform(_filter_candidates_by_phi, defra_habitat_area_parcels, evast_habitat_mapping_raw)
+        .toPandas()
+    )
 
 
 class HabitatCreationTypeParcelModel(DataFrameModel):
@@ -283,7 +287,7 @@ fcp_habitat_creation_type_parcel = DerivedDataset(
     level1="fcp",
     restricted=False,
     is_geo=False,
-    func=_assign_habitat,
+    func=_habitat_creation_classification,
     dependencies=[
         is_upland_parcels,
         cec_soilscapes_habitats_parcels,
@@ -300,4 +304,102 @@ habitat creation actions: create wetland, create species-rich grassland, and cre
 The dataset is created through a combination of Natmap Soilscapes and Priority Habitats Inventory
 geometries joined to parcels. To map between the different habitat names used in these datasets
 a lookup table provided by EVAST is used.
+"""
+
+
+def _habitat_management_classification(
+    reference_parcels: DerivedDataset,
+    defra_priority_habitat_parcels: DerivedDataset,
+    evast_habitat_mapping_raw: DerivedDataset,
+):
+    """Assign a habitat management habitat type to each parcel.
+
+    Assignment is based on the proportion of priority habitat inventory (PHI)
+    geometries overlapping the parcel. Where a PHI geometry corresponding to a
+    habitat that is covered by a habitat management action, that parcel can be considered
+    eligible management actions for that type of habitat. The parcel must be at least 10%
+    intersected by a habitat to be considered eligible for management of that habitat.
+
+    The output data includes the area of each habitat type that overlaps the parcel as well as
+    the total area for each habitat action group (Create Heathland, Create SRG, Create Wetland).
+    """
+
+    sdf = (
+        reference_parcels.sdf()
+        .join(defra_priority_habitat_parcels.sdf().filter("proportion>=0.1"), on="id_parcel", how="inner")
+        .join(
+            evast_habitat_mapping_raw.sdf().filter(F.expr("source = 'phi'")).select("action_group", "action_habitat", "habitat_name"),
+            on="habitat_name",
+            how="inner",
+        )
+        .selectExpr("id_parcel", "action_group", "action_habitat", "proportion", "area_ha*proportion as habitat_area_ha")
+    )
+    return sdf.unionByName(
+        sdf.groupby("id_parcel", "action_group").agg(
+            F.expr("'action_group_total' AS action_habitat"),
+            F.expr("FIRST(proportion) AS proportion"),
+            F.expr("SUM(habitat_area_ha) AS habitat_area_ha"),
+        )
+    ).toPandas()
+
+
+class HabitatManagementTypeParcelModel(DataFrameModel):
+    """Datamodel for the habitat creation type dataset.
+
+    Attributes:
+        id_parcel: The parcel ID.
+        action_group: The type of habitat creation action. Either 'Create Wetland',
+            'Create SRG', or 'Create Heathland'.
+        action_habitat: The specific habitat type assigned to this parcel. This indicates
+            what type of habitat is created on the parcel under the habitat creation action.
+        proportion: Proportion of parcel intersected by this habitat.
+        habitat_area_ha: Area of parcel intersected by this habitat in hectares.
+    """
+
+    id_parcel: str = Field()
+    action_group: str = Field(isin=["Create Heathland", "Create Wetland", "Create SRG"])
+    action_habitat: str = Field(
+        nullable=True,
+        isin=[
+            "lowland",
+            "lowland_meadow",
+            "upland_meadow",
+            "lowland_dry_acid_gr",
+            "fen",
+            "lowland_calc_gr",
+            "lowland_acid_gr",
+            "upland_acid_gr",
+            "upland_calc_gr",
+            "bog",
+            "upland",
+            "action_group_total",
+        ],
+    )
+    proportion: float = Field()
+    habitat_area_ha: float = Field()
+
+
+fcp_habitat_management_type_parcel = DerivedDataset(
+    name="fcp_habitat_management_type_parcel",
+    level0="silver",
+    level1="fcp",
+    restricted=False,
+    is_geo=False,
+    func=_habitat_management_classification,
+    dependencies=[
+        reference_parcels,
+        defra_priority_habitat_parcels,
+        evast_habitat_mapping_raw,
+    ],
+    model=HabitatManagementTypeParcelModel,
+)
+"""Applies the EVAST habitat name lookup dataset to assign an EVAST habitat type
+(refered to as factor level by EVAST) to parcels based on whether they intersect priority habitat
+inventory (PHI) geometries.
+
+This is used to model which parcels are eligible for habitat management actions.
+Comparison to actual agreements show that parcels which do not intersect priority
+habitats do also successfully claim for habitat management actions. Due to the low
+coverage of PHI data we expect this dataset greatly underestimates the area eligible
+for habitat maintenance actions.
 """
