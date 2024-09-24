@@ -179,6 +179,7 @@ catalogue = [
     living_england_habitat_map_phase_4_parcels,
     living_england_habitat_map_phase_4_raw,
     moorline_parcels,
+    moorline_raw,
     national_landscapes_raw,
     national_parks_raw,
     nca_parcels,

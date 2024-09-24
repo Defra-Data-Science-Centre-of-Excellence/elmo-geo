@@ -206,7 +206,7 @@ def _filter_candidates_by_phi(
     )
 
 
-def _assign_habitat(
+def _habitat_creation_classification(
     is_upland_parcels: DerivedDataset,
     cec_soilscapes_habitats_parcels: DerivedDataset,
     evast_habitat_mapping_raw: DerivedDataset,
@@ -239,11 +239,15 @@ def _assign_habitat(
     type, but permit a larger distance threshold where no match is found nearby.
     """
 
-    return _get_parcel_candidate_habitats(
-        is_upland_parcels,
-        cec_soilscapes_habitats_parcels,
-        evast_habitat_mapping_raw,
-    ).transform(_filter_candidates_by_phi, defra_habitat_area_parcels, evast_habitat_mapping_raw)
+    return (
+        _get_parcel_candidate_habitats(
+            is_upland_parcels,
+            cec_soilscapes_habitats_parcels,
+            evast_habitat_mapping_raw,
+        )
+        .transform(_filter_candidates_by_phi, defra_habitat_area_parcels, evast_habitat_mapping_raw)
+        .toPandas()
+    )
 
 
 class HabitatCreationTypeParcelModel(DataFrameModel):
@@ -283,7 +287,7 @@ fcp_habitat_creation_type_parcel = DerivedDataset(
     level1="fcp",
     restricted=False,
     is_geo=False,
-    func=_assign_habitat,
+    func=_habitat_creation_classification,
     dependencies=[
         is_upland_parcels,
         cec_soilscapes_habitats_parcels,
@@ -336,7 +340,7 @@ def _habitat_management_classification(
             F.expr("FIRST(proportion) AS proportion"),
             F.expr("SUM(habitat_area_ha) AS habitat_area_ha"),
         )
-    )
+    ).toPandas()
 
 
 class HabitatManagementTypeParcelModel(DataFrameModel):
