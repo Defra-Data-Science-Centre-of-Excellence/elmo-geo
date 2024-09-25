@@ -30,6 +30,7 @@ from .defra_national_character_areas import (
 )
 from .defra_priority_habitats import (
     defra_grassland_proximity_parcels,
+    defra_habitat_area_parcels,
     defra_heathland_proximity_parcels,
     defra_priority_habitat_england_raw,
     defra_priority_habitat_parcels,
@@ -56,6 +57,11 @@ from .fc_woodland_sensitivity import (
     woodland_creation_sensitivity_var3_parcels,
     woodland_creation_sensitivity_var3_raw,
 )
+from .fcp_habitat_classification import (
+    evast_habitat_mapping_raw,
+    fcp_habitat_creation_type_parcel,
+    fcp_habitat_management_type_parcel,
+)
 from .fr_esc_m3_trees import (
     esc_m3_geo,
     esc_m3_raw,
@@ -70,11 +76,12 @@ from .hedges import (
     rpa_hedges_raw,
 )
 from .living_england import (
-    living_england_habitat_map_phase_4_parcel,
+    living_england_habitat_map_phase_4_parcels,
     living_england_habitat_map_phase_4_raw,
 )
 from .moor import (
-    moorline_parcel,
+    is_upland_parcels,
+    moorline_parcels,
     moorline_raw,
 )
 from .ons import (
@@ -144,6 +151,7 @@ catalogue = [
     cua_parcels,
     cua_raw,
     defra_grassland_proximity_parcels,
+    defra_habitat_area_parcels,
     defra_heathland_proximity_parcels,
     defra_priority_habitat_england_raw,
     defra_priority_habitat_parcels,
@@ -153,20 +161,24 @@ catalogue = [
     esc_suitability_coniferous_raw,
     esc_suitability_riparian_raw,
     esc_tree_suitability,
+    evast_habitat_mapping_raw,
     ewco_nature_recovery_priority_habitat_parcels,
     ewco_nature_recovery_priority_habitat_raw,
     ewco_nature_recovery_priority_habitat,
+    fcp_habitat_creation_type_parcel,
+    fcp_habitat_management_type_parcel,
     flood_risk_areas_parcels,
     flood_risk_areas_raw,
+    is_upland_parcels,
     itl2_parcels,
     itl2_raw,
     jncc_spa_parcels,
     jncc_spa_raw,
     lad_parcels,
     lad_raw,
-    living_england_habitat_map_phase_4_parcel,
+    living_england_habitat_map_phase_4_parcels,
     living_england_habitat_map_phase_4_raw,
-    moorline_parcel,
+    moorline_parcels,
     moorline_raw,
     national_landscapes_raw,
     national_parks_raw,

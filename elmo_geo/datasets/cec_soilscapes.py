@@ -136,8 +136,9 @@ def _join_habitat_types(
     return soilscapes_parcels.pdf().merge(df_map, on="unit", how="left", validate="m:m")
 
 
-class CECSoilScapesParcels(DataFrameModel):
-    """Cranfield Environment Centre (CEC) SoilScapes data model.
+class CECSoilScapesHabitatsParcels(DataFrameModel):
+    """Cranfield Environment Centre (CEC) SoilScapes joined to parcels
+    and habitat types data model.
 
     Parameters:
         id_parcel: The parcel ID.
@@ -174,6 +175,7 @@ cec_soilscapes_habitats_parcels = DerivedDataset(
     level1="cec",
     restricted=True,
     is_geo=False,
+    model=CECSoilScapesHabitatsParcels,
     dependencies=[cec_soilscapes_parcels],
     func=_join_habitat_types,
 )
