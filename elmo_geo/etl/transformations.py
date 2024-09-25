@@ -2,8 +2,11 @@
 
 For use in `elmo.etl.DerivedDataset.func`.
 """
+from functools import partial
+
 import geopandas as gpd
 from pyspark.sql import functions as F
+from pyspark.sql.types import FloatType, StringType, StructField, StructType
 
 from elmo_geo.io.file import auto_repartition
 from elmo_geo.st.geometry import load_geometry
@@ -86,35 +89,49 @@ def fn_pass(sdf: SparkDataFrame) -> SparkDataFrame:
     return sdf
 
 
-def _st_union_right(pdf: PandasDataFrame) -> PandasDataFrame:
-    "Select first row with the union of geometry_right."
-    return pdf.iloc[:1].assign(geometry_right=gpd.GeoSeries.from_wkb(pdf["geometry_right"]).union_all().wkb)
+def _st_parcel_proportion(pdf: PandasDataFrame) -> PandasDataFrame:
+    "Calculate the proportion overlap between a parcel geometry and its overlapping features"
+    geometry_left_first = gpd.GeoSeries.from_wkb(pdf["geometry_left"])[0]  # since grouping by id_parcel, selecting first g_left gives the parcel geom.
+    geometry_right_union = gpd.GeoSeries.from_wkb(pdf["geometry_right"]).union_all()  # combine intersecting feature geometries into single geom.
+    geometry_intersection = geometry_left_first.intersection(geometry_right_union)
+    return (
+        pdf.iloc[:1]
+        .assign(proportion=max(0, min(1, (geometry_intersection.area / geometry_left_first.area))))
+        .drop(["geometry_left", "geometry_right"], axis=1)
+    )
 
 
-def sjoin_parcels(
+def _st_boundary_proportions(pdf: PandasDataFrame, buffers: list[float] = []) -> PandasDataFrame:
+    "Calculate the proportion overlap between parcel boundary segments its overlapping features"
+    geometry_right_union = gpd.GeoSeries.from_wkb(pdf["geometry_right"]).union_all()  # combine intersecting feature geometries into single geom.
+    segments = gpd.GeoSeries.from_wkb(pdf["geometry"])
+    for buf in buffers:
+        intersection_lengths = segments.map(lambda g: g.intersection(geometry_right_union.buffer(buf)).length)
+        pdf[f"proportion_{buf}m"] = (intersection_lengths / segments.length).clip(lower=0, upper=1)
+    return pdf.drop(["geometry", "geometry_right", "geometry_left"], axis=1)
+
+
+def sjoin_parcel_proportion(
     parcels: Dataset | SparkDataFrame,
-    feature: Dataset | SparkDataFrame,
+    features: Dataset | SparkDataFrame,
     columns: list[str] = [],
     fn_pre: callable = fn_pass,
     fn_post: callable = fn_pass,
     **kwargs,
 ):
-    """Spatially join features dataset to parcels and groups.
-    Returns a geospatial dataframe; id_parcel, *columns, geometry_left, geometry_right.
-
-    Parameters:
-        parcels: dataset containing rpa reference parcels.
-        feature: dataset is assumed to be a source dataset in EPSG:27700 without any geometry tidying.
-        columns: from the feature dataset to keep, and group by.
-        fn_pre: transforms sdf_feature after it is loaded, and before joined with parcels, used for filtering and renaming.
-        fn_post: transforms sdf output after grouping by, used for filtering and renaming columns.
-        **kwargs: passed to elmo_geo.st.sjoin, used for distance joins.
-    """
-    cols = ["id_parcel", *columns]
-    sdf_feature = feature if isinstance(feature, SparkDataFrame) else feature.sdf()
+    "Spatially joins datasets, groups, and calculates the proportional overlap, returning a non-geospatial dataframe."
+    sdf_features = features if isinstance(features, SparkDataFrame) else features.sdf()
     sdf_parcels = parcels if isinstance(parcels, SparkDataFrame) else parcels.sdf()
+
+    cols = ["id_parcel", *columns]
+    schema = StructType(
+        [StructField("id_parcel", StringType(), False)]
+        + [field for field in sdf_features.schema.fields if field.name in columns]
+        + [StructField("proportion", FloatType(), False)]
+    )
+
     return (
-        sdf_feature.transform(auto_repartition)  # TODO: move to SourceDataset, DerivedDatasets should be well partitioned/
+        sdf_features.transform(auto_repartition)  # TODO: move to SourceDataset, DerivedDatasets should be well partitioned/
         .withColumn("geometry", load_geometry(encoding_fn="", subdivide=True))  # TODO: ^
         .transform(fn_pre)
         .transform(lambda sdf: sjoin(sdf_parcels, sdf, **kwargs))
@@ -123,44 +140,49 @@ def sjoin_parcels(
             "ST_AsBinary(geometry_left) AS geometry_left",
             "ST_AsBinary(geometry_right) AS geometry_right",
         )
-        .transform(lambda sdf: sdf.groupby(*cols).applyInPandas(_st_union_right, sdf.schema))
-        .selectExpr(
-            *cols,
-            "ST_GeomFromWKB(geometry_left) AS geometry_left",
-            "ST_GeomFromWKB(geometry_right) AS geometry_right",
-        )
+        .transform(lambda sdf: sdf.groupby(*cols).applyInPandas(_st_parcel_proportion, schema))
         .transform(fn_post)
+        .toPandas()
     )
-
-
-def sjoin_parcel_proportion(
-    parcel: Dataset | SparkDataFrame,
-    features: Dataset | SparkDataFrame,
-    **kwargs,
-):
-    "Spatially joins datasets, groups, and calculates the proportional overlap, returning a non-geospatial dataframe."
-    expr = "ST_Intersection(geometry_left, geometry_right)"
-    expr = f"ST_Area({expr}) / ST_Area(geometry_left)"
-    expr = f"GREATEST(LEAST({expr}, 0), 1)"
-    return sjoin_parcels(parcel, features, **kwargs).withColumn("proportion", F.expr(expr)).drop("geometry_left", "geometry_right")
 
 
 def sjoin_boundary_proportion(
     boundary_segments: Dataset,
-    parcel: Dataset | SparkDataFrame,
+    parcels: Dataset | SparkDataFrame,
     features: Dataset | SparkDataFrame,
+    columns: list[str] = [],
     buffers: list[float] = [0, 2, 8, 12, 24],
+    fn_pre: callable = fn_pass,
+    fn_post: callable = fn_pass,
     **kwargs,
 ):
     """Spatially joins with parcels, groups, key joins with boundaries, calculating proportional overlap for multiple buffer distances.
     Returns a non-geospatial dataframe.
     """
-    expr = "ST_Intersection(geometry, ST_Buffer(geometry_right, {}))"
-    expr = f"ST_Length({expr}) / ST_Length(geometry)"
-    expr = f"GREATEST(LEAST({expr}, 0), 1)"
+
+    sdf_features = features if isinstance(features, SparkDataFrame) else features.sdf()
+    sdf_parcels = parcels if isinstance(parcels, SparkDataFrame) else parcels.sdf()
+    sdf_boundary_segments = boundary_segments if isinstance(boundary_segments, SparkDataFrame) else boundary_segments.sdf()
+
+    cols = ["id_parcel", *columns]
+    schema = StructType(
+        [StructField("id_parcel", StringType(), False)]
+        + [field for field in sdf_features.schema.fields if field.name in cols]
+        + [StructField(f"proportion_{buf}m", FloatType(), False) for buf in buffers]
+    )
+
     return (
-        sjoin_parcels(parcel, features, distance=max(buffers), **kwargs)
-        .join(boundary_segments.sdf(), on="id_parcel")
-        .withColumns({f"proportion_{buf}m": F.expr(expr.format(buf)) for buf in buffers})
-        .drop("geometry", "geometry_left", "geometry_right")
+        sdf_features.transform(auto_repartition)  # TODO: move to SourceDataset, DerivedDatasets should be well partitioned/
+        .withColumn("geometry", load_geometry(encoding_fn="", subdivide=True))  # TODO: ^
+        .transform(fn_pre)
+        .transform(lambda sdf: sjoin(sdf_parcels, sdf, distance=max(buffers), **kwargs))
+        .join(sdf_boundary_segments, on="id_parcel")
+        .selectExpr(
+            *cols,
+            "ST_AsBinary(geometry_left) AS geometry_left",
+            "ST_AsBinary(geometry_right) AS geometry_right",
+            "ST_AsBinary(geometry) AS geometry",
+        )
+        .transform(lambda sdf: sdf.groupby(*cols).applyInPandas(partial(_st_boundary_proportions, buffers=buffers), schema))
+        .transform(fn_post)
     )
