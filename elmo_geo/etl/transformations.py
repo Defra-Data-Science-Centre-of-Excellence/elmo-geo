@@ -114,8 +114,7 @@ def sjoin_parcels(
     sdf_feature = feature if isinstance(feature, SparkDataFrame) else feature.sdf()
     sdf_parcels = parcels if isinstance(parcels, SparkDataFrame) else parcels.sdf()
     return (
-        sdf_feature
-        .transform(auto_repartition)
+        sdf_feature.transform(auto_repartition)
         .withColumn("geometry", load_geometry(encoding_fn="", subdivide=True))
         .transform(fn_pre)
         .transform(lambda sdf: sjoin(sdf_parcels.transform(auto_repartition), sdf, **kwargs))
