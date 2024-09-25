@@ -15,7 +15,8 @@ from pyspark.sql import functions as F
 
 from elmo_geo.etl import SRID, Dataset, DerivedDataset, SourceDataset
 from elmo_geo.etl.transformations import sjoin_parcel_proportion
-from elmo_geo.st.join import knn
+from elmo_geo.st.geometry import load_geometry
+from elmo_geo.st.join import knn, sjoin
 from elmo_geo.utils.types import SparkDataFrame
 
 from .rpa_reference_parcels import reference_parcels

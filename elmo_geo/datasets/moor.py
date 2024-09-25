@@ -19,6 +19,7 @@ from pandera.engines.geopandas_engine import Geometry
 
 from elmo_geo.etl import SRID, DerivedDataset, SourceDataset
 from elmo_geo.etl.transformations import sjoin_parcel_proportion
+from elmo_geo.utils.types import PandasDataFrame
 
 from .rpa_reference_parcels import reference_parcels
 
