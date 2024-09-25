@@ -121,7 +121,7 @@ def _join_habitat_types(
     soilscapes_parcels: DerivedDataset,
 ) -> pd.DataFrame:
     df_map = ne_soilscapes_habitats_raw.pdf()
-    habitat_abbreviation_lookup = dict(zip(df_map.columns, df_map.iloc[0]))
+    habitat_abbreviation_lookup = dict(zip([c.strip() for c in df_map.columns], df_map.iloc[0]))
     df_map = (
         df_map.iloc[1:, 1:]
         .rename(columns={"Unnamed: 1": "unit"})
@@ -129,8 +129,9 @@ def _join_habitat_types(
         .stack()
         .reset_index()
         .drop(0, axis=1)
-        .rename(columns={"level_1": "habitat_type"})
-        .assign(habitat_code=lambda df: df.habitat_type.replace(habitat_abbreviation_lookup))
+        .rename(columns={"level_1": "habitat_name"})
+        .assign(habitat_name=lambda df: df.habitat_name.str.strip())
+        .assign(habitat_code=lambda df: df.habitat_name.replace(habitat_abbreviation_lookup))
     )
     return soilscapes_parcels.pdf().merge(df_map, on="unit", how="left", validate="m:m")
 
@@ -148,7 +149,9 @@ class CECSoilScapesHabitatsParcels(DataFrameModel):
 
     id_parcel: str = Field()
     unit: float = Field(nullable=True, isin=set(range(1, 32)).difference([29]))
-    habitat_code: str = Field(nullable=True, isin=["UHL", "LHL", "LCG", "LAG", "LMW", "UHM", "UCG", "LRB", "UFS", "BBG", "LFN", "PMG"])
+    habitat_code: str = Field(
+        nullable=True, isin=["UHL", "LHL", "LCG", "LAG", "LMW", "UHM", "UCG", "LRB", "UFS", "BBG", "LFN", "PMG", "WPP", "CVS", "RBD", "CSM", "TRO", "CSD"]
+    )
     habitat_name: str = Field(
         nullable=True,
         isin=[
@@ -164,6 +167,12 @@ class CECSoilScapesHabitatsParcels(DataFrameModel):
             "Blanket bog",
             "Lowland fens",
             "Purple moorgrass and rush pasture",
+            "Wood-pasture & parkland",
+            "Coastal vegetated shingle",
+            "Reedbeds",
+            "Saltmarsh",
+            "Traditional orchards",
+            "Coastal sand dunes",
         ],
     )
 

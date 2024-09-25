@@ -131,7 +131,7 @@ def _get_parcel_candidate_habitats(
     to get candidate habitat types for each parcel.
     """
 
-    sdf_ss = cec_soilscapes_habitats_parcels.sdf().filter(F.expr("proportion>0.1")).select("id_parcel", "unit", "habitat_code", "habitat_type")
+    sdf_ss = cec_soilscapes_habitats_parcels.sdf().filter(F.expr("proportion>0.1")).select("id_parcel", "unit", "habitat_code", "habitat_name")
 
     # select lookup to action habitats for soilscapes habitats
     sdf_habitat_lu = (
