@@ -11,7 +11,7 @@ from pandera import DataFrameModel, Field
 from pandera.engines.geopandas_engine import Geometry
 
 from elmo_geo.etl import SRID, DerivedDataset, SourceDataset
-from elmo_geo.etl.transformations import join_parcels
+from elmo_geo.etl.transformations import sjoin_parcel_proportion
 
 from .rpa_reference_parcels import reference_parcels
 
@@ -83,7 +83,7 @@ living_england_habitat_map_phase_4_parcels = DerivedDataset(
     level0="silver",
     level1="living_england",
     restricted=False,
-    func=partial(join_parcels, columns=["A_pred"]),
+    func=partial(sjoin_parcel_proportion, columns=["A_pred"]),
     dependencies=[reference_parcels, living_england_habitat_map_phase_4_raw],
     model=LivingEnglandHabitatMapPhase4Parcel,
 )

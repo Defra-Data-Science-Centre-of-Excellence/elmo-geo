@@ -3,7 +3,7 @@
 This dataset is derived from Forest Research's Ecological Site Classification (ESC)[^1]. It
 provides a parcel level suitability score for different tree species under the Representative
 Concentration Pathway (RCP) 4.5 climate scenario. These scores are averaged to give a single
-suitablity score for each woodland type (broadleaved, riparian, coniferous).
+suitability score for each woodland type (broadleaved, riparian, coniferous).
 
 The ESC produced by Forest Research is an input into EVAST. The source data used here 
 was received from EVAST and has been aggregated to parcel level from the original 

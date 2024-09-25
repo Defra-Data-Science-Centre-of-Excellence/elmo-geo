@@ -1,14 +1,30 @@
 import geopandas as gpd
 import pytest
+from pyspark.sql import DataFrame as SparkDataFrame
 from shapely.geometry import Point
 
 from elmo_geo.io import read_file, to_gdf, write_parquet
 from tests.test_etl import test_derived_dataset, test_source_dataset, test_source_geodataset
 
 
-def _write_read_dataset(df, p, is_geo, partition_cols):
-    write_parquet(df, p, partition_cols=partition_cols)
-    return read_file(p, is_geo)
+def _tweak_df(df):  # DONE: This is required because we now repartition on save.
+    "Returns a dataframe in the original order, required due to partitioning."
+    if isinstance(df, SparkDataFrame):
+        df = to_gdf(df) if "geometry" in df.columns else df.toPandas()
+    if {"id", "val", "class"}.issubset(df.columns):
+        return (
+            df.reindex(columns=["id", "val", "class"])
+            .assign(**{"class": lambda df: df["class"].astype("category")})
+            .sort_values(by=["class", "id"])
+            .reset_index(drop=True)
+        )
+    elif {"id", "val"}.issubset(df.columns):
+        return df.reindex(columns=["id", "val"]).sort_values(by=["id"]).reset_index(drop=True)
+
+
+def _write_read_dataset(df, f, is_geo, partition_cols):
+    write_parquet(df, f, partition_cols=partition_cols)
+    return read_file(f, is_geo).pipe(_tweak_df)
 
 
 @pytest.mark.dbr
@@ -76,7 +92,7 @@ def test_read_write_dataset_sdf():
     f = "/dbfs/mnt/lab/unrestricted/ELM-Project/bronze/test/test_source_dataset_io_sdf.parquet"
     df = test_source_dataset.sdf()
     df_read = _write_read_dataset(df, f, test_source_dataset.is_geo, partition_cols=None)
-    assert df.toPandas().equals(df_read)
+    assert _tweak_df(df).equals(df_read)
 
 
 @pytest.mark.dbr
@@ -84,7 +100,7 @@ def test_read_write_dataset_pdf():
     f = "/dbfs/mnt/lab/unrestricted/ELM-Project/bronze/test/test_source_dataset_io_pdf.parquet"
     df = test_source_dataset.pdf()
     df_read = _write_read_dataset(df, f, test_source_dataset.is_geo, partition_cols=None)
-    assert df.equals(df_read)
+    assert _tweak_df(df).equals(df_read)
 
 
 @pytest.mark.dbr
@@ -96,7 +112,7 @@ def test_read_write_geodataset_sdf():
     f = "/dbfs/mnt/lab/unrestricted/ELM-Project/bronze/test/test_source_geodataset_io_sdf.parquet"
     df = test_source_geodataset.sdf()
     df_read = _write_read_dataset(df, f, test_source_geodataset.is_geo, partition_cols=None)
-    assert to_gdf(df).equals(df_read)
+    assert _tweak_df(df).equals(df_read)
 
 
 @pytest.mark.dbr
@@ -104,7 +120,7 @@ def test_read_write_geodataset_gdf():
     f = "/dbfs/mnt/lab/unrestricted/ELM-Project/bronze/test/test_source_geodataset_io_gdf.parquet"
     df = test_source_geodataset.gdf()
     df_read = _write_read_dataset(df, f, test_source_geodataset.is_geo, partition_cols=None)
-    assert df.equals(df_read)
+    assert _tweak_df(df).equals(df_read)
 
 
 @pytest.mark.dbr
@@ -116,11 +132,7 @@ def test_read_write_dataset_partition_sdf():
     f = "/dbfs/mnt/lab/unrestricted/ELM-Project/bronze/test/test_derived_dataset_io_partitioned_sdf.parquet"
     df = test_derived_dataset.sdf()
     df_read = _write_read_dataset(df, f, test_derived_dataset.is_geo, partition_cols=["class"])
-
-    # Tweaks needed to make dataframes match
-    df = df.toPandas()
-    df["class"] = df["class"].astype("category")
-    assert df.reindex(columns=["id", "val", "class"]).sort_values(by=["class", "id"]).reset_index(drop=True).equals(df_read)
+    assert _tweak_df(df).equals(df_read)
 
 
 @pytest.mark.dbr
@@ -128,6 +140,4 @@ def test_read_write_dataset_partition_pdf():
     f = "/dbfs/mnt/lab/unrestricted/ELM-Project/bronze/test/test_derived_dataset_io_partitioned_pdf.parquet"
     df = test_derived_dataset.pdf()
     df_read = _write_read_dataset(df, f, test_derived_dataset.is_geo, partition_cols=["class"])
-    # Tweaks needed to make dataframes match
-    df["class"] = df["class"].astype("category")
-    assert df.reindex(columns=["id", "val", "class"]).sort_values(by=["class", "id"]).reset_index(drop=True).equals(df_read)
+    assert _tweak_df(df).equals(df_read)

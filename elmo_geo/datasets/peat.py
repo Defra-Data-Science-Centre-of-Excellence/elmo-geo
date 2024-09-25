@@ -13,7 +13,7 @@ from pandera.dtypes import Int32
 from pandera.engines.geopandas_engine import Geometry
 
 from elmo_geo.etl import SRID, DerivedDataset, SourceDataset
-from elmo_geo.etl.transformations import join_parcels
+from elmo_geo.etl.transformations import sjoin_parcel_proportion
 
 from .rpa_reference_parcels import reference_parcels
 
@@ -65,7 +65,7 @@ peaty_soils_parcels = DerivedDataset(
     level0="silver",
     level1="defra",
     restricted=False,
-    func=partial(join_parcels, columns=["group"]),
+    func=partial(sjoin_parcel_proportion, columns=["group"]),
     dependencies=[reference_parcels, peaty_soils_raw],
     model=PeatySoilsParcels,
 )
