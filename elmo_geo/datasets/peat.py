@@ -9,6 +9,7 @@ Peat Layer contains many more features and columns than Peaty Soils, but they ar
 from functools import partial
 
 from pandera import DataFrameModel, Field
+from pandera.dtypes import Int32
 from pandera.engines.geopandas_engine import Geometry
 
 from elmo_geo.etl import SRID, DerivedDataset, SourceDataset
@@ -29,7 +30,7 @@ class PeatySoilsRaw(DataFrameModel):
         geometry: Polygon geometries in EPSG:27700.
     """
 
-    fid: int = Field(unique=True, alias="objectid")
+    fid: Int32 = Field(unique=True, alias="objectid")
     group: str = Field(alias="pclassdesc", isin=["Deep Peaty Soils", "Shallow Peaty Soils", "Soils with Peaty Pockets"])
     geometry: Geometry(crs=SRID) = Field()
 

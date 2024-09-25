@@ -61,7 +61,7 @@ class CECSoilScapesParcels(DataFrameModel):
     # TODO: Alias the field names once PR #209. Task for aliasing:
     # https://github.com/Defra-Data-Science-Centre-of-Excellence/elmo-geo/issues/223
     id_parcel: str = Field()
-    unit: int = Field(isin=set(range(1, 32)).difference([29]))
+    unit: float = Field(isin=set(range(1, 32)).difference([29]))
     natural_dr: str = Field(
         isin=["Freely draining", "Naturally wet", " ", "Impeded drainage", "Variable", "Slightly impeded drainage", "Surface wetness"],
     )
@@ -147,7 +147,7 @@ class CECSoilScapesHabitatsParcels(DataFrameModel):
     """
 
     id_parcel: str = Field()
-    unit: int = Field(nullable=True, isin=set(range(1, 32)).difference([29]))
+    unit: float = Field(nullable=True, isin=set(range(1, 32)).difference([29]))
     habitat_code: str = Field(nullable=True, isin=["UHL", "LHL", "LCG", "LAG", "LMW", "UHM", "UCG", "LRB", "UFS", "BBG", "LFN", "PMG"])
     habitat_name: str = Field(
         nullable=True,

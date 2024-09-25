@@ -77,7 +77,6 @@ class ProtectedLandscapesTidy(DataFrameModel):
 
 
 protected_landscapes_tidy = DerivedDataset(
-    is_geo=False,
     name="protected_landscapes_tidy",
     level0="silver",
     level1="defra",
