@@ -11,7 +11,7 @@ from pandera.dtypes import Category
 from pandera.engines.geopandas_engine import Geometry
 
 from elmo_geo.etl import SRID, DerivedDataset, SourceDataset
-from elmo_geo.etl.transformations import join_parcels
+from elmo_geo.etl.transformations import sjoin_parcel_proportion
 
 from .rpa_reference_parcels import reference_parcels
 
@@ -72,7 +72,7 @@ nca_parcels = DerivedDataset(
     level0="silver",
     level1="defra",
     restricted=False,
-    func=partial(join_parcels, columns=["blt"]),
+    func=partial(sjoin_parcel_proportion, columns=["blt"]),
     dependencies=[reference_parcels, nca_raw],
     model=NCAParcels,
 )

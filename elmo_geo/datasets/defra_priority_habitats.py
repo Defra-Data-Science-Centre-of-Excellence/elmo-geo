@@ -14,7 +14,7 @@ from pandera.engines.geopandas_engine import Geometry
 from pyspark.sql import functions as F
 
 from elmo_geo.etl import SRID, Dataset, DerivedDataset, SourceDataset
-from elmo_geo.etl.transformations import join_parcels
+from elmo_geo.etl.transformations import sjoin_parcel_proportion
 from elmo_geo.st.geometry import load_geometry
 from elmo_geo.st.join import knn, sjoin
 from elmo_geo.utils.types import SparkDataFrame
@@ -33,7 +33,7 @@ def split_mainhabs(sdf: SparkDataFrame) -> SparkDataFrame:
     return sdf.withColumn("habitat_name", F.expr("EXPLODE(SPLIT(mainhabs, ','))")).drop("mainhabs")
 
 
-_join_parcels = partial(join_parcels, columns=["habitat_name"], fn_pre=split_mainhabs)
+_join_parcels = partial(sjoin_parcel_proportion, columns=["habitat_name"], fn_pre=split_mainhabs)
 
 
 def _habitat_proximity(parcels: Dataset, habitats: Dataset, habitat_filter_expr: str, max_vertices: int = 256) -> pd.DataFrame:

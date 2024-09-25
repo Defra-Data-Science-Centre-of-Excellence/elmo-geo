@@ -15,11 +15,11 @@ from pandera.dtypes import Category
 from pandera.engines.geopandas_engine import Geometry
 
 from elmo_geo.etl import DerivedDataset, SourceDataset
-from elmo_geo.etl.transformations import join_parcels
+from elmo_geo.etl.transformations import sjoin_parcel_proportion
 
 from .rpa_reference_parcels import reference_parcels
 
-_join_parcels = partial(join_parcels, columns=["unit", "natural_dr", "natural_fe"])
+_join_parcels = partial(sjoin_parcel_proportion, columns=["unit", "natural_dr", "natural_fe"])
 
 
 class CECSoilScapesRaw(DataFrameModel):
@@ -143,7 +143,7 @@ class CECSoilScapesHabitatsParcels(DataFrameModel):
     Parameters:
         id_parcel: The parcel ID.
         unit: Soil type category, expressed as an integer.
-        habitat_code: Abbreviation indiating the habitat type that can exist on the soil type.
+        habitat_code: Abbreviation indicating the habitat type that can exist on the soil type.
         habitat_name: Name of the habitat type that can exist on the soil type.
     """
 
