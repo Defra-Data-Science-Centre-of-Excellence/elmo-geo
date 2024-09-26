@@ -255,6 +255,8 @@ class SourceDataset(Dataset):
         )
 
     def rename(self, df: DataFrame) -> DataFrame:
+        if self.model is None:
+            return df
         mapping = {field.alias: field.original_name for _, field in self.model.__fields__.values()}
         if isinstance(df, SparkDataFrame):
             return df.withColumnsRenamed(mapping)

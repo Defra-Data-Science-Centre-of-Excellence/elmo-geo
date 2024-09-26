@@ -43,7 +43,6 @@ sequestration and positive values net emissions.
 
 import pyspark.sql.functions as F
 from pandera import DataFrameModel, Field
-from pandera.dtypes import Category
 from pandera.engines.geopandas_engine import Geometry
 
 from elmo_geo.etl import DerivedDataset, SourceGlobDataset
@@ -197,7 +196,7 @@ class ESCGeoModel(DataFrameModel):
         geometry: Geometry of the tile.
     """
 
-    woodland_type: Category = Field(
+    woodland_type: str = Field(
         isin=[
             "native_broadleaved",
             "productive_conifer",
@@ -206,7 +205,7 @@ class ESCGeoModel(DataFrameModel):
             "silvoarable",
         ],
     )
-    rcp: Category = Field(isin=["26", "45", "60", "85"])
+    rcp: str = Field(isin=["26", "45", "60", "85"])
     tile_name: str = Field()
     geometry: Geometry = Field()
 

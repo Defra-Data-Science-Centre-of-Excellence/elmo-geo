@@ -9,7 +9,6 @@ Protected Landscapes include; National Parks, and National Landscapes (previousl
 from functools import partial
 
 from pandera import DataFrameModel, Field
-from pandera.dtypes import Category
 from pandera.engines.geopandas_engine import Geometry
 
 from elmo_geo.etl import SRID, DerivedDataset, SourceDataset
@@ -72,13 +71,12 @@ class ProtectedLandscapesTidy(DataFrameModel):
         geometry: (Multi)Polygon geometries in EPSG:27700.
     """
 
-    source: Category = Field(isin=["National Park", "National Landscape"])
+    source: str = Field(isin=["National Park", "National Landscape"])
     name: str = Field()
     geometry: Geometry(crs=SRID) = Field()
 
 
 protected_landscapes_tidy = DerivedDataset(
-    is_geo=False,
     name="protected_landscapes_tidy",
     level0="silver",
     level1="defra",

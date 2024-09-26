@@ -7,7 +7,6 @@ This describes the geological land types.
 from functools import partial
 
 from pandera import DataFrameModel, Field
-from pandera.dtypes import Category
 from pandera.engines.geopandas_engine import Geometry
 
 from elmo_geo.etl import SRID, DerivedDataset, SourceDataset
@@ -37,8 +36,8 @@ class NCARaw(DataFrameModel):
     nca_name: str = Field(nullable=True)
     naname: str = Field(nullable=True)
     hotlink: str = Field(nullable=True)
-    alt: Category = Field(nullable=True)
-    blt: Category = Field(nullable=True)
+    alt: str = Field(nullable=True)
+    blt: str = Field(nullable=True)
     geometry: Geometry(crs=SRID) = Field()
 
 
