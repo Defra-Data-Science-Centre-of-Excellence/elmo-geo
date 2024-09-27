@@ -11,8 +11,10 @@ from functools import partial
 from pandera import DataFrameModel, Field
 from pandera.engines.geopandas_engine import Geometry
 
-from elmo_geo.etl import SRID, DerivedDataset, SourceDataset
+from elmo_geo.etl import SRID, Dataset, DerivedDataset, SourceDataset
 from elmo_geo.etl.transformations import combine_long, sjoin_parcel_proportion
+from elmo_geo.io.convert import to_gdf
+from elmo_geo.utils.types import GeoDataFrame
 
 from .rpa_reference_parcels import reference_parcels
 
@@ -62,6 +64,10 @@ national_landscapes_raw = SourceDataset(
 )
 
 
+def _combine_long_landscapes(national_parks_raw: Dataset, national_landscapes_raw: Dataset) -> GeoDataFrame:
+    return to_gdf(combine_long(national_parks_raw, national_landscapes_raw, sources=["National Park", "National Landscape"]))
+
+
 class ProtectedLandscapesTidy(DataFrameModel):
     """Model for a combined Protected Landscapes dataset.
 
@@ -81,7 +87,7 @@ protected_landscapes_tidy = DerivedDataset(
     level0="silver",
     level1="defra",
     restricted=False,
-    func=partial(combine_long, sources=["National Park", "National Landscape"]),
+    func=_combine_long_landscapes,
     dependencies=[national_parks_raw, national_landscapes_raw],
     model=ProtectedLandscapesTidy,
 )
