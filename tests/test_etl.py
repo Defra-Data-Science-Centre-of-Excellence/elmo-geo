@@ -1,4 +1,5 @@
-import os
+import re
+from datetime import datetime as dt
 from glob import iglob
 from importlib import import_module
 
@@ -9,6 +10,7 @@ import pytest
 from elmo_geo import datasets
 from elmo_geo.datasets import catalogue
 from elmo_geo.etl import Dataset, DerivedDataset, SourceDataset
+from elmo_geo.etl.etl import DATE_FMT, PAT_DATE
 from elmo_geo.etl.transformations import pivot_long_sdf, pivot_wide_sdf
 from elmo_geo.utils.dbr import spark
 
@@ -52,14 +54,6 @@ test_derived_dataset = DerivedDataset(
 )
 """Test DerivedDataset
 """
-
-
-@pytest.mark.dbr
-def test_loads_most_recent_data():
-    paths = [os.path.join(test_derived_dataset.path_dir, x) for x in os.listdir(test_derived_dataset.path_dir) if test_derived_dataset.name in x]
-    dataset_gm = os.path.getmtime(test_derived_dataset.path)
-
-    assert all(dataset_gm >= os.path.getmtime(p) for p in paths)
 
 
 @pytest.mark.dbr
@@ -110,3 +104,20 @@ def test_dataset_imports():
 def test_all_fresh():
     "Test all datasets are fresh."
     assert all(dataset.is_fresh for dataset in catalogue)
+
+
+def _dataset_date_is_most_recent(dataset):
+    date = dt.strptime(dataset.date, DATE_FMT)
+    pat = re.compile(PAT_DATE.format(name=dataset.name, hsh=dataset._hash))
+    other_dates = [dt.strptime(pat.findall(f)[0], DATE_FMT) for f in dataset.file_matches]
+    return all(date >= d for d in other_dates)
+
+
+@pytest.mark.dbr
+def test_all_datasets_path_most_recent():
+    fails = []
+    for dataset in catalogue:
+        if not _dataset_date_is_most_recent(dataset):
+            fails.append(dataset)
+    msg = "\n".join(d.name for d in fails)
+    assert not fails, f"Not all datasets loading most recent files. Failing datasets:\n{msg}"
