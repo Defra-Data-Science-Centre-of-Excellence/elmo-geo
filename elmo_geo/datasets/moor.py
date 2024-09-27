@@ -14,7 +14,6 @@ from functools import partial
 
 import pyspark.sql.functions as F
 from pandera import DataFrameModel, Field
-from pandera.dtypes import Category
 from pandera.engines.geopandas_engine import Geometry
 
 from elmo_geo.etl import SRID, DerivedDataset, SourceDataset
@@ -36,7 +35,7 @@ class MoorlineRaw(DataFrameModel):
         geometry: (Multi)Polygon geometries in EPSG:27700.
     """
 
-    name: Category = Field(isin=["D", "S", "MD", "MS"])
+    name: str = Field(isin=["D", "S", "MD", "MS"])
     geometry: Geometry(crs=SRID) = Field()
 
 

@@ -11,7 +11,6 @@ from functools import partial
 
 import pandas as pd
 from pandera import DataFrameModel, Field
-from pandera.dtypes import Category
 from pandera.engines.geopandas_engine import Geometry
 
 from elmo_geo.etl import DerivedDataset, SourceDataset
@@ -62,11 +61,11 @@ class CECSoilScapesParcels(DataFrameModel):
     # TODO: Alias the field names once PR #209. Task for aliasing:
     # https://github.com/Defra-Data-Science-Centre-of-Excellence/elmo-geo/issues/223
     id_parcel: str = Field()
-    unit: Category = Field(isin=set(range(1, 32)).difference([29]))
-    natural_dr: Category = Field(
+    unit: float = Field(isin=set(range(1, 32)).difference([29]))
+    natural_dr: str = Field(
         isin=["Freely draining", "Naturally wet", " ", "Impeded drainage", "Variable", "Slightly impeded drainage", "Surface wetness"],
     )
-    natural_fe: Category = Field(
+    natural_fe: str = Field(
         isin=[
             "Very low",
             "Low",
@@ -122,7 +121,7 @@ def _join_habitat_types(
     soilscapes_parcels: DerivedDataset,
 ) -> pd.DataFrame:
     df_map = ne_soilscapes_habitats_raw.pdf()
-    habitat_abbreviation_lookup = dict(zip(df_map.columns, df_map.iloc[0]))
+    habitat_abbreviation_lookup = dict(zip([c.strip() for c in df_map.columns], df_map.iloc[0]))
     df_map = (
         df_map.iloc[1:, 1:]
         .rename(columns={"Unnamed: 1": "unit"})
@@ -130,8 +129,9 @@ def _join_habitat_types(
         .stack()
         .reset_index()
         .drop(0, axis=1)
-        .rename(columns={"level_1": "habitat_type"})
-        .assign(habitat_code=lambda df: df.habitat_type.replace(habitat_abbreviation_lookup))
+        .rename(columns={"level_1": "habitat_name"})
+        .assign(habitat_name=lambda df: df.habitat_name.str.strip())
+        .assign(habitat_code=lambda df: df.habitat_name.replace(habitat_abbreviation_lookup))
     )
     return soilscapes_parcels.pdf().merge(df_map, on="unit", how="left", validate="m:m")
 
@@ -148,9 +148,11 @@ class CECSoilScapesHabitatsParcels(DataFrameModel):
     """
 
     id_parcel: str = Field()
-    unit: Category = Field(nullable=True, isin=set(range(1, 32)).difference([29]))
-    habitat_code: Category = Field(nullable=True, isin=["UHL", "LHL", "LCG", "LAG", "LMW", "UHM", "UCG", "LRB", "UFS", "BBG", "LFN", "PMG"])
-    habitat_name: Category = Field(
+    unit: float = Field(nullable=True, isin=set(range(1, 32)).difference([29]))
+    habitat_code: str = Field(
+        nullable=True, isin=["UHL", "LHL", "LCG", "LAG", "LMW", "UHM", "UCG", "LRB", "UFS", "BBG", "LFN", "PMG", "WPP", "CVS", "RBD", "CSM", "TRO", "CSD"]
+    )
+    habitat_name: str = Field(
         nullable=True,
         isin=[
             "Upland heathland",
@@ -165,6 +167,12 @@ class CECSoilScapesHabitatsParcels(DataFrameModel):
             "Blanket bog",
             "Lowland fens",
             "Purple moorgrass and rush pasture",
+            "Wood-pasture & parkland",
+            "Coastal vegetated shingle",
+            "Reedbeds",
+            "Saltmarsh",
+            "Traditional orchards",
+            "Coastal sand dunes",
         ],
     )
 
