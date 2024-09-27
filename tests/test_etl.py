@@ -113,11 +113,16 @@ def _dataset_date_is_most_recent(dataset):
     return all(date >= d for d in other_dates)
 
 
-@pytest.mark.dbr
 def test_all_datasets_path_most_recent():
+    """For all datasets flagging as fresh in the catalogue, check that the path used is the most recent.
+
+    Checks by using the date in the path rather than the modified time of the path because the dataset
+    uses the modified time and using a different method makes the test stronger.
+    """
     fails = []
     for dataset in catalogue:
-        if not _dataset_date_is_most_recent(dataset):
-            fails.append(dataset)
+        if dataset.is_fresh:
+            if not _dataset_date_is_most_recent(dataset):
+                fails.append(dataset)
     msg = "\n".join(d.name for d in fails)
     assert not fails, f"Not all datasets loading most recent files. Failing datasets:\n{msg}"
