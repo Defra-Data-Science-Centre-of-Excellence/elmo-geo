@@ -103,7 +103,9 @@ def test_dataset_imports():
 @pytest.mark.dbr
 def test_all_fresh():
     "Test all datasets are fresh."
-    assert all(dataset.is_fresh for dataset in catalogue)
+    unfresh = [d.name for d in catalogue if not d.is_fresh]
+    msg = "\n".join(unfresh)
+    assert not unfresh, f"Un-fresh datasets:\n{msg}"
 
 
 def _dataset_date_is_most_recent(dataset):
