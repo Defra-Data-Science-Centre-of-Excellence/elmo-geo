@@ -7,34 +7,45 @@ def load_missing(column: str) -> callable:
     """
     null = 'ST_GeomFromText("Point EMPTY")'
     return F.expr(f"COALESCE({column}, {null})")
-    # return F.expr(f'NVL({column}, {null})')
-    # return F.expr(f'CASE WHEN {column} IS NULL THEN {null} ELSE {column} END')
 
 
-def load_geometry(column: str = "geometry", from_crs: str = "EPSG:27700", encoding_fn: str = "ST_GeomFromWKB") -> callable:
+def load_geometry(
+    column: str = "geometry",
+    encoding_fn: str = "ST_GeomFromWKB",
+    geometry_dim: int | None = None,
+    subdivide: bool = False,
+) -> callable:
     """Load Geometry
-    Useful for ingesting data.
-    Missing
-      Check for NULL values and replace with an empty point
-    Encoding
-      encoding_fn '', 'ST_GeomFromWKB', 'ST_GeomFromWKT'
-      Validate
-    Standardise
-      Force 2D
-      Normalise ordering
-      CRS = EPSG:27700 = British National Grid, which uses 1m coordinates
-    Optimise
-      3 = 0.001m = 1mm precision
-      0 simplify to precision
-    AS column
-      simplify column name
+
+    Loads and cleans geometries.
+
+    Parameters:
+        column: The name of the geometry column to load.
+        encoding_fn = Function to load geometries with. Either "ST_GeomFromWKB" or "ST_GeomFromWKB" or "" to apply cleaning to pre-loaded geometries.
+        geometry_dim: Geometry type to extract from collection. 1 for Point, 2 for LineString, 3 for Polygon.
+        subdivide: Creates multiple optimised geometries with new rows.
     """
     null = 'ST_GeomFromText("Point EMPTY")'
-    to_crs = "EPSG:27700"
-    precision = 3
-    string = f"ST_MakeValid({encoding_fn}({column}))"
-    string = f"COALESCE({string}, {null})"
-    string = f'ST_Transform(ST_Normalize(ST_Force_2D({string})), "{from_crs}", "{to_crs}")'
-    string = f"ST_SimplifyPreserveTopology(ST_PrecisionReduce({string}, {precision}), 0)"
-    string = string + " AS " + column
-    return F.expr(string)
+    expr = f"ST_MakeValid({encoding_fn}({column}))"
+    expr = f"COALESCE({expr}, {null})"
+    expr = f"ST_MakeValid(ST_Force_2D({expr}))"
+    expr = f"ST_MakeValid(ST_SimplifyPreserveTopology({expr}, 1))"
+    expr = f"ST_MakeValid(ST_ReducePrecision({expr}, 0))"
+    expr = f"ST_MakeValid(ST_CollectionExtract({expr}, {geometry_dim}))" if geometry_dim else expr
+    expr = f"ST_SubDivideExplode({expr}, 256)" if subdivide else expr
+    expr = expr + " AS " + column
+    return F.expr(expr)
+
+
+def get_boundary(column: str) -> callable:
+    """Get geometry boundaries.
+
+    Returns a function that operates on the input column to produce geometry boundaries.
+
+    Parameters:
+        column: The geometry column to convert to geometry boundaries.
+
+    Returns:
+        Pyspark sql function
+    """
+    return load_geometry(column, encoding_fn="ST_Boundary")

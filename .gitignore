@@ -1,10 +1,12 @@
 # Hidden
 .*
+!/.gitignore
 !.gitkeep
 /data/
 
 # Manual
 !/.github/workflows/verify.yaml
+!/.devcontainer/devcontainer.json
 !/.vscode/settings.json
 !/data/catalogue.json
 !/data/*.csv

@@ -8,7 +8,7 @@
 # COMMAND ----------
 
 
-from elmo_geo.st.st import join
+from elmo_geo.st.st import fix_wkb, join
 
 # COMMAND ----------
 

@@ -1,4 +1,7 @@
+import os
+import re
 import subprocess
+from pathlib import Path
 
 from pyspark.sql import functions as F
 
@@ -30,7 +33,12 @@ def sh_run(exc: str, **kwargs):
     return out
 
 
-def info_sdf(sdf: SparkDataFrame, col: str = "geometry") -> SparkDataFrame:
+def count_parquet_files(folder):
+    """Get the number of parquet files in a dataset."""
+    return sum(1 for _, _, files in os.walk(folder) for f in files if f.endswith(".parquet"))
+
+
+def info_sdf(sdf: SparkDataFrame, f: str = None, geometry_column: str = "geometry", sindex_column: str = "sindex") -> SparkDataFrame:
     """Get Info about SedonaDataFrame
     Logs the number of partitions, geometry types, number of features, and average number of coordinates.
 
@@ -57,21 +65,65 @@ def info_sdf(sdf: SparkDataFrame, col: str = "geometry") -> SparkDataFrame:
     >>> 6             ST_Polygon   737962         44.8
     ```
     """
-    n = sdf.rdd.getNumPartitions()
     df = (
-        sdf.selectExpr(
-            f"ST_GeometryType({col}) AS gtype",
-            f"ST_NPoints({col}) AS n",
+        (
+            sdf.selectExpr(
+                f"ST_GeometryType({geometry_column}) AS gtype",
+                f"ST_NPoints({geometry_column}) AS n",
+            )
+            .groupby("gtype")
+            .agg(
+                F.count("gtype").alias("count"),
+                F.round(F.mean("n"), 1).alias("mean_coords"),
+            )
+            .toPandas()
         )
-        .groupby("gtype")
-        .agg(
-            F.count("gtype").alias("count"),
-            F.round(F.mean("n"), 1).alias("mean_coords"),
-        )
-        .toPandas()
+        if geometry_column
+        else None
     )
-    LOG.info(f"partitions:  {n}\n{df}")
-    return df
+    LOG.info(
+        f"""
+        Wrote Parquet: {f}
+        Count: {sdf.count()}
+        sindexes: {sdf.select(sindex_column).distinct().count() if sindex_column else None}
+        Partitions: {sdf.rdd.getNumPartitions()}
+        Files: {count_parquet_files(f) if f else f}
+        fid count: {sdf.select('fid').distinct().count() if "fid" in sdf.columns else None}
+        {df}
+    """
+    )
+    return sdf
+
+
+def snake_case(string: str) -> str:
+    r"""Convert string to snake_case
+    1, lowercase
+    2, replace spaces with underscores
+    3, remove special characters
+    \w=words, \d=digits, \s=spaces, [^ ]=not
+
+    ```py
+    snake_case('Kebab-case') == 'kebab_case'
+    snake_case('Terrible01 dataset_name%') == 'terrible01_dataset_name'
+    ```
+    """
+    return re.sub(r"[^\w\d_]", "", re.sub(r"[\s/-]", "_", string.lower()))
+
+
+def string_to_dict(string: str, pattern: str) -> dict:
+    """Reverse f-string
+    https://stackoverflow.com/a/36838374/10450752
+    ```py
+    string_to_dict('path/to/source_os/dataset_ngd', '{path}/source_{source}/dataset_{dataset}') == {'path':'path/to', 'source': 'os', 'dataset':'ngd'}
+    ```
+    """
+    regex = re.sub(r"{(.+?)}", r"(?P<_\1>.+)", pattern)
+    return dict(
+        zip(
+            re.findall(r"{(.+?)}", pattern),
+            list(re.search(regex, string).groups()),
+        )
+    )
 
 
 def total_bounds(sdf: SparkDataFrame, col: str = "geometry"):
@@ -108,3 +160,24 @@ def isolate_error(
             if len(keys) > 1:
                 result.extend(isolate_error(sdf2, fn, keys[1:]))
             yield result
+
+
+def dbmtime(path: str):
+    """Returns the last modified time of a file or directory in seconds since the epoch.
+
+    Alternative methods for getting the modified time are unreliable on the
+    databricks file system. For example, os.path.getmtime often returns the
+    time at which the cluster was turned on, not the last modified date of the
+    file.
+
+    Using dbutils for FileInfo objects within the parent directory and filter to the desired
+    FileInfo object. Return the modified time for this object in seconds rather than miliseconds.
+
+    Parameters:
+        path: The path to the file or directory.
+    """
+    from elmo_geo.utils.dbr import dbutils
+
+    p = Path(dbfs(path, True))
+    finfo = next(fi for fi in dbutils.fs.ls(str(p.parent)) if fi.name.strip("/") == str(p.name))
+    return finfo.modificationTime / 1_000
