@@ -7,7 +7,8 @@
 # MAGIC
 # MAGIC **Date:** 03/04/2024
 # MAGIC
-# MAGIC This notebook produces a choropleth plot from a processed dataset - a dataset which has values linked to parcel IDs. The chosen numeric variable of the processed dataset is aggregated to National Charater Area polygons, which are used to plot the variable at national scale. 
+# MAGIC This notebook produces a choropleth plot from a processed dataset - a dataset which has values linked to parcel IDs. The chosen numeric variable of the
+# MAGIC processed dataset is aggregated to National Charater Area polygons, which are used to plot the variable at national scale.
 # MAGIC
 # MAGIC Parcel IDs are used to link the chosen datasets with the NCA polygons. Therefore, the input dataset must contain an 'id_parcel' field.
 # MAGIC
@@ -21,7 +22,8 @@
 # MAGIC 1. The plot variable is aggregated to give a single value per parcel. It is aggregated by summing values for each parcel id.
 # MAGIC 2. Then the plot variable is aggregated to National Character Areas (NCAs) by calculating the mean across all parcels within each NCA
 # MAGIC
-# MAGIC The defaults for this notebook produce a choropleth plot of the proportion of parcels intersected by SHINE geometries (non-designated historic features).
+# MAGIC The defaults for this notebook produce a choropleth plot of the proportion of parcels intersected by SHINE geometries
+# MAGIC (non-designated historic features).
 
 # COMMAND ----------
 
@@ -30,58 +32,58 @@
 
 # COMMAND ----------
 
-import geopandas as gpd
-import mapclassify
-import seaborn as sns
-import matplotlib.pyplot as plt
-from matplotlib.ticker import PercentFormatter, FuncFormatter
-import numpy as np
 
-import os
 import geopandas as gpd
-from functools import partial
 from pyspark.sql import functions as F
 from pyspark.sql.types import DecimalType, DoubleType, FloatType, IntegerType, LongType
 
-from elmo_geo import LOG, register
-from elmo_geo.datasets.datasets import datasets, parcels
-from elmo_geo.st import sjoin
+from elmo_geo import register
+from elmo_geo.datasets import catalogue, reference_parcels
 from elmo_geo.plot.plotting import plot_choropleth_with_head_and_tail_bars
 
 register()
 
 # COMMAND ----------
 
-names = sorted([f"{d.source}/{d.name}/{v.name}" for d in datasets for v in d.versions])
-default_name = [n for n in names if "shine" in n][0]
-dbutils.widgets.dropdown("dataset", default_name, names)
-_, name, version = dbutils.widgets.get("dataset").split("/")
-dataset = next(d for d in datasets if d.name == name)
+medallions = sorted({d.level0 for d in catalogue})
+default_medallion = medallions[0]
+dbutils.widgets.dropdown("A - Medallion", default_medallion, medallions)
 
-[print(k, v, sep=":\t") for k, v in dataset.__dict__.items()]
+# COMMAND ----------
 
-parcels_names = sorted([f"{parcels.source}/{parcels.name}/{v.name}" for v in parcels.versions])
-default_parcels = [n for n in parcels_names if "adas" in n][0]
-dbutils.widgets.dropdown("parcels", default_parcels, parcels_names)
-_, pname, pversion = dbutils.widgets.get("parcels").split("/")
-path_parcels = next(v.path_read for v in parcels.versions if v.name == pversion)
-[print("\n\nname", parcels.name, sep=":\t"), 
- print("version", next(v for v in parcels.versions if v.name == pversion), sep = ":\t"),
- ]
+medallion = dbutils.widgets.get("A - Medallion")
+sources = sorted({d.level1 for d in catalogue if d.level0 == medallion})
+default_source = sources[0]
+dbutils.widgets.dropdown("B - Source", default_source, sources)
+
+# COMMAND ----------
+
+source = dbutils.widgets.get("B - Source")
+datasets = sorted({d.name for d in catalogue if (d.level0 == medallion) and (d.level1 == source)})
+default_dataset = datasets[0]
+dbutils.widgets.dropdown("C - Dataset", default_dataset, datasets)
+
+# COMMAND ----------
+
+dataset = dbutils.widgets.get("C - Dataset")
+dataset = next(d for d in catalogue if d.name == dataset)
+_ = [print(k, v, sep=":\t") for k, v in dataset.__dict__.items()]
+
+# COMMAND ----------
 
 # present fields of the dataset to select which to plot
-fields = spark.read.parquet(dataset.path_output.format(version=version)).schema.fields
+fields = dataset.sdf().schema.fields
 numeric_variables = [field.name for field in fields if isinstance(field.dataType, (DecimalType, DoubleType, FloatType, IntegerType, LongType))]
 dbutils.widgets.dropdown("plot variable", numeric_variables[0], numeric_variables)
 value_column = dbutils.widgets.get("plot variable")
 print(f"\nDataset variable to plot:\t{value_column}")
 
-formats = [".1%", ".0f"]
+formats = [".1%", ".0f", ".3f"]
 dbutils.widgets.dropdown("variable format", formats[0], formats)
 fmt = dbutils.widgets.get("variable format")
 
-dbutils.widgets.text("variable name", "SHINE proportion")
-dbutils.widgets.text("variable source", "Historic England SHINE dataset")
+dbutils.widgets.text("variable name", "<enter name>")
+dbutils.widgets.text("variable source", "<enter source")
 
 variable_name = dbutils.widgets.get("variable name")
 variable_source = dbutils.widgets.get("variable source")
@@ -96,41 +98,38 @@ path_nca_poly = "dbfs:/mnt/lab/unrestricted/elm/defra/national_character_areas/2
 
 # COMMAND ----------
 
-path_read = dataset.path_output.format(version=version)
+dataset.sdf().display()
 
 # COMMAND ----------
 
-spark.read.parquet(path_read).display()
-
-# COMMAND ----------
-
-df = (spark.read.parquet(path_read)
-      .groupBy("id_parcel").agg(F.sum(F.col(value_column)).alias(value_column))
-      ).toPandas()
+df = (dataset.sdf().groupBy("id_parcel").agg(F.mean(F.col(value_column)).alias(value_column))).toPandas()
 df.head()
 
 # COMMAND ----------
 
 # join to complete set of parcels
-parcels = (spark.read.format("geoparquet").load(path_parcels)
-           .select("id_parcel")
-           ).toPandas()
-df = parcels.set_index("id_parcel").join(df.set_index("id_parcel"), how = "left")
+df = reference_parcels.gdf().set_index("id_parcel").join(df.set_index("id_parcel"), how="left")
 df
 
 # COMMAND ----------
 
 df_nca = spark.read.parquet(path_nca).repartition(200).toPandas()
-df_nca = df_nca.sort_values("proportion", ascending=False).drop_duplicates(subset=["id_parcel"]).drop(columns=[
-#  "partition",
-    "proportion"
-])
+df_nca = (
+    df_nca.sort_values("proportion", ascending=False)
+    .drop_duplicates(subset=["id_parcel"])
+    .drop(
+        columns=[
+            #  "partition",
+            "proportion"
+        ]
+    )
+)
 df_nca
 
 # COMMAND ----------
 
 # check parcel counts in each NCA
-df.join(df_nca.set_index("id_parcel"), how="inner").groupby("nca_name").count()[value_column].plot.hist(figsize=(20,6), bins=100)
+df.join(df_nca.set_index("id_parcel"), how="inner").groupby("nca_name").count()[value_column].plot.hist(figsize=(20, 6), bins=100)
 
 # COMMAND ----------
 
@@ -145,18 +144,19 @@ df.join(df_nca.set_index("id_parcel"), how="inner").groupby("nca_name").count().
 df_all = df[[value_column]].fillna(0).join(df_nca.set_index("id_parcel"), how="inner").groupby("nca_name").mean()
 
 # with only parcels that do appear in the input dataset
-df_feature = df.dropna(subset=[value_column]).join(df_nca.set_index("id_parcel"), how="inner").groupby("nca_name").mean()
+df_feature = df[[value_column]].dropna().join(df_nca.set_index("id_parcel"), how="inner").groupby("nca_name").mean()
 
 df_feature.head(), df_all.head()
 
 # COMMAND ----------
 
-polygons = (spark.read.parquet(path_nca_poly)
-            .withColumn("geometry", F.expr("ST_GeomFromWKB(geometry)"))
-            .groupby("nca_name")
-            .agg(F.expr("ST_Union_Aggr(geometry) as geometry"))
-            ).toPandas()
-polygons = gpd.GeoDataFrame(polygons, crs = "epsg:27700").loc[:, ["nca_name", "geometry"]].set_index("nca_name")
+polygons = (
+    spark.read.parquet(path_nca_poly)
+    .withColumn("geometry", F.expr("ST_GeomFromWKB(geometry)"))
+    .groupby("nca_name")
+    .agg(F.expr("ST_Union_Aggr(geometry) as geometry"))
+).toPandas()
+polygons = gpd.GeoDataFrame(polygons, crs="epsg:27700").loc[:, ["nca_name", "geometry"]].set_index("nca_name")
 polygons_feature = polygons.join(df_feature).reset_index().sort_values(by=value_column, ascending=False).dropna()
 polygons_all = polygons.join(df_all).reset_index().sort_values(by=value_column, ascending=False).dropna()
 polygons_all

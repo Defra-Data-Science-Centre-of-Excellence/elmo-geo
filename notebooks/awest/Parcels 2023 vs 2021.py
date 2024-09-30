@@ -3,15 +3,14 @@
 
 # COMMAND ----------
 
-from pyspark.sql import functions as F
-from sedona.register import SedonaRegistrator
-
-SedonaRegistrator.registerAll(spark)
 from io import StringIO
 
 import pandas as pd
 from cdap_geo.sedona import st_fromwkb
+from pyspark.sql import functions as F
+from sedona.register import SedonaRegistrator
 
+SedonaRegistrator.registerAll(spark)
 # COMMAND ----------
 
 csv = """,id_parcel,check_total_hedge,check_order_water,check_total_water
@@ -6378,4 +6377,4 @@ df2.dropna()
 
 # COMMAND ----------
 
-df2[(df2["check_total_hedge"] == False) & (df2["ha_diff"] != 0)]["ha_diff"].hist(bins=20)
+df2[(~df2["check_total_hedge"]) & (df2["ha_diff"] != 0)]["ha_diff"].hist(bins=20)

@@ -1,28 +1,19 @@
 name: Verify
+
 on:
-  push:
-    branches: [main]
   pull_request:
-    branches: [main]
+    branches: main
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ["3.10"]
-    name: Verify
-
     steps:
+      # - uses: https://raw.githubusercontent.com/databrickslabs/mosaic/main/.github/actions/scala_build/action.yml
+      # - uses: https://raw.githubusercontent.com/databrickslabs/mosaic/main/.github/actions/python_build/action.yml
       - uses: actions/checkout@v3
-      - name: Set up Python
-        uses: actions/setup-python@v4
+      - uses: actions/setup-python@v4
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: "3.11"
           architecture: x64
-
-      - name: Install dependencies
-        run: make install
-
-      - name: Run verify
-        run: make verify
+      - run: make install
+      - run: make verify_gh

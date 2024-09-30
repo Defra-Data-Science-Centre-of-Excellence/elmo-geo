@@ -1,0 +1,13 @@
+# Old Analysis Notebooks
+- Admin Cost Scenarios, contains scenarios like paying buffer strips as hectares instead of meters.
+- AHL3 Analysis, is some metrics on a subset of parcels for LR.
+- Amy EVAST, is waterbody buffer strip data creation.
+- Arable Incentivisation, "How many arable farmers are incentivised to put 100% of their land in SFI?"
+- Coastal, is analysing the potential coastal buffer strips.
+- Euan's Farms, is some small analysis for a subset of parcels for LR.
+- EWCO vs Hedge, is comparing the land use change for hedgerow creation on a set of potential Woodland creation parcels.
+- Hedges and Parcels on Protected Landscapes, is analysis for Amy Cairns on National Parks and National Landscapes (prv AONBs).
+- Moorwood, is old analysis comparing woodland on moorland.
+- Rasterise WFM, is converting WFM to raster bands for Sam Flint.
+- Segmentise Boundary, is the previous analysis for [#213](https://github.com/Defra-Data-Science-Centre-of-Excellence/elmo-geo/issues/213)
+- UKCEH Fertilisers and Pesticides, is adding rasterised chemical maps to WFM.
