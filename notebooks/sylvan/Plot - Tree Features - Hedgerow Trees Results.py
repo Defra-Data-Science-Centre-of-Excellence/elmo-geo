@@ -3,10 +3,8 @@
 
 # COMMAND ----------
 
-from typing import Optional, Tuple, List, Dict
+from typing import Optional, Tuple
 
-import contextily as ctx
-import geopandas as gpd
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
@@ -14,18 +12,14 @@ import pandas as pd
 import seaborn as sns
 from matplotlib.ticker import FuncFormatter, PercentFormatter
 from pyspark.sql import functions as F
-from shapely.geometry import Polygon
-from elmo_geo.utils.types import SparkDataFrame, SparkSession
-from tree_features import get_hedgerow_trees_features, make_parcel_geometries
 
-#from elmo_geo import LOG, register
-#from elmo_geo.io.io2 import load_geometry
-#from elmo_geo.utils.dbr import spark
-
+# from elmo_geo import LOG, register
+# from elmo_geo.io.io2 import load_geometry
+# from elmo_geo.utils.dbr import spark
 # COMMAND ----------
-
-#register()
+# register()
 from sedona.spark import SedonaContext
+
 SedonaContext.create(spark)
 
 # COMMAND ----------
@@ -33,25 +27,17 @@ SedonaContext.create(spark)
 hedgerows_buffer_distance = 2
 hedgerow_distance_threshold = 8
 
-tree_detection_timestamp = "202311231323" # 20230602 timestamp was used for original mmsg figures 
+tree_detection_timestamp = "202311231323"  # 20230602 timestamp was used for original mmsg figures
 
-elmo_geo_hedgerows_path = (
-    "dbfs:/mnt/lab/restricted/ELM-Project/ods/elmo_geo-hedge-2024_01_08.parquet"
-)
+elmo_geo_hedgerows_path = "dbfs:/mnt/lab/restricted/ELM-Project/ods/elmo_geo-hedge-2024_01_08.parquet"
 
 adas_parcels_path = "dbfs:/mnt/lab/restricted/ELM-Project/ods/rpa-parcel-adas.parquet"
 
-trees_output_template = (
-    "dbfs:/mnt/lab/unrestricted/elm/elmo/"
-    "tree_features/tree_detections/"
-    "tree_detections_{timestamp}.parquet"
-)
+trees_output_template = "dbfs:/mnt/lab/unrestricted/elm/elmo/" "tree_features/tree_detections/" "tree_detections_{timestamp}.parquet"
 output_trees_path = trees_output_template.format(timestamp=tree_detection_timestamp)
 
-features_output_template = (
-    "dbfs:/mnt/lab/unrestricted/elm/elmo/tree_features/tree_features_hr{threshold}_td{timestamp}.parquet"
-)
-parcel_trees_output = features_output_template.format(threshold = hedgerow_distance_threshold, timestamp=tree_detection_timestamp)
+features_output_template = "dbfs:/mnt/lab/unrestricted/elm/elmo/tree_features/tree_features_hr{threshold}_td{timestamp}.parquet"
+parcel_trees_output = features_output_template.format(threshold=hedgerow_distance_threshold, timestamp=tree_detection_timestamp)
 
 tile_to_visualise = "SP65nw"
 
@@ -64,18 +50,13 @@ save_data = True
 
 # COMMAND ----------
 
-treesDF = (spark.read.parquet(output_trees_path)
-           .repartition(200_000, "major_grid", "chm_path")
-)
-parcelsDF = (spark.read.format("geoparquet").load(adas_parcels_path)
-             .repartition(1_250, "sindex")
-)
-hrDF = (spark.read.format("geoparquet").load(elmo_geo_hedgerows_path)
-        .repartition(1_250, "sindex")
-)
-treeFeaturesDF = (spark.read.parquet(parcel_trees_output)
-                  .select("id_parcel", "hrtrees_count2", "hedge_length")
-                  .withColumn("hrtrees_per_m", F.col("hrtrees_count2") / F.col("hedge_length"))
+treesDF = spark.read.parquet(output_trees_path).repartition(200_000, "major_grid", "chm_path")
+parcelsDF = spark.read.format("geoparquet").load(adas_parcels_path).repartition(1_250, "sindex")
+hrDF = spark.read.format("geoparquet").load(elmo_geo_hedgerows_path).repartition(1_250, "sindex")
+treeFeaturesDF = (
+    spark.read.parquet(parcel_trees_output)
+    .select("id_parcel", "hrtrees_count2", "hedge_length")
+    .withColumn("hrtrees_per_m", F.col("hrtrees_count2") / F.col("hedge_length"))
 )
 
 # COMMAND ----------
@@ -146,8 +127,8 @@ n_unknown = 38592  # geometry difference method - comparing gaps in vom data to 
 # COMMAND ----------
 
 nParcels = parcelsDF.select("id_parcel").distinct().count()  # All parcels
-nHRParcels = treeFeaturesDF.filter(F.col("hedge_length").isNotNull()).count() # Parcels with hedgerows
-nHRTParcels = treeFeaturesDF.filter(F.col("hrtrees_count2")>0).count() # Parcels with hedgerow trees
+nHRParcels = treeFeaturesDF.filter(F.col("hedge_length").isNotNull()).count()  # Parcels with hedgerows
+nHRTParcels = treeFeaturesDF.filter(F.col("hrtrees_count2") > 0).count()  # Parcels with hedgerow trees
 
 parcel_count = pd.Series(
     index=["All Parcels", "HR Parcels", "HR Tree Parcels"],
@@ -156,6 +137,7 @@ parcel_count = pd.Series(
 parcel_count
 
 # COMMAND ----------
+
 
 def stacked_bar_parcel_counts(
     data: pd.Series,
@@ -200,9 +182,7 @@ def stacked_bar_parcel_counts(
         fontsize="large",
     )
     f.supxlabel(
-        "Source: Environment Agency Vegitation Object Model"
-        + r" $1m^2$"
-        + " and Rural Payments Agency EFA Hedges",
+        "Source: Environment Agency Vegitation Object Model" + r" $1m^2$" + " and Rural Payments Agency EFA Hedges",
         x=0.09,
         y=-0.07,
         ha="left",
@@ -232,6 +212,7 @@ f.show()
 # MAGIC ## Plot distribution of hedgerow trees per parcel
 
 # COMMAND ----------
+
 
 def plot_hrtree_dist(
     data: pd.Series,
@@ -276,9 +257,7 @@ def plot_hrtree_dist(
 
     dark = False
     fig, ax = plt.subplots(figsize=(18, 6), constrained_layout=True)
-    data_filtered.plot.hist(
-        ax=ax, bins=bins, log=False, xlabel="f", alpha=0.7, linewidth=0, color="#00A33B"
-    )
+    data_filtered.plot.hist(ax=ax, bins=bins, log=False, xlabel="f", alpha=0.7, linewidth=0, color="#00A33B")
     # ax.xaxis.set_major_formatter(PercentFormatter(xmax=1))
     ax.yaxis.set_major_formatter(FuncFormatter(lambda x, _: f"{x:,.0f}"))
     c = "#999997" if dark else "#D9D9D6"
@@ -317,9 +296,7 @@ def plot_hrtree_dist(
         fontsize="large",
     )
     fig.supxlabel(
-        "Source: Environment Agency Vegitation Object Model"
-        + r" $1m^2$"
-        + " and Rural Payments Agency EFA Hedges",
+        "Source: Environment Agency Vegitation Object Model" + r" $1m^2$" + " and Rural Payments Agency EFA Hedges",
         x=0.09,
         y=-0.09,
         ha="left",
@@ -341,7 +318,7 @@ for c in ["hedge_length", "hrtrees_count2"]:
 
 # COMMAND ----------
 
-assert data.loc[ (data.hedge_length.isnull()) & (data.hrtrees_count2 > 0)].shape[0]==0
+assert data.loc[(data.hedge_length.isnull()) & (data.hrtrees_count2 > 0)].shape[0] == 0
 assert data.loc[data.hedge_length.notnull()].shape[0] > data.loc[data.hrtrees_count2 > 0].shape[0]
 
 # COMMAND ----------
@@ -385,7 +362,7 @@ f.show()
 # COMMAND ----------
 
 f, ax = plot_hrtree_dist(
-    data.loc[data['hrtrees_count2']>0, "hrtrees_per_m"] * 100,
+    data.loc[data["hrtrees_count2"] > 0, "hrtrees_per_m"] * 100,
     "Distribution of hedgerow tree density - all parcels with hedgerow trees",
     "Hedgerow trees per 100m of hedgerow",
     0.995,

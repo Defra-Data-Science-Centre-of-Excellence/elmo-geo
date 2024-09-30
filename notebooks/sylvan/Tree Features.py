@@ -32,7 +32,7 @@
 # MAGIC > `dbfs:/mnt/lab/unrestricted/elm/elmo/hrtrees/tree_features_{timestamp}.parquet`
 # MAGIC > The timestamp of the file path corresponds to the timestamp of the tree detection data used as an input to the notebook.
 # MAGIC >
-# MAGIC | SHEET_ID | PARCEL_ID | perimeter_length | SHEET_PARCEL_ID | hrtrees_count2 | wbtrees_count2  | wbtrees_count4 | perim_trees_count2 | crown_perim_length2 | int_trees_count2 | perim_trees_count4 | crown_perim_length4 | int_trees_count4
+# MAGIC | SHEET_ID | PARCEL_ID | perimeter_length | SHEET_PARCEL_ID | hrtrees_count2 | wbtrees_count2  | wbtrees_count4 | perim_trees_count2 | crown_perim_length2 | int_trees_count2 | perim_trees_count4 | crown_perim_length4 | int_trees_count4 | #noqa
 # MAGIC |---|---|---|---|---|---|---|---|---|---|---|---|---|
 # MAGIC |   |   |   |   |   |   |   |   |   |   |   |   |   |
 # MAGIC
@@ -62,7 +62,8 @@
 # MAGIC
 # MAGIC Given by intersecting buffered hedgerow geometries with tree crown coordinates.
 # MAGIC
-# MAGIC The amount hedgerows are buffered by is given in the field name. hr_tree_count2 means the hedgerow geometry was buffered 2m before intersecting with the trees.
+# MAGIC The amount hedgerows are buffered by is given in the field name. hr_tree_count2 means the hedgerow geometry was
+# MAGIC buffered 2m before intersecting with the trees.
 # MAGIC
 # MAGIC ##### wbtrees_count{buffer}
 # MAGIC
@@ -86,29 +87,32 @@
 # MAGIC
 # MAGIC The length of the parcel perimeter that intersects with perimeter tree crowns.
 # MAGIC
-# MAGIC Calculated by intersecting the crown geometries (polygons) of perimeter trees (trees whose crown coordinate intersects with the buffered perimeter) with the parcel perimeter. See figure above for illustration.
+# MAGIC Calculated by intersecting the crown geometries (polygons) of perimeter trees (trees whose crown coordinate
+# MAGIC intersects with the buffered perimeter) with the parcel perimeter. See figure above for illustration.
 # MAGIC
 # MAGIC ##### int_trees_count{buffer}
 # MAGIC
 # MAGIC Number of trees in the parcel interior.
 # MAGIC
-# MAGIC The parcel interior is given by the difference between the buffered parcel perimeter and the parcel geometry. The distance the parcel perimeter is buffered by is given in the field name.
+# MAGIC The parcel interior is given by the difference between the buffered parcel perimeter and the parcel geometry.
+# MAGIC The distance the parcel perimeter is buffered by is given in the field name.
 # MAGIC
 
 # COMMAND ----------
 
-from tree_features import *
-from matplotlib import pyplot as plt
 import geopandas as gpd
-from shapely import from_wkb, from_wkt
 from sedona.spark import SedonaContext
-#from sedona.register import SedonaRegistrator
+from shapely import from_wkb
+from spark.sql import functions as F
+from tree_features import get_parcel_tree_features
+
+# from sedona.register import SedonaRegistrator
 from elmo_geo.utils.dbr import spark
 
 # COMMAND ----------
 
 SedonaContext.create(spark)
-#SedonaRegistrator.registerAll(spark)
+# SedonaRegistrator.registerAll(spark)
 
 # COMMAND ----------
 
@@ -119,24 +123,16 @@ hedgerow_distance_threshold = 8
 
 tree_detection_timestamp = "202311231323"  # 202311231323 timestamp is tree detection version with best F1 score so far.
 
-elmo_geo_hedgerows_path = (
-    "dbfs:/mnt/lab/restricted/ELM-Project/ods/elmo_geo-hedge-2024_01_08.parquet"
-)
+elmo_geo_hedgerows_path = "dbfs:/mnt/lab/restricted/ELM-Project/ods/elmo_geo-hedge-2024_01_08.parquet"
 elmo_geo_waterbodies_path = "dbfs:/mnt/lab/restricted/ELM-Project/ods/elmo_geo-water-2024_01_08.parquet"
 
-adas_parcels_path = "dbfs:/mnt/lab/restricted/ELM-Project/ods/rpa-parcel-adas.parquet" # november 2021 parcels
+adas_parcels_path = "dbfs:/mnt/lab/restricted/ELM-Project/ods/rpa-parcel-adas.parquet"  # november 2021 parcels
 
-trees_output_template = (
-    "dbfs:/mnt/lab/unrestricted/elm/elmo/"
-    "tree_features/tree_detections/"
-    "tree_detections_{timestamp}.parquet"
-)
+trees_output_template = "dbfs:/mnt/lab/unrestricted/elm/elmo/" "tree_features/tree_detections/" "tree_detections_{timestamp}.parquet"
 output_trees_path = trees_output_template.format(timestamp=tree_detection_timestamp)
 
-features_output_template = (
-    "dbfs:/mnt/lab/unrestricted/elm/elmo/tree_features/tree_features_hr{threshold}_td{timestamp}.parquet"
-)
-parcel_trees_output = features_output_template.format(threshold = hedgerow_distance_threshold, timestamp=tree_detection_timestamp)
+features_output_template = "dbfs:/mnt/lab/unrestricted/elm/elmo/tree_features/tree_features_hr{threshold}_td{timestamp}.parquet"
+parcel_trees_output = features_output_template.format(threshold=hedgerow_distance_threshold, timestamp=tree_detection_timestamp)
 
 # COMMAND ----------
 
@@ -156,18 +152,10 @@ output_trees_path
 # COMMAND ----------
 
 # DBTITLE 1,Load Data
-treesDF = (spark.read.parquet(output_trees_path)
-           .repartition(200_000, "major_grid", "chm_path")
-)
-parcelsDF = (spark.read.format("geoparquet").load(adas_parcels_path)
-             .repartition(1_250, "sindex")
-)
-hrDF = (spark.read.format("geoparquet").load(elmo_geo_hedgerows_path)
-        .repartition(1_250, "sindex")
-)
-wbDF = (spark.read.parquet(elmo_geo_waterbodies_path)
-        .repartition(1_250, "sindex")
-)
+treesDF = spark.read.parquet(output_trees_path).repartition(200_000, "major_grid", "chm_path")
+parcelsDF = spark.read.format("geoparquet").load(adas_parcels_path).repartition(1_250, "sindex")
+hrDF = spark.read.format("geoparquet").load(elmo_geo_hedgerows_path).repartition(1_250, "sindex")
+wbDF = spark.read.parquet(elmo_geo_waterbodies_path).repartition(1_250, "sindex")
 
 # COMMAND ----------
 
@@ -188,73 +176,73 @@ treesDF.select(F.col("chm_path")).display()
 
 # DBTITLE 1,Prepare elmo geo hedge data for hrtree classification
 # elmo-hedges assigns any hedge within 12m of a parcel to that parcel
-pDF = (parcelsDF
-       .withColumnRenamed("geometry", "geometry_parcel")
-       .withColumnRenamed("id_parcel", "id_parcel_main")
-       .select("id_parcel_main", "geometry_parcel")
-)
+pDF = parcelsDF.withColumnRenamed("geometry", "geometry_parcel").withColumnRenamed("id_parcel", "id_parcel_main").select("id_parcel_main", "geometry_parcel")
 
-hrDF = (hrDF
-        .join(pDF, pDF.id_parcel_main == hrDF.id_parcel, "inner")
-        .withColumn("geometry", F.expr(f"""
+hrDF = (
+    hrDF.join(pDF, pDF.id_parcel_main == hrDF.id_parcel, "inner")
+    .withColumn(
+        "geometry",
+        F.expr(
+            f"""
                                              ST_Intersection(
                                                  geometry,
                                                  ST_Buffer(geometry_parcel, {hedgerow_distance_threshold})
-                                                 )"""))
-        .withColumn("hedge_length", F.expr("ST_Length(geometry)"))
-        .select("id_parcel", "geometry", "hedge_length", "sindex")
+                                                 )"""
+        ),
+    )
+    .withColumn("hedge_length", F.expr("ST_Length(geometry)"))
+    .select("id_parcel", "geometry", "hedge_length", "sindex")
 )
 
-wbDF = (wbDF
-        .join(pDF, pDF.id_parcel_main == wbDF.id_parcel, "inner")
-        .withColumn("geometry", F.expr(f"""
+wbDF = (
+    wbDF.join(pDF, pDF.id_parcel_main == wbDF.id_parcel, "inner")
+    .withColumn(
+        "geometry",
+        F.expr(
+            f"""
                                              ST_Intersection(
                                                  geometry,
                                                  ST_Buffer(geometry_parcel, {hedgerow_distance_threshold})
-                                                 )"""))
-        .select("id_parcel", "geometry", "sindex")
+                                                 )"""
+        ),
+    )
+    .select("id_parcel", "geometry", "sindex")
 )
 
 # COMMAND ----------
 
-#wbDF.display()
+# wbDF.display()
 
 # COMMAND ----------
 
 # DBTITLE 1,Map hedge data to check it
 geo_cols = ["geometry"]
-gdf = (hrDF
-       .select(
-           [
-               "id_parcel",
-               "sindex",
-           *[F.expr(f"ST_AsBinary({c}) as {c}") for c in geo_cols]
-           ]
-       )
-       .filter(F.col("sindex") == "SP53")).toPandas()
+gdf = (hrDF.select(["id_parcel", "sindex", *[F.expr(f"ST_AsBinary({c}) as {c}") for c in geo_cols]]).filter(F.col("sindex") == "SP53")).toPandas()
 for c in geo_cols:
     gdf[c] = gdf[c].map(lambda x: from_wkb(x))
 
-gdf = gpd.GeoDataFrame(gdf, geometry="geometry", crs = "epsg:27700")
+gdf = gpd.GeoDataFrame(gdf, geometry="geometry", crs="epsg:27700")
 m = gdf.explore()
 outfp = "/dbfs/FileStore/hedge_map.html"
 m.save(outfp)
 
+
 def download_link(filepath, move=True):
     # NB filepath must be in the format dbfs:/ not /dbfs/
     # Get filename
-    filename = filepath[filepath.rfind("/"):]
+    filename = filepath[filepath.rfind("/") :]
     # Move file to FileStore
-    '''
+    """
     if move:
         dbutils.fs.mv(filepath, f"dbfs:/FileStore/{filename}")
     else:
         dbutils.fs.cp(filepath, f"dbfs:/FileStore/{filename}")
-    '''
+    """
     # Construct download url
     url = f"https://{spark.conf.get('spark.databricks.workspaceUrl')}/files/{filename}?o={spark.conf.get('spark.databricks.clusterUsageTags.orgId')}"
     # Return html snippet
     return f"<a href={url} target='_blank'>Download file: {filename}</a>"
+
 
 download_link(outfp, move=False)
 
@@ -277,7 +265,7 @@ pTreesDF = get_parcel_tree_features(
     treesDF,
     parcelsDF,
     hrDF,
-    None, # wbDF not working currently.
+    None,  # wbDF not working currently.
     parcelBufferDistances,
     hedgerowBufferDistances,
     waterbodyBufferDistances,
@@ -293,18 +281,8 @@ pTreesDF.write.mode("overwrite").parquet(parcel_trees_output)
 
 # DBTITLE 1,Add hedgerow length
 pTreesDF = spark.read.parquet(parcel_trees_output)
-hLengthDF = (hrDF
-             .withColumnRenamed("id_parcel", "idp")
-             .groupBy("idp")
-             .agg(F.sum("hedge_length").alias("hedge_length"))
-)
-pTreesDF = (pTreesDF
-       .join(
-           hLengthDF,
-           hLengthDF.idp == pTreesDF.id_parcel,
-           "left")
-       .drop("idp")
-)
+hLengthDF = hrDF.withColumnRenamed("id_parcel", "idp").groupBy("idp").agg(F.sum("hedge_length").alias("hedge_length"))
+pTreesDF = pTreesDF.join(hLengthDF, hLengthDF.idp == pTreesDF.id_parcel, "left").drop("idp")
 
 # COMMAND ----------
 
