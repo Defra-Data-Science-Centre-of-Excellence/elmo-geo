@@ -44,9 +44,7 @@ def setup_geoplot(lims=(446450, 349550, 446650, 349850), basemap=True, figsize=(
     if basemap:
         ctx.add_basemap(
             ax=ax,
-            source=ctx.providers.Thunderforest.Landscape(
-                apikey="25a2eb26caa6466ebc5c2ddd50c5dde8", attribution=None
-            ),
+            source=ctx.providers.Thunderforest.Landscape(apikey="25a2eb26caa6466ebc5c2ddd50c5dde8", attribution=None),
             crs="EPSG:27700",
         )
     return fig, ax
@@ -68,9 +66,7 @@ def add_patch(legend, layers):
     legend.set_title(legend.get_title().get_text())
 
 
-def layers_plot(
-    *layers, lims, figsize=(15, 15), suptitle="", axtitle="", stagger=True, basemap=False, **kwargs
-):
+def layers_plot(*layers, lims, figsize=(15, 15), suptitle="", axtitle="", stagger=True, basemap=False, **kwargs):
     """
     Each element is layers is a 4-tuple of:
     - gdf: the data to be plotted
@@ -158,9 +154,7 @@ def load_data(subdir: str, datasets: list) -> Tuple[types.SparkDataFrame]:
         key = f"sf_{ds}_out"
         sdf = spark.read.parquet(paths_out[key])
         if ds == "hedgerows":
-            sdf = sdf.withColumn("length", F.expr("ST_Length(geometry_hedge)")).withColumn(
-                "major_grid", F.expr("LEFT(bng_10km, 2)")
-            )
+            sdf = sdf.withColumn("length", F.expr("ST_Length(geometry_hedge)")).withColumn("major_grid", F.expr("LEFT(bng_10km, 2)"))
         output.append(sdf)
 
     return output
@@ -171,9 +165,7 @@ def load_data(subdir: str, datasets: list) -> Tuple[types.SparkDataFrame]:
 # Input data paths
 sf_vom_td = "dbfs:/mnt/lab/unrestricted/elm/elmo/tree_features/tree_detections/tree_detections_202308040848.parquet"
 sf_tow_sp = "dbfs:/mnt/lab/unrestricted/elm_data/forest_research/TOW_SP_England_26062023.parquet"
-sf_tow_lidar = (
-    "dbfs:/mnt/lab/unrestricted/elm_data/forest_research/TOW_LiDAR_England_26062023.parquet"
-)
+sf_tow_lidar = "dbfs:/mnt/lab/unrestricted/elm_data/forest_research/TOW_LiDAR_England_26062023.parquet"
 
 # COMMAND ----------
 
@@ -237,9 +229,7 @@ for pid in gdf_seg["id_parcel"].unique():
 
 # COMMAND ----------
 
-sf_output_relict_lengths = (
-    "/dbfs/mnt/lab/unrestricted/elm/elm_se/relict_hedge/relict_length_totals.csv"
-)
+sf_output_relict_lengths = "/dbfs/mnt/lab/unrestricted/elm/elm_se/relict_hedge/relict_length_totals.csv"
 sf_efa_hedge = "dbfs:/mnt/lab/unrestricted/elm_data/rpa/efa_control/2023_02_07.parquet"
 
 sdf_hedge = spark.read.parquet(sf_efa_hedge).select(
@@ -304,11 +294,7 @@ df_relict_30 = (
     .toPandas()
 )
 
-df_relict_all = (
-    sdf_relict_segments.groupBy("major_grid")
-    .agg(F.expr("SUM(segment_length) as relict_length_30"))
-    .toPandas()
-)
+df_relict_all = sdf_relict_segments.groupBy("major_grid").agg(F.expr("SUM(segment_length) as relict_length_30")).toPandas()
 
 df_wood_features = (
     sdf_wb.groupBy("major_grid")
@@ -330,9 +316,7 @@ df_boundary_length = (
 )
 
 df_avail_seg_length = (
-    sdf_available_segments.groupBy("major_grid")
-    .agg(F.expr("SUM(ST_Length(ST_GeomFromWKB(geometry))) as available_segments_length"))
-    .toPandas()
+    sdf_available_segments.groupBy("major_grid").agg(F.expr("SUM(ST_Length(ST_GeomFromWKB(geometry))) as available_segments_length")).toPandas()
 )
 
 # COMMAND ----------
@@ -397,9 +381,7 @@ ax.set_xlabel("Major OS Grid", fontsize=22)
 ax.set_ylabel("Length", fontsize=22)
 ax.legend(fontsize=18)
 
-ax.set_title(
-    "Mapped and relict hedgerow length by OS grid, England", fontsize=22, loc="left", y=1.05
-)
+ax.set_title("Mapped and relict hedgerow length by OS grid, England", fontsize=22, loc="left", y=1.05)
 
 f.supxlabel(
     """
@@ -542,9 +524,7 @@ names = {
     "boundary_wood_length": "Wooded boundary",
     "boundary_relict_length": "Relict hedge",
 }
-f, ax = stacked_bar_parcel_counts(
-    df_eng_totals, title="Parcel boundary lengths for England", names=names
-)
+f, ax = stacked_bar_parcel_counts(df_eng_totals, title="Parcel boundary lengths for England", names=names)
 f.show()
 
 # COMMAND ----------
@@ -593,9 +573,7 @@ sdf_tow_li = spark.read.parquet(sf_tow_lidar)
 sdf_tow_sp = spark.read.parquet(sf_tow_sp)
 sdf_tow = (
     sdf_tow_li.union(  # Combine two two datasets
-        sdf_tow_sp.select(
-            *list(sdf_tow_li.columns)
-        )  # sdf_tow_sp has 4 additional columns that we don't want
+        sdf_tow_sp.select(*list(sdf_tow_li.columns))  # sdf_tow_sp has 4 additional columns that we don't want
     )
     .withColumn("geometry", io.load_geometry(column="geometry"))
     .filter(F.expr(f"ST_Intersects(geometry, ST_GeomFromText('{filter_polygon.wkt}'))"))
@@ -604,9 +582,7 @@ sdf_tow = (
 # Other Woody - VOM-TD
 sdf_vom_td = (
     spark.read.parquet(sf_vom_td)
-    .withColumn(
-        "geometry", io.load_geometry(column="top_point", encoding_fn="ST_GeomFromText")
-    )  # Use coordinate to join to parcels for efficiency
+    .withColumn("geometry", io.load_geometry(column="top_point", encoding_fn="ST_GeomFromText"))  # Use coordinate to join to parcels for efficiency
     .filter(F.expr(f"ST_Intersects(geometry, ST_GeomFromText('{filter_polygon.wkt}'))"))
 )
 
@@ -614,14 +590,10 @@ sdf_vom_td = (
 
 # Create geo dataframes
 gdf_parcels = io.SparkDataFrame_to_PandasDataFrame(sdf_parcels)
-gdf_parcels = gpd.GeoDataFrame(
-    gdf_parcels, geometry=gpd.GeoSeries.from_wkb(gdf_parcels["geometry"], crs=27700), crs=27700
-)
+gdf_parcels = gpd.GeoDataFrame(gdf_parcels, geometry=gpd.GeoSeries.from_wkb(gdf_parcels["geometry"], crs=27700), crs=27700)
 
 gdf_hr = io.SparkDataFrame_to_PandasDataFrame(sdf_hr)
-gdf_hr = gpd.GeoDataFrame(
-    gdf_hr, geometry=gpd.GeoSeries.from_wkb(gdf_hr["geometry_hedge"], crs=27700), crs=27700
-)
+gdf_hr = gpd.GeoDataFrame(gdf_hr, geometry=gpd.GeoSeries.from_wkb(gdf_hr["geometry_hedge"], crs=27700), crs=27700)
 
 gdf_woodland = io.SparkDataFrame_to_PandasDataFrame(sdf_nfi)
 gdf_woodland = gpd.GeoDataFrame(
@@ -631,10 +603,12 @@ gdf_woodland = gpd.GeoDataFrame(
 )
 
 # gdf_other_woody_vom = io.SparkDataFrame_to_PandasDataFrame(sdf_other_woody_vom)
-# gdf_other_woody_vom = gpd.GeoDataFrame(gdf_other_woody_vom, geometry = gpd.GeoSeries.from_wkb(gdf_other_woody_vom['geometry_vom_td'], crs=27700), crs = 27700 )
+# gdf_other_woody_vom = gpd.GeoDataFrame(gdf_other_woody_vom,
+# geometry = gpd.GeoSeries.from_wkb(gdf_other_woody_vom['geometry_vom_td'], crs=27700), crs = 27700 )
 
 # gdf_other_woody_tow = io.SparkDataFrame_to_PandasDataFrame(sdf_other_woody_tow)
-# gdf_other_woody_tow = gpd.GeoDataFrame(gdf_other_woody_tow, geometry = gpd.GeoSeries.from_wkb(gdf_other_woody_tow['geometry_tow'], crs=27700), crs = 27700 )
+# gdf_other_woody_tow = gpd.GeoDataFrame(gdf_other_woody_tow,
+# geometry = gpd.GeoSeries.from_wkb(gdf_other_woody_tow['geometry_tow'], crs=27700), crs = 27700 )
 
 gdf_other_woody_segments = io.SparkDataFrame_to_PandasDataFrame(sdf_other_woody_segments)
 gdf_other_woody_segments = gpd.GeoDataFrame(
@@ -662,9 +636,7 @@ gdf_relict_segments = gpd.GeoDataFrame(
 # COMMAND ----------
 
 gdf_vom_td = io.SparkDataFrame_to_PandasDataFrame(sdf_vom_td)
-gdf_vom_td = gpd.GeoDataFrame(
-    gdf_vom_td, geometry=gpd.GeoSeries.from_wkb(gdf_vom_td["geometry"], crs=27700), crs=27700
-)
+gdf_vom_td = gpd.GeoDataFrame(gdf_vom_td, geometry=gpd.GeoSeries.from_wkb(gdf_vom_td["geometry"], crs=27700), crs=27700)
 
 # COMMAND ----------
 
@@ -736,9 +708,7 @@ layers_plot(
 # DBTITLE 1,Compare available boundary to segmentise available boundary
 layers = [
     (
-        gdf_wb.set_geometry(
-            gdf_wb["geometry_boundary_relict_available"].map(lambda x: from_wkb(x))
-        ),
+        gdf_wb.set_geometry(gdf_wb["geometry_boundary_relict_available"].map(lambda x: from_wkb(x))),
         "Available segment",
         "red",
         dict(linewidth=2),
@@ -800,9 +770,7 @@ layers_plot(
 # Plot the boundary available to be relict
 layers = [
     (
-        gdf_other_woody_segments.set_geometry(
-            gdf_other_woody_segments["geometry_segment_orig"].map(lambda x: from_wkb(x))
-        ),
+        gdf_other_woody_segments.set_geometry(gdf_other_woody_segments["geometry_segment_orig"].map(lambda x: from_wkb(x))),
         "Available segments",
         "black",
         dict(linestyle=":", linewidth=2),
@@ -814,9 +782,7 @@ layers = [
         dict(),
     ),
     (
-        gdf_other_woody_segments.set_geometry(
-            gdf_other_woody_segments["geometry_other_woody_vom_boundary"].map(lambda x: from_wkb(x))
-        ),
+        gdf_other_woody_segments.set_geometry(gdf_other_woody_segments["geometry_other_woody_vom_boundary"].map(lambda x: from_wkb(x))),
         "VOM segment portions",
         "red",
         dict(linewidth=3),
@@ -855,9 +821,7 @@ layers = [
         dict(linewidth=3),
     ),
     (
-        gdf_other_woody_segments.set_geometry(
-            gdf_other_woody_segments["geometry_other_woody_vom_boundary"].map(lambda x: from_wkb(x))
-        ),
+        gdf_other_woody_segments.set_geometry(gdf_other_woody_segments["geometry_other_woody_vom_boundary"].map(lambda x: from_wkb(x))),
         "VOM segment portions",
         "orange",
         dict(linewidth=3),

@@ -7,7 +7,9 @@
 # MAGIC
 # MAGIC Classifies parcel boundaries as either **hedgerow**, **woodland**, or **other woody**.
 # MAGIC
-# MAGIC The other woody classification is then used to classify sections of parcel boundaries as relict hedges. Relict hedges are ["where individual shrubs have grown up into single stem mature trees with full canopies and lots of gaps in between"](https://www.teagasc.ie/news--events/daily/environment/hedges-for-rejuvenation.php)
+# MAGIC The other woody classification is then used to classify sections of parcel boundaries as relict hedges.
+# MAGIC Relict hedges are ["where individual shrubs have grown up into single stem mature trees with full canopies and
+# MAGIC lots of gaps in between"](https://www.teagasc.ie/news--events/daily/environment/hedges-for-rejuvenation.php)
 # MAGIC
 # MAGIC
 # MAGIC
@@ -49,7 +51,8 @@
 # MAGIC
 # MAGIC ### Priority method
 # MAGIC
-# MAGIC The priority method classifies portions of parcel boundary segments as _either_ hedgerow, woodland, other woody, or unclassified (meaning not a woody boundary).
+# MAGIC The priority method classifies portions of parcel boundary segments as _either_ hedgerow, woodland, other woody,
+# MAGIC or unclassified (meaning not a woody boundary).
 # MAGIC
 # MAGIC The hierarchy of this classification is:
 # MAGIC   1. Hedgerow
@@ -57,7 +60,8 @@
 # MAGIC   3. Other woody
 # MAGIC   4. Unclassified
 # MAGIC
-# MAGIC If a portion of a boundary segment intersects hedgerow that portion is removed so that is cannot be classified as any other woody type. Only portions of boudnary segments that are not intersected y hedgerows or woodland can be classified as other woody.
+# MAGIC If a portion of a boundary segment intersects hedgerow that portion is removed so that is cannot be classified as any
+# MAGIC other woody type. Only portions of boudnary segments that are not intersected y hedgerows or woodland can be classified as other woody.
 # MAGIC
 # MAGIC ### Relict hedge classification
 # MAGIC
@@ -68,12 +72,28 @@
 # MAGIC   2. Divide this by the total segment length to give the proportion of other woody features
 # MAGIC   3. Classify the segment as a relict hedge based on a threshold proportion.
 # MAGIC
-# MAGIC On top of this additional filters can be applied. For example, only certain types of Trees Outside Woodland can be included in the 'other woody' classification.
+# MAGIC On top of this additional filters can be applied. For example, only certain types of Trees Outside
+# MAGIC Woodland can be included in the 'other woody' classification.
 
 # COMMAND ----------
+from glob import glob
+
+import geopandas as gpd
+import numpy as np
+import pandas as pd
+from pyspark.sql import functions as F
+from pyspark.sql import types as T
+from shapely.geometry import LineString
+
+from elmo_geo import register
+from elmo_geo.io import io2 as io
+from elmo_geo.st import st
+from elmo_geo.utils.dbr import spark
+
+register()
 
 # DBTITLE 1,Find Filepaths
-from glob import glob
+
 
 set(
     glob("/dbfs/mnt/base/unrestricted/source_[!bluesky]*/dataset_*fell*", recursive=True)
@@ -92,18 +112,17 @@ BUFFER = 4
 sf_parcel = "dbfs:/mnt/lab/unrestricted/elm_data/rpa/reference_parcels/2023_06_03.geoparquet"
 sf_efa_hedge = "dbfs:/mnt/lab/unrestricted/elm_data/rpa/efa_control/2023_02_07.parquet"
 sf_nfi = "dbfs:/mnt/lab/unrestricted/elm_data/forestry_commission/national_forest_inventory_woodland_england_2018/2021_03_24.parquet"
-sf_nfi = "dbfs:/mnt/lab/unrestricted/elm_data/source_forestry_commission_open_data/dataset_national_forest_inventory_woodland_england/SNAPSHOT_2022_10_19_national_forest_inventory_woodland_england_2020/National_Forest_Inventory_Woodland_England_2020.parquet"
-sf_fl = (
-    "dbfs:/mnt/lab/unrestricted/elm_data/forestry_commission/felling_licences/2021_03_18.parquet"
+sf_nfi = (
+    "dbfs:/mnt/lab/unrestricted/elm_data/source_forestry_commission_open_data/dataset_national_forest_inventory_woodland_england/"
+    "SNAPSHOT_2022_10_19_national_forest_inventory_woodland_england_2020/National_Forest_Inventory_Woodland_England_2020.parquet"
 )
+sf_fl = "dbfs:/mnt/lab/unrestricted/elm_data/forestry_commission/felling_licences/2021_03_18.parquet"
 # sf_to = 'dbfs:/mnt/lab/unrestricted/elm_data/defra/traditional_orchards/2021_03_22.parquet'
 sf_cf = "dbfs:/mnt/lab/unrestricted/elm_data/englands_community_forests_partnership/community_forests/2021_11_02.parquet"
 sf_awi = "dbfs:/mnt/lab/unrestricted/elm_data/defra/ancient_woodland_inventory/2021_03_12.parquet"
 sf_vom_td = "dbfs:/mnt/lab/unrestricted/elm/elmo/tree_features/tree_detections/tree_detections_202308040848.parquet"
 sf_tow_sp = "dbfs:/mnt/lab/unrestricted/elm_data/forest_research/TOW_SP_England_26062023.parquet"
-sf_tow_lidar = (
-    "dbfs:/mnt/lab/unrestricted/elm_data/forest_research/TOW_LiDAR_England_26062023.parquet"
-)
+sf_tow_lidar = "dbfs:/mnt/lab/unrestricted/elm_data/forest_research/TOW_LiDAR_England_26062023.parquet"
 
 #
 # Option to work on subset of data. Used for testing
@@ -113,10 +132,9 @@ if filter_parcels:
     # 'SS4826' 'SP5833' - this tile is causing invalid geom # SP6552 - this is the tile I am creating figures for
     filter_tile = "SP6552"
     path_out = (
-        "dbfs:/mnt/lab/unrestricted/elm/elm_se/relict_hedge/test"
-        + filter_tile
-        + "/elm_se-{}-2023_08.parquet"
-    )  # v2 - changes to where segmenting happens (after hedge and wood priority) and joining segments back to original parcel boundararies. Output needs to be same geometry as parcel boundary.
+        "dbfs:/mnt/lab/unrestricted/elm/elm_se/relict_hedge/test" + filter_tile + "/elm_se-{}-2023_08.parquet"
+    )  # v2 - changes to where segmenting happens (after hedge and wood priority) and joining segments back to original parcel
+    # boundararies. Output needs to be same geometry as parcel boundary.
 
     # partition numbers
     n1 = 10
@@ -134,25 +152,19 @@ else:
 # Output paths for woody features joined to parcel segments
 #
 sf_parcels_out = path_out.format("parcels")  # Parcel boundaries split into component segments
-sf_parcel_segments_out = path_out.format(
-    "parcel_segments"
-)  # Parcel boundaries split into component segments
+sf_parcel_segments_out = path_out.format("parcel_segments")  # Parcel boundaries split into component segments
 sf_hedgerows_out = path_out.format("hedgerows")  # Hedges
 sf_woodland_out = path_out.format("woodland")  # Woodland
 sf_nfi_out = path_out.format("nfi")  # NFI woodland only
 sf_available_segments_out = path_out.format("available_segments")
 sf_other_woody_tow_out = path_out.format("other_woody_tow")  # Trees Outside Woodland
 sf_other_woody_vom_out = path_out.format("other_woody_vom_td")  # VOM Tree Detections
-sf_other_woody_segments_out = path_out.format(
-    "other_woody_segments"
-)  # Other woody features priority on available segments
+sf_other_woody_segments_out = path_out.format("other_woody_segments")  # Other woody features priority on available segments
 
 #
 # Output paths for priority method (differencing segments with woody features)
 #
-sf_woody_boundaries_out = path_out.format(
-    "woody_boundaries"
-)  # Priority Method: hedges, then woodland, then other woody features from TOW and VOM
+sf_woody_boundaries_out = path_out.format("woody_boundaries")  # Priority Method: hedges, then woodland, then other woody features from TOW and VOM
 sf_relict_segments_out = path_out.format(
     "relict_segments"
 )  # Length of other woody features aggregated to each boundary segment. Used to classify segments as relict by applying length proportion threshold.
@@ -164,22 +176,6 @@ sf_relict_segments_out
 # COMMAND ----------
 
 # MAGIC %pip install rich
-
-# COMMAND ----------
-
-import geopandas as gpd
-import numpy as np
-import pandas as pd
-from pyspark.sql import functions as F
-from pyspark.sql import types as T
-from shapely.geometry import LineString
-
-from elmo_geo import register
-from elmo_geo.io import io2 as io
-from elmo_geo.st import st
-from elmo_geo.utils.dbr import spark
-
-register()
 
 
 # COMMAND ----------
@@ -202,9 +198,7 @@ if filter_parcels:
         F.expr("CONCAT(SHEET_ID, PARCEL_ID) as id_parcel"),
         io.load_geometry("geometry"),  # WKB>UDT (optimised)
     )
-    sdf_parcel = sdf_parcel.filter(
-        F.expr(f"ST_Intersects(geometry, ST_GeomFromText('{filter_polygon.wkt}'))")
-    )
+    sdf_parcel = sdf_parcel.filter(F.expr(f"ST_Intersects(geometry, ST_GeomFromText('{filter_polygon.wkt}'))"))
 else:
     sdf_parcel = (
         spark.read.parquet(sf_parcel)
@@ -247,9 +241,7 @@ sdf_hedge = spark.read.parquet(sf_efa_hedge).select(
     "LENGTH",
     io.load_geometry("wkb_geometry").alias("geometry"),
 )
-sdf_hedge = st.sjoin(
-    sdf_parcels, sdf_hedge, distance=BUFFER, lsuffix="_segjoin", rsuffix="_hedge", spark=spark
-)
+sdf_hedge = st.sjoin(sdf_parcels, sdf_hedge, distance=BUFFER, lsuffix="_segjoin", rsuffix="_hedge", spark=spark)
 
 
 # Woodland
@@ -290,9 +282,7 @@ sdf_woodland = st.sjoin(sdf_parcel_segments, sdf_woodland, distance=4, lsuffix='
 """
 
 sdf_woodland = (
-    st.sjoin(
-        sdf_parcels, sdf_nfi, distance=BUFFER, lsuffix="_segjoin", rsuffix="_woodland", spark=spark
-    )
+    st.sjoin(sdf_parcels, sdf_nfi, distance=BUFFER, lsuffix="_segjoin", rsuffix="_woodland", spark=spark)
     # .union(st.sjoin(sdf_parcel_segments, sdf_fl, distance=4, lsuffix='_segjoin', rsuffix='_woodland'))
     # .union(st.sjoin(sdf_parcel_segments, sdf_cf, distance=4, lsuffix='_segjoin', rsuffix='_woodland'))
     # .union(st.sjoin(sdf_parcel_segments, sdf_awi, distance=4, lsuffix='_segjoin', rsuffix='_woodland'))
@@ -302,9 +292,7 @@ sdf_woodland = (
 
 # DBTITLE 0,t
 # Save the joined data
-sdf_hedge.repartition(n1, "major_grid", "bng_10km").write.mode("overwrite").parquet(
-    sf_hedgerows_out
-)
+sdf_hedge.repartition(n1, "major_grid", "bng_10km").write.mode("overwrite").parquet(sf_hedgerows_out)
 sdf_woodland.repartition(n1, "major_grid", "bng_10km").write.mode("overwrite").parquet(sf_nfi_out)
 
 # COMMAND ----------
@@ -325,9 +313,7 @@ sdf_woodland = spark.read.parquet(sf_nfi_out)
 
 # Method
 def group_agg_features(sdf, geom: str, group_cols: list):
-    sdf = sdf.groupby(*group_cols).agg(
-        F.expr(f"ST_MakeValid(ST_Union_Aggr({geom}))  AS geometry_tmp")
-    )
+    sdf = sdf.groupby(*group_cols).agg(F.expr(f"ST_MakeValid(ST_Union_Aggr({geom}))  AS geometry_tmp"))
     return sdf
 
 
@@ -352,9 +338,7 @@ def boundary_use(
 
     return (
         left.join(right, on=group_cols, how="left")
-        .withColumn(
-            "geometry_tmp", F.expr('COALESCE(geometry_tmp, ST_GeomFromText("POINT EMPTY"))')
-        )
+        .withColumn("geometry_tmp", F.expr('COALESCE(geometry_tmp, ST_GeomFromText("POINT EMPTY"))'))
         .withColumn(f"geometry_{suffix}", F.expr(fn_in))
         .withColumn(left_geom, F.expr(fn_out))
         .drop("geometry_tmp")
@@ -366,9 +350,7 @@ def boundary_use(
 # DBTITLE 0,Priority method refactored
 group_cols = ["major_grid", "bng_10km", "bng_1km", "id_parcel"]
 sdf_woody_boundaries = (
-    sdf_parcels.select(
-        *group_cols, "geometry_boundary", F.expr("geometry_boundary AS geometry_boundary_orig")
-    )
+    sdf_parcels.select(*group_cols, "geometry_boundary", F.expr("geometry_boundary AS geometry_boundary_orig"))
     .transform(
         boundary_use,
         sdf_hedge,
@@ -392,9 +374,7 @@ sdf_woody_boundaries = (
 )
 
 # Checkpoint. Record the boundary available. This is the geometry that will be converted into segments.
-sdf_woody_boundaries = sdf_woody_boundaries.withColumn(
-    "geometry_boundary_relict_available", F.col("geometry_boundary")
-)
+sdf_woody_boundaries = sdf_woody_boundaries.withColumn("geometry_boundary_relict_available", F.col("geometry_boundary"))
 
 # Output
 sdf_woody_boundaries.write.parquet(sf_woody_boundaries_out, mode="overwrite")
@@ -421,21 +401,18 @@ def st_dump_to_list(s: pd.Series) -> pd.Series:
 def st_interpolate_to_list(col: str, d: int = 10):
     @F.pandas_udf(T.ArrayType(T.BinaryType()))
     def udf(s: pd.Series) -> pd.Series:
-        """Splits linestrings up based on distance. Splits line string into a list of line string segments of length approximately equal to input parameter d."""
+        """Splits linestrings up based on distance. Splits line string into a list of
+        line string segments of length approximately equal to input parameter d."""
 
         def linestring_interpolate(line):
             # generate the equidistant points
             distances = np.linspace(0, line.length, int(np.ceil(line.length / d)) + 1)[1:-1]
-            points = (
-                [list(line.boundary.geoms)[0]]
-                + [line.interpolate(distance) for distance in distances]
-                + [list(line.boundary.geoms)[1]]
-            )
+            points = [list(line.boundary.geoms)[0]] + [line.interpolate(distance) for distance in distances] + [list(line.boundary.geoms)[1]]
             lines = [LineString([a, b]).wkb for a, b in zip(points[:-1], points[1:])]
             return lines
 
         gs = gpd.GeoSeries.from_wkb(s)
-        return gs.map(lambda l: linestring_interpolate(l))
+        return gs.map(linestring_interpolate)
 
     return udf(col)
 
@@ -444,11 +421,7 @@ def apply_st_func(sdf, func, explode_query, gcol, **kwargs):
     """Worker function to apply a function to the geometry column and explode the result.
     Explode query creates new id column so needs to be tailored to the function being applied.
     """
-    (
-        sdf.withColumn(gcol, F.expr(f"ST_AsBinary({gcol})"))
-        .withColumn(gcol, func(gcol, **kwargs))
-        .createOrReplaceTempView("tbl")
-    )
+    (sdf.withColumn(gcol, F.expr(f"ST_AsBinary({gcol})")).withColumn(gcol, func(gcol, **kwargs)).createOrReplaceTempView("tbl"))
 
     return spark.sql(explode_query)
 
@@ -475,14 +448,16 @@ def apply_st_interpolate(sdf, gcol="geometry", d=10):
 #
 # Create boundary segments
 #
-segment_query = (
+segment_query = (  # noqa
     lambda t: f"""
 select mp.major_grid, mp.bng_10km, mp.bng_1km, mp.id_parcel, mp.id_boundary, mp.id_segment, St_LineFromMultiPoint(St_collect(mp.p1, mp.p2)) as geometry
 from
 (
-  select d.major_grid, d.bng_10km, d.bng_1km, d.id_parcel, d.id_boundary, d.id_segment, d.j p1, lead(d.j) over (partition by d.id_parcel, d.id_boundary order by d.id_segment) p2 from
+  select d.major_grid, d.bng_10km, d.bng_1km, d.id_parcel, d.id_boundary, d.id_segment, d.j p1, 
+  lead(d.j) over (partition by d.id_parcel, d.id_boundary order by d.id_segment) p2 from
   (
-    select major_grid, bng_10km, bng_1km, id_parcel, id_boundary, EXPLODE(ST_DumpPoints(geometry_boundary_relict_available))  j, ROW_NUMBER() OVER (partition by id_parcel, id_boundary ORDER BY id_parcel, id_boundary ASC) AS id_segment from {t}
+    select major_grid, bng_10km, bng_1km, id_parcel, id_boundary, EXPLODE(ST_DumpPoints(geometry_boundary_relict_available))  j, 
+    ROW_NUMBER() OVER (partition by id_parcel, id_boundary ORDER BY id_parcel, id_boundary ASC) AS id_segment from {t}
     ) d
 ) mp
 where (p1 is not null) and (p2 is not null);
@@ -499,9 +474,7 @@ sdf_woody_boundaries = spark.read.parquet(sf_woody_boundaries_out)
         F.expr("ST_MakeValid(ST_SimplifyPreserveTopology(geometry_boundary_relict_available, 1))"),
     )
     .transform(apply_st_dump, gcol="geometry_boundary_relict_available")
-    .withColumn(
-        "geometry_boundary_relict_available", io.load_geometry("geometry_boundary_relict_available")
-    )
+    .withColumn("geometry_boundary_relict_available", io.load_geometry("geometry_boundary_relict_available"))
     .createOrReplaceTempView("available_boundaries")
 )
 
@@ -512,16 +485,12 @@ sdf_available_segments = (
     # .withColumn("geometry", F.expr("ST_AsBinary(geometry)"))
 )
 
-sdf_available_segments.repartition(n1, "major_grid", "bng_10km").write.mode("overwrite").parquet(
-    sf_available_segments_out
-)
+sdf_available_segments.repartition(n1, "major_grid", "bng_10km").write.mode("overwrite").parquet(sf_available_segments_out)
 
 # COMMAND ----------
 
 # DBTITLE 1,Buffer spatial join segments to other woody features
-sdf_available_segments = spark.read.parquet(sf_available_segments_out).withColumn(
-    "geometry", io.load_geometry("geometry")
-)
+sdf_available_segments = spark.read.parquet(sf_available_segments_out).withColumn("geometry", io.load_geometry("geometry"))
 
 # Other Woody - TOW
 """
@@ -587,9 +556,7 @@ sdf_vom_td = (
         "top_point",  # wkt; POINT representing tree top
         "crown_poly_raster",  # wkt; POLYGON representing tree crown
     )
-    .withColumn(
-        "geometry", io.load_geometry(column="top_point", encoding_fn="ST_GeomFromText")
-    )  # Use coordinate to join to parcels for efficiency
+    .withColumn("geometry", io.load_geometry(column="top_point", encoding_fn="ST_GeomFromText"))  # Use coordinate to join to parcels for efficiency
 )
 sdf_other_woody_vom = st.sjoin(
     sdf_available_segments,
@@ -600,9 +567,7 @@ sdf_other_woody_vom = st.sjoin(
     spark=spark,
 )
 
-sdf_other_woody_vom.repartition(n2, "major_grid", "bng_10km").write.mode("overwrite").parquet(
-    sf_other_woody_vom_out
-)
+sdf_other_woody_vom.repartition(n2, "major_grid", "bng_10km").write.mode("overwrite").parquet(sf_other_woody_vom_out)
 
 # COMMAND ----------
 
@@ -648,9 +613,7 @@ sdf_other_woody_segments = (
 # Taking many hours why segments split into 10m chunks
 # Also takes about 48s including tow in the priority use, but only 2s with only vom (without restrictions on segment length)
 # takes about 25s including tow in the priority use, but only 2s with only vom (with 50m restriction on segment length)
-sdf_other_woody_segments.repartition(n2, "major_grid", "bng_10km").write.mode("overwrite").parquet(
-    sf_other_woody_segments_out
-)
+sdf_other_woody_segments.repartition(n2, "major_grid", "bng_10km").write.mode("overwrite").parquet(sf_other_woody_segments_out)
 
 # COMMAND ----------
 
@@ -693,9 +656,7 @@ sdf_relict_segments = spark.sql(
                                 """
 )
 
-sdf_relict_segments.repartition(n2, "major_grid", "bng_10km").write.mode("overwrite").parquet(
-    sf_relict_segments_out
-)
+sdf_relict_segments.repartition(n2, "major_grid", "bng_10km").write.mode("overwrite").parquet(sf_relict_segments_out)
 
 # COMMAND ----------
 
@@ -709,9 +670,7 @@ sdf_relict_segments = (
 )
 
 # Run priority method on the boundary available to be relict
-sdf_woody_boundaries = spark.read.parquet(sf_woody_boundaries_out).withColumn(
-    "geometry_boundary", F.col("geometry_boundary_relict_available")
-)
+sdf_woody_boundaries = spark.read.parquet(sf_woody_boundaries_out).withColumn("geometry_boundary", F.col("geometry_boundary_relict_available"))
 
 # Priority method with relict hedge
 sdf_woody_boundaries = sdf_woody_boundaries.transform(
@@ -723,9 +682,7 @@ sdf_woody_boundaries = sdf_woody_boundaries.transform(
     simp=0,
     buf=2,
 )
-sdf_woody_boundaries.repartition(n2, "major_grid", "bng_10km").write.mode("overwrite").parquet(
-    sf_woody_boundaries_out
-)
+sdf_woody_boundaries.repartition(n2, "major_grid", "bng_10km").write.mode("overwrite").parquet(sf_woody_boundaries_out)
 
 # COMMAND ----------
 

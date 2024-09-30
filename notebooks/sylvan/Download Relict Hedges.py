@@ -3,25 +3,18 @@
 
 # COMMAND ----------
 
-from shapely import from_wkt
+import json
+
 import geopandas as gpd
-import numpy as np
-import pandas as pd
+from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
-from pyspark.sql import types as T
-from shapely.geometry import LineString
+from shapely import from_wkt
 
 from elmo_geo import register
-#from elmo_geo.io import io2 as io
-#from elmo_geo.st import st
-from elmo_geo.utils.dbr import spark
-
-from pyspark.sql import SparkSession
-spark = SparkSession.getActiveSession()
 
 register()
-#from sedona.register import SedonaRegistrator
-#SedonaRegistrator.registerAll(spark)
+# from sedona.register import SedonaRegistrator
+# SedonaRegistrator.registerAll(spark)
 
 # COMMAND ----------
 
@@ -39,13 +32,7 @@ sdf_wb.select("major_grid", "bng_10km", "geometry_relict_boundary").display()
 
 # COMMAND ----------
 
-sdf_wb = (sdf_wb.select(
-    "major_grid",
-    "bng_10km",
-    "bng_1km",
-    "id_parcel",
-    F.expr("ST_AsTEXT(geometry_relict_boundary) as geometry_relict_boundary")
-))
+sdf_wb = sdf_wb.select("major_grid", "bng_10km", "bng_1km", "id_parcel", F.expr("ST_AsTEXT(geometry_relict_boundary) as geometry_relict_boundary"))
 
 # COMMAND ----------
 
@@ -57,7 +44,7 @@ df_wb.shape
 
 # COMMAND ----------
 
-gdf_wb = gpd.GeoDataFrame(df_wb, geometry=df_wb.geometry_relict_boundary.map(lambda x: from_wkt(x)), crs = "epsg:27700")
+gdf_wb = gpd.GeoDataFrame(df_wb, geometry=df_wb.geometry_relict_boundary.map(lambda x: from_wkt(x)), crs="epsg:27700")
 
 # COMMAND ----------
 
@@ -69,30 +56,22 @@ sdf_wb.write.mode("overwrite").parquet("dbfs:/FileStore/relict_parcel_boundaries
 
 # COMMAND ----------
 
-import os
-import shutil
-import tempfile
-import zipfile
-from pyspark.sql import SparkSession
 
-
-def download_file(filepath,
-                  filestore_path = '/dbfs/FileStore',
-                  move=True,
-                  spark=None) -> str:
+def download_file(filepath, filestore_path="/dbfs/FileStore", move=True, spark=None) -> str:
     # Get spark Session
     if not spark:
         spark = SparkSession.getActiveSession()
     # Get filename
-    filename = filepath[filepath.rfind("/"):]
+    filename = filepath[filepath.rfind("/") :]
     # Construct download url
     url = f"https://{spark.conf.get('spark.databricks.workspaceUrl')}/files/{filename}?o={spark.conf.get('spark.databricks.clusterUsageTags.orgId')}"
     # Return html snippet
     return f"<a href={url} target='_blank'>Download file: {filename}</a>"
 
+
 # COMMAND ----------
 
-download_file("/dbfs/FileStore/relict_parcel_boundaries.geojson", filestore_path = '/dbfs/FileStore', move=False,spark=spark)
+download_file("/dbfs/FileStore/relict_parcel_boundaries.geojson", filestore_path="/dbfs/FileStore", move=False, spark=spark)
 
 # COMMAND ----------
 
@@ -101,7 +80,7 @@ gdf_test.shape
 
 # COMMAND ----------
 
-import json
+
 upload_json = None
 with open("/dbfs/FileStore/relict_parcel_boundaries_upload.geojson") as f:
     upload_json = json.load(f)
@@ -129,17 +108,12 @@ len(lines), len(orig_json)
 
 # COMMAND ----------
 
-sdf_wb_len = (sdf_wb.select(
-    "id_parcel",
-    F.expr("ST_Length(geometry_relict_boundary) as length_relict_boundary")
-))
+sdf_wb_len = sdf_wb.select("id_parcel", F.expr("ST_Length(geometry_relict_boundary) as length_relict_boundary"))
 
 # COMMAND ----------
 
 df_wb_len = sdf_wb_len.toPandas()
 df_wb_len.to_csv("/dbfs/FileStore/relict_parcel_length.csv", index=False)
-download_file("/dbfs/FileStore/relict_parcel_length.csv", filestore_path = '/dbfs/FileStore', move=False,spark=spark)
+download_file("/dbfs/FileStore/relict_parcel_length.csv", filestore_path="/dbfs/FileStore", move=False, spark=spark)
 
 # COMMAND ----------
-
-
