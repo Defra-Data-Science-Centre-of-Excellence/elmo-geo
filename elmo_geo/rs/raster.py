@@ -1,8 +1,10 @@
 import shutil
+import tempfile
 from typing import Dict, Set, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
+import rasterio
 import seaborn as sns
 import xarray as xr
 from xarray.core.dataarray import DataArray
@@ -10,10 +12,29 @@ from xarray.core.dataarray import DataArray
 from elmo_geo import LOG
 
 
+def write_array_to_raster(arr, filename, **meta):
+    """Save an array of data to a .tif format raster file.
+    Alternative to to_raster commonly used by ESD Team avoiding xarray.
+
+    Parameters:
+        arr: (array-like) – This may be a numpy.ma.MaskedArray.
+        filename: (str) Path to save the file to.
+        meta: Metadata passed to the rasterio.open() function
+        when creating a raster file writer.
+
+    Returns:
+        None
+    """
+    with tempfile.NamedTemporaryFile(suffix=".tif") as tmp:
+        with rasterio.open(tmp.name, mode="w", **meta) as dst:
+            dst.write(arr)
+        shutil.copy(tmp.name, filename)
+
+
 def to_raster(da: DataArray, path: str):
     """Save a DataArray to dbfs e.g. .tif
-    temp file then move it..."""
-
+    temp file then move it...
+    """
     filename = path.split("/")[-1]
     temp_loc = f"/tmp/{filename}"
     da.rio.to_raster(temp_loc)
@@ -65,20 +86,12 @@ def set_nodata(band: DataArray, val: Union[int, float], nodataval=np.nan) -> Dat
 
 def _check_bands(bands: Dict[str, DataArray], required_bands: Set[str]):
     bands_present = set(bands.keys())
-    assert required_bands.issubset(
-        bands_present
-    ), f"Could not find required bands {required_bands} in {bands_present}"
+    assert required_bands.issubset(bands_present), f"Could not find required bands {required_bands} in {bands_present}"
     for band1 in required_bands:
         for band2 in required_bands:
-            assert (
-                bands[band1].rio.crs == bands[band2].rio.crs
-            ), "CRS mismatch between {band1} and {band2}"
-            assert (
-                bands[band1].rio.bounds() == bands[band2].rio.bounds()
-            ), "Bounds mismatch between {band1} and {band2}"
-            assert (
-                bands[band1].rio.resolution() == bands[band2].rio.resolution()
-            ), "Resolution mismatch between {band1} and {band2}"
+            assert bands[band1].rio.crs == bands[band2].rio.crs, "CRS mismatch between {band1} and {band2}"
+            assert bands[band1].rio.bounds() == bands[band2].rio.bounds(), "Bounds mismatch between {band1} and {band2}"
+            assert bands[band1].rio.resolution() == bands[band2].rio.resolution(), "Resolution mismatch between {band1} and {band2}"
 
 
 def normalised_diff(a: DataArray, b: DataArray) -> DataArray:
