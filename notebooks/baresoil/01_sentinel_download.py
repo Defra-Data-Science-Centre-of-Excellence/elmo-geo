@@ -45,12 +45,7 @@ with sentinel_api_session() as api:
 
 # add some columns and summarise
 # df["usefulpercentage"] = df.notvegetatedpercentage + df.vegetationpercentage
-df["size"] = [
-    round(float(i.split(" ")[0])) / 1000
-    if i.split(" ")[1] == "MB"
-    else round(float(i.split(" ")[0]))
-    for i in df["size"]
-]
+df["size"] = [(round(float(i.split(" ")[0])) / 1000 if i.split(" ")[1] == "MB" else round(float(i.split(" ")[0]))) for i in df["size"]]
 # mimicking updated usefulness (if size is small then not all image is there)
 df["usefulpercentage"] = (df.notvegetatedpercentage + df.vegetationpercentage) * df["size"]
 df["useful"] = df.usefulpercentage.rank(ascending=False) <= top_n
@@ -63,10 +58,7 @@ print(df.groupby(["useful", "downloaded"])["filename"].count())
 
 fig, _ = plot_products(
     df,
-    title=(
-        f"Sentinel 2A products for tile {tile} between {date_from:%d/%m/%Y}"
-        f" and {date_to:%d/%m/%Y}"
-    ),
+    title=(f"Sentinel 2A products for tile {tile} between {date_from:%d/%m/%Y} and {date_to:%d/%m/%Y}"),
     show_nmax=top_n,
 )
 fig.show()

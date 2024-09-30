@@ -1,13 +1,60 @@
-[tool.black]
-line-length = 100
-exclude = '''(
-    \.eggs
-  | \.git
-  | \.mypy_cache
-  | build
-  | dist
-  | .*.ipynb
-)'''
+[project]
+name = "elmo_geo"
+version = "0.1"
+description = "Environmental Land Management Geospatial Analysis"
+readme = "README.md"
+dependencies = [
+    "apache-sedona==1.6.1",
+    "beautifulsoup4",
+    "contextily",
+    "databricks-sdk<0.21",
+    "folium",
+    "geopandas",
+    "mapclassify",
+    "pandas",
+    "pandera[geopandas,pyspark]",
+    "pyarrow",
+    "pyspark==3.5",
+    "python-dotenv",
+    "rich",
+    "rioxarray",
+    "seaborn",
+]
+requires-python = "==3.11"
 
-[tool.isort]
-profile = "black"
+[tool.setuptools.packages.find]
+exclude = ["tests"]
+
+[project.optional-dependencies]
+dev = [
+    "pip-tools",
+    "pytest",
+    "ruff<0.2",
+]
+
+[project.urls]
+homepage = "https://github.com/Defra-Data-Science-Centre-of-Excellence/elmo-geo"
+
+
+[build-system]
+requires = ["setuptools>=64.0.0"]
+build-backend = "setuptools.build_meta"
+
+
+
+[tool.pytest.ini_options]
+python_files = "tests/*.py"
+markers = ["dbr: Requires databricks runtime"]
+
+
+[tool.ruff]
+line-length = 160
+unsafe-fixes = false
+builtins = ["spark", "dbutils", "sc", "display", "displayHTML"]
+
+[tool.ruff.lint]
+select = ["F", "E", "I"]
+ignore = ["D203", "D212", "COM812", "ISC001"]  # Conflict
+
+[tool.ruff.lint.per-file-ignores]
+"**/__init__.py" = ["F401"]

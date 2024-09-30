@@ -10,11 +10,7 @@ from elmo_geo.utils.types import SparkDataFrame
 @F.pandas_udf(T.BinaryType())
 def remove_z(geoms: pd.Series) -> pd.Series:
     """Remove the z coordinate from WKB geometries"""
-    return (
-        gpd.GeoSeries.from_wkb(geoms)
-        .map(lambda g: transform(lambda x, y, z=None: (x, y), g))
-        .to_wkb()
-    )
+    return gpd.GeoSeries.from_wkb(geoms).map(lambda g: transform(lambda x, y, z=None: (x, y), g)).to_wkb()
 
 
 @F.pandas_udf(T.BooleanType())
@@ -42,3 +38,34 @@ def st_explode(sdf: SparkDataFrame) -> SparkDataFrame:
         .withColumn("geometry", F.explode("geometry"))
         .withColumn("geometry", F.expr("ST_GeomFromWKB(geometry)"))
     )
+
+
+def st_union(sdf: SparkDataFrame, keys: list[str] | str = ["id_parcel"], col: str = "geometry") -> SparkDataFrame:
+    """Group geometries of different types, using geopandas
+
+    Example
+    ```py
+    sf = (
+        'dbfs:/mnt/base/unrestricted/source_rpa_spatial_data_mart/dataset_rpa_reference_parcels/'
+        'format_GEOPARQUET_rpa_reference_parcels/LATEST_rpa_reference_parcels/reference_parcels.parquet'
+    )
+    sdf = (spark.read.parquet(sf)
+        .limit(1000)
+        .selectExpr(
+            'CONCAT(SHEET_ID, PARCEL_ID) AS id_parcel',
+            'ST_GeomFromWKB(GEOM) AS geometry',
+        )
+        .transform(st_union, ['id_parcel'], 'geometry')
+    )
+    sdf.display()
+    ```
+    """
+    if isinstance(keys, str):
+        keys = [keys]
+
+    def _fn(pdf):
+        gdf = gpd.GeoDataFrame(pdf, geometry=gpd.GeoSeries.from_wkb(pdf[col]))
+        return gdf.dissolve(by=keys).reset_index().to_wkb()
+
+    _sdf = sdf.select(*keys, col).withColumn(col, F.expr(f"ST_AsBinary({col})"))
+    return _sdf.groupby(keys).applyInPandas(_fn, _sdf.schema).withColumn(col, F.expr(f"ST_GeomFromWKB({col})"))
