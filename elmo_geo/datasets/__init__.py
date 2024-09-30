@@ -4,7 +4,7 @@ import shutil
 from pathlib import Path
 
 from elmo_geo.utils.log import LOG
-from elmo_geo.utils.register import register
+from elmo_geo import register
 
 from .cec_soilscapes import (
     cec_soilscapes_habitats_parcels,
