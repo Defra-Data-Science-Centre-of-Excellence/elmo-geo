@@ -3,13 +3,17 @@
 # MAGIC
 # MAGIC # Validate VOM tree detections
 # MAGIC
-# MAGIC The VOM tree detection process uses two parameters when classifying cells in teh VOM raster data as tree tops (more parameters are involved i the process of delineating tree crowns into polygons).
+# MAGIC The VOM tree detection process uses two parameters when classifying cells in teh VOM raster data as tree tops
+# MAGIC (more parameters are involved i the process of delineating tree crowns into polygons).
 # MAGIC
 # MAGIC These parameters should ideally be tuned so that the tree detection process best matches ground truth data.
 # MAGIC
-# MAGIC This notebook provides a process for comparing the tree crown area detected by the VOM tree detection process to the Trees Outside Woodland (TOW) dataset.
+# MAGIC This notebook provides a process for comparing the tree crown area detected by the VOM tree detection process to
+# MAGIC the Trees Outside Woodland (TOW) dataset.
 # MAGIC
-# MAGIC The TOW dataset is itself a model of tree locatiosn and therefore not a true source of ground truch. However, this data has undergone a more thorough validation process which includes comparisions to field samples. It therefore represents a more authoritative source of tree locations and extend than the VOM tree detections.
+# MAGIC The TOW dataset is itself a model of tree locatiosn and therefore not a true source of ground truch. However, this data
+# MAGIC has undergone a more thorough validation process which includes comparisions to field samples. It therefore represents a
+# MAGIC more authoritative source of tree locations and extend than the VOM tree detections.
 # MAGIC
 # MAGIC ## Method
 # MAGIC ### Sample of tiles to compare
@@ -36,16 +40,17 @@
 import os
 
 import geopandas as gpd
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from pyspark.sql import functions as F
+from shapely import from_wkb
 
-from elmo_geo import register
 import elmo_geo.io.io2 as io
+from elmo_geo import register
 from elmo_geo.st import st
-
-from elmo_geo.utils.types import SparkDataFrame
 from elmo_geo.utils.dbr import spark
+from elmo_geo.utils.types import SparkDataFrame
 
 register()
 
@@ -53,9 +58,7 @@ register()
 
 
 # write function that excludes woodland tree detections
-def disjoint_filter(
-    inDF: SparkDataFrame, filterFeaturesDF: SparkDataFrame, left_geometry: str, right_geometry: str
-) -> SparkDataFrame:
+def disjoint_filter(inDF: SparkDataFrame, filterFeaturesDF: SparkDataFrame, left_geometry: str, right_geometry: str) -> SparkDataFrame:
     inDF = inDF.withColumn("geometry_temp", F.col(left_geometry))
     filterFeaturesDF = filterFeaturesDF.withColumn("geometry_temp", F.col(right_geometry))
 
@@ -83,9 +86,7 @@ def disjoint_filter(
     return notIntersectDF.drop("geometry_temp")
 
 
-def calculate_tree_crown_areas(
-    notNfiTreesDF: SparkDataFrame, towDF: SparkDataFrame, left_geometry: str, right_geometry: str
-) -> tuple:
+def calculate_tree_crown_areas(notNfiTreesDF: SparkDataFrame, towDF: SparkDataFrame, left_geometry: str, right_geometry: str) -> tuple:
     """
     Running on tile SS4826 takes 3.8s.
 
@@ -95,13 +96,9 @@ def calculate_tree_crown_areas(
     notNfiTreesDF = notNfiTreesDF.withColumn("geometry", F.col(left_geometry))
     towDF = towDF.withColumn("geometry", F.col(right_geometry))
 
-    vom_crown_area = (
-        notNfiTreesDF.select(F.expr("ST_Area(geometry) as area")).agg(F.sum("area")).collect()[0][0]
-    )
+    vom_crown_area = notNfiTreesDF.select(F.expr("ST_Area(geometry) as area")).agg(F.sum("area")).collect()[0][0]
 
-    tow_crown_area = (
-        towDF.select(F.expr("ST_Area(geometry) as area")).agg(F.sum("area")).collect()[0][0]
-    )
+    tow_crown_area = towDF.select(F.expr("ST_Area(geometry) as area")).agg(F.sum("area")).collect()[0][0]
 
     compDF = st.sjoin(notNfiTreesDF, towDF, lsuffix="_vom", rsuffix="_tow", spark=spark)
     approximated = False
@@ -112,17 +109,14 @@ def calculate_tree_crown_areas(
         )
         true_positive = compDF.agg(F.sum("intersection_area")).collect()[0][0]
     except Exception:
-        true_positive = (
-            compDF.select(F.expr("ST_Area(geometry_vom) as area"))
-            .agg(F.sum("area"))
-            .collect()[0][0]
-        )
+        true_positive = compDF.select(F.expr("ST_Area(geometry_vom) as area")).agg(F.sum("area")).collect()[0][0]
         approximated = True
 
     # precision = true_positive / vom_crown_area
     # recall = true_positive / tow_crown_area
 
     return vom_crown_area, tow_crown_area, true_positive, approximated
+
 
 def validate_tree_detections_tile(
     sdf_vom_td: SparkDataFrame,
@@ -134,17 +128,15 @@ def validate_tree_detections_tile(
     # Exclude woodland
     # - TOW methodology states that tree height polygons within 10m of NFI woodland polygons are removed
     # - replicate this by buffering nfi polygons by 10m and intersecting with tree top points
-    # - TOW also imposes a minimum tree area of 20m2 threshold for lone trees and 50m2 for hedgerows. This is not currently accounted for when excluding VOM tree detections.
+    # - TOW also imposes a minimum tree area of 20m2 threshold for lone trees and 50m2 for hedgerows.
+    # - This is not currently accounted for when excluding VOM tree detections.
     sdf_nfi = sdf_nfi.withColumn("geometry_genbuf", F.expr("ST_Buffer(geometry, 10)"))
-    sdf_notNfiTrees = disjoint_filter(
-        sdf_vom_td, sdf_nfi, left_geometry="top_point", right_geometry="geometry_genbuf"
-    )
+    sdf_notNfiTrees = disjoint_filter(sdf_vom_td, sdf_nfi, left_geometry="top_point", right_geometry="geometry_genbuf")
 
     # Calculate overlap
-    result = calculate_tree_crown_areas(
-        sdf_notNfiTrees, sdf_tow, left_geometry=vom_td_canopy_geom, right_geometry=tow_canopy_geom
-    )
+    result = calculate_tree_crown_areas(sdf_notNfiTrees, sdf_tow, left_geometry=vom_td_canopy_geom, right_geometry=tow_canopy_geom)
     return result
+
 
 def validate_tree_detections_string_filter(
     tile_name: str,
@@ -162,12 +154,9 @@ def validate_tree_detections_string_filter(
     sdf_nfi_tile = sdf_nfi.filter(tile_filter)
 
     # validate the detections for this tile
-    result = validate_tree_detections_tile(
-        sdf_vom_tile, sdf_tow_tile, sdf_nfi_tile, vom_td_canopy_geom, tow_canopy_geom
-    )
-    return pd.DataFrame(
-        [result], columns=["vom_crown_area", "tow_crown_area", "true_positive", "approximation"]
-    )
+    result = validate_tree_detections_tile(sdf_vom_tile, sdf_tow_tile, sdf_nfi_tile, vom_td_canopy_geom, tow_canopy_geom)
+    return pd.DataFrame([result], columns=["vom_crown_area", "tow_crown_area", "true_positive", "approximation"])
+
 
 def aggregated_precision_recall(df):
     p = df["true_positive"].sum() / df["vom_crown_area"].sum()
@@ -179,9 +168,7 @@ def aggregated_precision_recall(df):
 # COMMAND ----------
 
 # Check metadata
-dfmeta = pd.read_csv(
-    "/dbfs/mnt/lab/unrestricted/elm/elmo/tree_features/tree_detections/metadata.csv"
-)
+dfmeta = pd.read_csv("/dbfs/mnt/lab/unrestricted/elm/elmo/tree_features/tree_detections/metadata.csv")
 dfmeta
 
 # COMMAND ----------
@@ -191,13 +178,12 @@ tree_detection_timestamp = "202308040848"
 
 # input paths for validation
 output_trees_path = f"dbfs:/mnt/lab/unrestricted/elm/elmo/tree_features/tree_detections/tree_detections_{tree_detection_timestamp}.parquet"
-tow_sp_parquet_output = (
-    "dbfs:/mnt/lab/unrestricted/elm_data/forest_research/TOW_SP_England_26062023.parquet"
+tow_sp_parquet_output = "dbfs:/mnt/lab/unrestricted/elm_data/forest_research/TOW_SP_England_26062023.parquet"
+tow_lidar_parquet_output = "dbfs:/mnt/lab/unrestricted/elm_data/forest_research/TOW_LiDAR_England_26062023.parquet"
+nfi_path = (
+    "dbfs:/mnt/lab/unrestricted/elm_data/source_forestry_commission_open_data/dataset_national_forest_inventory_woodland_england/"
+    "SNAPSHOT_2022_10_19_national_forest_inventory_woodland_england_2020/National_Forest_Inventory_Woodland_England_2020.parquet"
 )
-tow_lidar_parquet_output = (
-    "dbfs:/mnt/lab/unrestricted/elm_data/forest_research/TOW_LiDAR_England_26062023.parquet"
-)
-nfi_path = "dbfs:/mnt/lab/unrestricted/elm_data/source_forestry_commission_open_data/dataset_national_forest_inventory_woodland_england/SNAPSHOT_2022_10_19_national_forest_inventory_woodland_england_2020/National_Forest_Inventory_Woodland_England_2020.parquet"
 os_gb_grid_path = "/dbfs/mnt/lab/unrestricted/elm_data/ordnance_survey/os_bng_grids.gpkg"
 countries_path = "/dbfs/FileStore/Countries_December_2022_GB_BUC.gpkg"
 
@@ -227,17 +213,9 @@ gdf_tiles = gdf_tiles.loc[gdf_tiles.intersects(england_polygon)]
 tile_proportion = n_tiles / gdf_tiles.shape[0]
 
 # produce stratified sample of tiles - stratified by OSGB major grid
-df_sampled_tiles = (
-    gdf_tiles.groupby("major_grid", group_keys=False)
-    .apply(lambda x: x.sample(frac=tile_proportion, random_state=seed))
-    .to_wkb()
-)
+df_sampled_tiles = gdf_tiles.groupby("major_grid", group_keys=False).apply(lambda x: x.sample(frac=tile_proportion, random_state=seed)).to_wkb()
 
-sdf_sampled_tiles = (
-    spark.createDataFrame(df_sampled_tiles)
-    .repartition(10, "major_grid", "tile_name")
-    .withColumn("geometry", io.load_geometry("geometry"))
-)
+sdf_sampled_tiles = spark.createDataFrame(df_sampled_tiles).repartition(10, "major_grid", "tile_name").withColumn("geometry", io.load_geometry("geometry"))
 
 # COMMAND ----------
 
@@ -252,21 +230,15 @@ simplify_tollerance = 1
 
 sdf_vom = (
     spark.read.parquet(output_trees_path)
-    .withColumn(
-        "geometry_orig", io.load_geometry("crown_poly_raster", encoding_fn="ST_GeomFromText")
-    )
-    .withColumn(
-        "geometry", F.expr(f"ST_SimplifyPreserveTopology(geometry_orig, {simplify_tollerance})")
-    )
+    .withColumn("geometry_orig", io.load_geometry("crown_poly_raster", encoding_fn="ST_GeomFromText"))
+    .withColumn("geometry", F.expr(f"ST_SimplifyPreserveTopology(geometry_orig, {simplify_tollerance})"))
     .withColumn("top_point", io.load_geometry("top_point", encoding_fn="ST_GeomFromText"))
     .repartition(10_000)
 )
 sdf_nfi = (
     spark.read.parquet(nfi_path)
     .withColumn("geometry_orig", io.load_geometry("wkt", encoding_fn="ST_GeomFromText"))
-    .withColumn(
-        "geometry", F.expr(f"ST_SimplifyPreserveTopology(geometry_orig, {simplify_tollerance})")
-    )
+    .withColumn("geometry", F.expr(f"ST_SimplifyPreserveTopology(geometry_orig, {simplify_tollerance})"))
     .repartition(1_000)
 )
 
@@ -275,9 +247,7 @@ sdf_tow_sp = spark.read.parquet(tow_sp_parquet_output)
 sdf_tow = (
     sdf_tow_li.union(sdf_tow_sp.select(*list(sdf_tow_li.columns)))
     .withColumn("geometry_orig", io.load_geometry("geometry"))
-    .withColumn(
-        "geometry", F.expr(f"ST_SimplifyPreserveTopology(geometry_orig, {simplify_tollerance})")
-    )
+    .withColumn("geometry", F.expr(f"ST_SimplifyPreserveTopology(geometry_orig, {simplify_tollerance})"))
     .repartition(10_000)
 )
 
@@ -337,9 +307,7 @@ sdf_nfi_tile = sdf_nfi_sample.filter(tile_filter)
 
 # validate the detections for this tile
 sdf_nfi_tile = sdf_nfi_tile.withColumn("geometry_genbuf", F.expr("ST_Buffer(geometry, 10)"))
-sdf_notNfiTrees = disjoint_filter(
-    sdf_vom_tile, sdf_nfi_tile, left_geometry="top_point", right_geometry="geometry_genbuf"
-)
+sdf_notNfiTrees = disjoint_filter(sdf_vom_tile, sdf_nfi_tile, left_geometry="top_point", right_geometry="geometry_genbuf")
 
 # Calculate overlap
 # result = calculate_tree_crown_areas(sdf_notNfiTrees, sdf_tow, left_geometry=vom_td_canopy_geom, right_geometry=tow_canopy_geom)
@@ -347,13 +315,9 @@ sdf_notNfiTrees = disjoint_filter(
 notNfiTreesDF = sdf_notNfiTrees.withColumn("geometry", F.col("geometry"))
 towDF = sdf_tow_tile.withColumn("geometry", F.col("geometry"))
 
-vom_crown_area = (
-    notNfiTreesDF.select(F.expr("ST_Area(geometry) as area")).agg(F.sum("area")).collect()[0][0]
-)
+vom_crown_area = notNfiTreesDF.select(F.expr("ST_Area(geometry) as area")).agg(F.sum("area")).collect()[0][0]
 
-tow_crown_area = (
-    towDF.select(F.expr("ST_Area(geometry) as area")).agg(F.sum("area")).collect()[0][0]
-)
+tow_crown_area = towDF.select(F.expr("ST_Area(geometry) as area")).agg(F.sum("area")).collect()[0][0]
 
 compDF = st.sjoin(notNfiTreesDF, towDF, lsuffix="_vom", rsuffix="_tow", spark=spark)
 approximated = False
@@ -364,37 +328,25 @@ try:
     )
     true_positive = compDF.agg(F.sum("intersection_area")).collect()[0][0]
 except Exception:
-    true_positive = (
-        compDF.select(F.expr("ST_Area(geometry_vom) as area")).agg(F.sum("area")).collect()[0][0]
-    )
+    true_positive = compDF.select(F.expr("ST_Area(geometry_vom) as area")).agg(F.sum("area")).collect()[0][0]
     approximated = True
 
 vom_crown_area, tow_crown_area, true_positive, approximated
 
 # COMMAND ----------
 
-df_res = validate_tree_detections_string_filter(
-    "TR26NW", sdf_vom_sample, sdf_nfi_sample, sdf_tow_sample
-)
+df_res = validate_tree_detections_string_filter("TR26NW", sdf_vom_sample, sdf_nfi_sample, sdf_tow_sample)
 df_res
 
 # COMMAND ----------
 
-from shapely import from_wkb
-
-gdf_vom_not_nfi = notNfiTreesDF.select(
-    F.expr("ST_AsBinary(geometry) as geometry"), "tile_name"
-).toPandas()
-gdf_vom_not_nfi = gpd.GeoDataFrame(
-    gdf_vom_not_nfi, geometry=gdf_vom_not_nfi["geometry"].map(lambda x: from_wkb(x))
-)
+gdf_vom_not_nfi = notNfiTreesDF.select(F.expr("ST_AsBinary(geometry) as geometry"), "tile_name").toPandas()
+gdf_vom_not_nfi = gpd.GeoDataFrame(gdf_vom_not_nfi, geometry=gdf_vom_not_nfi["geometry"].map(lambda x: from_wkb(x)))
 
 gdf_tow = towDF.select(F.expr("ST_AsBinary(geometry) as geometry"), "tile_name").toPandas()
 gdf_tow = gpd.GeoDataFrame(gdf_tow, geometry=gdf_tow["geometry"].map(lambda x: from_wkb(x)))
 
-gdf_sampled_tiles = gpd.GeoDataFrame(
-    df_sampled_tiles, geometry=df_sampled_tiles["geometry"].map(lambda x: from_wkb(x))
-)
+gdf_sampled_tiles = gpd.GeoDataFrame(df_sampled_tiles, geometry=df_sampled_tiles["geometry"].map(lambda x: from_wkb(x)))
 
 # COMMAND ----------
 
@@ -404,9 +356,6 @@ gdf_tow.loc[gdf_tow.intersects(gdf_area.geometry.values[0])].plot()
 # ax.set_ylim(ymin = 167000, ymax = 168000)
 
 # COMMAND ----------
-
-import matplotlib.pyplot as plt
-
 f, ax = plt.subplots(figsize=(10, 10))
 
 gdf_vom_not_nfi.plot(ax=ax, alpha=0.5, color="blue")
@@ -438,9 +387,7 @@ else:
     df_res_all = pd.DataFrame()
 
 for ix, row in df_sampled_tiles.iterrows():
-    df_res = validate_tree_detections_string_filter(
-        row["tile_name"], sdf_vom_sample, sdf_nfi_sample, sdf_tow_sample
-    )
+    df_res = validate_tree_detections_string_filter(row["tile_name"], sdf_vom_sample, sdf_nfi_sample, sdf_tow_sample)
     df_res["tile_name"] = row["tile_name"]
     df_res["tile_geom"] = row["geometry"]
     df_res["tree_detections_data"] = output_trees_path
@@ -474,10 +421,7 @@ df_res_all["recall"] = df_res_all["true_positive"] / df_res_all["tow_crown_area"
 # COMMAND ----------
 
 s = (
-    df_res_all.loc[
-        (df_res_all["method"] == "stratified_sample_seed_1")
-        & (~df_res_all["true_positive"].isnull())
-    ]
+    df_res_all.loc[(df_res_all["method"] == "stratified_sample_seed_1") & (~df_res_all["true_positive"].isnull())]
     .groupby("tree_detections_data")
     .apply(aggregated_precision_recall)
 )
@@ -485,5 +429,3 @@ s.index = [i.split("/")[-1] for i in s.index]
 s  # precision, recall, f score
 
 # COMMAND ----------
-
-
