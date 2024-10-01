@@ -63,8 +63,10 @@ from .fcp_habitat_classification import (
     fcp_habitat_management_type_parcel,
 )
 from .fr_esc_m3_trees import (
+    esc_carbon_parcels,
     esc_m3_geo,
     esc_m3_raw,
+    esc_species_parcels,
 )
 from .fr_esc_m3_trees_suitability import (
     esc_suitability_broadleaved_raw,
@@ -157,6 +159,8 @@ catalogue = [
     defra_priority_habitat_parcels,
     esc_m3_geo,
     esc_m3_raw,
+    esc_carbon_parcels,
+    esc_species_parcels,
     esc_suitability_broadleaved_raw,
     esc_suitability_coniferous_raw,
     esc_suitability_riparian_raw,

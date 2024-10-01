@@ -49,9 +49,9 @@ from pyspark.sql.types import BinaryType, StringType, StructField, StructType
 
 from elmo_geo.etl import Dataset, DerivedDataset, SourceGlobDataset
 from elmo_geo.etl.transformations import sjoin_parcel_proportion, sjoin_parcels
-from elmo_geo.st.join import sjoin
-from elmo_geo.utils.types import SparkDataFrame, PandasDataFrame
 from elmo_geo.st.geometry import load_geometry
+from elmo_geo.st.join import sjoin
+from elmo_geo.utils.types import PandasDataFrame, SparkDataFrame
 
 from .os import os_bng_raw
 from .peat import peaty_soils_raw
@@ -245,27 +245,41 @@ def _sjoin_bng_to_no_peat_parcel(
     outputs results for 1km grid tiles.
     """
 
-    schema = StructType([
-        StructField("id_parcel", StringType(), True),
-        StructField("geometry", BinaryType(), True)
-    ])
+    schema = StructType([StructField("id_parcel", StringType(), True), StructField("geometry", BinaryType(), True)])
+
     def _udf_difference(pdfs):
-        """Get the parcel geometry excluding peaty soils
-        """
+        """Get the parcel geometry excluding peaty soils"""
         for pdf in pdfs:
-            yield (pdf
-                .assign(geometry = gpd.GeoSeries.from_wkb(pdf["geometry_left"]).difference(gpd.GeoSeries.from_wkb(pdf["geometry_right"])).to_wkb())
-                .reindex(columns = ["id_parcel", "geometry"])
+            yield (
+                pdf.assign(geometry=gpd.GeoSeries.from_wkb(pdf["geometry_left"]).difference(gpd.GeoSeries.from_wkb(pdf["geometry_right"])).to_wkb()).reindex(
+                    columns=["id_parcel", "geometry"]
+                )
             )
 
-    sdf = (reference_parcels.sdf().select("id_parcel", "geometry")
-        .transform(sjoin_parcels,peaty_soils_raw.sdf().withColumn("geometry", load_geometry(encoding_fn="")))
-        .selectExpr("id_parcel", "ST_AsBinary(geometry_left) as geometry_left", "ST_AsBinary(geometry_right) as geometry_right",)
+    # parcels intersecting peat
+    sdf_peat = (
+        reference_parcels.sdf()
+        .select("id_parcel", "geometry")
+        .transform(sjoin_parcels, peaty_soils_raw.sdf().withColumn("geometry", load_geometry(encoding_fn="")))
+        .selectExpr(
+            "id_parcel",
+            "ST_AsBinary(geometry_left) as geometry_left",
+            "ST_AsBinary(geometry_right) as geometry_right",
+        )
         .mapInPandas(_udf_difference, schema=schema)
         .withColumn("geometry", load_geometry())
-        .withColumn("nopeat_area", F.expr("ST_Area(geometry)"))
+        .withColumn("nopeat_area", F.expr("ST_Area(geometry)/10000"))
     )
-    return sjoin_parcel_proportion(sdf,os_bng_raw.sdf().filter("layer='1km_grid'"),columns=["tile_name", "nopeat_area"])
+
+    # all parcels
+    sdf_other = (
+        reference_parcels.sdf()
+        .join(sdf_peat.select("id_parcel", "nopeat_area"), on="id_parcel", how="left")
+        .filter("nopeat_area IS NULL")
+        .selectExpr("id_parcel", "geometry", "area_ha as nopeat_area")
+    )
+
+    return sjoin_parcel_proportion(sdf_other.unionByName(sdf_peat), os_bng_raw.sdf().filter("layer='1km_grid'"), columns=["tile_name", "nopeat_area"])
 
 
 class NoPeatParcelBNGModel(DataFrameModel):
@@ -298,7 +312,9 @@ os_bng_no_peat_parcels = DerivedDataset(
     func=_sjoin_bng_to_no_peat_parcel,
     model=NoPeatParcelBNGModel,
 )
-"""ESC M3 Trees model outputs joined to 1km OS BNG tile geometries.
+"""Proportion of non-peat parcels intersected by BNG 1km tiles.
+
+Used as an input to the ESC M3 data aggregation to parcels process.
 """
 
 
@@ -313,7 +329,9 @@ def _join_esc_outputs(
     return (
         sdf_parcel_tiles.join(sdf_esc.drop("geometry", "layer"), on="tile_name")
         .join(
-            sdf_esc.filter("(AA_grass=0) OR (AA_crop=0) OR (AA_grass_wood=0) OR (AA_crop_wood=0)").selectExpr("DISTINCT(tile_name)", "TRUE AS missing_data"),
+            sdf_esc.filter("(AA_grass=0) OR (AA_crop=0) OR (AA_grass_wood=0) OR (AA_crop_wood=0)")
+            .dropDuplicates(subset=["tile_name"])
+            .selectExpr("tile_name", "TRUE AS missing_data"),
             on="tile_name",
             how="left",
         )
@@ -353,14 +371,16 @@ def _aggregate_carbon_values(sdf_parcel_esc: SparkDataFrame) -> SparkDataFrame:
         "T2_crop_wood",
     ]
     return (
-        sdf_parcel_esc.groupby(*groupby_cols).agg(
-            *[F.expr(f"ROUND(SUM(proportion * {c})/SUM(proportion), 5) as {c}") for c in value_cols],
+        sdf_parcel_esc.repartition(*groupby_cols)
+        .groupby(*groupby_cols)
+        .agg(
+            *[F.expr(f"ROUND(SUM(proportion * {c}), 5) as {c}") for c in value_cols],
             F.array_join(F.collect_list("tile_name"), "-").alias("tiles"),
         )
-    ).toPandas()
+    )
 
 
-def _aggregae_species_values(sdf_parcel_esc: SparkDataFrame) -> SparkDataFrame:
+def _aggregate_species_values(sdf_parcel_esc: SparkDataFrame) -> SparkDataFrame:
     """Aggregate ESC spcies area, yield class and suitability scores to parcels by calculating the weighted sum across 1km tiles."""
     groupby_cols = [
         "id_parcel",
@@ -374,10 +394,11 @@ def _aggregae_species_values(sdf_parcel_esc: SparkDataFrame) -> SparkDataFrame:
     species_cols = [
         "area",
         "yield_class",
-        "ssuitability",
+        "suitability",
     ]
     return (
-        sdf_parcel_esc.selectExpr(
+        sdf_parcel_esc.repartition(*groupby_cols)
+        .selectExpr(
             *groupby_cols,
             "tile_name",
             "proportion",
@@ -391,7 +412,7 @@ def _aggregae_species_values(sdf_parcel_esc: SparkDataFrame) -> SparkDataFrame:
         )
         .groupby(*groupby_cols, "species")
         .agg(
-            *[F.expr(f"ROUND(SUM(proportion * {c})/SUM(proportion),5) as {c}") for c in species_cols],
+            *[F.expr(f"ROUND(SUM(proportion * {c}),5) as {c}") for c in species_cols],
             F.array_join(F.collect_list("tile_name"), "-").alias("tiles"),
         )
     )
@@ -404,12 +425,13 @@ def _transform_esc_carbon(
     """Aggregate ESC carbon values to parcels."""
     return _join_esc_outputs(os_bng_no_peat_parcels.sdf(), esc_m3.sdf()).transform(_aggregate_carbon_values)
 
+
 def _transform_esc_species(
     os_bng_no_peat_parcels: Dataset,
     esc_m3: Dataset,
 ) -> SparkDataFrame:
     """Aggregate ESC carbon values to parcels."""
-    return _join_esc_outputs(os_bng_no_peat_parcels.sdf(), esc_m3.sdf()).transform(_aggregae_species_values)
+    return _join_esc_outputs(os_bng_no_peat_parcels.sdf(), esc_m3.sdf()).transform(_aggregate_species_values)
 
 
 class ESCCarbonParcels(DataFrameModel):
@@ -461,24 +483,24 @@ class ESCCarbonParcels(DataFrameModel):
     period_T2: str = Field()
     period_AA_T1_duration: int = Field()
     period_T2_duration: int = Field()
-    tree_carbon:float = Field()
-    litter_carbon:float = Field()
-    deadwood_carbon:float = Field()
-    grass_soil_carbon:float = Field()
-    crop_soil_carbon:float = Field()
-    wood_product_carbon_ipcc:float = Field()
-    AA_grass:float = Field()
-    AA_crop:float = Field()
-    AA_grass_wood:float = Field()
-    AA_crop_wood:float = Field()
-    T1_grass:float = Field()
-    T1_crop:float = Field()
-    T1_grass_wood:float = Field()
-    T1_crop_wood:float = Field()
-    T2_grass:float = Field()
-    T2_crop:float = Field()
-    T2_grass_wood:float = Field()
-    T2_crop_wood:float = Field()
+    tree_carbon: float = Field()
+    litter_carbon: float = Field()
+    deadwood_carbon: float = Field()
+    grass_soil_carbon: float = Field()
+    crop_soil_carbon: float = Field()
+    wood_product_carbon_ipcc: float = Field()
+    AA_grass: float = Field()
+    AA_crop: float = Field()
+    AA_grass_wood: float = Field()
+    AA_crop_wood: float = Field()
+    T1_grass: float = Field()
+    T1_crop: float = Field()
+    T1_grass_wood: float = Field()
+    T1_crop_wood: float = Field()
+    T2_grass: float = Field()
+    T2_crop: float = Field()
+    T2_grass_wood: float = Field()
+    T2_crop_wood: float = Field()
 
 
 esc_carbon_parcels = DerivedDataset(
@@ -495,6 +517,7 @@ esc_carbon_parcels = DerivedDataset(
 )
 """ESC M3 carbon metrics for parcels.
 """
+
 
 class ESCSpeciesParcels(DataFrameModel):
     """ESC M3 tree species metrics for parcels data model.
@@ -523,10 +546,10 @@ class ESCSpeciesParcels(DataFrameModel):
     period_T2: str = Field()
     period_AA_T1_duration: int = Field()
     period_T2_duration: int = Field()
-    species:str=Field()
-    area:float=Field(ge=0, le=1)
-    yield_class:float=Field()
-    suitability:float=Field(ge=0, le=1)
+    species: str = Field()
+    area: float = Field(ge=0, le=1)
+    yield_class: float = Field()
+    suitability: float = Field(ge=0, le=1)
 
 
 esc_species_parcels = DerivedDataset(
@@ -543,4 +566,3 @@ esc_species_parcels = DerivedDataset(
 )
 """ESC M3 species metrics for parcels.
 """
-
