@@ -66,7 +66,6 @@ from .fr_esc_m3_trees import (
     esc_carbon_parcels,
     esc_m3_geo,
     esc_m3_raw,
-    esc_carbon_parcels,
     esc_species_parcels,
     os_bng_no_peat_parcels,
 )
