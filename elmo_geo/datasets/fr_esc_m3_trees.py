@@ -41,14 +41,21 @@ sequestration and positive values net emissions.
 """
 
 
+import geopandas as gpd
 import pyspark.sql.functions as F
 from pandera import DataFrameModel, Field
 from pandera.engines.geopandas_engine import Geometry
+from pyspark.sql.types import BinaryType, StringType, StructField, StructType
 
-from elmo_geo.etl import DerivedDataset, SourceGlobDataset
+from elmo_geo.etl import Dataset, DerivedDataset, SourceGlobDataset
+from elmo_geo.etl.transformations import sjoin_parcel_proportion, sjoin_parcels
 from elmo_geo.st.join import sjoin
+from elmo_geo.utils.types import SparkDataFrame, PandasDataFrame
+from elmo_geo.st.geometry import load_geometry
 
 from .os import os_bng_raw
+from .peat import peaty_soils_raw
+from .rpa_reference_parcels import reference_parcels
 
 
 class ESCM3WoodlandScenariosRaw(DataFrameModel):
@@ -222,3 +229,318 @@ esc_m3_geo = DerivedDataset(
 )
 """ESC M3 Trees model outputs joined to 1km OS BNG tile geometries.
 """
+
+
+def _sjoin_bng_to_no_peat_parcel(
+    reference_parcels: Dataset,
+    peaty_soils_raw: Dataset,
+    os_bng_raw: Dataset,
+) -> PandasDataFrame:
+    """Produces dataframe linking parcels to 1km BNG tiles.
+
+    Combines parcels, peat and OS BNG geometries to identify the proportion of non-peat parcel area
+    intersected by different 1km BNG grid tiles.
+
+    These proportions are used to aggregate ESC M3 outputs to parcel level, since the ESC-CARBINE model
+    outputs results for 1km grid tiles.
+    """
+
+    schema = StructType([
+        StructField("id_parcel", StringType(), True),
+        StructField("geometry", BinaryType(), True)
+    ])
+    def _udf_difference(pdfs):
+        """Get the parcel geometry excluding peaty soils
+        """
+        for pdf in pdfs:
+            yield (pdf
+                .assign(geometry = gpd.GeoSeries.from_wkb(pdf["geometry_left"]).difference(gpd.GeoSeries.from_wkb(pdf["geometry_right"])).to_wkb())
+                .reindex(columns = ["id_parcel", "geometry"])
+            )
+
+    sdf = (reference_parcels.sdf().select("id_parcel", "geometry")
+        .transform(sjoin_parcels,peaty_soils_raw.sdf().withColumn("geometry", load_geometry(encoding_fn="")))
+        .selectExpr("id_parcel", "ST_AsBinary(geometry_left) as geometry_left", "ST_AsBinary(geometry_right) as geometry_right",)
+        .mapInPandas(_udf_difference, schema=schema)
+        .withColumn("geometry", load_geometry())
+        .withColumn("nopeat_area", F.expr("ST_Area(geometry)"))
+    )
+    return sjoin_parcel_proportion(sdf,os_bng_raw.sdf().filter("layer='1km_grid'"),columns=["tile_name", "nopeat_area"])
+
+
+class NoPeatParcelBNGModel(DataFrameModel):
+    """Proportion of no-peat parcel geometries intersected by BNG 1km grids.
+
+    Attributes:
+        id_parcel: Parcel ID
+        nopeat_area: Geographic area of parcel excluding intersecting peaty soils geometries.
+        tile_name: Name of 1km OS BNG tile intersected the parcel.
+        proportion: Proportion of parcel no peat area intersected by 1km BNG tile.
+    """
+
+    id_parcel: str = Field()
+    nopeat_area: float = Field()
+    tile_name: str = Field()
+    proportion: float = Field(ge=0, le=1)
+
+
+os_bng_no_peat_parcels = DerivedDataset(
+    name="os_bng_no_peat_parcels",
+    level0="silver",
+    level1="os",
+    restricted=False,
+    is_geo=False,
+    dependencies=[
+        reference_parcels,
+        peaty_soils_raw,
+        os_bng_raw,
+    ],
+    func=_sjoin_bng_to_no_peat_parcel,
+    model=NoPeatParcelBNGModel,
+)
+"""ESC M3 Trees model outputs joined to 1km OS BNG tile geometries.
+"""
+
+
+def _join_esc_outputs(
+    sdf_parcel_tiles: SparkDataFrame,
+    sdf_esc: SparkDataFrame,
+) -> SparkDataFrame:
+    """Joins parcels to ESC outputs using 1km BNG tiles.
+
+    Exludes ESC data for tiles with have missing carbon values, as per EVAST methodology.
+    """
+    return (
+        sdf_parcel_tiles.join(sdf_esc.drop("geometry", "layer"), on="tile_name")
+        .join(
+            sdf_esc.filter("(AA_grass=0) OR (AA_crop=0) OR (AA_grass_wood=0) OR (AA_crop_wood=0)").selectExpr("DISTINCT(tile_name)", "TRUE AS missing_data"),
+            on="tile_name",
+            how="left",
+        )
+        .filter("missing_data IS NULL")
+    )
+
+
+def _aggregate_carbon_values(sdf_parcel_esc: SparkDataFrame) -> SparkDataFrame:
+    """Aggregate ESC carbon values to parcels by calcualting the weighted sum across 1km tiles."""
+    groupby_cols = [
+        "id_parcel",
+        "woodland_type",
+        "rcp",
+        "period_AA_T1",
+        "period_T2",
+        "period_AA_T1_duration",
+        "period_T2_duration",
+    ]
+    value_cols = [
+        "tree_carbon",
+        "litter_carbon",
+        "deadwood_carbon",
+        "grass_soil_carbon",
+        "crop_soil_carbon",
+        "wood_product_carbon_ipcc",
+        "AA_grass",
+        "AA_crop",
+        "AA_grass_wood",
+        "AA_crop_wood",
+        "T1_grass",
+        "T1_crop",
+        "T1_grass_wood",
+        "T1_crop_wood",
+        "T2_grass",
+        "T2_crop",
+        "T2_grass_wood",
+        "T2_crop_wood",
+    ]
+    return (
+        sdf_parcel_esc.groupby(*groupby_cols).agg(
+            *[F.expr(f"ROUND(SUM(proportion * {c})/SUM(proportion), 5) as {c}") for c in value_cols],
+            F.array_join(F.collect_list("tile_name"), "-").alias("tiles"),
+        )
+    ).toPandas()
+
+
+def _aggregae_species_values(sdf_parcel_esc: SparkDataFrame) -> SparkDataFrame:
+    """Aggregate ESC spcies area, yield class and suitability scores to parcels by calculating the weighted sum across 1km tiles."""
+    groupby_cols = [
+        "id_parcel",
+        "woodland_type",
+        "rcp",
+        "period_AA_T1",
+        "period_T2",
+        "period_AA_T1_duration",
+        "period_T2_duration",
+    ]
+    species_cols = [
+        "area",
+        "yield_class",
+        "ssuitability",
+    ]
+    return (
+        sdf_parcel_esc.selectExpr(
+            *groupby_cols,
+            "tile_name",
+            "proportion",
+            """
+            stack(4, 
+                species_1, area_1, yield_class_1, suitability_1, 
+                species_2, area_2, yield_class_2, suitability_2, 
+                species_3, area_3, yield_class_3, suitability_3,
+                'OPENSPACE', open_space, NULL, NULL) as (species, area, yield_class, suitability)
+            """,
+        )
+        .groupby(*groupby_cols, "species")
+        .agg(
+            *[F.expr(f"ROUND(SUM(proportion * {c})/SUM(proportion),5) as {c}") for c in species_cols],
+            F.array_join(F.collect_list("tile_name"), "-").alias("tiles"),
+        )
+    )
+
+
+def _transform_esc_carbon(
+    os_bng_no_peat_parcels: Dataset,
+    esc_m3: Dataset,
+) -> SparkDataFrame:
+    """Aggregate ESC carbon values to parcels."""
+    return _join_esc_outputs(os_bng_no_peat_parcels.sdf(), esc_m3.sdf()).transform(_aggregate_carbon_values)
+
+def _transform_esc_species(
+    os_bng_no_peat_parcels: Dataset,
+    esc_m3: Dataset,
+) -> SparkDataFrame:
+    """Aggregate ESC carbon values to parcels."""
+    return _join_esc_outputs(os_bng_no_peat_parcels.sdf(), esc_m3.sdf()).transform(_aggregae_species_values)
+
+
+class ESCCarbonParcels(DataFrameModel):
+    """ESC M3 carbon metrics for parcels data model.
+
+    Attributes:
+        id_parcel: Parcel ID
+        nopeat_area: Geographic area of parcel excluding intersecting peaty soils geometries.
+        woodland_type: Type of woodland modelled.
+        rcp: Representating concetration pathway scenario (i.e cliamte change scenario)
+        period_AA_T1: Time periods for annual average (AA) and T1 carbon values
+        period_T2: period_T2: Time periods for T2 carbon values: 2021_2028, 2021_2036, 2021_2050, 2021_2100
+        period_AA_T1_duration: Number of years in each time period (AA_T1)
+        period_T2_duration: period_T2_duration: Number of years in each time period (T2): 8, 16, 30, 80
+        tiles: Concatenated names of 1km tiles aggregated to this parcel
+        tree_carbon: carbon sequestered into standing trees tCO2/ha average over period AA T1
+        litter_carbon: carbon sequestered into litter tCO2/ha average over period AA T1
+        deadwood_carbon: carbon sequestered into deadwood tCO2/ha average over period AA T1
+        grass_soil_carbon: carbon sequestered into soil (previously land use grassland) tCO2/ha average over period AA T1
+        crop_soil_carbon: carbon sequestered into soil (previous land use cropland) tCO2/ha average over period AA T1
+        wood_product_carbon_ipcc: carbon sequestered into wood products tCO2/ha average over period AA T1
+        AA_grass: Carbon stored in trees, litter, deadwood & soil, annual average over time period (period_AA_T1), previous land use grassland
+        AA_crop: Carbon stored in trees, litter, deadwood & soil, annual average over time period (period_AA_T1), previous land use cropland
+        AA_grass_wood: Carbon stored in trees, litter, deadwood, soil & harvested wood products,
+        annual average over time period (period_AA_T1), previous land use grassland
+        AA_crop_wood: Carbon stored in trees, litter, deadwood, soil & harvested wood products,
+        annual average over time period (period_AA_T1), previous land use cropland
+        T1_grass: Carbon stored in trees, litter, deadwood & soil, sum over time period (period_AA_T1), previous land use grassland
+        T1_crop: Carbon stored in trees, litter, deadwood & soil, sum over time period (period_AA_T1), previous land use cropland
+        T1_grass_wood: Carbon stored in trees, litter, deadwood, soil & harvested wood products, sum over time period (period_AA_T1),
+        previous land use grassland.
+        T1_crop_wood: Carbon stored in trees, litter, deadwood, soil & harvested wood products, sum over time period (period_AA_T1),
+        previous land use cropland.
+        T2_grass: Carbon stored in trees, litter, deadwood & soil, cumulative sum of T1 carbon values
+        over time period (period_T2), previous land use grassland
+        T2_crop: Carbon stored in trees, litter, deadwood & soil, cumulative sum of T1 carbon values
+        over time period (period_T2), previous land use cropland
+        T2_grass_wood: Carbon stored in trees, litter, deadwood, soil & harvested wood products,
+        cumulative sum of T1 carbon values over time period (period_T2), previous land use grassland
+        T2_crop_wood: Carbon stored in trees, litter, deadwood, soil & harvested wood products,
+        cumulative sum of T1 carbon values over time period (period_T2), previous land use cropland
+    """
+
+    id_parcel: str = Field()
+    nopeat_area: float = Field()
+    woodland_type: str = Field()
+    rcp: str = Field()
+    period_AA_T1: str = Field()
+    period_T2: str = Field()
+    period_AA_T1_duration: int = Field()
+    period_T2_duration: int = Field()
+    tree_carbon:float = Field()
+    litter_carbon:float = Field()
+    deadwood_carbon:float = Field()
+    grass_soil_carbon:float = Field()
+    crop_soil_carbon:float = Field()
+    wood_product_carbon_ipcc:float = Field()
+    AA_grass:float = Field()
+    AA_crop:float = Field()
+    AA_grass_wood:float = Field()
+    AA_crop_wood:float = Field()
+    T1_grass:float = Field()
+    T1_crop:float = Field()
+    T1_grass_wood:float = Field()
+    T1_crop_wood:float = Field()
+    T2_grass:float = Field()
+    T2_crop:float = Field()
+    T2_grass_wood:float = Field()
+    T2_crop_wood:float = Field()
+
+
+esc_carbon_parcels = DerivedDataset(
+    name="esc_carbon_parcels",
+    level0="silver",
+    level1="forest_research",
+    restricted=False,
+    dependencies=[
+        os_bng_no_peat_parcels,
+        esc_m3_geo,
+    ],
+    func=_transform_esc_carbon,
+    model=ESCCarbonParcels,
+)
+"""ESC M3 carbon metrics for parcels.
+"""
+
+class ESCSpeciesParcels(DataFrameModel):
+    """ESC M3 tree species metrics for parcels data model.
+
+    Attributes:
+        id_parcel: Parcel ID
+        nopeat_area: Geographic area of parcel excluding intersecting peaty soils geometries.
+        woodland_type: Type of woodland modelled.
+        rcp: Representating concetration pathway scenario (i.e cliamte change scenario)
+        period_AA_T1: Time periods for annual average (AA) and T1 carbon values
+        period_T2: period_T2: Time periods for T2 carbon values: 2021_2028, 2021_2036, 2021_2050, 2021_2100
+        period_AA_T1_duration: Number of years in each time period (AA_T1)
+        period_T2_duration: period_T2_duration: Number of years in each time period (T2): 8, 16, 30, 80
+        tiles: Concatenated names of 1km tiles aggregated to this parcel
+        species: Tree species. OPENSPACE refers to open space where trees are not growing.
+        area: Proportion of no peat parcel area covered by this tree species.
+        yield_class: Tree species yield score.
+        suitability: Tree speices suitability score.
+    """
+
+    id_parcel: str = Field()
+    nopeat_area: float = Field()
+    woodland_type: str = Field()
+    rcp: str = Field()
+    period_AA_T1: str = Field()
+    period_T2: str = Field()
+    period_AA_T1_duration: int = Field()
+    period_T2_duration: int = Field()
+    species:str=Field()
+    area:float=Field(ge=0, le=1)
+    yield_class:float=Field()
+    suitability:float=Field(ge=0, le=1)
+
+
+esc_species_parcels = DerivedDataset(
+    name="esc_species_parcels",
+    level0="silver",
+    level1="forest_research",
+    restricted=False,
+    dependencies=[
+        os_bng_no_peat_parcels,
+        esc_m3_geo,
+    ],
+    func=_transform_esc_species,
+    model=ESCSpeciesParcels,
+)
+"""ESC M3 species metrics for parcels.
+"""
+
