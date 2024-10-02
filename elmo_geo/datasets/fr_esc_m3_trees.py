@@ -45,7 +45,6 @@ import geopandas as gpd
 import pyspark.sql.functions as F
 from pandera import DataFrameModel, Field
 from pandera.engines.geopandas_engine import Geometry
-from pyspark.sql.types import BinaryType, StringType, StructField, StructType
 
 from elmo_geo.etl import Dataset, DerivedDataset, SourceGlobDataset
 from elmo_geo.etl.transformations import sjoin_parcel_proportion, sjoin_parcels
@@ -245,8 +244,6 @@ def _sjoin_bng_to_no_peat_parcel(
     outputs results for 1km grid tiles.
     """
 
-    schema = StructType([StructField("id_parcel", StringType(), True), StructField("geometry", BinaryType(), True)])
-
     def _udf_difference(pdfs):
         """Get the parcel geometry excluding peaty soils"""
         for pdf in pdfs:
@@ -266,7 +263,7 @@ def _sjoin_bng_to_no_peat_parcel(
             "ST_AsBinary(geometry_left) as geometry_left",
             "ST_AsBinary(geometry_right) as geometry_right",
         )
-        .mapInPandas(_udf_difference, schema=schema)
+        .mapInPandas(_udf_difference, schema="id_parcel:string,geometry:binary")
         .withColumn("geometry", load_geometry())
         .withColumn("nopeat_area", F.expr("ST_Area(geometry)/10000"))
     )
