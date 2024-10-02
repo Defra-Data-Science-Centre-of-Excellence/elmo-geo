@@ -12,7 +12,7 @@ from elmo_geo.etl import SourceDataset
 
 
 #tree detections
-class TreeDetectionsRaw(DataFrameModel):
+class FCPTreeDetectionsRaw(DataFrameModel):
     """Model for fcp tree detection datset.
 
     Attributes:
@@ -54,11 +54,11 @@ class TreeDetectionsRaw(DataFrameModel):
     int_trees_count4: int = Field()
 
 
-    fcp_tree_detection_raw = SourceDataset(
+fcp_tree_detection_raw = SourceDataset(
     name="fcp_tree_detection_raw",
     level0="bronze",
     level1="fcp",
-    model=TreeDetectionsRaw,
+    model= FCPTreeDetectionsRaw,
     restricted=False,
     source_path="dbfs:/mnt/lab/unrestricted/elm/elmo/tree_features/tree_detections/tree_detections_202311231323.parquet",
 )
