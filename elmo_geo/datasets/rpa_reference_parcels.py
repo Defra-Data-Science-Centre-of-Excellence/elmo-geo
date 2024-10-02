@@ -15,25 +15,33 @@ from elmo_geo.etl import SRID, Dataset, DerivedDataset, SourceDataset
 class ReferenceParcelsRaw(DataFrameModel):
     """Model for raw version of Rural Payment Agency's Reference Parcels dataset.
 
-    "More columns may be present in the data and would be persisted but we have defined here the ones we want to validate
-
     Attributes:
+        id_parcel: 11 character RPA reference parcel ID (including the sheet ID) e.g. `SE12263419`.
+        sbi: The single business identifier (SBI), stored as a string.
+        area_ha: The original area of the parcel in hectares.
         geometry: The parcel geospatial polygons in EPSG:27700.
     """
 
+    id_parcel: str = Field(str_matches=r"(^[A-Z]{2}[\d]{8}$)", unique=True, alias="FULL_PARCEL_ID")
+    sbi: str = Field(str_matches=r"(^[\d]{9}$)", alias="SBI")
+    area_ha: float = Field(gt=0, alias="GEOM_AR_HA")
     geometry: Geometry(crs=SRID) = Field()
 
 
 class ReferenceParcelsRawNoSBI(DataFrameModel):
-    """Model for raw version of Rural Payment Agency's Reference Parcels dataset.
-
-    "More columns may be present in the data and would be persisted but we have defined here the ones we want to validate
+    """Model for raw version of Rural Payment Agency's Reference Parcels dataset without any SBI.
+    This dataset is messy containing null values instead of geometries, all SBIs should be null, and id_parcel can be duplicated.
 
     Attributes:
-        geometry: The parcel geospatial polygons in EPSG:27700.
+        id_parcel: 11 character RPA reference parcel ID (including the sheet ID) e.g. `SE12263419`.
+        area_ha: The original area of the parcel in hectares.
+        geometry: The parcel geospatial polygons in EPSG:27700 but not recorded as such due to null geometries.
     """
 
-    geometry: Geometry(crs=SRID) = Field(nullable=True)
+    id_parcel: str = Field(str_matches=r"(^[A-Z]{2}[\d]{8}$)", alias="FULL_PARCEL_ID", nullable=True)
+    sbi: str = Field(str_matches=r"(^[\d]{9}$)", alias="SBI", nullable=True)
+    area_ha: float = Field(gt=0, alias="GEOM_AR_HA", nullable=True)
+    geometry: Geometry(crs=None) = Field(nullable=True)
 
 
 class ReferenceParcels(DataFrameModel):
@@ -42,7 +50,7 @@ class ReferenceParcels(DataFrameModel):
     Attributes:
         id_parcel: 11 character RPA reference parcel ID (including the sheet ID) e.g. `SE12263419`.
         sbi: The single business identifier (SBI), stored as a string.
-        area_ha: The area of the parcel in hectares.
+        area_ha: The original area of the parcel in hectares.
         geometry: The parcel geospatial polygons in EPSG:27700.
     """
 
@@ -58,7 +66,6 @@ def _combine_and_clean_parcels(parcels_sbi: Dataset, parcels_nosbi: Dataset) -> 
     Info:
         What this is doing:
         - Concatenate the SBI and non SBI datasets
-        - Rename PARCEL_ID to id_parcel to align to our modelling standards
         - Make the geometries valid
         - Explode the geometries to unpack them as they are all MultiPolygons
         - Filter out some LineStrings to keep only Polygons
@@ -84,18 +91,15 @@ def _combine_and_clean_parcels(parcels_sbi: Dataset, parcels_nosbi: Dataset) -> 
                 parcels_nosbi.gdf().loc[lambda df: df.geometry.notna(), :],
             ]
         )
-        .rename(columns=dict(SBI="sbi", FULL_PARCEL_ID="id_parcel"))
-        .drop(columns=["PARCEL_ID", "SHAPE_Length", "SHAPE_Area", "SHEET_ID", "GEOM_AR_HA"])
-        .loc[:, ["id_parcel", "sbi", "geometry"]]
+        [["id_parcel", "sbi", "area_ha", "geometry"]]
         .assign(geometry=lambda df: df.geometry.make_valid())
         .explode()
         .loc[lambda df: (df.geometry.geometry.type == "Polygon") & (df.area > 50.0)]
         .dissolve(by="id_parcel")
-        .assign(geometry=lambda df: df.geometry.simplify(1).set_precision(0).remove_repeated_points(1).make_valid())
+        .assign(geometry=lambda df: df.geometry.simplify(1).set_precision(1).remove_repeated_points(1).make_valid())
         .explode()
         .loc[lambda df: (df.geometry.geometry.type == "Polygon") & (df.area > 50.0)]
         .dissolve(by="id_parcel")
-        .assign(area_ha=lambda df: df.geometry.area / 10_000)
         .reset_index()
     )
 
@@ -107,6 +111,7 @@ reference_parcels_raw = SourceDataset(
     model=ReferenceParcelsRaw,
     restricted=False,
     source_path="/dbfs/mnt/lab/unrestricted/elm_data/rpa/reference_parcels/LIDM_Parcels.gdb",
+    clean_geometry=False,
 )
 """Definition for the raw sourced version of the RPA's Reference Parcels dataset.
 
@@ -120,6 +125,7 @@ reference_parcels_raw_no_sbi = SourceDataset(
     model=ReferenceParcelsRawNoSBI,
     restricted=False,
     source_path="/dbfs/mnt/lab/unrestricted/elm_data/rpa/reference_parcels/No_SBI_Parcels.gdb",
+    clean_geometry=False,
 )
 """Raw parcels that have no SBI.
 

@@ -7,6 +7,7 @@ import geopandas as gpd
 import pandas as pd
 from geopandas.io.arrow import _geopandas_to_arrow
 from pyarrow.parquet import write_to_dataset
+from pyspark.errors import AnalysisException
 from pyspark.serializers import AutoBatchedSerializer, PickleSerializer
 from pyspark.sql import functions as F
 
@@ -79,7 +80,7 @@ def load_sdf(path: str, **kwargs) -> SparkDataFrame:
 
     try:
         sdf = read(path)
-    except Exception:  # TODO: pyspark.errors.AnalysisException, requires pyspark==3.4.1
+    except AnalysisException:
         sdf = reduce(union, [read(f) for f in iglob(path + "*")])
 
     if "geometry" in sdf.columns:
@@ -87,10 +88,10 @@ def load_sdf(path: str, **kwargs) -> SparkDataFrame:
     return sdf
 
 
-def read_file(source_path: str, is_geo: bool, layer: int | str | None = None) -> PandasDataFrame | GeoDataFrame:
+def read_file(source_path: str, is_geo: bool, layer: int | str | None = None, clean_geometry: bool = True) -> PandasDataFrame | GeoDataFrame:
     path = Path(source_path)
     if is_geo:
-        if path.suffix == ".parquet" or path.is_dir():
+        if path.suffix == ".parquet" or list(path.glob("*.parquet")):
             df = gpd.read_parquet(path)
         else:
             layers = gpd.list_layers(path)["name"]
@@ -98,6 +99,8 @@ def read_file(source_path: str, is_geo: bool, layer: int | str | None = None) ->
                 df = gpd.GeoDataFrame(pd.concat((gpd.read_file(path, layer=layer, use_arrow=True).assign(layer=layer) for layer in layers), ignore_index=True))
             else:
                 df = gpd.read_file(path, layer=layer, use_arrow=True)
+        if clean_geometry:
+            df.geometry = df.geometry.simplify(1).set_precision(1).remove_repeated_points(1).make_valid()
     else:
         if path.suffix == ".parquet" or path.is_dir():
             df = pd.read_parquet(path)
@@ -126,7 +129,7 @@ def write_parquet(df: DataFrame, path: str, partition_cols: list[str] | None = N
         write_to_dataset(table, path, partition_cols=partition_cols)
         return pd.DataFrame([])
 
-    def map_to_gpqs(iterator):  # DONE: I forgot mapInPandas uses an iterator.
+    def map_to_gpqs(iterator):
         "Iterator of to_gpqs, for mapInPandas."
         for pdf in iterator:
             yield to_gpqs(pdf)
