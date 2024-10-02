@@ -6,6 +6,7 @@ from pathlib import Path
 from elmo_geo import register
 from elmo_geo.utils.log import LOG
 
+from .catchment_based_approach import wetland_vision_parcels, wetland_vision_raw
 from .cec_soilscapes import (
     cec_soilscapes_habitats_parcels,
     cec_soilscapes_parcels,
@@ -214,6 +215,8 @@ catalogue = [
     sfi_agroforestry,
     ward_parcels,
     ward_raw,
+    wetland_vision_parcels,
+    wetland_vision_raw,
     woodland_creation_sensitivity_parcels,
     woodland_creation_sensitivity_raw,
     woodland_creation_sensitivity_var1_parcels,
