@@ -11,12 +11,13 @@ from pyspark.errors import AnalysisException
 from pyspark.serializers import AutoBatchedSerializer, PickleSerializer
 from pyspark.sql import functions as F
 
+from elmo_geo.st.geometry import load_geometry
 from elmo_geo.utils.dbr import spark
 from elmo_geo.utils.log import LOG
 from elmo_geo.utils.misc import dbfs
 from elmo_geo.utils.types import DataFrame, GeoDataFrame, PandasDataFrame, SparkDataFrame
 
-from .convert import to_gdf
+from .convert import to_gdf, to_sdf
 
 
 class UnknownFileExtension(Exception):

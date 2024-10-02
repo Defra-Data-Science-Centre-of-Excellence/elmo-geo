@@ -6,7 +6,6 @@ import geopandas as gpd
 from pyspark.sql import functions as F
 
 from elmo_geo.io.file import auto_repartition
-from elmo_geo.st.geometry import load_geometry
 from elmo_geo.st.join import sjoin
 from elmo_geo.utils.types import PandasDataFrame, SparkDataFrame
 
