@@ -58,6 +58,7 @@ the carbon and species varables, producing the `esc_species_parcels` and `esc_ca
 import geopandas as gpd
 import pyspark.sql.functions as F
 from pandera import DataFrameModel, Field
+from pandera.dtypes import Int32
 from pandera.engines.geopandas_engine import Geometry
 
 from elmo_geo.etl import Dataset, DerivedDataset, SourceGlobDataset
@@ -279,18 +280,18 @@ def _sjoin_bng_to_no_peat_parcel(
         )
         .mapInPandas(_udf_difference, schema="id_parcel:string,geometry:binary")
         .withColumn("geometry", load_geometry())
-        .withColumn("nopeat_area_ha", F.expr("ST_Area(geometry)/10000"))
+        .withColumn("nopeat_area", F.expr("ST_Area(geometry)/10000"))
     )
 
     # all parcels
     sdf_other = (
         reference_parcels.sdf()
-        .join(sdf_peat.select("id_parcel", "nopeat_area_ha"), on="id_parcel", how="left")
-        .filter("nopeat_area_ha IS NULL")
-        .selectExpr("id_parcel", "geometry", "area_ha as nopeat_area_ha")
+        .join(sdf_peat.select("id_parcel", "nopeat_area"), on="id_parcel", how="left")
+        .filter("nopeat_area IS NULL")
+        .selectExpr("id_parcel", "geometry", "area_ha as nopeat_area")
     )
 
-    return sjoin_parcel_proportion(sdf_other.unionByName(sdf_peat), os_bng_raw.sdf().filter("layer='1km_grid'"), columns=["tile_name", "nopeat_area_ha"])
+    return sjoin_parcel_proportion(sdf_other.unionByName(sdf_peat), os_bng_raw.sdf().filter("layer='1km_grid'"), columns=["tile_name", "nopeat_area"])
 
 
 class NoPeatParcelBNGModel(DataFrameModel):
@@ -298,13 +299,13 @@ class NoPeatParcelBNGModel(DataFrameModel):
 
     Attributes:
         id_parcel: Parcel ID
-        nopeat_area_ha: Geographic area of parcel excluding intersecting peaty soils geometries, in hectares.
+        nopeat_area: Geographic area of parcel excluding intersecting peaty soils geometries, in hectares.
         tile_name: Name of 1km OS BNG tile intersected the parcel.
         proportion: Proportion of parcel no peat area intersected by 1km BNG tile.
     """
 
     id_parcel: str = Field()
-    nopeat_area_ha: float = Field()
+    nopeat_area: float = Field()
     tile_name: str = Field()
     proportion: float = Field(ge=0, le=1)
 
@@ -354,6 +355,7 @@ def _aggregate_carbon_values(sdf_parcel_esc: SparkDataFrame) -> SparkDataFrame:
     """Aggregate ESC carbon values to parcels by calcualting the weighted sum across 1km tiles."""
     groupby_cols = [
         "id_parcel",
+        "nopeat_area",
         "woodland_type",
         "rcp",
         "period_AA_T1",
@@ -395,6 +397,7 @@ def _aggregate_species_values(sdf_parcel_esc: SparkDataFrame) -> SparkDataFrame:
     """Aggregate ESC spcies area, yield class and suitability scores to parcels by calculating the weighted sum across 1km tiles."""
     groupby_cols = [
         "id_parcel",
+        "nopeat_area",
         "woodland_type",
         "rcp",
         "period_AA_T1",
@@ -421,6 +424,7 @@ def _aggregate_species_values(sdf_parcel_esc: SparkDataFrame) -> SparkDataFrame:
                 'OPENSPACE', open_space, NULL, NULL) as (species, area, yield_class, suitability)
             """,
         )
+        .filter("species IS NOT NULL")
         .groupby(*groupby_cols, "species")
         .agg(
             *[F.expr(f"ROUND(SUM(proportion * {c}),5) as {c}") for c in species_cols],
@@ -450,7 +454,7 @@ class ESCCarbonParcels(DataFrameModel):
 
     Attributes:
         id_parcel: Parcel ID
-        nopeat_area_ha: Geographic area of parcel excluding intersecting peaty soils geometries.
+        nopeat_area: Geographic area of parcel excluding intersecting peaty soils geometries.
         woodland_type: Type of woodland modelled.
         rcp: Representating concetration pathway scenario (i.e cliamte change scenario)
         period_AA_T1: Time periods for annual average (AA) and T1 carbon values
@@ -487,11 +491,33 @@ class ESCCarbonParcels(DataFrameModel):
     """
 
     id_parcel: str = Field()
-    nopeat_area_ha: float = Field()
-    woodland_type: str = Field()
-    rcp: str = Field()
-    period_AA_T1: str = Field()
-    period_T2: str = Field()
+    nopeat_area: float = Field()
+    woodland_type: str = Field(
+        isin=[
+            "productive_conifer",
+            "native_broadleaved",
+            "riparian",
+            "silvoarable",
+            "wood_pasture",
+        ]
+    )
+    rcp: Int32 = Field(isin=[26, 45, 60, 85])
+    period_AA_T1: str = Field(
+        isin=[
+            "2021_2028",
+            "2029_2036",
+            "2037_2050",
+            "2051_2100",
+        ]
+    )
+    period_T2: str = Field(
+        isin=[
+            "2021_2050",
+            "2021_2100",
+            "2021_2036",
+            "2021_2028",
+        ]
+    )
     period_AA_T1_duration: int = Field()
     period_T2_duration: int = Field()
     tree_carbon: float = Field()
@@ -536,7 +562,7 @@ class ESCSpeciesParcels(DataFrameModel):
 
     Attributes:
         id_parcel: Parcel ID
-        nopeat_area_ha: Geographic area of parcel excluding intersecting peaty soils geometries.
+        nopeat_area: Geographic area of parcel excluding intersecting peaty soils geometries.
         woodland_type: Type of woodland modelled.
         rcp: Representating concetration pathway scenario (i.e cliamte change scenario)
         period_AA_T1: Time periods for annual average (AA) and T1 carbon values
@@ -551,17 +577,39 @@ class ESCSpeciesParcels(DataFrameModel):
     """
 
     id_parcel: str = Field()
-    nopeat_area_ha: float = Field()
-    woodland_type: str = Field()
-    rcp: str = Field()
-    period_AA_T1: str = Field()
-    period_T2: str = Field()
+    nopeat_area: float = Field()
+    woodland_type: str = Field(
+        isin=[
+            "productive_conifer",
+            "native_broadleaved",
+            "riparian",
+            "silvoarable",
+            "wood_pasture",
+        ]
+    )
+    rcp: Int32 = Field(isin=[26, 45, 60, 85])
+    period_AA_T1: str = Field(
+        isin=[
+            "2021_2028",
+            "2029_2036",
+            "2037_2050",
+            "2051_2100",
+        ]
+    )
+    period_T2: str = Field(
+        isin=[
+            "2021_2050",
+            "2021_2100",
+            "2021_2036",
+            "2021_2028",
+        ]
+    )
     period_AA_T1_duration: int = Field()
     period_T2_duration: int = Field()
     species: str = Field()
     area: float = Field(ge=0, le=1)
-    yield_class: float = Field()
-    suitability: float = Field(ge=0, le=1)
+    yield_class: float = Field(nullable=True)
+    suitability: float = Field(ge=0, le=1, nullable=True)
 
 
 esc_species_parcels = DerivedDataset(
