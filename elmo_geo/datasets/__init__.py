@@ -70,9 +70,6 @@ from .fr_esc_m3_trees import (
     os_bng_no_peat_parcels,
 )
 from .fr_esc_m3_trees_suitability import (
-    esc_suitability_broadleaved_raw,
-    esc_suitability_coniferous_raw,
-    esc_suitability_riparian_raw,
     esc_tree_suitability,
 )
 from .hedges import (
@@ -162,9 +159,6 @@ catalogue = [
     esc_m3_raw,
     esc_carbon_parcels,
     esc_species_parcels,
-    esc_suitability_broadleaved_raw,
-    esc_suitability_coniferous_raw,
-    esc_suitability_riparian_raw,
     esc_tree_suitability,
     evast_habitat_mapping_raw,
     ewco_nature_recovery_priority_habitat_parcels,
