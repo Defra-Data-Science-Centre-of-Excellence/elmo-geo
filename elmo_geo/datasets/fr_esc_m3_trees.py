@@ -37,6 +37,20 @@ of the time period corresponding to a single suitability and yield class score (
 2037-2051, or 2051-2100). Values are maximum potential carbon sequestration, negative values represent net
 sequestration and positive values net emissions.
 
+# Aggregation to parcels methodology
+
+The raw ESC model outputs for carbon and tree species are aggregated to parcels following the methodology used by EVAST:
+[Carbon values](https://defra.sharepoint.com/:w:/r/teams/Team1645/Evidence%20and%20Analysis%20WS/4.9_Workstream_Areas_Modelling_Strategy/4.9.7%20Modelling%20Strategy%20Documentation/Incoming/20240712%20-%20Amy%20Thomas%20-%20ESC%20tree%20data/ESC%20Trees%20Documentation%20Update%202024-07-31/MethodNote_AggregationOfWoodlandCarbonToParcelLevel%20-%20Copy.docx?d=w5fb03e4998fa4dc2aef9b83850c339e3&csf=1&web=1&e=hUdTef)
+[Species values](https://defra.sharepoint.com/:w:/r/teams/Team1645/Evidence%20and%20Analysis%20WS/4.9_Workstream_Areas_Modelling_Strategy/4.9.7%20Modelling%20Strategy%20Documentation/Incoming/20240712%20-%20Amy%20Thomas%20-%20ESC%20tree%20data/ESC%20Trees%20Documentation%20Update%202024-07-31/MethodNote_AggregationOfSpeciesDataToParcelLevel.docx?d=w0f27d6ebe52e450697d1aa0d661f0fcb&csf=1&web=1&e=scqSBn)
+
+There are three main steps to the methodology:
+1. Remove peat areas from parcel geometries.
+2. Intersect parcel geoemtries with the 1km BNG grid
+3. Assign parcels the weighted average of ESC outputs, based on the proportion of each 1km grid overlapping the parcel.
+
+Steps 1. and 2. are implemented by producing the `os_bng_no_peat_parcels` dataset. Step 3. is performed separately for
+the carbon and species varables, producing the `esc_species_parcels` and `esc_carbon_parcels` datasets.
+
 [^1] [Forest Research - Ecological Site Classification](https://www.forestresearch.gov.uk/tools-and-resources/fthr/ecological-site-classification)
 """
 
@@ -266,18 +280,18 @@ def _sjoin_bng_to_no_peat_parcel(
         )
         .mapInPandas(_udf_difference, schema="id_parcel:string,geometry:binary")
         .withColumn("geometry", load_geometry())
-        .withColumn("nopeat_area", F.expr("ST_Area(geometry)/10000"))
+        .withColumn("nopeat_area_ha", F.expr("ST_Area(geometry)/10000"))
     )
 
     # all parcels
     sdf_other = (
         reference_parcels.sdf()
-        .join(sdf_peat.select("id_parcel", "nopeat_area"), on="id_parcel", how="left")
-        .filter("nopeat_area IS NULL")
-        .selectExpr("id_parcel", "geometry", "area_ha as nopeat_area")
+        .join(sdf_peat.select("id_parcel", "nopeat_area_ha"), on="id_parcel", how="left")
+        .filter("nopeat_area_ha IS NULL")
+        .selectExpr("id_parcel", "geometry", "area_ha as nopeat_area_ha")
     )
 
-    return sjoin_parcel_proportion(sdf_other.unionByName(sdf_peat), os_bng_raw.sdf().filter("layer='1km_grid'"), columns=["tile_name", "nopeat_area"])
+    return sjoin_parcel_proportion(sdf_other.unionByName(sdf_peat), os_bng_raw.sdf().filter("layer='1km_grid'"), columns=["tile_name", "nopeat_area_ha"])
 
 
 class NoPeatParcelBNGModel(DataFrameModel):
@@ -285,13 +299,13 @@ class NoPeatParcelBNGModel(DataFrameModel):
 
     Attributes:
         id_parcel: Parcel ID
-        nopeat_area: Geographic area of parcel excluding intersecting peaty soils geometries.
+        nopeat_area_ha: Geographic area of parcel excluding intersecting peaty soils geometries, in hectares.
         tile_name: Name of 1km OS BNG tile intersected the parcel.
         proportion: Proportion of parcel no peat area intersected by 1km BNG tile.
     """
 
     id_parcel: str = Field()
-    nopeat_area: float = Field()
+    nopeat_area_ha: float = Field()
     tile_name: str = Field()
     proportion: float = Field(ge=0, le=1)
 
@@ -436,7 +450,7 @@ class ESCCarbonParcels(DataFrameModel):
 
     Attributes:
         id_parcel: Parcel ID
-        nopeat_area: Geographic area of parcel excluding intersecting peaty soils geometries.
+        nopeat_area_ha: Geographic area of parcel excluding intersecting peaty soils geometries.
         woodland_type: Type of woodland modelled.
         rcp: Representating concetration pathway scenario (i.e cliamte change scenario)
         period_AA_T1: Time periods for annual average (AA) and T1 carbon values
@@ -473,7 +487,7 @@ class ESCCarbonParcels(DataFrameModel):
     """
 
     id_parcel: str = Field()
-    nopeat_area: float = Field()
+    nopeat_area_ha: float = Field()
     woodland_type: str = Field()
     rcp: str = Field()
     period_AA_T1: str = Field()
@@ -505,6 +519,7 @@ esc_carbon_parcels = DerivedDataset(
     level0="silver",
     level1="forest_research",
     restricted=False,
+    is_geo=False,
     dependencies=[
         os_bng_no_peat_parcels,
         esc_m3_geo,
@@ -521,7 +536,7 @@ class ESCSpeciesParcels(DataFrameModel):
 
     Attributes:
         id_parcel: Parcel ID
-        nopeat_area: Geographic area of parcel excluding intersecting peaty soils geometries.
+        nopeat_area_ha: Geographic area of parcel excluding intersecting peaty soils geometries.
         woodland_type: Type of woodland modelled.
         rcp: Representating concetration pathway scenario (i.e cliamte change scenario)
         period_AA_T1: Time periods for annual average (AA) and T1 carbon values
@@ -536,7 +551,7 @@ class ESCSpeciesParcels(DataFrameModel):
     """
 
     id_parcel: str = Field()
-    nopeat_area: float = Field()
+    nopeat_area_ha: float = Field()
     woodland_type: str = Field()
     rcp: str = Field()
     period_AA_T1: str = Field()
@@ -554,6 +569,7 @@ esc_species_parcels = DerivedDataset(
     level0="silver",
     level1="forest_research",
     restricted=False,
+    is_geo=False,
     dependencies=[
         os_bng_no_peat_parcels,
         esc_m3_geo,
