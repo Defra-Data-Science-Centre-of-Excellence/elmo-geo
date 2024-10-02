@@ -11,7 +11,7 @@ from pandera import DataFrameModel, Field
 from elmo_geo.etl import SourceDataset
 
 
-#tree detections
+# tree detections
 class FCPTreeDetectionsRaw(DataFrameModel):
     """Model for fcp tree detection datset.
 
@@ -58,7 +58,7 @@ fcp_tree_detection_raw = SourceDataset(
     name="fcp_tree_detection_raw",
     level0="bronze",
     level1="fcp",
-    model= FCPTreeDetectionsRaw,
+    model=FCPTreeDetectionsRaw,
     restricted=False,
     source_path="dbfs:/mnt/lab/unrestricted/elm/elmo/tree_features/tree_detections/tree_detections_202311231323.parquet",
 )

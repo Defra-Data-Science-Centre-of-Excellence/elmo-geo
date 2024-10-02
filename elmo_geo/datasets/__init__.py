@@ -62,6 +62,9 @@ from .fcp_habitat_classification import (
     fcp_habitat_creation_type_parcel,
     fcp_habitat_management_type_parcel,
 )
+from .fcp_tree_detection import (
+    fcp_tree_detection_raw,
+)
 from .fr_esc_m3_trees import (
     esc_m3_geo,
     esc_m3_raw,
@@ -167,6 +170,7 @@ catalogue = [
     ewco_nature_recovery_priority_habitat,
     fcp_habitat_creation_type_parcel,
     fcp_habitat_management_type_parcel,
+    fcp_tree_detection_raw,
     flood_risk_areas_parcels,
     flood_risk_areas_raw,
     is_upland_parcels,
