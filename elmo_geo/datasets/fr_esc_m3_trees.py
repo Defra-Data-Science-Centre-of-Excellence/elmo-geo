@@ -59,7 +59,6 @@ import geopandas as gpd
 import pyspark.sql.functions as F
 from pandera import DataFrameModel, Field
 from pandera.engines.geopandas_engine import Geometry
-from pyspark.sql.types import BinaryType, StringType, StructField, StructType
 
 from elmo_geo.etl import Dataset, DerivedDataset, SourceGlobDataset
 from elmo_geo.etl.transformations import sjoin_parcel_proportion, sjoin_parcels
@@ -328,6 +327,7 @@ os_bng_no_peat_parcels = DerivedDataset(
 
 Used as an input to the ESC M3 data aggregation to parcels process.
 """
+
 
 def _join_esc_outputs(
     sdf_parcel_tiles: SparkDataFrame,
