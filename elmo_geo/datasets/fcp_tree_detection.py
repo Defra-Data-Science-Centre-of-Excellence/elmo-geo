@@ -60,5 +60,5 @@ fcp_tree_detection_raw = SourceDataset(
     level1="fcp",
     model=FCPTreeDetectionsRaw,
     restricted=False,
-    source_path="dbfs:/mnt/lab/unrestricted/elm/elmo/tree_features/tree_detections/tree_detections_202311231323.parquet",
+    source_path="/dbfs/mnt/lab/unrestricted/elm/elmo/tree_features/tree_detections/tree_detections_202311231323.parquet/",
 )
