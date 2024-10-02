@@ -385,6 +385,5 @@ class DerivedDataset(Dataset):
         LOG.info(f"Creating '{self.name}' dataset.")
         df = self.func(*self.dependencies)
         df = self._validate(df)
-        print(df)
         write_parquet(df, path=self._new_path, partition_cols=self.partition_cols)
         LOG.info(f"Saved to '{self.path}'.")
