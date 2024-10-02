@@ -11,9 +11,44 @@ from pandera.engines.geopandas_engine import Geometry
 
 from elmo_geo.etl import SRID, SourceDataset
 
+# Tree Detctions Dataset
+class FCPTreeDetectionsRaw():
+    """
+    Attributes:
+        top_x: float
+        top_y: float 
+        top_height: float 
+        chm_path: string
+        msg: string
+        top_point: string
+        crown_poly_raster: string
+        major_grid: string
+        geometry: Geospatial polygons in EPSG:27700
 
-# tree detections
-class FCPTreeDetectionsRaw(DataFrameModel):
+    """
+
+    top_x: float = Field()
+    top_y: float = Field()
+    top_height: float = Field()
+    chm_path: str = Field()
+    msg: str = Field()
+    top_point: str = Field()
+    crown_poly_raster: str = Field()
+    major_grid: str = Field()
+    geometry: Geometry(crs=SRID) = Field()
+
+fcp_tree_detection_raw = SourceDataset(
+    name="fcp_tree_detection_raw",
+    level0="bronze",
+    level1="fcp",
+    model=FCPTreeDetectionsRaw,
+    restricted=False,
+    source_path="/dbfs/mnt/lab/unrestricted/elm/elmo/tree_features/tree_detections/tree_detections_202311231323.parquet/",
+)
+
+
+# tree detections This is they model for the end out put, written in error!
+class FCPTreeDetectionsFinal(DataFrameModel):
     """Model for fcp tree detection datset.
 
     Attributes:
@@ -57,12 +92,12 @@ class FCPTreeDetectionsRaw(DataFrameModel):
     geometry: Geometry(crs=SRID) = Field()
 
 
-fcp_tree_detection_raw = SourceDataset(
+fcp_tree_detection_final = SourceDataset(
     is_geo=False,
-    name="fcp_tree_detection_raw",
+    name="fcp_tree_detection_Final",
     level0="bronze",
     level1="fcp",
     model=FCPTreeDetectionsRaw,
     restricted=False,
-    source_path="/dbfs/mnt/lab/unrestricted/elm/elmo/tree_features/tree_detections/tree_detections_202311231323.parquet/",
+    source_path="",
 )
