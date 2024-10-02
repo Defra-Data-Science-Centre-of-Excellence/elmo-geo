@@ -65,6 +65,7 @@ from .fcp_habitat_classification import (
 from .fr_esc_m3_trees import (
     esc_m3_geo,
     esc_m3_raw,
+    os_bng_no_peat_parcels,
 )
 from .fr_esc_m3_trees_suitability import (
     esc_suitability_broadleaved_raw,
@@ -195,6 +196,7 @@ catalogue = [
     ne_soilscapes_habitats_raw,
     ne_sssi_units_parcels,
     ne_sssi_units_raw,  # snapshot
+    os_bng_no_peat_parcels,
     os_bng_parcels,
     os_bng_raw,
     os_ngd_raw,
