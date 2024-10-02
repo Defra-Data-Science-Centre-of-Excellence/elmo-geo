@@ -76,13 +76,14 @@ def _combine_and_clean_parcels(parcels_sbi: Dataset, parcels_nosbi: Dataset) -> 
         - Remove any repeated points from the precision reduction.
         - Make the geometries valid again.
 
-    Note:
-        Simplification effects at different tolerances:
-
-        - Before: mean points=92, total area= 9,780,243 ha
-        - **1m simplification: mean points=21, total area= 9,779,732 ha**
-        - 5m simplification: mean points=11, total area= 9,770,628 ha
-        - 10m simplification: mean points=8, total area= 9,752,380 ha
+    Simplification effects at different tolerances:
+        Abs Sum: 16,166ha
+        Abs Mean: 0.006ha
+    ```py
+    df = reference_parcels.gdf().assign(diff=lambda df: df.area / 10_000 - df["area_ha"])
+    title = f'Parcel change in Area from original geometry cause by Precision 1.\n{df["diff"].abs().sum():,.0f}ha abs sum, {df["diff"].abs().mean():.3f}ha abs mean difference.'
+    df["diff"].hist(bins=100).set(title=title)
+    ```
     """
     return (
         pd.concat(
@@ -91,7 +92,7 @@ def _combine_and_clean_parcels(parcels_sbi: Dataset, parcels_nosbi: Dataset) -> 
                 parcels_nosbi.gdf().loc[lambda df: df.geometry.notna(), :],
             ]
         )
-        [["id_parcel", "sbi", "area_ha", "geometry"]]
+        .loc[:, ["id_parcel", "sbi", "area_ha", "geometry"]]
         .assign(geometry=lambda df: df.geometry.make_valid())
         .explode()
         .loc[lambda df: (df.geometry.geometry.type == "Polygon") & (df.area > 50.0)]
