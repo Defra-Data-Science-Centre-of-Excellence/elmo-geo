@@ -7,8 +7,9 @@ notebooks/sylvan/tree_features.py file.
 
 
 from pandera import DataFrameModel, Field
+from pandera.engines.geopandas_engine import Geometry
 
-from elmo_geo.etl import SourceDataset
+from elmo_geo.etl import SRID, SourceDataset
 
 
 # tree detections
@@ -37,6 +38,7 @@ class FCPTreeDetectionsRaw(DataFrameModel):
         (trees whose crown coordinate intersects with the 4m buffered perimeter) with the parcel perimeter.
         int_trees_count4: Number of trees in the parcel interior.
                         The parcel interior is given by the difference between the 4m buffered parcel perimeter and the parcel geometry.
+        geometry: Geospatial polygons in EPSG:27700
     """
 
     SHEET_ID: str = Field()
@@ -52,6 +54,7 @@ class FCPTreeDetectionsRaw(DataFrameModel):
     perim_trees_count4: int = Field()
     crown_perim_length4: float = Field()
     int_trees_count4: int = Field()
+    geometry: Geometry(crs=SRID) = Field()
 
 
 fcp_tree_detection_raw = SourceDataset(
