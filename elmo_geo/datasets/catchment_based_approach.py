@@ -42,7 +42,7 @@ wetland_vision_raw = SourceDataset(
 
 
 class WetlandVisionParcels(DataFrameModel):
-    """Model for Defra ALC with parcel dataset.
+    """Model for Wetalnd Vision joined to parcel dataset.
 
     Attributes:
         id_parcel: 11 character RPA reference parcel ID (including the sheet ID) e.g. `SE12263419`.
@@ -63,3 +63,4 @@ wetland_vision_parcels = DerivedDataset(
     dependencies=[reference_parcels, wetland_vision_raw],
     model=WetlandVisionParcels,
 )
+"""Wetland Vision Future Potential Wetlands joined to RPA parcels."""
