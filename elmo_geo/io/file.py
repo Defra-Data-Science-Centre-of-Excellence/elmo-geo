@@ -90,7 +90,7 @@ def load_sdf(path: str, **kwargs) -> SparkDataFrame:
 def read_file(source_path: str, is_geo: bool, layer: int | str | None = None) -> PandasDataFrame | GeoDataFrame:
     path = Path(source_path)
     if is_geo:
-        if path.suffix == ".parquet" or path.is_dir():
+        if (path.suffix == ".parquet" or path.is_dir()) and (path.suffix != ".gdb"):
             df = gpd.read_parquet(path)
         else:
             layers = gpd.list_layers(path)["name"]
