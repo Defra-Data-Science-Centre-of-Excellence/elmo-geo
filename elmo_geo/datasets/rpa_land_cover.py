@@ -1,5 +1,6 @@
 """RPA Land Cover
 """
+import pyspark.sql.functions as F
 from pandera import DataFrameModel, Field
 
 from elmo_geo.etl.etl import DerivedDataset, SourceDataset
@@ -8,9 +9,9 @@ from elmo_geo.etl.etl import DerivedDataset, SourceDataset
 class RPALandCoverParcelsRaw(DataFrameModel):
     """Model for raw RPA land cover data."""
 
-    FULL_PARCEL_ID: str = Field(alias="id_parcel")
-    LAND_COVER_CLASS_CODE: int = Field(alias="land_cover_code", coerce=True)
-    LC_AREA: float = Field(alias="area")
+    id_parcel: str = Field(alias="FULL_PARCEL_ID")
+    land_cover_code: int = Field(alias="LAND_COVER_CLASS_CODE", coerce=True)
+    area: float = Field(alias="LC_AREA")
 
 
 rpa_land_cover_parcels_raw = SourceDataset(
@@ -26,8 +27,8 @@ rpa_land_cover_parcels_raw = SourceDataset(
 class RPALandCoverCodesRaw(DataFrameModel):
     """Model for RPA land cover codes lookup."""
 
-    LAND_COVER_CLASS_CODE: int = Field(alias="land_cover_code", coerce=True)
-    NAME: str = Field(alias="land_cover_name")
+    land_cover_code: int = Field(alias="LAND_COVER_CLASS_CODE", coerce=True)
+    land_cover_name: str = Field(alias="NAME")
 
 
 rpa_land_cover_codes_raw = SourceDataset(
@@ -45,14 +46,30 @@ class RPALandCoverParcels(DataFrameModel):
     """Model for RPA land cover data with land cover names."""
 
     id_parcel: str = Field()
-    land_cover_code: int = Field(coerce=True)
+    land_cover_codes: str = Field()
     land_cover_name: str = Field()
     area: float = Field()
     area_ha: float = Field()
 
 
-def _transform(rpa_land_cover_parcels, rpa_land_cover_codes):
-    return rpa_land_cover_parcels.pdf().merge(rpa_land_cover_codes.pdf(), on="LAND_COVER_CLASS_CODE").assign(area_ha=lambda df: df["area"] / 10_000)
+def _transform(rpa_land_cover_parcels_raw, rpa_land_cover_codes_raw):
+    """Joins RPA parcel land cover area values to land cover names.
+
+    Land cover codes 130 and 131 both have the name 'Permanent Grassland' and
+    codes 520 and 525 both have the name 'Structure'. This is why codes have been concatenated
+    as part of the groupby aggregation.
+    """
+    return (
+        rpa_land_cover_parcels_raw.sdf()
+        .join(rpa_land_cover_codes_raw.sdf(), on="land_cover_code")
+        .groupby("id_parcel", "land_cover_name")
+        .agg(
+            F.expr("SUM(area) as area"),
+            F.expr("ARRAY_JOIN(COLLECT_LIST(land_cover_code),'-') AS land_cover_codes"),
+        )
+        .selectExpr("id_parcel", "land_cover_codes", "land_cover_name", "area", "area/10000 as area_ha")
+        .toPandas()
+    )
 
 
 rpa_land_cover_parcels = DerivedDataset(
