@@ -50,15 +50,16 @@ def auto_repartition(
         jobs_cap: limits the maximum number of jobs to fit within Spark's job limit.
         acceptance_ratio: don't repartition unless it exceeds this ratio.
     """
-    partitioners = (
-        round(sdf.rdd.countApprox(1000, 0.8) * count_ratio),  # 1s wait or 80% accurate.
-        round(memsize_sdf(sdf) * mem_ratio),
-        round(spark.sparkContext.defaultParallelism * thread_ratio),
-    )
-    suggested_partitions = int(min(max(partitioners), jobs_cap))
+    partitioners = {
+        "rows": round(sdf.rdd.countApprox(1000, 0.8) * count_ratio),  # 1s wait or 80% accurate.
+        "memory": round(memsize_sdf(sdf) * mem_ratio),
+        "cores": round(spark.sparkContext.defaultParallelism * thread_ratio),
+    }
+    suggested_partitions = int(min(max(partitioners.values()), jobs_cap))
     current_partitions = sdf.rdd.getNumPartitions()
     ratio = abs(suggested_partitions - current_partitions) / current_partitions
     if acceptance_ratio < ratio:
+        LOG.info(f"Repartitioning: {current_partitions} to {suggested_partitions}, due to {partitioners}.")
         return sdf.repartition(suggested_partitions)
     else:
         return sdf

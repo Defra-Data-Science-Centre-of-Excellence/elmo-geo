@@ -116,6 +116,10 @@ from .os import (
     os_bng_raw,
     os_ngd_raw,
 )
+from .osm import (
+    osm_raw,
+    osm_tidy,
+)
 from .peat import (
     peaty_soils_parcels,
     peaty_soils_raw,
@@ -214,6 +218,8 @@ catalogue = [
     os_bng_parcels,
     os_bng_raw,
     os_ngd_raw,
+    osm_raw,  # TODO
+    osm_tidy,  # TODO
     peaty_soils_parcels,
     peaty_soils_raw,
     protected_areas_parcels,
