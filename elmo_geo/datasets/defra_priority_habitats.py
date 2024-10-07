@@ -5,17 +5,17 @@ is a spatial dataset indicating the locations and extents of habitat of 'princip
 
 The data is not a exhaustive survey of habitat locations but is the best available indication of the locations of specific habitat types.
 """
-from functools import partial
+from functools import partial, reduce
 
 import pandas as pd
 from pandera import DataFrameModel, Field
-from pandera.dtypes import Category
 from pandera.engines.geopandas_engine import Geometry
 from pyspark.sql import functions as F
 
 from elmo_geo.etl import SRID, Dataset, DerivedDataset, SourceDataset
 from elmo_geo.etl.transformations import sjoin_parcel_proportion
-from elmo_geo.st.join import knn
+from elmo_geo.st.geometry import load_geometry
+from elmo_geo.st.join import knn, sjoin
 from elmo_geo.utils.types import SparkDataFrame
 
 from .rpa_reference_parcels import reference_parcels
@@ -116,7 +116,7 @@ class PriorityHabitatParcels(DataFrameModel):
     """
 
     id_parcel: str = Field()
-    habitat_name: Category = Field()
+    habitat_name: str = Field()
     proportion: float = Field(ge=0, le=1)
 
 
@@ -131,7 +131,7 @@ class PriorityHabitatProximity(DataFrameModel):
     """
 
     id_parcel: str = Field()
-    habitat_name: Category = Field()
+    habitat_name: str = Field()
     distance: int = Field()
 
 
@@ -190,4 +190,84 @@ The following grassland habitats are included:
 - Lowland meadows
 - Purple moor grass and rush pastures
 - Grass moorland
+"""
+
+
+def _habitat_area_within_distance(
+    sdf_parcels: SparkDataFrame,
+    sdf_phi: SparkDataFrame,
+    distance_threshold: int,
+) -> SparkDataFrame:
+    """Performs distance join between parcels and priority habitats and sums the habitat area per parcel."""
+    return (
+        sjoin(sdf_parcels, sdf_phi, distance=distance_threshold)
+        .withColumn("distance", F.expr("ST_Distance(geometry_left, geometry_right)"))
+        .groupby("id_parcel", "habitat_name")
+        .agg(
+            F.expr("SUM(ST_Area(geometry_right)) AS area"),
+            F.expr("CAST(ROUND(MIN(distance),0) AS int) AS minimum_distance"),
+        )
+        .withColumn("distance_threshold", F.lit(distance_threshold))
+    )
+
+
+def _habitat_area_within_distances(
+    parcels: Dataset,
+    priority_habitats_raw: Dataset,
+    distances: list[int] = [1_000, 2_000, 3_000, 5_000],
+) -> SparkDataFrame:
+    """Calculates the area of priority habitat within each threshold distance to parcels."""
+    sdf_phi = (
+        priority_habitats_raw.sdf()
+        .withColumn("geometry", load_geometry(encoding_fn=""))
+        .withColumn("geometry", F.expr("ST_SubDivideExplode(geometry, 256)"))
+        .transform(split_mainhabs)
+    )
+
+    def union(sdf1: SparkDataFrame, sdf2: SparkDataFrame) -> SparkDataFrame:
+        return sdf1.unionByName(sdf2, allowMissingColumns=False)
+
+    return reduce(union, [_habitat_area_within_distance(parcels.sdf(), sdf_phi, distance) for distance in distances])
+
+
+class PriorityHabitatArea(DataFrameModel):
+    """Model describing the area of priority habitats at different
+    threshold distances from RPA parcels.
+
+    Parameters:
+        id_parcel: 11 character RPA reference parcel ID (including the sheet ID) e.g. `SE12263419`.
+        habitat_name: The name of the priority habitat.
+        area: The area of priority habitat geometries that are within the threshold distance, in m2. The area
+        of the whole geometry is given, even if only part of the geometry is within the threshold.
+        minimum_distance: Minimum distance to this type of habitat.
+        distance_threshold: The threshold distance in metres.
+    """
+
+    id_parcel: str = Field(coerce=True)
+    habitat_name: str = Field(coerce=True)
+    area: float = Field(coerce=True)
+    minimum_distance: int = Field(coerce=True)
+    distance_threshold: int = Field(coerce=True)
+
+
+defra_habitat_area_parcels = DerivedDataset(
+    name="defra_habitat_area_parcels",
+    level0="silver",
+    level1="defra",
+    restricted=False,
+    is_geo=False,
+    func=_habitat_area_within_distances,
+    dependencies=[reference_parcels, defra_priority_habitat_england_raw],
+    model=PriorityHabitatArea,
+)
+"""Area of Defra Priority Habitats within 2km and 5km of a parcel.
+
+Used, in combination with other datasets, to classify which types of habitats can be created
+on parcels as part of ELM habitat creation actions.
+
+Two thresholds of 2km and 5km are used to allow for different criteria for rarer habitats.
+At a single 5km threshold we expect rarer priority habitats to have smaller areas that other
+habitat types, which could overly bias habitat creation classification towards more common
+habitats. Using a second 2km threshold allows checking for nearby rarer habitats before moving to
+more common habitats. 
 """

@@ -6,6 +6,14 @@ from pathlib import Path
 from elmo_geo import register
 from elmo_geo.utils.log import LOG
 
+from .boundary import (
+    boundary_adjacencies,
+    boundary_hedgerows,
+    boundary_segments,
+    boundary_walls,
+    boundary_water,
+)
+from .catchment_based_approach import wetland_vision_parcels, wetland_vision_raw
 from .cec_soilscapes import (
     cec_soilscapes_habitats_parcels,
     cec_soilscapes_parcels,
@@ -30,6 +38,7 @@ from .defra_national_character_areas import (
 )
 from .defra_priority_habitats import (
     defra_grassland_proximity_parcels,
+    defra_habitat_area_parcels,
     defra_heathland_proximity_parcels,
     defra_priority_habitat_england_raw,
     defra_priority_habitat_parcels,
@@ -56,25 +65,31 @@ from .fc_woodland_sensitivity import (
     woodland_creation_sensitivity_var3_parcels,
     woodland_creation_sensitivity_var3_raw,
 )
+from .fcp_habitat_classification import (
+    evast_habitat_mapping_raw,
+    fcp_habitat_creation_type_parcel,
+    fcp_habitat_management_type_parcel,
+)
 from .fr_esc_m3_trees import (
+    esc_carbon_parcels,
     esc_m3_geo,
     esc_m3_raw,
+    esc_species_parcels,
+    os_bng_no_peat_parcels,
 )
 from .fr_esc_m3_trees_suitability import (
-    esc_suitability_broadleaved_raw,
-    esc_suitability_coniferous_raw,
-    esc_suitability_riparian_raw,
     esc_tree_suitability,
 )
 from .hedges import (
     rpa_hedges_raw,
 )
 from .living_england import (
-    living_england_habitat_map_phase_4_parcel,
+    living_england_habitat_map_phase_4_parcels,
     living_england_habitat_map_phase_4_raw,
 )
 from .moor import (
-    moorline_parcel,
+    is_upland_parcels,
+    moorline_parcels,
     moorline_raw,
 )
 from .ons import (
@@ -97,6 +112,10 @@ from .os import (
     os_bng_parcels,
     os_bng_raw,
     os_ngd_raw,
+)
+from .osm import (
+    osm_raw,
+    osm_tidy,
 )
 from .peat import (
     peaty_soils_parcels,
@@ -130,6 +149,13 @@ from .rpa_reference_parcels import (
 )
 
 catalogue = [
+    boundary_walls,
+    boundary_segments,
+    boundary_adjacencies,
+    boundary_hedgerows,
+    boundary_water,
+    osm_raw,
+    osm_tidy,
     alc_parcels,
     alc_raw,
     bua_parcels,
@@ -144,29 +170,33 @@ catalogue = [
     cua_parcels,
     cua_raw,
     defra_grassland_proximity_parcels,
+    defra_habitat_area_parcels,
     defra_heathland_proximity_parcels,
     defra_priority_habitat_england_raw,
     defra_priority_habitat_parcels,
     esc_m3_geo,
     esc_m3_raw,
-    esc_suitability_broadleaved_raw,
-    esc_suitability_coniferous_raw,
-    esc_suitability_riparian_raw,
+    esc_carbon_parcels,
+    esc_species_parcels,
     esc_tree_suitability,
+    evast_habitat_mapping_raw,
     ewco_nature_recovery_priority_habitat_parcels,
     ewco_nature_recovery_priority_habitat_raw,
     ewco_nature_recovery_priority_habitat,
+    fcp_habitat_creation_type_parcel,
+    fcp_habitat_management_type_parcel,
     flood_risk_areas_parcels,
     flood_risk_areas_raw,
+    is_upland_parcels,
     itl2_parcels,
     itl2_raw,
     jncc_spa_parcels,
     jncc_spa_raw,
     lad_parcels,
     lad_raw,
-    living_england_habitat_map_phase_4_parcel,
+    living_england_habitat_map_phase_4_parcels,
     living_england_habitat_map_phase_4_raw,
-    moorline_parcel,
+    moorline_parcels,
     moorline_raw,
     national_landscapes_raw,
     national_parks_raw,
@@ -183,6 +213,7 @@ catalogue = [
     ne_soilscapes_habitats_raw,
     ne_sssi_units_parcels,
     ne_sssi_units_raw,  # snapshot
+    os_bng_no_peat_parcels,
     os_bng_parcels,
     os_bng_raw,
     os_ngd_raw,
@@ -202,6 +233,8 @@ catalogue = [
     sfi_agroforestry,
     ward_parcels,
     ward_raw,
+    wetland_vision_parcels,
+    wetland_vision_raw,
     woodland_creation_sensitivity_parcels,
     woodland_creation_sensitivity_raw,
     woodland_creation_sensitivity_var1_parcels,
