@@ -89,7 +89,7 @@ def load_sdf(path: str, **kwargs) -> SparkDataFrame:
     return sdf
 
 
-def read_file(source_path: str, is_geo: bool, layer: int | str | None = None, clean_geometry: bool = True) -> PandasDataFrame | GeoDataFrame:
+def read_file(source_path: str, is_geo: bool, layer: int | str | None = None, clean_geometry: bool = True) -> SparkDataFrame :
     path = Path(source_path)
     if is_geo:
         if path.suffix == ".parquet" or list(path.glob("*.parquet")):

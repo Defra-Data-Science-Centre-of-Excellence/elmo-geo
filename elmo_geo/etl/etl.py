@@ -330,7 +330,7 @@ class SourceGlobDataset(SourceDataset):
             def union(x: SparkDataFrame, y: SparkDataFrame) -> SparkDataFrame:
                 return x.unionByName(y, allowMissingColumns=True)
 
-            gen_sdfs = (spark.createDataFrame(read_file(f, self.is_geo)).withColumn("_path", F.lit(f)) for f in iglob(self.glob_path))
+            gen_sdfs = (read_file(f, is_geo=self.is_geo).withColumn("_path", F.lit(f)) for f in iglob(self.glob_path))
             df = reduce(union, gen_sdfs)
             df = self._validate(df)
             write_parquet(df, path=self._new_path, partition_cols=self.partition_cols)
