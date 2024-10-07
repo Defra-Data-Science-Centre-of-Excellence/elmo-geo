@@ -8,7 +8,10 @@ from elmo_geo.utils.log import LOG
 
 from .boundary import (
     boundary_adjacencies,
+    boundary_hedgerows,
     boundary_segments,
+    boundary_walls,
+    boundary_water,
 )
 from .catchment_based_approach import (
     wetland_vision_parcels,
@@ -148,7 +151,10 @@ catalogue = [
     alc_parcels,
     alc_raw,
     boundary_adjacencies,
+    boundary_hedgerows,
     boundary_segments,
+    boundary_walls,
+    boundary_water,
     bua_parcels,
     bua_raw,
     cec_soilscapes_habitats_parcels,
