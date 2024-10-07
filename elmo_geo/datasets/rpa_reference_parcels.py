@@ -81,7 +81,10 @@ def _combine_and_clean_parcels(parcels_sbi: Dataset, parcels_nosbi: Dataset) -> 
         Abs Mean: 0.006ha
     ```py
     df = reference_parcels.gdf().assign(diff=lambda df: df.area / 10_000 - df["area_ha"])
-    title = f'Parcel change in area cause by Precision 1.\n{df["diff"].abs().sum():,.0f}ha abs sum, {df["diff"].abs().mean():.3f}ha abs mean difference.'
+    title = "Parcel change in Area from original geometry cause by Precision 1.\n{:,.0f}ha abs sum, {:.3f}ha abs mean difference.".format(
+        df["diff"].abs().sum(),
+        df["diff"].abs().mean(),
+    )
     df["diff"].hist(bins=100).set(title=title)
     ```
     """
