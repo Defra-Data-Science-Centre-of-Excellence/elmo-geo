@@ -6,7 +6,14 @@ from pathlib import Path
 from elmo_geo import register
 from elmo_geo.utils.log import LOG
 
-from .catchment_based_approach import wetland_vision_parcels, wetland_vision_raw
+from .boundary import (
+    boundary_adjacencies,
+    boundary_segments,
+)
+from .catchment_based_approach import (
+    wetland_vision_parcels,
+    wetland_vision_raw,
+)
 from .cec_soilscapes import (
     cec_soilscapes_habitats_parcels,
     cec_soilscapes_parcels,
@@ -140,6 +147,8 @@ from .rpa_reference_parcels import (
 catalogue = [
     alc_parcels,
     alc_raw,
+    boundary_adjacencies,
+    boundary_segments,
     bua_parcels,
     bua_raw,
     cec_soilscapes_habitats_parcels,
