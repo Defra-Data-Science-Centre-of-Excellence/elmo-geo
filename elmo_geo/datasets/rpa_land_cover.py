@@ -62,10 +62,10 @@ def _transform(rpa_land_cover_parcels_raw, rpa_land_cover_codes_raw):
     return (
         rpa_land_cover_parcels_raw.sdf()
         .join(rpa_land_cover_codes_raw.sdf(), on="land_cover_code")
-        .withColumn("land_cover_name", F.expr("STRIP(land_cover_name)"))
+        .withColumn("land_cover_name", F.expr("TRIM(land_cover_name)"))
         .groupby("id_parcel", "land_cover_name")
         .agg(
-            F.expr("ARRAY_JOIN(SORT(COLLECT_SET(land_cover_code)), ',') AS land_cover_codes"),
+            F.expr("ARRAY_JOIN(SORT_ARRAY(COLLECT_SET(land_cover_code)), ',') AS land_cover_codes"),
             F.expr("SUM(area) as area"),
             F.expr("SUM(area)/10000 as area_ha"),
         )
