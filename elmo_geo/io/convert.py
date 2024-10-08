@@ -43,7 +43,7 @@ def to_sdf(
     column: str = "geometry",
     crs: Union[int, str] = 27700,
 ) -> SparkDataFrame:
-    """Convert dataframe with geometry field to SparkDataFrame"""
+    """Convert dataframe with geometry field or geometry to SparkDataFrame"""
     if isinstance(x, SparkDataFrame):
         sdf = x
     elif isinstance(x, Geometry):
