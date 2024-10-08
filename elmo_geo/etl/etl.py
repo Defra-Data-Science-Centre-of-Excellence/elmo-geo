@@ -325,7 +325,6 @@ class SourceGlobDataset(SourceDataset):
             df = load_sdf(new_path)
             df = self._validate(df)
         else:
-            from elmo_geo.utils.dbr import spark
 
             def union(x: SparkDataFrame, y: SparkDataFrame) -> SparkDataFrame:
                 return x.unionByName(y, allowMissingColumns=True)
