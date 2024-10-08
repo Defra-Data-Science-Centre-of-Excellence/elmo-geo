@@ -131,6 +131,11 @@ from .protected_landscapes import (
     protected_landscapes_parcels,
     protected_landscapes_tidy,
 )
+from .rpa_land_cover import (
+    rpa_land_cover_codes_raw,
+    rpa_land_cover_parcels,
+    rpa_land_cover_parcels_raw,
+)
 from .rpa_reference_parcels import (
     reference_parcels,
     reference_parcels_raw,
@@ -209,6 +214,9 @@ catalogue = [
     reference_parcels,
     region_parcels,
     region_raw,
+    rpa_land_cover_codes_raw,
+    rpa_land_cover_parcels,
+    rpa_land_cover_parcels_raw,
     rpa_hedges_raw,  # snapshot
     sfi_agroforestry_parcels,
     sfi_agroforestry_raw,
