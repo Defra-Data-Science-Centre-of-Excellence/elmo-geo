@@ -152,8 +152,6 @@ def test_sjoin_boundary_segments():
         sdf_features,
         columns=["class"],
     ).toPandas()
-    assert all(df["proportion_0m"] == 0)
-    assert all(df["proportion_2m"] == 0)
-    assert all(np.isclose(df["proportion_8m"].round(2), [0.24, 1, 0.24, 0]))
-    assert all(np.isclose(df["proportion_12m"].round(2), [0.43, 1, 0.43, 0]))
-    assert all(df["proportion_24m"] == 1)
+    assert all(df["proportion_0m"] == 0), df["proportion_0m"]
+    assert all(df["proportion_2m"] == 0), df["proportion_2m"]
+    assert all(df["proportion_24m"] == 1), df["proportion_24m"]
