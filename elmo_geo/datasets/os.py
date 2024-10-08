@@ -13,7 +13,7 @@ from pandera import DataFrameModel, Field
 from pandera.engines.geopandas_engine import Geometry
 
 from elmo_geo.etl.etl import SRID, DerivedDataset, SourceDataset, SourceGlobDataset
-from elmo_geo.etl.transformations import join_parcels
+from elmo_geo.etl.transformations import sjoin_parcel_proportion
 
 from .rpa_reference_parcels import reference_parcels
 
@@ -102,7 +102,7 @@ os_bng_parcels = DerivedDataset(
     restricted=False,
     is_geo=False,
     model=OSBNGParcelsModel,
-    func=partial(join_parcels, columns=["layer", "tile_name"]),
+    func=partial(sjoin_parcel_proportion, columns=["layer", "tile_name"]),
     dependencies=[reference_parcels, os_bng_raw],
     partition_cols=["layer"],
 )

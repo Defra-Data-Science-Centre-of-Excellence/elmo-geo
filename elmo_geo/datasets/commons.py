@@ -7,12 +7,11 @@ Common Land Amalgamation merges Registered Common Land (BPS Layer), CRoW Act 200
 from functools import partial
 
 from pandera import DataFrameModel, Field
-from pandera.dtypes import Category
 from pandera.engines.geopandas_engine import Geometry
 from pyspark.sql import functions as F
 
 from elmo_geo.etl import SRID, DerivedDataset, SourceDataset
-from elmo_geo.etl.transformations import join_parcels
+from elmo_geo.etl.transformations import sjoin_parcel_proportion
 from elmo_geo.utils.types import SparkDataFrame
 
 from .rpa_reference_parcels import reference_parcels
@@ -33,7 +32,7 @@ class CommonsRaw(DataFrameModel):
     """
 
     name: str = Field()
-    source: Category = Field(isin=["BPS_RCL", "BPS_RCL & CROW", "CROW", "HISTORIC2001?"])
+    source: str = Field(isin=["BPS_RCL", "BPS_RCL & CROW", "CROW", "HISTORIC2001?"])
     geometry: Geometry(crs=SRID) = Field()
 
 
@@ -71,7 +70,7 @@ commons_parcels = DerivedDataset(
     level0="silver",
     level1="defra",
     restricted=False,
-    func=partial(join_parcels, columns=["conclusive"], fn_pre=fn_pre_conclusive),
+    func=partial(sjoin_parcel_proportion, columns=["conclusive"], fn_pre=fn_pre_conclusive),
     dependencies=[reference_parcels, commons_raw],
     model=CommonsParcels,
 )

@@ -9,15 +9,14 @@ from functools import partial
 
 import geopandas as gpd
 from pandera import DataFrameModel, Field
-from pandera.dtypes import Category
 from pandera.engines.geopandas_engine import Geometry
 
 from elmo_geo.etl import SRID, Dataset, DerivedDataset, SourceDataset
-from elmo_geo.etl.transformations import join_parcels
+from elmo_geo.etl.transformations import sjoin_parcel_proportion
 
 from .rpa_reference_parcels import reference_parcels
 
-_join_parcels = partial(join_parcels, columns=["sensitivity"])
+_join_parcels = partial(sjoin_parcel_proportion, columns=["sensitivity"])
 
 
 class WoodlandSensitivityClean(DataFrameModel):
@@ -28,7 +27,7 @@ class WoodlandSensitivityClean(DataFrameModel):
         geometry: The sensitivity classification's geospatial extent (polygons).
     """
 
-    sensitivity: Category = Field(isin=["Unsuitable", "High", "Medium", "Low"])
+    sensitivity: str = Field(isin=["Unsuitable", "High", "Medium", "Low"])
     geometry: Geometry(crs=SRID) = Field()
 
 
@@ -42,12 +41,12 @@ class WoodlandSensitivityParcels(DataFrameModel):
     """
 
     id_parcel: str = Field()
-    sensitivity: Category = Field(isin=["Unsuitable", "High", "Medium", "Low"])
+    sensitivity: str = Field(isin=["Unsuitable", "High", "Medium", "Low"])
     proportion: float = Field(ge=0, le=1)
 
 
 def _clean_dataset(ds: Dataset) -> gpd.GeoDataFrame:
-    """Only keep the geometry and the sensitivity col, fixing typo in colname."""
+    """Only keep the geometry and the sensitivity col, fixing typo in column name."""
     return ds.gdf(columns=["geometry", "sensitivit"]).rename(columns={"sensitivit": "sensitivity"}).assign(fid=lambda df: range(len(df)))
 
 

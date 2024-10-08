@@ -121,10 +121,15 @@ def write_parquet(df: DataFrame, path: str, partition_cols: list[str] | None = N
         partition_cols = []
 
     def to_gpqs(df):
-        "GeoPandas writer as partial function."
+        "GeoPandas writer as partial function, for applyInPandas."
         table = _geopandas_to_arrow(to_gdf(df))
         write_to_dataset(table, path, partition_cols=partition_cols)
         return pd.DataFrame([])
+
+    def map_to_gpqs(iterator):  # DONE: I forgot mapInPandas uses an iterator.
+        "Iterator of to_gpqs, for mapInPandas."
+        for pdf in iterator:
+            yield to_gpqs(pdf)
 
     path = Path(path)
     if path.exists():
@@ -141,7 +146,7 @@ def write_parquet(df: DataFrame, path: str, partition_cols: list[str] | None = N
             if partition_cols:
                 df.withColumn("geometry", F.expr("ST_AsBinary(geometry)")).groupby(partition_cols).applyInPandas(to_gpqs, "col struct<>").collect()
             else:
-                df.withColumn("geometry", F.expr("ST_AsBinary(geometry)")).transform(auto_repartition).mapInPandas(to_gpqs, "col struct<>").collect()
+                df.withColumn("geometry", F.expr("ST_AsBinary(geometry)")).transform(auto_repartition).mapInPandas(map_to_gpqs, "col struct<>").collect()
         else:
             if partition_cols:
                 df.write.parquet(dbfs(str(path), True), partitionBy=partition_cols)

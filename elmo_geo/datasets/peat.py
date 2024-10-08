@@ -9,11 +9,11 @@ Peat Layer contains many more features and columns than Peaty Soils, but they ar
 from functools import partial
 
 from pandera import DataFrameModel, Field
-from pandera.dtypes import Category
+from pandera.dtypes import Int32
 from pandera.engines.geopandas_engine import Geometry
 
 from elmo_geo.etl import SRID, DerivedDataset, SourceDataset
-from elmo_geo.etl.transformations import join_parcels
+from elmo_geo.etl.transformations import sjoin_parcel_proportion
 
 from .rpa_reference_parcels import reference_parcels
 
@@ -30,8 +30,8 @@ class PeatySoilsRaw(DataFrameModel):
         geometry: Polygon geometries in EPSG:27700.
     """
 
-    fid: int = Field(unique=True, alias="objectid")
-    group: Category = Field(alias="pclassdesc", isin=["Deep Peaty Soils", "Shallow Peaty Soils", "Soils with Peaty Pockets"])
+    fid: Int32 = Field(unique=True, alias="objectid")
+    group: str = Field(alias="pclassdesc", isin=["Deep Peaty Soils", "Shallow Peaty Soils", "Soils with Peaty Pockets"])
     geometry: Geometry(crs=SRID) = Field()
 
 
@@ -65,7 +65,7 @@ peaty_soils_parcels = DerivedDataset(
     level0="silver",
     level1="defra",
     restricted=False,
-    func=partial(join_parcels, columns=["group"]),
+    func=partial(sjoin_parcel_proportion, columns=["group"]),
     dependencies=[reference_parcels, peaty_soils_raw],
     model=PeatySoilsParcels,
 )

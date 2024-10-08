@@ -7,11 +7,10 @@ This describes the geological land types.
 from functools import partial
 
 from pandera import DataFrameModel, Field
-from pandera.dtypes import Category
 from pandera.engines.geopandas_engine import Geometry
 
 from elmo_geo.etl import SRID, DerivedDataset, SourceDataset
-from elmo_geo.etl.transformations import join_parcels
+from elmo_geo.etl.transformations import sjoin_parcel_proportion
 
 from .rpa_reference_parcels import reference_parcels
 
@@ -37,8 +36,8 @@ class NCARaw(DataFrameModel):
     nca_name: str = Field(nullable=True)
     naname: str = Field(nullable=True)
     hotlink: str = Field(nullable=True)
-    alt: Category = Field(nullable=True)
-    blt: Category = Field(nullable=True)
+    alt: str = Field(nullable=True)
+    blt: str = Field(nullable=True)
     geometry: Geometry(crs=SRID) = Field()
 
 
@@ -72,7 +71,7 @@ nca_parcels = DerivedDataset(
     level0="silver",
     level1="defra",
     restricted=False,
-    func=partial(join_parcels, columns=["blt"]),
+    func=partial(sjoin_parcel_proportion, columns=["blt"]),
     dependencies=[reference_parcels, nca_raw],
     model=NCAParcels,
 )

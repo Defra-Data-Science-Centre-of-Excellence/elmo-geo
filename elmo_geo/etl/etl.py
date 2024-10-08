@@ -24,6 +24,7 @@ from pandera import DataFrameModel
 
 from elmo_geo.io import download_link, load_sdf, ogr_to_geoparquet, read_file, to_gdf, write_parquet
 from elmo_geo.utils.log import LOG
+from elmo_geo.utils.misc import dbmtime
 from elmo_geo.utils.types import DataFrame, GeoDataFrame, PandasDataFrame, SparkDataFrame
 
 DATE_FMT: str = r"%Y_%m_%d"
@@ -100,7 +101,7 @@ class Dataset(ABC):
         pat = re.compile(PAT_FMT.format(name=self.name, hsh=self._hash))
         return sorted(
             [y.group(0) for y in [pat.fullmatch(x) for x in os.listdir(self.path_dir)] if y is not None],
-            key=lambda x: os.path.getmtime(self.path_dir + x),
+            key=lambda x: dbmtime(self.path_dir + x),
             reverse=True,
         )
 
@@ -232,12 +233,12 @@ class SourceDataset(Dataset):
     @property
     def _new_date(self) -> str:
         """Return the last-modified date of the source file in ISO string format."""
-        return time.strftime(DATE_FMT, time.gmtime(os.path.getmtime(self.source_path)))
+        return time.strftime(DATE_FMT, time.gmtime(dbmtime(self.source_path)))
 
     @property
     def _hash(self) -> str:
         """Return the last-modified date of the source file."""
-        date = time.strftime(SRC_HASH_FMT, time.gmtime(os.path.getmtime(self.source_path)))
+        date = time.strftime(SRC_HASH_FMT, time.gmtime(dbmtime(self.source_path)))
         return sha256(date.encode()).hexdigest()[:HASH_LENGTH]
 
     @property
@@ -255,6 +256,8 @@ class SourceDataset(Dataset):
         )
 
     def rename(self, df: DataFrame) -> DataFrame:
+        if self.model is None:
+            return df
         mapping = {field.alias: field.original_name for _, field in self.model.__fields__.values()}
         if isinstance(df, SparkDataFrame):
             return df.withColumnsRenamed(mapping)
@@ -293,7 +296,7 @@ class SourceGlobDataset(SourceDataset):
     def _new_date(self) -> str:
         """Return the mean of last-modified dates of the files
         contain in the glob path ISO string format."""
-        mtimes = [os.path.getmtime(f) for f in iglob(self.glob_path)]
+        mtimes = [dbmtime(f) for f in iglob(self.glob_path)]
         mtime = sum(mtimes) / len(mtimes)
         return time.strftime(DATE_FMT, time.gmtime(mtime))
 
@@ -308,7 +311,7 @@ class SourceGlobDataset(SourceDataset):
     def _hash(self) -> str:
         """Return a hash calculated from of last-modified dates of the files
         contain in the glob."""
-        mtimes = [os.path.getmtime(f) for f in iglob(self.glob_path)]
+        mtimes = [dbmtime(f) for f in iglob(self.glob_path)]
         mtime = sum(mtimes) / len(mtimes)
         date = time.strftime(SRC_HASH_FMT, time.gmtime(mtime))
         return sha256(date.encode()).hexdigest()[:HASH_LENGTH]

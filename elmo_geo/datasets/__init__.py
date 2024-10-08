@@ -6,6 +6,7 @@ from pathlib import Path
 from elmo_geo import register
 from elmo_geo.utils.log import LOG
 
+from .catchment_based_approach import wetland_vision_parcels, wetland_vision_raw
 from .cec_soilscapes import (
     cec_soilscapes_habitats_parcels,
     cec_soilscapes_parcels,
@@ -60,15 +61,16 @@ from .fc_woodland_sensitivity import (
 from .fcp_habitat_classification import (
     evast_habitat_mapping_raw,
     fcp_habitat_creation_type_parcel,
+    fcp_habitat_management_type_parcel,
 )
 from .fr_esc_m3_trees import (
+    esc_carbon_parcels,
     esc_m3_geo,
     esc_m3_raw,
+    esc_species_parcels,
+    os_bng_no_peat_parcels,
 )
 from .fr_esc_m3_trees_suitability import (
-    esc_suitability_broadleaved_raw,
-    esc_suitability_coniferous_raw,
-    esc_suitability_riparian_raw,
     esc_tree_suitability,
 )
 from .hedges import (
@@ -161,15 +163,15 @@ catalogue = [
     defra_priority_habitat_parcels,
     esc_m3_geo,
     esc_m3_raw,
-    esc_suitability_broadleaved_raw,
-    esc_suitability_coniferous_raw,
-    esc_suitability_riparian_raw,
+    esc_carbon_parcels,
+    esc_species_parcels,
     esc_tree_suitability,
     evast_habitat_mapping_raw,
     ewco_nature_recovery_priority_habitat_parcels,
     ewco_nature_recovery_priority_habitat_raw,
     ewco_nature_recovery_priority_habitat,
     fcp_habitat_creation_type_parcel,
+    fcp_habitat_management_type_parcel,
     flood_risk_areas_parcels,
     flood_risk_areas_raw,
     is_upland_parcels,
@@ -198,6 +200,7 @@ catalogue = [
     ne_soilscapes_habitats_raw,
     ne_sssi_units_parcels,
     ne_sssi_units_raw,  # snapshot
+    os_bng_no_peat_parcels,
     os_bng_parcels,
     os_bng_raw,
     os_ngd_raw,
@@ -220,6 +223,8 @@ catalogue = [
     sfi_agroforestry,
     ward_parcels,
     ward_raw,
+    wetland_vision_parcels,
+    wetland_vision_raw,
     woodland_creation_sensitivity_parcels,
     woodland_creation_sensitivity_raw,
     woodland_creation_sensitivity_var1_parcels,

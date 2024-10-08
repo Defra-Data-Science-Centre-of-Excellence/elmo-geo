@@ -1,6 +1,7 @@
 import os
 import re
 import subprocess
+from pathlib import Path
 
 from pyspark.sql import functions as F
 
@@ -159,3 +160,24 @@ def isolate_error(
             if len(keys) > 1:
                 result.extend(isolate_error(sdf2, fn, keys[1:]))
             yield result
+
+
+def dbmtime(path: str):
+    """Returns the last modified time of a file or directory in seconds since the epoch.
+
+    Alternative methods for getting the modified time are unreliable on the
+    databricks file system. For example, os.path.getmtime often returns the
+    time at which the cluster was turned on, not the last modified date of the
+    file.
+
+    Using dbutils for FileInfo objects within the parent directory and filter to the desired
+    FileInfo object. Return the modified time for this object in seconds rather than miliseconds.
+
+    Parameters:
+        path: The path to the file or directory.
+    """
+    from elmo_geo.utils.dbr import dbutils
+
+    p = Path(dbfs(path, True))
+    finfo = next(fi for fi in dbutils.fs.ls(str(p.parent)) if fi.name.strip("/") == str(p.name))
+    return finfo.modificationTime / 1_000

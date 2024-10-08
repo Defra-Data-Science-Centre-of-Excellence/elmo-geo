@@ -9,15 +9,14 @@ from functools import partial
 
 import geopandas as gpd
 from pandera import DataFrameModel, Field
-from pandera.dtypes import Category
 from pandera.engines.geopandas_engine import Geometry
 
 from elmo_geo.etl import SRID, Dataset, DerivedDataset, SourceDataset
-from elmo_geo.etl.transformations import join_parcels
+from elmo_geo.etl.transformations import sjoin_parcel_proportion
 
 from .rpa_reference_parcels import reference_parcels
 
-_join_parcels = partial(join_parcels, columns=["spatial_priority"])
+_join_parcels = partial(sjoin_parcel_proportion, columns=["spatial_priority"])
 
 
 class EwcoClean(DataFrameModel):
@@ -29,7 +28,7 @@ class EwcoClean(DataFrameModel):
     """
 
     geometry: Geometry(crs=SRID) = Field()
-    spatial_priority: Category = Field(isin=["Premium", "High", "Lower"])
+    spatial_priority: str = Field(isin=["Premium", "High", "Lower"])
 
 
 class SpatialPriorityParcels(DataFrameModel):
@@ -42,7 +41,7 @@ class SpatialPriorityParcels(DataFrameModel):
     """
 
     id_parcel: str = Field()
-    spatial_priority: Category = Field()
+    spatial_priority: str = Field()
     proportion: float = Field(ge=0, le=1)
 
 

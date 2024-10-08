@@ -30,7 +30,7 @@ def load_geometry(
     expr = f"COALESCE({expr}, {null})"
     expr = f"ST_MakeValid(ST_Force_2D({expr}))"
     expr = f"ST_MakeValid(ST_SimplifyPreserveTopology({expr}, 1))"
-    expr = f"ST_MakeValid(ST_PrecisionReduce({expr}, 0))"
+    expr = f"ST_MakeValid(ST_ReducePrecision({expr}, 0))"
     expr = f"ST_MakeValid(ST_CollectionExtract({expr}, {geometry_dim}))" if geometry_dim else expr
     expr = f"ST_SubDivideExplode({expr}, 256)" if subdivide else expr
     expr = expr + " AS " + column

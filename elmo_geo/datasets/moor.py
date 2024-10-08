@@ -14,11 +14,10 @@ from functools import partial
 
 import pyspark.sql.functions as F
 from pandera import DataFrameModel, Field
-from pandera.dtypes import Category
 from pandera.engines.geopandas_engine import Geometry
 
 from elmo_geo.etl import SRID, DerivedDataset, SourceDataset
-from elmo_geo.etl.transformations import join_parcels
+from elmo_geo.etl.transformations import sjoin_parcel_proportion
 from elmo_geo.utils.types import PandasDataFrame
 
 from .rpa_reference_parcels import reference_parcels
@@ -36,7 +35,7 @@ class MoorlineRaw(DataFrameModel):
         geometry: (Multi)Polygon geometries in EPSG:27700.
     """
 
-    name: Category = Field(isin=["D", "S", "MD", "MS"])
+    name: str = Field(isin=["D", "S", "MD", "MS"])
     geometry: Geometry(crs=SRID) = Field()
 
 
@@ -70,7 +69,7 @@ moorline_parcels = DerivedDataset(
     level0="silver",
     level1="rpa",
     restricted=False,
-    func=partial(join_parcels, columns=["name"]),
+    func=partial(sjoin_parcel_proportion, columns=["name"]),
     dependencies=[reference_parcels, moorline_raw],
     model=MoorlineParcel,
 )

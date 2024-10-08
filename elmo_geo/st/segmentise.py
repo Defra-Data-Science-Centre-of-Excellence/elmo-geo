@@ -30,8 +30,7 @@ def closest_point_index(point: Point, points: MultiPoint) -> int:
 
 
 def segmentise_with_tolerance(geometry: LineString, tolerance: float = 10, length: float = 50) -> MultiLineString:
-    """
-    Segments a LineString into smaller segments based on tolerance and length limit.
+    r"""Segments a LineString into smaller segments based on tolerance and length limit.
     Uses segment on each vertex methodology, but adds a tolerance to create longer segments.
     Arguments:
         geometry (LineString): The input LineString geometry.
@@ -60,9 +59,10 @@ def segmentise_with_tolerance(geometry: LineString, tolerance: float = 10, lengt
     """
     original = linear_to_multipoint(segmentize(geometry, length))
     simplified = linear_to_multipoint(segmentize(geometry.simplify(tolerance), length))
-    indices = sorted(list(set(closest_point_index(point, original) for point in simplified.geoms)))
-    slices = indices[:-1], [*indices[1:-1], len(original.geoms) + 1]
-    return MultiLineString([original.geoms[i : j + 1].geoms for i, j in zip(*slices)])
+    indices = [0] + [closest_point_index(point, original) for point in simplified.geoms] + [len(original.geoms) - 1]
+    indices = sorted(list(set(indices)))
+    slices = zip(indices[:-1], indices[1:])
+    return MultiLineString([original.geoms[i : j + 1].geoms for i, j in slices])
 
 
 def st_udf(sdf: SparkDataFrame, fn: callable, geometry_column: str = "geometry"):
