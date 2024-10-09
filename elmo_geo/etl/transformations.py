@@ -145,8 +145,8 @@ def sjoin_parcel_proportion(
 
 
 def sjoin_boundary_proportion(
-    boundary_segments: Dataset | SparkDataFrame,
     parcel: Dataset | SparkDataFrame,
+    boundary_segments: Dataset | SparkDataFrame,
     features: Dataset | SparkDataFrame,
     buffers: list[float] = [0, 2, 8, 12, 24],
     **kwargs,
