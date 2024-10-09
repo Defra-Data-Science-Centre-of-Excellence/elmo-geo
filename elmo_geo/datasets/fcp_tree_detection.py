@@ -1,7 +1,7 @@
 from pandera import DataFrameModel, Field
 from pandera.engines.geopandas_engine import Geometry
 
-from elmo_geo.etl import SRID, SourceDataset, DerivedDataset
+from elmo_geo.etl import SRID, DerivedDataset, SourceDataset
 
 # Tree Detctions Dataset
 
@@ -12,17 +12,18 @@ in the notebooks/sylvan/Tree Features notebook, which makes use of functions in 
 notebooks/sylvan/tree_features.py file
 """
 
-class FCPTreeDetectionsRaw():
-    """
+
+class FCPTreeDetectionsRaw:
+    """Model for raw tree detection data before parcel joins.
     Attributes:
-        top_x: float
-        top_y: float 
-        top_height: float 
-        chm_path: string
-        msg: string
-        top_point: string
-        crown_poly_raster: string
-        major_grid: string
+        top_x:easting spatial reference for point location of a tree
+        top_y:northing spatial reference for point location of a tree
+        top_height: height of identified tree (maybe meters, need to confirm)
+        chm_path:source of lidar the data is derived from
+        msg: field for annotations
+        top_point: point geometry
+        crown_poly_raster: polygon geometry
+        major_grid:possibly OS grid location i.e. SO
         geometry: Geospatial polygons in EPSG:27700
 
     """
@@ -36,6 +37,7 @@ class FCPTreeDetectionsRaw():
     crown_poly_raster: str = Field()
     major_grid: str = Field()
     geometry: Geometry(crs=SRID) = Field()
+
 
 fcp_tree_detection_raw = SourceDataset(
     name="fcp_tree_detection_raw",
@@ -56,8 +58,9 @@ in the notebooks/sylvan/Tree Features notebook, which makes use of functions in 
 notebooks/sylvan/tree_features.py file.
 """
 
+
 class FCPTreeDetectionsFinal(DataFrameModel):
-    """Model for fcp tree detection datset.
+    """Model for fcp tree detection datset including joins and counts to parcels.
 
     Attributes:
         SHEET_ID: Is the parcel sheet ID.
