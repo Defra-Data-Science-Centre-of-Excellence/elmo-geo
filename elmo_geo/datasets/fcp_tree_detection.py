@@ -1,17 +1,17 @@
+from pandera import DataFrameModel, Field
+from pandera.engines.geopandas_engine import Geometry
+
+from elmo_geo.etl import SRID, SourceDataset, DerivedDataset
+
+# Tree Detctions Dataset
+
 """The 'tree_features' dataset is parcel level counts of the number of trees
 within a parcel and intersecting the perimeter of a parcel.
 It was created by DSMT FCP in the ots-sylvan-tree-features' branch of elmo-geo,
 in the notebooks/sylvan/Tree Features notebook, which makes use of functions in the
-notebooks/sylvan/tree_features.py file.
+notebooks/sylvan/tree_features.py file
 """
 
-
-from pandera import DataFrameModel, Field
-from pandera.engines.geopandas_engine import Geometry
-
-from elmo_geo.etl import SRID, SourceDataset
-
-# Tree Detctions Dataset
 class FCPTreeDetectionsRaw():
     """
     Attributes:
@@ -48,6 +48,14 @@ fcp_tree_detection_raw = SourceDataset(
 
 
 # tree detections This is they model for the end out put, written in error!
+
+"""The 'tree_features' dataset is parcel level counts of the number of trees
+within a parcel and intersecting the perimeter of a parcel.
+It was created by DSMT FCP in the ots-sylvan-tree-features' branch of elmo-geo,
+in the notebooks/sylvan/Tree Features notebook, which makes use of functions in the
+notebooks/sylvan/tree_features.py file.
+"""
+
 class FCPTreeDetectionsFinal(DataFrameModel):
     """Model for fcp tree detection datset.
 
@@ -92,10 +100,10 @@ class FCPTreeDetectionsFinal(DataFrameModel):
     geometry: Geometry(crs=SRID) = Field()
 
 
-fcp_tree_detection_final = SourceDataset(
+fcp_tree_detection_final = DerivedDataset(
     is_geo=False,
     name="fcp_tree_detection_Final",
-    level0="bronze",
+    level0="silver",
     level1="fcp",
     model=FCPTreeDetectionsRaw,
     restricted=False,
