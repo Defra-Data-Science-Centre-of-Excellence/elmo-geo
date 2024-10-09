@@ -37,9 +37,7 @@ from .defra_national_character_areas import (
     nca_raw,
 )
 from .defra_priority_habitats import (
-    defra_grassland_proximity_parcels,
     defra_habitat_area_parcels,
-    defra_heathland_proximity_parcels,
     defra_priority_habitat_england_raw,
     defra_priority_habitat_parcels,
 )
@@ -169,9 +167,7 @@ catalogue = [
     country_raw,
     cua_parcels,
     cua_raw,
-    defra_grassland_proximity_parcels,
     defra_habitat_area_parcels,
-    defra_heathland_proximity_parcels,
     defra_priority_habitat_england_raw,
     defra_priority_habitat_parcels,
     esc_m3_geo,
