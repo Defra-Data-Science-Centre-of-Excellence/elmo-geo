@@ -33,13 +33,13 @@ class EARoFRSRaw(DataFrameModel):
       prob_4band: risk of flooding split into 4 likelihood categories high(>3.3% AEP),
                   medium(between 3.3% and 1% AEP), low(between 1% and 0.1% AEP), very low(<0.1% AEP)
       suitabilit: an indication of what geographic scale the data is suitable for
-      Pub_date: date model extent was published
+      pub_date: date model extent was published
       geometry: Geospatial polygons in EPSG:27700
     """
 
     prob_4band: str = Field()
     suitabilit: str = Field()
-    Pub_date: str = Field()
+    pub_date: str = Field()
     geometry: Geometry(crs=SRID) = Field()
 
 
