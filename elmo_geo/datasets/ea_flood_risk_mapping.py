@@ -65,9 +65,9 @@ class EARoFRSParcels(DataFrameModel):
     proportion: float = Field(ge=0, le=1)
 
 
-ea_rofrs_raw_parcels = DerivedDataset(
+ea_rofrs_parcels = DerivedDataset(
     is_geo=False,
-    name="ea_rofrs_raw_parcels",
+    name="ea_rofrs_parcels",
     level0="silver",
     level1="ea",
     restricted=False,

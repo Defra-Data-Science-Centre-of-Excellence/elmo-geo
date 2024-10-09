@@ -36,6 +36,10 @@ from .defra_priority_habitats import (
     defra_priority_habitat_england_raw,
     defra_priority_habitat_parcels,
 )
+from .ea_flood_risk_mapping import (
+    ea_rofrs_parcels,
+    ea_rofrs_raw,
+)
 from .fc_ewco import (
     ewco_nature_recovery_priority_habitat,
     ewco_nature_recovery_priority_habitat_parcels,
