@@ -203,8 +203,8 @@ catalogue = [
     os_bng_parcels,
     os_bng_raw,
     os_ngd_raw,
-    osm_raw,  # TODO
-    osm_tidy,  # TODO
+    osm_raw,
+    osm_tidy,
     peaty_soils_parcels,
     peaty_soils_raw,
     protected_areas_parcels,
