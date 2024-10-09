@@ -4,7 +4,7 @@ import boto3
 import dotenv
 import pandas as pd
 
-from elmo_geo import LOG
+from elmo_geo.utils.log import LOG
 
 
 class S3Handler:
@@ -25,7 +25,7 @@ class S3Handler:
     | --------- | ---- | -------- |
     |           |      |          |
 
-    >>> s3.write_file(gdf, "test-elmo_geo-test.parquet", fn_write=gpd.GeoDataFrane.to_parquet)
+    >>> s3.write_file(gdf, "test-elmo_geo-test.parquet", fn_write=gpd.GeoDataFrame.to_parquet)
     ```
     """
 
@@ -50,7 +50,7 @@ class S3Handler:
             )
 
     def list_files(self, prefix=""):
-        """List files in the S3 bucket, with pagination support to access more than 1000 responces."""
+        """List files in the S3 bucket, with pagination support to access more than 1000 responses."""
         files = []
         response = self.s3_client.list_objects_v2(Bucket=self.bucket, Prefix=prefix)
         while response.get("IsTruncated"):
