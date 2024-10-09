@@ -26,8 +26,7 @@ class OSMRaw(DataFrameModel):
     """Model for OSM dataset.
     Attributes:
         layer: is the dataset layer one of [points, lines, multilinestrings, multipolygons, other_relations].
-        osm_id: is the OSM assigned unique id, there is more than I64 values, so this is stored as a string.
-        *tags: string tags the describe the feature, there is several managed tags, like barrier and highway, but most tags are in other_tags.
+        osm_id: is the OSM assigned unique id.  There is more than Int64 values, so this is stored as a string.
         geometry: geometries in EPSG:4326.
     """
 

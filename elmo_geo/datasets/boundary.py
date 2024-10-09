@@ -7,11 +7,11 @@ Segmentation can be done at each node, it can also be done to split 2 points at 
 
 | Parameter  | Value |     |
 | ---------- | ----- | --- |
-| Tolerance  |   10m | Collects nearby nodes to a single segment.  Higher means less segments.
-| Max Length |   50m | Splits long lengths between 2 nodes.  Lower means more segments.
+| Tolerance  |   10m | The tolerance used for simplification.  Lower means more segments.
+| Max Length |   50m | The maximum length of each segment.  Lower means more segments.
 
 ## Adjacent Boundaries
-Identify the adjacency between boundary segments and another parcel.
+Identifies the proportion of each parcel boundary segment within a buffer distance of a boundary from another parcel.
 Used to identify if this parcel owner would be responsible for both sides of the boundary.
 
 ## Hedge Boundaries
@@ -114,7 +114,7 @@ class SjoinBoundaries(DataFrameModel):
 
 
 def fn_pre_adj(sdf: SparkDataFrame) -> SparkDataFrame:
-    return sdf.selectExpr("id_parcel AS id_parcel_right", "geometry").transform(auto_repartition)
+    return sdf.selectExpr("id_parcel AS id_parcel_right", "geometry")
 
 
 def fn_post_adj(sdf: SparkDataFrame) -> SparkDataFrame:
@@ -131,6 +131,7 @@ boundary_adjacencies = DerivedDataset(
     dependencies=[reference_parcels, boundary_segments, boundary_segments],
     is_geo=False,
 )
+"""Proportion of parcel boundaries intersected by boundaries of other parcels at different buffer distances."""
 
 
 # Hedge
