@@ -29,9 +29,6 @@ def split_mainhabs(sdf: SparkDataFrame) -> SparkDataFrame:
     return sdf.withColumn("habitat_name", F.expr("EXPLODE(SPLIT(mainhabs, ','))")).drop("mainhabs")
 
 
-_join_parcels = partial(sjoin_parcel_proportion, columns=["habitat_name"], fn_pre=split_mainhabs)
-
-
 class PHIEnglandRawModel(DataFrameModel):
     """Data model for all England source PHI dataset.
 
@@ -57,11 +54,15 @@ class PriorityHabitatParcels(DataFrameModel):
 
     Parameters:
         id_parcel: 11 character RPA reference parcel ID (including the sheet ID) e.g. `SE12263419`.
+        fid: Unique identifier for habitat geometry. Because each geometry can be labelled with multiple
+            habitats the fid is retained in the aprcels join to ensure correct aggregation of proportions
+            in derived datasets.
         habitat_name: The name of the priority habitat.
         proportion: The proportion of the parcel that intersects with the spatial priority.
     """
 
     id_parcel: str = Field()
+    fid: str = Field()
     habitat_name: str = Field()
     proportion: float = Field(ge=0, le=1)
 
@@ -82,7 +83,7 @@ defra_priority_habitat_parcels = DerivedDataset(
     level1="defra",
     restricted=False,
     is_geo=False,
-    func=_join_parcels,
+    func=partial(sjoin_parcel_proportion, columns=["fid", "habitat_name"], fn_pre=split_mainhabs),
     dependencies=[reference_parcels, defra_priority_habitat_england_raw],
     model=PriorityHabitatParcels,
 )

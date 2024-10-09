@@ -64,9 +64,10 @@ from .fc_woodland_sensitivity import (
     woodland_creation_sensitivity_var3_raw,
 )
 from .fcp_habitat_classification import (
+    evast_habitat_management_mapping_raw,
     evast_habitat_mapping_raw,
     fcp_habitat_creation_type_parcel,
-    fcp_habitat_management_type_parcel,
+    fcp_is_phi_parcel,
 )
 from .fr_esc_m3_trees import (
     esc_carbon_parcels,
@@ -175,12 +176,13 @@ catalogue = [
     esc_carbon_parcels,
     esc_species_parcels,
     esc_tree_suitability,
+    evast_habitat_management_mapping_raw,
     evast_habitat_mapping_raw,
     ewco_nature_recovery_priority_habitat_parcels,
     ewco_nature_recovery_priority_habitat_raw,
     ewco_nature_recovery_priority_habitat,
     fcp_habitat_creation_type_parcel,
-    fcp_habitat_management_type_parcel,
+    fcp_is_phi_parcel,
     flood_risk_areas_parcels,
     flood_risk_areas_raw,
     is_upland_parcels,
