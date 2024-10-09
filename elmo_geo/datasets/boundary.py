@@ -38,7 +38,6 @@ from pyspark.sql import functions as F
 
 from elmo_geo.etl import SRID, Dataset, DerivedDataset
 from elmo_geo.etl.transformations import sjoin_boundary_proportion
-from elmo_geo.io.file import auto_repartition
 from elmo_geo.st.segmentise import segmentise_with_tolerance, st_udf
 from elmo_geo.utils.types import SparkDataFrame
 
