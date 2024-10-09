@@ -151,7 +151,6 @@ from .rpa_reference_parcels import (
     reference_parcels_raw_no_sbi,
 )
 
-
 catalogue = [
     alc_parcels,
     alc_raw,
