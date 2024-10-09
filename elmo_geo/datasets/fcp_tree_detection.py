@@ -1,10 +1,9 @@
-from pandera import DataFrameModel, Field
+from pandera import Field
 from pandera.engines.geopandas_engine import Geometry
 
-from elmo_geo.etl import SRID, DerivedDataset, SourceDataset
+from elmo_geo.etl import SRID, SourceDataset
 
 # Tree Detctions Dataset
-
 """The 'tree_features' dataset is parcel level counts of the number of trees
 within a parcel and intersecting the perimeter of a parcel.
 It was created by DSMT FCP in the ots-sylvan-tree-features' branch of elmo-geo,
@@ -14,7 +13,7 @@ notebooks/sylvan/tree_features.py file
 
 
 class FCPTreeDetectionsRaw:
-    """Model for raw tree detection data before parcel joins.
+    """Model for raw tree detection data before parcel joins and counts.
     Attributes:
         top_x:easting spatial reference for point location of a tree
         top_y:northing spatial reference for point location of a tree
