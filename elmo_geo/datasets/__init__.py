@@ -6,6 +6,14 @@ from pathlib import Path
 from elmo_geo import register
 from elmo_geo.utils.log import LOG
 
+from .boundary import (
+    boundary_adjacencies,
+    boundary_segments,
+)
+from .catchment_based_approach import (
+    wetland_vision_parcels,
+    wetland_vision_raw,
+)
 from .cec_soilscapes import (
     cec_soilscapes_habitats_parcels,
     cec_soilscapes_parcels,
@@ -66,13 +74,13 @@ from .fcp_tree_detection import (
     fcp_tree_detection_raw,
 )
 from .fr_esc_m3_trees import (
+    esc_carbon_parcels,
     esc_m3_geo,
     esc_m3_raw,
+    esc_species_parcels,
+    os_bng_no_peat_parcels,
 )
 from .fr_esc_m3_trees_suitability import (
-    esc_suitability_broadleaved_raw,
-    esc_suitability_coniferous_raw,
-    esc_suitability_riparian_raw,
     esc_tree_suitability,
 )
 from .hedges import (
@@ -108,6 +116,10 @@ from .os import (
     os_bng_raw,
     os_ngd_raw,
 )
+from .osm import (
+    osm_raw,
+    osm_tidy,
+)
 from .peat import (
     peaty_soils_parcels,
     peaty_soils_raw,
@@ -133,6 +145,11 @@ from .protected_landscapes import (
     protected_landscapes_parcels,
     protected_landscapes_tidy,
 )
+from .rpa_land_cover import (
+    rpa_land_cover_codes_raw,
+    rpa_land_cover_parcels,
+    rpa_land_cover_parcels_raw,
+)
 from .rpa_reference_parcels import (
     reference_parcels,
     reference_parcels_raw,
@@ -142,6 +159,8 @@ from .rpa_reference_parcels import (
 catalogue = [
     alc_parcels,
     alc_raw,
+    boundary_adjacencies,
+    boundary_segments,
     bua_parcels,
     bua_raw,
     cec_soilscapes_habitats_parcels,
@@ -160,9 +179,8 @@ catalogue = [
     defra_priority_habitat_parcels,
     esc_m3_geo,
     esc_m3_raw,
-    esc_suitability_broadleaved_raw,
-    esc_suitability_coniferous_raw,
-    esc_suitability_riparian_raw,
+    esc_carbon_parcels,
+    esc_species_parcels,
     esc_tree_suitability,
     evast_habitat_mapping_raw,
     ewco_nature_recovery_priority_habitat_parcels,
@@ -199,9 +217,12 @@ catalogue = [
     ne_soilscapes_habitats_raw,
     ne_sssi_units_parcels,
     ne_sssi_units_raw,  # snapshot
+    os_bng_no_peat_parcels,
     os_bng_parcels,
     os_bng_raw,
     os_ngd_raw,
+    osm_raw,
+    osm_tidy,
     peaty_soils_parcels,
     peaty_soils_raw,
     protected_areas_parcels,
@@ -212,12 +233,17 @@ catalogue = [
     reference_parcels,
     region_parcels,
     region_raw,
+    rpa_land_cover_codes_raw,
+    rpa_land_cover_parcels,
+    rpa_land_cover_parcels_raw,
     rpa_hedges_raw,  # snapshot
     sfi_agroforestry_parcels,
     sfi_agroforestry_raw,
     sfi_agroforestry,
     ward_parcels,
     ward_raw,
+    wetland_vision_parcels,
+    wetland_vision_raw,
     woodland_creation_sensitivity_parcels,
     woodland_creation_sensitivity_raw,
     woodland_creation_sensitivity_var1_parcels,

@@ -7,7 +7,7 @@ from elmo_geo.io import read_file, to_gdf, write_parquet
 from tests.test_etl import test_derived_dataset, test_source_dataset, test_source_geodataset
 
 
-def _tweak_df(df):  # DONE: This is required because we now repartition on save.
+def _tweak_df(df):
     "Returns a dataframe in the original order, required due to partitioning."
     if isinstance(df, SparkDataFrame):
         df = to_gdf(df) if "geometry" in df.columns else df.toPandas()
@@ -24,7 +24,8 @@ def _tweak_df(df):  # DONE: This is required because we now repartition on save.
 
 def _write_read_dataset(df, f, is_geo, partition_cols):
     write_parquet(df, f, partition_cols=partition_cols)
-    return read_file(f, is_geo).pipe(_tweak_df)
+    df = read_file(f, is_geo)
+    return _tweak_df(df)
 
 
 @pytest.mark.dbr
