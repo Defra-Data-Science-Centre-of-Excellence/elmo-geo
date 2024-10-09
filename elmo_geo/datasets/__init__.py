@@ -169,6 +169,8 @@ catalogue = [
     defra_heathland_proximity_parcels,
     defra_priority_habitat_england_raw,
     defra_priority_habitat_parcels,
+    ea_rofrs_parcels,
+    ea_rofrs_raw,
     esc_m3_geo,
     esc_m3_raw,
     esc_carbon_parcels,
