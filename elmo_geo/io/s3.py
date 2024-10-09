@@ -4,6 +4,8 @@ import boto3
 import dotenv
 import pandas as pd
 
+from elmo_geo import LOG
+
 
 class S3Handler:
     """Simple wrapper around boto3.client which is specific for ELMO's S3 bucket and portal.
@@ -14,16 +16,16 @@ class S3Handler:
     >>> from elmo_geo.io.s3 import S3Handler
     >>> s3 = S3Handler()  # defaults to s3-ranch-013
 
-    >>> s3.list_files("data/from_cdap")
-    ["s3://s3-ranch-013/data/from_cdap/rpa-parcels-adas.parquet", ...]
+    >>> s3.list_files("data/Elm-Project")
+    ["s3://s3-ranch-013/data/Elm-Project/silver/rural_payments_agency/reference_parcels-2024_08_06-6cbd7056.parquet", ...]
 
-    >>> gdf = s3.read_file("data/from_cdap/rpa-parcels-adas.parquet", fn_read=gpd.read_parquet)
+    >>> gdf = s3.read_file("data/Elm-Project/silver/rural_payments_agency/reference_parcels-2024_08_06-6cbd7056.parquet", fn_read=gpd.read_parquet)
     >>> gdf
     | id_parcel | area | geometry |
     | --------- | ---- | -------- |
     |           |      |          |
 
-    >>> s3.write_file(gdf, "data/from_cdap/rpa-parcels-adas.parquet", fn_write=gpd.GeoDataFrane.to_parquet)
+    >>> s3.write_file(gdf, "test-elmo_geo-test.parquet", fn_write=gpd.GeoDataFrane.to_parquet)
     ```
     """
 
@@ -32,28 +34,28 @@ class S3Handler:
         self.bucket = bucket
         self.s3_client = boto3.client(
             "s3",
-            aws_access_key_id=dotenv.get_key(".env", "AWS_USER"),
-            aws_secret_access_key=dotenv.get_key(".env", "AWS_PASS"),
-            aws_session_token=dotenv.get_key(".env", "AWS_SESSION"),
+            aws_access_key_id=dotenv.get_key(".env", "aws_access_key_id"),
+            aws_secret_access_key=dotenv.get_key(".env", "aws_secret_access_key"),
+            aws_session_token=dotenv.get_key(".env", "aws_session_token"),
         )
         self.test()
 
     def test(self):
         """Test the connection works."""
         try:
-            self.s3_client.list_objects_v2(Bucket=self.bucket_name)
-        except boto3.client.exceptions.ClientError:
-            print(
-                "ClientError: update .env AWS_SESSION\nLogin and click 'Access keys' (next to 'ELMModelling').\nhttps://sso-int-sce-network.awsapps.com/start#/\n"
+            self.s3_client.list_objects_v2(Bucket=self.bucket)
+        except self.s3_client.exceptions.ClientError:
+            LOG.error(
+                "ClientError: update .env AWS credentials.\nLogin and click 'Access keys' (next to 'ELMModelling').\nhttps://sso-int-sce-network.awsapps.com/start#/\n"
             )
 
     def list_files(self, prefix=""):
         """List files in the S3 bucket, with pagination support to access more than 1000 responces."""
         files = []
-        response = self.s3_client.list_objects_v2(Bucket=self.bucket_name, Prefix=prefix)
+        response = self.s3_client.list_objects_v2(Bucket=self.bucket, Prefix=prefix)
         while response.get("IsTruncated"):
             response = self.s3_client.list_objects_v2(
-                Bucket=self.bucket_name,
+                Bucket=self.bucket,
                 Prefix=prefix,
                 ContinuationToken=response.get("NextContinuationToken"),
             )
@@ -67,7 +69,7 @@ class S3Handler:
         buf = io.BytesIO(obj["Body"].read())
         return fn_read(buf)
 
-    def write_parquet(self, df: pd.DataFrame, file_key: str, fn_write: callable = pd.DataFrame.to_parquet):
+    def write_file(self, df: pd.DataFrame, file_key: str, fn_write: callable = pd.DataFrame.to_parquet):
         """Write a DataFrame to the S3 bucket as a Parquet file."""
         buf = io.BytesIO()
         fn_write(df, buf)
