@@ -117,6 +117,18 @@ class EwcoRedSquirrelRaw(DataFrameModel):
     geometry: Geometry(crs=SRID) = Field()
 
 
+class EwcoRedSquirrelParcels(DataFrameModel):
+    """ "Model describing the EWCO priority species red squirrel dataset joined with Rural Payment Agency parcel dataset
+
+    Attributes:
+    id_parcel: 11 character RPA reference parcel ID (including the sheet ID) e.g. `SE12263419`.
+    proportion: The proportion of the parcel that intersects with the red squiell areas
+    """
+
+    id_parcel: str = Field(unique=True)
+    proportion: float = Field(ge=0, le=1)
+
+
 ewco_red_squirrel_raw = SourceDataset(
     name="ewco_red_squirrel_raw",
     level0="bronze",
@@ -127,3 +139,14 @@ ewco_red_squirrel_raw = SourceDataset(
 )
 """Spatial data supporting the England Woodland Creation Offer (EWCO) additional contribution targeting for Nature Recovery.
 This layer is identical to that titled ‘CS WCM Biodiversity - Priority Species - Red Squirrel """
+
+ewco_red_squirrel_parcels = DerivedDataset(
+    is_geo=False,
+    name="ewco_red_squirrel_parcels",
+    level0="silver",
+    level1="forestry_commission",
+    restricted=False,
+    func=sjoin_parcel_proportion,
+    dependencies=[reference_parcels, ewco_red_squirrel_raw],
+    model=EwcoRedSquirrelParcels,
+)
