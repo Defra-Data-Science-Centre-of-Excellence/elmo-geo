@@ -97,8 +97,6 @@ ewco_nature_recovery_priority_habitat_parcels = DerivedDataset(
 """Definition for Forestry Commission's SFI Agroforestry dataset joined to RPA Parcels."""
 
 # EWCO Red Squirrels
-
-
 class EwcoRedSquirrelRaw(DataFrameModel):
     """Model describing the EWCO priority species red squirrel dataset.
 
@@ -118,7 +116,7 @@ class EwcoRedSquirrelRaw(DataFrameModel):
 
 
 class EwcoRedSquirrelParcels(DataFrameModel):
-    """ "Model describing the EWCO priority species red squirrel dataset joined with Rural Payment Agency parcel dataset
+    """Model describing the EWCO priority species red squirrel dataset joined with Rural Payment Agency parcel dataset
 
     Attributes:
     id_parcel: 11 character RPA reference parcel ID (including the sheet ID) e.g. `SE12263419`.
@@ -137,8 +135,7 @@ ewco_red_squirrel_raw = SourceDataset(
     model=EwcoRedSquirrelRaw,
     source_path="/dbfs/mnt/lab/unrestricted/elm_data/ewco/red_squirrel/2022_10_18/EWCO_Biodiversity___Priority_Species___Red_Squirrel___Woodland_Creation.shp",
 )
-"""Spatial data supporting the England Woodland Creation Offer (EWCO) additional contribution targeting for Nature Recovery.
-This layer is identical to that titled ‘CS WCM Biodiversity - Priority Species - Red Squirrel """
+
 
 ewco_red_squirrel_parcels = DerivedDataset(
     is_geo=False,
@@ -150,3 +147,55 @@ ewco_red_squirrel_parcels = DerivedDataset(
     dependencies=[reference_parcels, ewco_red_squirrel_raw],
     model=EwcoRedSquirrelParcels,
 )
+"""Spatial data supporting the England Woodland Creation Offer (EWCO) additional contribution targeting for Nature Recovery.
+This layer is identical to that titled ‘CS WCM Biodiversity - Priority Species - Red Squirrel """
+
+
+#EWCO NfC Social
+class EwcoNfcSocialRaw(DataFrameModel):
+    """Model describing the EWCO NfC Social dataset.
+
+    Attributes:
+    status: features assigned as ‘Meets social criteria’
+    geometry: polygons
+    """
+    
+    status: str = Field()
+    geometry: Geometry(crs=SRID) = Field()
+
+
+class EwcoNfcSocialParcels(DataFrameModel):
+    """Model describing the EWCO NfC Social dataset joined with Rural Payment Agency parcel dataset
+
+    Attributes:
+    id_parcel: 11 character RPA reference parcel ID (including the sheet ID) e.g. `SE12263419`.
+    proportion: The proportion of the parcel that intersects with nfc social areas
+    """
+
+    id_parcel: str = Field(unique=True)
+    proportion: float = Field(ge=0, le=1)
+
+ewco_nfc_social_raw = SourceDataset(
+    name="ewco_nfc_social_raw",
+    level0="bronze",
+    level1="forestry_commission",
+    restricted=False,
+    model=EwcoNfcSocialRaw,
+    source_path="/dbfs/mnt/lab/unrestricted/elm_data/ewco/nfc_social/2022_03_14/EWCO___NfC_Social.shp",
+)
+
+
+ewco_nfc_social_parcels = DerivedDataset(
+    is_geo=False,
+    name="ewco_nfc_social_parcels",
+    level0="silver",
+    level1="forestry_commission",
+    restricted=False,
+    func=sjoin_parcel_proportion,
+    dependencies=[reference_parcels, ewco_nfc_social_raw],
+    model=EwcoNfcSocialParcels,
+)
+
+"""Spatial data supporting the England Woodland Creation Offer (EWCO)
+‘Close to settlements’ Additional Contribution. This contribution is
+available where woodland creation will provide social and environmental benefits by being close to people. """
