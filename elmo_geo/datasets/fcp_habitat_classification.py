@@ -389,7 +389,7 @@ def _is_phi(
         .withColumn("grouping_category", F.lit("evast_create"))
     )
 
-    # setup additional aggregations
+    # setup habitat management categories with additional aggregations
     sdf_manage_lookup = (
         evast_habitat_management_mapping_raw.sdf()
         .unionByName(
