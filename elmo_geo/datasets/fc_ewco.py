@@ -98,7 +98,7 @@ ewco_nature_recovery_priority_habitat_parcels = DerivedDataset(
 
 #EWCO Red Squirrels
 
-class EwcoRedSquirrel:(Dataframemodel):
+class EwcoRedSquirrel (DataFrameModel):
     """Model describing the EWCO priority species red squirrel dataset.
 
     Attributes:
