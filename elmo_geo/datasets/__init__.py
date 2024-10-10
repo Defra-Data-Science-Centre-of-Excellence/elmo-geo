@@ -47,7 +47,7 @@ from .fc_ewco import (
     ewco_nature_recovery_priority_habitat,
     ewco_nature_recovery_priority_habitat_parcels,
     ewco_nature_recovery_priority_habitat_raw,
-    ewco_red_squirrel,
+    ewco_red_squirrel_raw,
 )
 from .fc_woodland_sensitivity import (
     sfi_agroforestry,
@@ -184,7 +184,7 @@ catalogue = [
     ewco_nature_recovery_priority_habitat_parcels,
     ewco_nature_recovery_priority_habitat_raw,
     ewco_nature_recovery_priority_habitat,
-    ewco_red_squirrel,
+    ewco_red_squirrel_raw,
     fcp_habitat_creation_type_parcel,
     fcp_habitat_management_type_parcel,
     flood_risk_areas_parcels,

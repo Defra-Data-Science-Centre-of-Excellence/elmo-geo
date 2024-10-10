@@ -99,7 +99,7 @@ ewco_nature_recovery_priority_habitat_parcels = DerivedDataset(
 # EWCO Red Squirrels
 
 
-class EwcoRedSquirrel(DataFrameModel):
+class EwcoRedSquirrelRaw(DataFrameModel):
     """Model describing the EWCO priority species red squirrel dataset.
 
     Attributes:
@@ -117,12 +117,12 @@ class EwcoRedSquirrel(DataFrameModel):
     geometry: Geometry(crs=SRID) = Field()
 
 
-ewco_red_squirrel = SourceDataset(
-    name="ewco_red_squirrel",
+ewco_red_squirrel_raw = SourceDataset(
+    name="ewco_red_squirrel_raw",
     level0="bronze",
     level1="forestry_commission",
     restricted=False,
-    model=EwcoRedSquirrel,
+    model=EwcoRedSquirrelRaw,
     source_path="/dbfs/mnt/lab/unrestricted/elm_data/ewco/red_squirrel/2022_10_18/EWCO_Biodiversity___Priority_Species___Red_Squirrel___Woodland_Creation.shp",
 )
 """Spatial data supporting the England Woodland Creation Offer (EWCO) additional contribution targeting for Nature Recovery.
