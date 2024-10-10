@@ -58,14 +58,6 @@ def _clean_dataset(ds: Dataset) -> gpd.GeoDataFrame:
     )
 
 
-class EwcoRedSquirrel:(Dataframemodel):
-    """Model describing the EWCO priority species red squirrel dataset.
-
-    Attributes:
-    
-    """
-
-
 ewco_nature_recovery_priority_habitat_raw = SourceDataset(
     name="ewco_nature_recovery_priority_habitat_raw",
     level0="bronze",
@@ -103,3 +95,34 @@ ewco_nature_recovery_priority_habitat_parcels = DerivedDataset(
     is_geo=False,
 )
 """Definition for Forestry Commission's SFI Agroforestry dataset joined to RPA Parcels."""
+
+#EWCO Red Squirrels
+
+class EwcoRedSquirrel:(Dataframemodel):
+    """Model describing the EWCO priority species red squirrel dataset.
+
+    Attributes:
+        sitename: name of the red squirrel reserve/stronghold and it’s buffer
+        cat: title of the targeting use for this feature
+        cswcm_pnts: scoring values relating to Countryside Stewardship schemes
+        ewco_val:EWCO £ value the additional contribution provides per Ha if awarded
+        geometry: polygons
+    """
+
+    sitename: str = Field()
+    cat: str = Field()
+    cswcm_pnts: int = Field()
+    ewco_val: int = Field()
+    geometry: Geometry(crs=SRID) = Field()
+
+
+ewco_Red_Squirrel = SourceDataset(
+    name="ewco_Red_Squirrel",
+    level0="bronze",
+    level1="forestry_commission",
+    restricted=False,
+    model=EwcoRedSquirrel,
+    source_path="/dbfs/mnt/lab/unrestricted/elm_data/ewco/red_squirrel/2022_10_18/EWCO_Biodiversity___Priority_Species___Red_Squirrel___Woodland_Creation.shp",
+)
+"""Spatial data supporting the England Woodland Creation Offer (EWCO) additional contribution targeting for Nature Recovery.
+This layer is identical to that titled ‘CS WCM Biodiversity - Priority Species - Red Squirrel """
