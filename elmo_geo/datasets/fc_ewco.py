@@ -113,7 +113,7 @@ class EwcoRedSquirrelRaw(DataFrameModel):
     sitename: str = Field()
     cat: str = Field()
     cswcm_pnts: str = Field()
-    ewco_val: int = Field()
+    ewco_val: str = Field()
     geometry: Geometry(crs=SRID) = Field()
 
 
