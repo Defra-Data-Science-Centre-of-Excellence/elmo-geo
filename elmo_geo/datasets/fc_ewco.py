@@ -58,6 +58,14 @@ def _clean_dataset(ds: Dataset) -> gpd.GeoDataFrame:
     )
 
 
+class EwcoRedSquirrel:(Dataframemodel):
+    """Model describing the EWCO priority species red squirrel dataset.
+
+    Attributes:
+    
+    """
+
+
 ewco_nature_recovery_priority_habitat_raw = SourceDataset(
     name="ewco_nature_recovery_priority_habitat_raw",
     level0="bronze",
