@@ -18,12 +18,11 @@ class FCPTreeDetectionsRaw:
         top_x:easting spatial reference for point location of a tree
         top_y:northing spatial reference for point location of a tree
         top_height: height of identified tree (maybe meters, need to confirm)
-        chm_path:source of lidar the data is derived from
+        chm_path:source of lidar the tree detection is derived from
         msg: field for annotations
         top_point: point geometry
         crown_poly_raster: polygon geometry of the crown of the tree
         major_grid:possibly OS grid location i.e. SO
-        geometry: Geospatial polygons in EPSG:27700
 
     """
 
@@ -35,7 +34,6 @@ class FCPTreeDetectionsRaw:
     top_point: str = Field()
     crown_poly_raster: str = Field()
     major_grid: str = Field()
-    geometry: Geometry(crs=SRID) = Field()
 
 
 fcp_tree_detection_raw = SourceDataset(
@@ -44,5 +42,6 @@ fcp_tree_detection_raw = SourceDataset(
     level1="fcp",
     model=FCPTreeDetectionsRaw,
     restricted=False,
+    is_geo = False,
     source_path="/dbfs/mnt/lab/unrestricted/elm/elmo/tree_features/tree_detections/tree_detections_202311231323.parquet/",
 )
