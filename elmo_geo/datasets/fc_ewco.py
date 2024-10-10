@@ -96,9 +96,10 @@ ewco_nature_recovery_priority_habitat_parcels = DerivedDataset(
 )
 """Definition for Forestry Commission's SFI Agroforestry dataset joined to RPA Parcels."""
 
-#EWCO Red Squirrels
+# EWCO Red Squirrels
 
-class EwcoRedSquirrel (DataFrameModel):
+
+class EwcoRedSquirrel(DataFrameModel):
     """Model describing the EWCO priority species red squirrel dataset.
 
     Attributes:
@@ -116,8 +117,8 @@ class EwcoRedSquirrel (DataFrameModel):
     geometry: Geometry(crs=SRID) = Field()
 
 
-ewco_Red_Squirrel = SourceDataset(
-    name="ewco_Red_Squirrel",
+ewco_red_squirrel = SourceDataset(
+    name="ewco_red_squirrel",
     level0="bronze",
     level1="forestry_commission",
     restricted=False,
