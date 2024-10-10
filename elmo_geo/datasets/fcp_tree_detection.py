@@ -21,7 +21,7 @@ class FCPTreeDetectionsRaw:
         chm_path:source of lidar the data is derived from
         msg: field for annotations
         top_point: point geometry
-        crown_poly_raster: polygon geometry
+        crown_poly_raster: polygon geometry of the crown of the tree
         major_grid:possibly OS grid location i.e. SO
         geometry: Geospatial polygons in EPSG:27700
 
