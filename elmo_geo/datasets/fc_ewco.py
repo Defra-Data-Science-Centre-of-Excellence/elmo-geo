@@ -1,6 +1,7 @@
 """England Woodland Creation Offer (EWCO) datasets from Forestry Commission.
 
-[A guide to Forestry Commission's sensitivity maps for woodland creation](https://www.gov.uk/guidance/a-guide-to-forestry-commissions-sensitivity-maps-for-woodland-creation)
+[A guide to Forestry Commission's sensitivity maps for woodland creation]
+(https://www.gov.uk/guidance/a-guide-to-forestry-commissions-sensitivity-maps-for-woodland-creation)
 
 The low sensitivity areas have fewest identified constraints to address,
 and it should be easier to agree creating new woodland here than in other areas.
@@ -96,6 +97,31 @@ ewco_nature_recovery_priority_habitat_parcels = DerivedDataset(
 )
 """Definition for Forestry Commission's SFI Agroforestry dataset joined to RPA Parcels."""
 
+
+#EWCO nfc_ammonia_emmissions
+class EwcoAmmoniaEmmesionsRaw(DataFrameModel):
+    """Model describing the EWCO NfC Ammonia Emissions Capture for SSSI Protection dataset.
+
+    Attributes:
+        status: features assigned as ‘Meets air quality criteria’
+        pnts: point value awarded to applications Attribution statement
+        geometry: polygons
+    """
+    status: str = Feild()
+    pnts: str = Field()
+    geometry: Geometry(crs=SRID) = Field()
+
+
+class EwcoAmmoniaEmmesionsParcels(DataFrameModel):
+    """Model describing the EWCO NfC Ammonia Emissions Capture for SSSI Protection dataset joined with Rural Payment Agency parcel dataset
+
+    Attributes:
+    id_parcel: 11 character RPA reference parcel ID (including the sheet ID) e.g. `SE12263419`.
+    proportion: The proportion of the parcel that intersects with the red squiell areas
+    """
+
+    id_parcel: str = Field(unique=True)
+    proportion: float = Field(ge=0, le=1)
 
 # EWCO Red Squirrels
 class EwcoRedSquirrelRaw(DataFrameModel):
