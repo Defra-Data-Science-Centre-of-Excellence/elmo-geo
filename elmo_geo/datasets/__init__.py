@@ -53,6 +53,8 @@ from .fc_ewco import (
     ewco_red_squirrel_raw,
     ewco_ammonia_emmesions_raw,
     ewco_ammonia_emmesions_parcels,
+    ewco_flood_risk_raw,
+    ewco_flood_risk_parcels,
 )
 from .fc_woodland_sensitivity import (
     sfi_agroforestry,
@@ -195,6 +197,8 @@ catalogue = [
     ewco_nfc_social_parcels,
     ewco_ammonia_emmesions_raw,
     ewco_ammonia_emmesions_parcels,
+    ewco_flood_risk_raw,
+    ewco_flood_risk_parcels,
     fcp_habitat_creation_type_parcel,
     fcp_habitat_management_type_parcel,
     flood_risk_areas_parcels,

@@ -153,6 +153,59 @@ locations where there is a potential risk of air pollution impacting a Site of S
 acidification from ammonia emissions."""
 
 
+#EWCO flood risk management
+class EwcoFloodRiskRaw(DataFrameModel):
+    """Model describing the EWCO Flood Risk Management dataset.
+
+    Attributes:
+        LANDSCAPE: the targeting category: Opportunity for Floodplain Woodland / Opportunity for Wider Catchment Woodland
+        AreaHa: ‘AreaHa’ – Area of the feature in hectares
+        geometry: polygons
+    """
+
+    LANDSCASPE: str = Field()
+    AreaHa: float = Field()
+    geometry: Geometry(crs=SRID) = Field()
+
+
+class EwcoFloodRiskParcels(DataFrameModel):
+    """Model describing the EWCO Flood Risk Management dataset joined with Rural Payment Agency parcel dataset.
+
+    Attributes:
+        id_parcel: 11 character RPA reference parcel ID (including the sheet ID) e.g. `SE12263419`.
+        proportion: The proportion of the parcel that intersects with the floos risk management areas
+    """
+
+    id_parcel: str = Field(unique=True)
+    proportion: float = Field(ge=0, le=1)
+    
+
+ewco_flood_risk_raw = SourceDataset(
+    name="ewco_flood_risk_raw",
+    level0="bronze",
+    level1="forestry_commission",
+    restricted=False,
+    model=EwcoFloodRiskRaw,
+    source_path="/dbfs/mnt/lab/unrestricted/elm_data/ewco/flood_risk_management/2023_02_24/EWCO___Flood_Risk_Management.shp",
+)
+
+
+ewco_flood_risk_parcels = DerivedDataset(
+    is_geo=False,
+    name="ewco_flood_risk_parcels",
+    level0="silver",
+    level1="forestry_commission",
+    restricted=False,
+    func=sjoin_parcel_proportion,
+    dependencies=[reference_parcels, ewco_flood_risk_raw],
+    model=EwcoFloodRiskParcels,
+)
+"""Spatial data supporting appropriately located and designed woodland creation to help reduce flood risk by slowing
+flood flows and increasing the retention and infiltration of water on the land.
+The layer shows where there is ‘Opportunity for Floodplain’ woodland creation and ‘Opportunity for Wider Catchment’
+woodland creation."""
+
+
 # EWCO Red Squirrels
 class EwcoRedSquirrelRaw(DataFrameModel):
     """Model describing the EWCO priority species red squirrel dataset.
