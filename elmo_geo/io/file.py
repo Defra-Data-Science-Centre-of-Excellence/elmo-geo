@@ -32,7 +32,7 @@ def memsize_sdf(sdf: SparkDataFrame) -> int:
 def auto_repartition(
     sdf: SparkDataFrame,
     count_ratio: float = 1e-6,
-    mem_ratio: float = 1 / 1024**2,
+    mem_ratio: float = 1 / 1024**2 / 10,
     thread_ratio: float = 1.5,
     jobs_cap: int = 100_000,
     acceptance_ratio: float = 0.8,
@@ -45,7 +45,7 @@ def auto_repartition(
     Parameters:
         sdf: dataframe to repartition.
         count_ratio: with default value attempts to repartition* every 1 million rows.
-        mem_ratio: * every 1MiB.
+        mem_ratio: * every 10 MiB.
         thread_ratio: * 1.5 tasks per thread.
         jobs_cap: limits the maximum number of jobs to fit within Spark's job limit.
         acceptance_ratio: don't repartition unless it exceeds this ratio.

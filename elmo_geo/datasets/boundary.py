@@ -1,24 +1,31 @@
 """Boundaries from RPA Parcels segmentised.
+
 ## Boundary Segments
 Objective is to create a dataset of linear features which are likely to represent a realistic buffer strip.
 Segmentation can be done at each node, it can also be done to split 2 points at a maximum length.  However, this can create very short segments
 (especially along bends and corners), and such simplification is also utilised to merge shorter segments together.
+
 | Parameter  | Value |     |
 | ---------- | ----- | --- |
 | Tolerance  |   10m | Collects nearby nodes to a single segment.  Higher means less segments.
 | Max Length |   50m | Splits long lengths between 2 nodes.  Lower means more segments.
+
 ## Adjacent Boundaries
 Identify the adjacency between boundary segments and another parcel.
 Used to identify if this parcel owner would be responsible for both sides of the boundary.
+
 ## Hedge Boundaries
 This is used to identify if the boundary is a hedgerow, and suitable for maintaining hedgerow actions.
 This is missing other sylvan features such as relict hedgerows and woodland.
+
 ## Water Boundaries
 This is used to identify if a boundary is beside water, and suitable for riparian actions.
 Not yet included is the separation between flowing, still, and seasonal water.
+
 ## Heritage Wall Boundaries
 These boundaries would be suitable for actions like dry stone wall maintenance, or Cornish and Devon hedge maintenance.
 OS field boundaries is not yet included in NGD.  Only OSM data is used.
+
 ## Merged Output Boundary Dataset
 This is a combined dataset, useful for land change analysis.
 This includes assumptions such as setting a strict feature distance.
