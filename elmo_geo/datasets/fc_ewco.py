@@ -96,6 +96,7 @@ ewco_nature_recovery_priority_habitat_parcels = DerivedDataset(
 )
 """Definition for Forestry Commission's SFI Agroforestry dataset joined to RPA Parcels."""
 
+
 # EWCO Red Squirrels
 class EwcoRedSquirrelRaw(DataFrameModel):
     """Model describing the EWCO priority species red squirrel dataset.
@@ -151,7 +152,7 @@ ewco_red_squirrel_parcels = DerivedDataset(
 This layer is identical to that titled ‘CS WCM Biodiversity - Priority Species - Red Squirrel """
 
 
-#EWCO NfC Social
+# EWCO NfC Social
 class EwcoNfcSocialRaw(DataFrameModel):
     """Model describing the EWCO NfC Social dataset.
 
@@ -159,7 +160,7 @@ class EwcoNfcSocialRaw(DataFrameModel):
     status: features assigned as ‘Meets social criteria’
     geometry: polygons
     """
-    
+
     status: str = Field()
     geometry: Geometry(crs=SRID) = Field()
 
@@ -174,6 +175,7 @@ class EwcoNfcSocialParcels(DataFrameModel):
 
     id_parcel: str = Field(unique=True)
     proportion: float = Field(ge=0, le=1)
+
 
 ewco_nfc_social_raw = SourceDataset(
     name="ewco_nfc_social_raw",
