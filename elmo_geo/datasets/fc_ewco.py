@@ -310,3 +310,17 @@ ewco_nfc_social_parcels = DerivedDataset(
 """Spatial data supporting the England Woodland Creation Offer (EWCO)
 ‘Close to settlements’ Additional Contribution. This contribution is
 available where woodland creation will provide social and environmental benefits by being close to people. """
+
+#Keeping Rivers Cool
+class EwcoKeepingRiversCoolRaw(DataFrameModel):
+    """Model describing the EWCO keeping rivers cool riparian buffers dataset.
+
+    Attributes:
+        AreaHa:area of the feature in hectares
+        geometry:polygons
+    """
+
+    AreaHa: float = Field()
+    geometry: Geometry(crs=SRID) = Field()
+
+    
