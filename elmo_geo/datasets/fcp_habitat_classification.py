@@ -425,7 +425,7 @@ def _is_phi(
 
     return (
         sdf_raw.unionByName(sdf_create, allowMissingColumns=True)
-        .unionByName(sdf_manage, allowMissingCollumns=True)
+        .unionByName(sdf_manage, allowMissingColumns=True)
         .dropDuplicates(subset=["id_parcel", "grouping_category", "action_group", "action_habitat", "fid"])
         .groupby("id_parcel", "grouping_category", "action_group", "action_habitat")
         .agg(
@@ -433,6 +433,7 @@ def _is_phi(
             F.expr("SUM(proportion) as proportion"),
         )
         .selectExpr("id_parcel", "grouping_category", "action_group", "action_habitat", "proportion", "area_ha*proportion as habitat_area_ha")
+        .filter("proportion>0")
         .toPandas()
     )
 
@@ -452,24 +453,8 @@ class IsPHIParcelModel(DataFrameModel):
 
     id_parcel: str = Field()
     grouping_category: str = Field(isin=["raw", "evast_create", "evast_manage"])
-    action_group: str = Field(isin=["Heathland", "Wetland", "SRG"])
-    action_habitat: str = Field(
-        nullable=True,
-        isin=[
-            "lowland",
-            "lowland_meadow",
-            "upland_meadow",
-            "lowland_dry_acid_gr",
-            "fen",
-            "lowland_calc_gr",
-            "lowland_acid_gr",
-            "upland_acid_gr",
-            "upland_calc_gr",
-            "bog",
-            "upland",
-            "action_group_total",
-        ],
-    )
+    action_group: str = Field(isin=["Heathland", "Wetland", "SRG", "Wetland and SRG"], nullable=True)
+    action_habitat: str = Field()
     proportion: float = Field()
     habitat_area_ha: float = Field()
 

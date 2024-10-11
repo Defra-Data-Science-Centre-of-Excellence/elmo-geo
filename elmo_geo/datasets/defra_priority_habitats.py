@@ -45,7 +45,7 @@ class PHIEnglandRawModel(DataFrameModel):
     habcodes: str = Field()
     areaha: float = Field()
     version: str = Field()
-    fid: str = Field(unique=True, alias="uid")
+    fid: str = Field(unique=False, alias="uid")
     geometry: Geometry(crs=SRID) = Field()
 
 
@@ -62,7 +62,7 @@ class PriorityHabitatParcels(DataFrameModel):
     """
 
     id_parcel: str = Field()
-    uid: str = Field()
+    fid: str = Field()
     habitat_name: str = Field()
     proportion: float = Field(ge=0, le=1)
 
@@ -72,7 +72,8 @@ defra_priority_habitat_england_raw = SourceDataset(
     level0="bronze",
     level1="defra",
     restricted=False,
-    clean_geometry=False,
+    clean_geometry=True,  # Splits geometries resulting in duplciate fids.
+    partition_cols=["habcodes"],
     source_path="/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_priority_habitats_inventory_eng/format_GEOPARQUET_priority_habitats_inventory_eng/LATEST_priority_habitats_inventory_eng/ne_priority_habitat_inventory_england.parquet",
     model=PHIEnglandRawModel,
 )
