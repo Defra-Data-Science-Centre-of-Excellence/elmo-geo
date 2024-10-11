@@ -163,7 +163,7 @@ class EwcoFloodRiskRaw(DataFrameModel):
         geometry: polygons
     """
 
-    LANDSCASPE: str = Field()
+    LANDSCAPE: str = Field()
     AreaHa: float = Field()
     geometry: Geometry(crs=SRID) = Field()
 
