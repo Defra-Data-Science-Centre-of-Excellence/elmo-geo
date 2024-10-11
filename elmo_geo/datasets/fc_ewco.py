@@ -98,7 +98,7 @@ ewco_nature_recovery_priority_habitat_parcels = DerivedDataset(
 """Definition for Forestry Commission's SFI Agroforestry dataset joined to RPA Parcels."""
 
 
-#EWCO nfc_ammonia_emmissions
+# EWCO nfc_ammonia_emmissions
 class EwcoAmmoniaEmmesionsRaw(DataFrameModel):
     """Model describing the EWCO NfC Ammonia Emissions Capture for SSSI Protection dataset.
 
@@ -107,7 +107,8 @@ class EwcoAmmoniaEmmesionsRaw(DataFrameModel):
         pnts: point value awarded to applications Attribution statement
         geometry: polygons
     """
-    status: str = Feild()
+
+    status: str = Field()
     pnts: str = Field()
     geometry: Geometry(crs=SRID) = Field()
 
@@ -122,6 +123,35 @@ class EwcoAmmoniaEmmesionsParcels(DataFrameModel):
 
     id_parcel: str = Field(unique=True)
     proportion: float = Field(ge=0, le=1)
+
+
+ewco_ammonia_emmesions_raw = SourceDataset(
+    name="ewco_ammonia_emmesions_raw",
+    level0="bronze",
+    level1="forestry_commission",
+    restricted=False,
+    model=EwcoAmmoniaEmmesionsRaw,
+    source_path="/dbfs/mnt/lab/unrestricted/elm_data/ewco/nfc_ammonia_emmissions/2022_03_14/EWCO___NfC_Ammonia_Emissions_Capture_for_SSSI_Protection.shp",
+)
+
+
+ewco_ammonia_emmesions_parcels = DerivedDataset(
+    is_geo=False,
+    name="ewco_ammonia_emmesions_parcels",
+    level0="silver",
+    level1="forestry_commission",
+    restricted=False,
+    func=sjoin_parcel_proportion,
+    dependencies=[reference_parcels, ewco_ammonia_emmesions_raw],
+    model=EwcoAmmoniaEmmesionsParcels,
+)
+"""Spatial data supporting the England Woodland Creation Offer (EWCO) additional point scoring for ammonia capture.
+There is no Additional Contribution for ammonia capture but EWCO supports action to address air pollution.
+Additional points are available for creating shelterbelts designed to capture ammonia emissions from farm sources in
+locations where there is a potential risk of air pollution impacting a Site of Special Scientific Interest (SSSI)
+– where sensitive habitats or species could be impacted by direct toxic effects of ammonia, nitrogen deposition or
+acidification from ammonia emissions."""
+
 
 # EWCO Red Squirrels
 class EwcoRedSquirrelRaw(DataFrameModel):
