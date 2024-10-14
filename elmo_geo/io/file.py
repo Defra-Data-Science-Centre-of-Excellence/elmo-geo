@@ -1,8 +1,7 @@
 import shutil
-from functools import reduce
+from functools import partial, reduce
 from glob import iglob
 from pathlib import Path
-from functools import partial
 
 import geopandas as gpd
 import pandas as pd
@@ -16,7 +15,7 @@ from elmo_geo.st.geometry import load_geometry
 from elmo_geo.utils.dbr import spark
 from elmo_geo.utils.log import LOG
 from elmo_geo.utils.misc import dbfs
-from elmo_geo.utils.types import DataFrame, GeoDataFrame, PandasDataFrame, SparkDataFrame, spark_schema_to_arrow
+from elmo_geo.utils.types import DataFrame, GeoDataFrame, PandasDataFrame, SparkDataFrame
 
 from .convert import to_gdf, to_sdf
 
@@ -127,10 +126,54 @@ def write_parquet(df: DataFrame, path: str, partition_cols: list[str] | None = N
     if partition_cols is None:
         partition_cols = []
 
+    def to_gpqs(df):
+        "GeoPandas writer as partial function, for applyInPandas."
+        table = _geopandas_to_arrow(to_gdf(df))
+        write_to_dataset(table, path, partition_cols=partition_cols)
+        return pd.DataFrame([])
+
+    path = Path(path)
+    if path.exists():
+        LOG.warning(f"Replacing Dataset: {path}")
+        if path.is_dir():
+            shutil.rmtree(path)
+        else:
+            path.unlink()
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+
+    if isinstance(df, SparkDataFrame):
+        fmt = "geoparquet" if "geometry" in df.columns else "parquet"
+        if partition_cols:
+            df.write.format(fmt).save(dbfs(str(path), True), partitionBy=partition_cols)
+        else:
+            df.transform(auto_repartition).write.format(fmt).save(dbfs(str(path), True))
+    elif isinstance(df, GeoDataFrame):
+        to_gpqs(df)
+    elif isinstance(df, PandasDataFrame):
+        df.to_parquet(path, partition_cols=partition_cols)
+    else:
+        raise TypeError(f"Expected Spark, GeoPandas or Pandas dataframe, received {type(df)}.")
+
+
+def write_parquet2(df: DataFrame, path: str, partition_cols: list[str] | None = None):
+    """Write a DataFrame to parquet and partition.
+    Takes in Spark, Pandas, or GeoPandas dataframe, remove any already written data, and writes a new dataframe.
+
+    Parameters:
+        df: Dataframe to be written as (geo)parquet.
+        path: Output path to write the data into.
+        partition_cols: Column to write the output as separate files.
+    """
+    if partition_cols is None:
+        partition_cols = []
+
     def to_gpqs(df, schema):
         "GeoPandas writer as partial function, for applyInPandas."
         table = _geopandas_to_arrow(to_gdf(df))
-        write_to_dataset(table, path, partition_cols=partition_cols, schema=schema)
+        g_index = schema.get_field_index("geometry")
+        new_schema = schema.remove(g_index).insert(g_index, table.schema.field("geometry")).with_metadata(table.schema.metadata)
+        write_to_dataset(table.cast(new_schema), path, partition_cols=partition_cols, schema=new_schema)
         return pd.DataFrame([])
 
     def map_to_gpqs(iterator, schema):
@@ -149,12 +192,22 @@ def write_parquet(df: DataFrame, path: str, partition_cols: list[str] | None = N
     path.parent.mkdir(parents=True, exist_ok=True)
 
     if isinstance(df, SparkDataFrame):
-        arrow_schema = spark_schema_to_arrow(df.schema)
+        arrow_schema = df.limit(10).toArrow().schema
         if "geometry" in df.columns:
             if partition_cols:
-                df.withColumn("geometry", F.expr("ST_AsBinary(geometry)")).groupby(partition_cols).applyInPandas(partial(to_gpqs, schema=arrow_schema), "col struct<>").collect()
+                (
+                    df.withColumn("geometry", F.expr("ST_AsBinary(geometry)"))
+                    .groupby(partition_cols)
+                    .applyInPandas(partial(to_gpqs, schema=arrow_schema), "col struct<>")
+                    .collect()
+                )
             else:
-                df.withColumn("geometry", F.expr("ST_AsBinary(geometry)")).transform(auto_repartition).mapInPandas(partial(map_to_gpqs, schema=arrow_schema), "col struct<>").collect()
+                (
+                    df.withColumn("geometry", F.expr("ST_AsBinary(geometry)"))
+                    .transform(auto_repartition)
+                    .mapInPandas(partial(map_to_gpqs, schema=arrow_schema), "col struct<>")
+                    .collect()
+                )
         else:
             if partition_cols:
                 df.write.parquet(dbfs(str(path), True), partitionBy=partition_cols)
