@@ -1,9 +1,12 @@
 import geopandas as gpd
+import numpy as np
+import pandas as pd
+import pyspark.sql.functions as F
 import pytest
 from pyspark.sql import DataFrame as SparkDataFrame
 from shapely.geometry import Point
 
-from elmo_geo.io import read_file, to_gdf, write_parquet
+from elmo_geo.io import load_sdf, read_file, to_gdf, write_parquet
 from tests.test_etl import test_derived_dataset, test_source_dataset, test_source_geodataset
 
 
@@ -142,3 +145,41 @@ def test_read_write_dataset_partition_pdf():
     df = test_derived_dataset.pdf()
     df_read = _write_read_dataset(df, f, test_derived_dataset.is_geo, partition_cols=["class"])
     assert _tweak_df(df).equals(df_read)
+
+
+@pytest.mark.dbr
+def test_read_write_dataset_null_partition_gdf():
+    """Tests whether the schema for all partitions is the same
+    when a field for a partition if all null.
+    """
+    from elmo_geo.utils.dbr import spark
+    from elmo_geo.utils.register import register
+
+    register()
+
+    sdf = spark.createDataFrame(
+        pd.DataFrame(
+            {
+                "id": np.arange(1_000),
+                "class": ["a"] * 500 + ["b"] * 500,
+                "desc": [None] * 500 + ["a metric"] * 500,
+                "x": np.random.randint(100, size=(1_000)),
+                "y": np.random.randint(100, size=(1_000)),
+                "value": np.random.rand(1_000),
+            }
+        )
+    ).withColumn("geometry", F.expr("ST_Point(x,y)"))
+    f = "/dbfs/mnt/lab/unrestricted/ELM-Project/bronze/test/test_io_partitioned_schema_sdf.parquet"
+    write_parquet(sdf, path=f, partition_cols=["class"])
+
+    # Load data to test
+    descs = load_sdf(f).select("desc").dropDuplicates().toPandas()["desc"]
+    assert descs == pd.Series([None, "a metric"])
+
+    gdf = gpd.read_parquet(f)
+    descs = gdf["desc"].unique()
+    assert descs == pd.Series([None, "a metric"])
+
+    # Check geometry
+    assert gdf.crs is not None
+    assert gdf.to_crs("epsg:4326").geometry.area.sum() == 0
