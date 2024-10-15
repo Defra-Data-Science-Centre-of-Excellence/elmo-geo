@@ -1,3 +1,5 @@
+import time
+
 import geopandas as gpd
 import numpy as np
 import pandas as pd
@@ -8,6 +10,7 @@ from shapely.geometry import Point
 
 from elmo_geo.io import load_sdf, read_file, to_gdf, write_parquet
 from elmo_geo.io.file import write_parquet2
+from elmo_geo.utils.log import LOG
 from tests.test_etl import test_derived_dataset, test_source_dataset, test_source_geodataset
 
 
@@ -171,7 +174,10 @@ def test_read_write_dataset_null_partition_gdf():
         )
     ).withColumn("geometry", F.expr("ST_Point(x,y)"))
     f = "/dbfs/mnt/lab/unrestricted/ELM-Project/bronze/test/test_io_partitioned_schema_sdf.parquet"
+
+    start = time.time_ns()
     write_parquet(sdf, path=f, partition_cols=["class"])
+    LOG.info(f"test_read_write_dataset_null_partition_gdf: write_parquet time: {(time.time_ns()-start)/1e9}s")
 
     # Load data to test
     descs = load_sdf(f).select("desc").dropDuplicates().toPandas()["desc"].sort_values(na_position="first").reset_index(drop=True)
@@ -210,7 +216,10 @@ def test_read_write_dataset_null_partition_gdf2():
         )
     ).withColumn("geometry", F.expr("ST_Point(x,y)"))
     f = "/dbfs/mnt/lab/unrestricted/ELM-Project/bronze/test/test_io_partitioned_schema_sdf2.parquet"
+
+    start = time.time_ns()
     write_parquet2(sdf, path=f, partition_cols=["class"])
+    LOG.info(f"test_read_write_dataset_null_partition_gdf2: write_parquet time: {(time.time_ns()-start)/1e9}s")
 
     # Load data to test
     descs = load_sdf(f).select("desc").dropDuplicates().toPandas()["desc"].sort_values(na_position="first").reset_index(drop=True)
