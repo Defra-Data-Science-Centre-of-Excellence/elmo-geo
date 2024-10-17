@@ -76,4 +76,50 @@ ea_rofrs_parcels = DerivedDataset(
     model=EARoFRSParcels,
 )
 
+
 # Flood Zone 3
+class EAFZ3Raw(DataFrameModel):
+    """Model for Environment Agency Flood Zone 3 (FZ3) taken from the Floodmap for Planning dataset
+    Attributes:
+    layer: name of layer i.e flood zone 3
+    type: type of flooding i.e fluvial or tidal
+    geometry: Geospatial polygons in EPSG:27700
+    """
+
+    layer: str = Field()
+    type: str = Field()
+    geometry: Geometry(crs=SRID) = Field()
+
+
+ea_fz3_raw = SourceDataset(
+    name="ea_fz3_raw",
+    level0="bronze",
+    level1="ea",
+    model=EAFZ3Raw,
+    restricted=False,
+    source_path="/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_ea_flood_map_flood_zone_3/format_GEOPARQUET_ea_flood_map_flood_zone_3/LATEST_ea_flood_map_flood_zone_3/ea_flood_map_for_planning_rivers_and_sea_flood_zone_3_n.parquet/",
+)
+
+
+class EAFZ3Parcels(DataFrameModel):
+    """Model for Environment Agency Flood Zone 3 (FZ3) taken from the Floodmap for Planning dataset joined with Rural Payment Agency parcel dataset.
+
+    Attributes:
+        id_parcel: 11 character RPA reference parcel ID (including the sheet ID) e.g. `SE12263419`.
+        proportion: The proportion of the parcel that intersects with the FZ3.
+    """
+
+    id_parcel: str = Field(unique=True)
+    proportion: float = Field(ge=0, le=1)
+
+
+ea_fz3_parcels = DerivedDataset(
+    is_geo=False,
+    name="ea_fz3_parcels",
+    level0="silver",
+    level1="ea",
+    restricted=False,
+    func=sjoin_parcel_proportion,
+    dependencies=[reference_parcels, ea_fz3_raw],
+    model=EAFZ3Parcels,
+)

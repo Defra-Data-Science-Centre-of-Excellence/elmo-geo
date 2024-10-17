@@ -6,7 +6,14 @@ from pathlib import Path
 from elmo_geo import register
 from elmo_geo.utils.log import LOG
 
-from .catchment_based_approach import wetland_vision_parcels, wetland_vision_raw
+from .boundary import (
+    boundary_adjacencies,
+    boundary_segments,
+)
+from .catchment_based_approach import (
+    wetland_vision_parcels,
+    wetland_vision_raw,
+)
 from .cec_soilscapes import (
     cec_soilscapes_habitats_parcels,
     cec_soilscapes_parcels,
@@ -41,9 +48,17 @@ from .ea_flood_risk_mapping import (
     ea_rofrs_raw,
 )
 from .fc_ewco import (
+    ewco_ammonia_emmesions_parcels,
+    ewco_ammonia_emmesions_raw,
+    ewco_flood_risk_parcels,
+    ewco_flood_risk_raw,
     ewco_nature_recovery_priority_habitat,
     ewco_nature_recovery_priority_habitat_parcels,
     ewco_nature_recovery_priority_habitat_raw,
+    ewco_nfc_social_parcels,
+    ewco_nfc_social_raw,
+    ewco_red_squirrel_parcels,
+    ewco_red_squirrel_raw,
 )
 from .fc_woodland_sensitivity import (
     sfi_agroforestry,
@@ -153,6 +168,8 @@ from .rpa_reference_parcels import (
 catalogue = [
     alc_parcels,
     alc_raw,
+    boundary_adjacencies,
+    boundary_segments,
     bua_parcels,
     bua_raw,
     cec_soilscapes_habitats_parcels,
@@ -169,8 +186,10 @@ catalogue = [
     defra_heathland_proximity_parcels,
     defra_priority_habitat_england_raw,
     defra_priority_habitat_parcels,
+    ea_rofrs_raw,
     ea_rofrs_parcels,
     ea_rofrs_raw,
+    ea_rofrs_parcels,
     esc_m3_geo,
     esc_m3_raw,
     esc_carbon_parcels,
@@ -180,6 +199,14 @@ catalogue = [
     ewco_nature_recovery_priority_habitat_parcels,
     ewco_nature_recovery_priority_habitat_raw,
     ewco_nature_recovery_priority_habitat,
+    ewco_red_squirrel_raw,
+    ewco_red_squirrel_parcels,
+    ewco_nfc_social_raw,
+    ewco_nfc_social_parcels,
+    ewco_ammonia_emmesions_raw,
+    ewco_ammonia_emmesions_parcels,
+    ewco_flood_risk_raw,
+    ewco_flood_risk_parcels,
     fcp_habitat_creation_type_parcel,
     fcp_habitat_management_type_parcel,
     flood_risk_areas_parcels,
