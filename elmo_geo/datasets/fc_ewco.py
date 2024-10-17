@@ -349,7 +349,7 @@ ewco_keeping_rivers_cool_raw = SourceDataset(
 
 ewco_keeping_rivers_cool_parcels = DerivedDataset(
     is_geo=False,
-    name="ewco_keeping_rivers_cool__parcels",
+    name="ewco_keeping_rivers_cool_parcels",
     level0="silver",
     level1="forestry_commission",
     restricted=False,
@@ -361,3 +361,60 @@ ewco_keeping_rivers_cool_parcels = DerivedDataset(
 """Spatial data supporting appropriately located and designed woodland creation where this will provide dappled shade to improve aquatic
 ecology by reducing summer water temperatures and benefiting wildlife dispersal (for example, otter) along the corridors of habitat this
 creates. The data represents a 50 m buffer around patches of surface waterbodies (rivers) with little or no existing riparian shade."""
+
+
+# priority habitat network
+class EwcoPriorityHabitatNetworkRaw(DataFrameModel):
+    """Model describing the EWCO Biodiversity Priority Habitat Network dataset.
+
+    Attributes:
+    cat: ‘Higher’ and ‘Lower’ priority area for woodland network expansion
+    csht_pnts: base scoring value for Countryside Stewardship Higher Tier
+    cswc_mpnts: scoring value per Ha for Countryside Stewardship woodland creation
+    ewco_val: £ value the additional contribution provides per Ha if awarded
+    geometry:polygons
+    """
+
+    cat: str = Field()
+    csht_pnts: str = Field()
+    cswc_mpnts: str = Field()
+    ewco_val: str = Field()
+    geometry: Geometry(crs=SRID) = Field()
+
+
+class EwcoPriorityHabitatNetworkParcels(DataFrameModel):
+    """Model describing the EWCO Biodiversity Priority Habitat Network dataset joined with Rural Payment Agency parcel dataset
+
+    Attributes:
+    id_parcel: 11 character RPA reference parcel ID (including the sheet ID) e.g. `SE12263419`.
+    proportion: The proportion of the parcel that intersects with Priority Habitat Network
+    """
+
+    id_parcel: str = Field(unique=True)
+    proportion: float = Field(ge=0, le=1)
+
+
+ewco_priority_habitat_network_raw = SourceDataset(
+    name="ewco_priority_habitat_network_raw",
+    level0="bronze",
+    level1="forestry_commission",
+    restricted=False,
+    model=EwcoPriorityHabitatNetworkRaw,
+    source_path="/dbfs/mnt/lab/unrestricted/elm_data/ewco/priority_habitat_network/2022_10_06/EWCO_Biodiversity___Priority_Habitat_Network.shp",
+)
+
+
+ewco_priority_habitat_network_parcels = DerivedDataset(
+    is_geo=False,
+    name="ewco_priority_habitat_network_parcels",
+    level0="silver",
+    level1="forestry_commission",
+    restricted=False,
+    func=sjoin_parcel_proportion,
+    dependencies=[reference_parcels, ewco_priority_habitat_network_raw],
+    model=EwcoPriorityHabitatNetworkParcels,
+)
+
+"""Spatial data supporting the England Woodland Creation Offer (EWCO) additional contribution targeting for Nature Recovery, where the layer
+indicates ‘High Spatial Priority’. ‘Higher’ and ‘Lower’ priority areas for woodland network expansion. 
+"""

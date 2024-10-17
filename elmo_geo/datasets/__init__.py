@@ -55,6 +55,8 @@ from .fc_ewco import (
     ewco_nature_recovery_priority_habitat_raw,
     ewco_nfc_social_parcels,
     ewco_nfc_social_raw,
+    ewco_priority_habitat_network_parcels,
+    ewco_priority_habitat_network_raw,
     ewco_red_squirrel_parcels,
     ewco_red_squirrel_raw,
 )
@@ -203,6 +205,8 @@ catalogue = [
     ewco_flood_risk_parcels,
     ewco_keeping_rivers_cool_raw,
     ewco_keeping_rivers_cool_parcels,
+    ewco_priority_habitat_network_raw,
+    ewco_priority_habitat_network_parcels,
     fcp_habitat_creation_type_parcel,
     fcp_habitat_management_type_parcel,
     flood_risk_areas_parcels,
