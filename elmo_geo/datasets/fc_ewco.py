@@ -153,7 +153,7 @@ locations where there is a potential risk of air pollution impacting a Site of S
 acidification from ammonia emissions."""
 
 
-#EWCO flood risk management
+# EWCO flood risk management
 class EwcoFloodRiskRaw(DataFrameModel):
     """Model describing the EWCO Flood Risk Management dataset.
 
@@ -178,7 +178,7 @@ class EwcoFloodRiskParcels(DataFrameModel):
 
     id_parcel: str = Field(unique=True)
     proportion: float = Field(ge=0, le=1)
-    
+
 
 ewco_flood_risk_raw = SourceDataset(
     name="ewco_flood_risk_raw",
@@ -311,7 +311,8 @@ ewco_nfc_social_parcels = DerivedDataset(
 ‘Close to settlements’ Additional Contribution. This contribution is
 available where woodland creation will provide social and environmental benefits by being close to people. """
 
-#Keeping Rivers Cool
+
+# Keeping Rivers Cool
 class EwcoKeepingRiversCoolRaw(DataFrameModel):
     """Model describing the EWCO keeping rivers cool riparian buffers dataset.
 
@@ -323,4 +324,36 @@ class EwcoKeepingRiversCoolRaw(DataFrameModel):
     AreaHa: float = Field()
     geometry: Geometry(crs=SRID) = Field()
 
-    
+
+class EwcoKeepingRiversCoolParcels(DataFrameModel):
+    """Model describing the EWCO keeping rivers cool riparian buffers dataset joined with Rural Payment Agency parcel dataset
+
+    Attributes:
+    id_parcel: 11 character RPA reference parcel ID (including the sheet ID) e.g. `SE12263419`.
+    proportion: The proportion of the parcel that intersects with keeping rivers cool areas
+    """
+
+    id_parcel: str = Field(unique=True)
+    proportion: float = Field(ge=0, le=1)
+
+
+ewco_keeping_rivers_cool_raw = SourceDataset(
+    name="ewco_keeping_rivers_cool_raw",
+    level0="bronze",
+    level1="forestry_commission",
+    restricted=False,
+    model=EwcoKeepingRiversCoolRaw,
+    source_path="/dbfs/mnt/lab/unrestricted/elm_data/ewco/keeping_rivers_cool_riparian_buffers/2023_03_03/EWCO___Keeping_Rivers_Cool_Riparian_Buffers.shp",
+)
+
+
+ewco_nfc_social_parcels = DerivedDataset(
+    is_geo=False,
+    name="ewco_keeping_rivers_cool__parcels",
+    level0="silver",
+    level1="forestry_commission",
+    restricted=False,
+    func=sjoin_parcel_proportion,
+    dependencies=[reference_parcels, ewco_keeping_rivers_cool_raw],
+    model=EwcoKeepingRiversCoolParcels,
+)

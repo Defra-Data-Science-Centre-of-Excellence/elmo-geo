@@ -44,6 +44,12 @@ from .defra_priority_habitats import (
     defra_priority_habitat_parcels,
 )
 from .fc_ewco import (
+    ewco_ammonia_emmesions_parcels,
+    ewco_ammonia_emmesions_raw,
+    ewco_flood_risk_parcels,
+    ewco_flood_risk_raw,
+    ewco_keeping_rivers_cool_parcels,
+    ewco_keeping_rivers_cool_raw,
     ewco_nature_recovery_priority_habitat,
     ewco_nature_recovery_priority_habitat_parcels,
     ewco_nature_recovery_priority_habitat_raw,
@@ -51,10 +57,6 @@ from .fc_ewco import (
     ewco_nfc_social_raw,
     ewco_red_squirrel_parcels,
     ewco_red_squirrel_raw,
-    ewco_ammonia_emmesions_raw,
-    ewco_ammonia_emmesions_parcels,
-    ewco_flood_risk_raw,
-    ewco_flood_risk_parcels,
 )
 from .fc_woodland_sensitivity import (
     sfi_agroforestry,
@@ -199,6 +201,8 @@ catalogue = [
     ewco_ammonia_emmesions_parcels,
     ewco_flood_risk_raw,
     ewco_flood_risk_parcels,
+    ewco_keeping_rivers_cool_raw,
+    ewco_keeping_rivers_cool_parcels,
     fcp_habitat_creation_type_parcel,
     fcp_habitat_management_type_parcel,
     flood_risk_areas_parcels,
