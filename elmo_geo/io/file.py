@@ -115,49 +115,7 @@ def read_file(source_path: str, is_geo: bool, layer: int | str | None = None, cl
     return df
 
 
-def write_parquet(df: DataFrame, path: str, partition_cols: list[str] | None = None):
-    """Write a DataFrame to parquet and partition.
-    Takes in Spark, Pandas, or GeoPandas dataframe, remove any already written data, and writes a new dataframe.
-
-    Parameters:
-        df: Dataframe to be written as (geo)parquet.
-        path: Output path to write the data into.
-        partition_cols: Column to write the output as separate files.
-    """
-    if partition_cols is None:
-        partition_cols = []
-
-    def to_gpqs(df):
-        "GeoPandas writer as partial function, for applyInPandas."
-        table = _geopandas_to_arrow(to_gdf(df))
-        write_to_dataset(table, path, partition_cols=partition_cols)
-        return pd.DataFrame([])
-
-    path = Path(path)
-    if path.exists():
-        LOG.warning(f"Replacing Dataset: {path}")
-        if path.is_dir():
-            shutil.rmtree(path)
-        else:
-            path.unlink()
-
-    path.parent.mkdir(parents=True, exist_ok=True)
-
-    if isinstance(df, SparkDataFrame):
-        fmt = "geoparquet" if "geometry" in df.columns else "parquet"
-        if partition_cols:
-            df.write.format(fmt).save(dbfs(str(path), True), partitionBy=partition_cols)
-        else:
-            df.transform(auto_repartition).write.format(fmt).save(dbfs(str(path), True))
-    elif isinstance(df, GeoDataFrame):
-        to_gpqs(df)
-    elif isinstance(df, PandasDataFrame):
-        df.to_parquet(path, partition_cols=partition_cols)
-    else:
-        raise TypeError(f"Expected Spark, GeoPandas or Pandas dataframe, received {type(df)}.")
-
-
-def get_arrow_schema(sdf: SparkDataFrame) -> pa.Schema:
+def _get_arrow_schema(sdf: SparkDataFrame) -> pa.Schema:
     """Produce a pyarrow schema for a spark dataframe that contains a geometry field.
 
     This function combines two methods for getting a pyarrow schema. THe methods need to be combined
@@ -175,7 +133,7 @@ def get_arrow_schema(sdf: SparkDataFrame) -> pa.Schema:
     return main_schema.remove(ind).insert(ind, geo_schema.field("geometry")).with_metadata(geo_schema.metadata)
 
 
-def write_parquet2(df: DataFrame, path: str, partition_cols: list[str] | None = None):
+def write_parquet(df: DataFrame, path: str, partition_cols: list[str] | None = None):
     """Write a DataFrame to parquet and partition.
     Takes in Spark, Pandas, or GeoPandas dataframe, remove any already written data, and writes a new dataframe.
 
@@ -187,10 +145,12 @@ def write_parquet2(df: DataFrame, path: str, partition_cols: list[str] | None = 
     if partition_cols is None:
         partition_cols = []
 
-    def to_gpqs(df, schema):
+    def to_gpqs(df, schema=None):
         "GeoPandas writer as partial function, for applyInPandas."
         table = _geopandas_to_arrow(to_gdf(df))
-        write_to_dataset(table.cast(schema), path, partition_cols=partition_cols)
+        if schema:
+            table = table.cast(schema)
+        write_to_dataset(table, path, partition_cols=partition_cols)
         return pd.DataFrame([])
 
     def map_to_gpqs(iterator, schema):
@@ -210,7 +170,7 @@ def write_parquet2(df: DataFrame, path: str, partition_cols: list[str] | None = 
 
     if isinstance(df, SparkDataFrame):
         if "geometry" in df.columns:
-            arrow_schema = get_arrow_schema(df)
+            arrow_schema = _get_arrow_schema(df)
             if partition_cols:
                 (
                     df.withColumn("geometry", F.expr("ST_AsBinary(geometry)"))
