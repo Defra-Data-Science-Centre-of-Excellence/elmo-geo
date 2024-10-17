@@ -347,7 +347,7 @@ ewco_keeping_rivers_cool_raw = SourceDataset(
 )
 
 
-ewco_nfc_social_parcels = DerivedDataset(
+ewco_keeping_rivers_cool_parcels = DerivedDataset(
     is_geo=False,
     name="ewco_keeping_rivers_cool__parcels",
     level0="silver",
@@ -357,3 +357,7 @@ ewco_nfc_social_parcels = DerivedDataset(
     dependencies=[reference_parcels, ewco_keeping_rivers_cool_raw],
     model=EwcoKeepingRiversCoolParcels,
 )
+
+"""Spatial data supporting appropriately located and designed woodland creation where this will provide dappled shade to improve aquatic
+ecology by reducing summer water temperatures and benefiting wildlife dispersal (for example, otter) along the corridors of habitat this
+creates. The data represents a 50 m buffer around patches of surface waterbodies (rivers) with little or no existing riparian shade."""
