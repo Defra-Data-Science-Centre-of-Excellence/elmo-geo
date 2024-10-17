@@ -321,7 +321,7 @@ class EwcoKeepingRiversCoolRaw(DataFrameModel):
         geometry:polygons
     """
 
-    AreaHa: float = Field()
+    areaha: float = Field()
     geometry: Geometry(crs=SRID) = Field()
 
 
