@@ -1,9 +1,15 @@
+import time
+
 import geopandas as gpd
+import numpy as np
+import pandas as pd
+import pyspark.sql.functions as F
 import pytest
 from pyspark.sql import DataFrame as SparkDataFrame
 from shapely.geometry import Point
 
-from elmo_geo.io import read_file, to_gdf, write_parquet
+from elmo_geo.io import load_sdf, read_file, to_gdf, write_parquet
+from elmo_geo.utils.log import LOG
 from tests.test_etl import test_derived_dataset, test_source_dataset, test_source_geodataset
 
 
@@ -90,7 +96,7 @@ def test_read_write_dataset_sdf():
 
     register()
 
-    f = "/dbfs/mnt/lab/unrestricted/ELM-Project/bronze/test/test_source_dataset_io_sdf.parquet"
+    f = "/dbfs/mnt/lab/unrestricted/ELM-Project/test/test_source_dataset_io_sdf.parquet"
     df = test_source_dataset.sdf()
     df_read = _write_read_dataset(df, f, test_source_dataset.is_geo, partition_cols=None)
     assert _tweak_df(df).equals(df_read)
@@ -98,7 +104,7 @@ def test_read_write_dataset_sdf():
 
 @pytest.mark.dbr
 def test_read_write_dataset_pdf():
-    f = "/dbfs/mnt/lab/unrestricted/ELM-Project/bronze/test/test_source_dataset_io_pdf.parquet"
+    f = "/dbfs/mnt/lab/unrestricted/ELM-Project/test/test_source_dataset_io_pdf.parquet"
     df = test_source_dataset.pdf()
     df_read = _write_read_dataset(df, f, test_source_dataset.is_geo, partition_cols=None)
     assert _tweak_df(df).equals(df_read)
@@ -110,7 +116,7 @@ def test_read_write_geodataset_sdf():
 
     register()
 
-    f = "/dbfs/mnt/lab/unrestricted/ELM-Project/bronze/test/test_source_geodataset_io_sdf.parquet"
+    f = "/dbfs/mnt/lab/unrestricted/ELM-Project/test/test_source_geodataset_io_sdf.parquet"
     df = test_source_geodataset.sdf()
     df_read = _write_read_dataset(df, f, test_source_geodataset.is_geo, partition_cols=None)
     assert _tweak_df(df).equals(df_read)
@@ -118,7 +124,7 @@ def test_read_write_geodataset_sdf():
 
 @pytest.mark.dbr
 def test_read_write_geodataset_gdf():
-    f = "/dbfs/mnt/lab/unrestricted/ELM-Project/bronze/test/test_source_geodataset_io_gdf.parquet"
+    f = "/dbfs/mnt/lab/unrestricted/ELM-Project/test/test_source_geodataset_io_gdf.parquet"
     df = test_source_geodataset.gdf()
     df_read = _write_read_dataset(df, f, test_source_geodataset.is_geo, partition_cols=None)
     assert _tweak_df(df).equals(df_read)
@@ -130,7 +136,7 @@ def test_read_write_dataset_partition_sdf():
 
     register()
 
-    f = "/dbfs/mnt/lab/unrestricted/ELM-Project/bronze/test/test_derived_dataset_io_partitioned_sdf.parquet"
+    f = "/dbfs/mnt/lab/unrestricted/ELM-Project/test/test_derived_dataset_io_partitioned_sdf.parquet"
     df = test_derived_dataset.sdf()
     df_read = _write_read_dataset(df, f, test_derived_dataset.is_geo, partition_cols=["class"])
     assert _tweak_df(df).equals(df_read)
@@ -138,7 +144,49 @@ def test_read_write_dataset_partition_sdf():
 
 @pytest.mark.dbr
 def test_read_write_dataset_partition_pdf():
-    f = "/dbfs/mnt/lab/unrestricted/ELM-Project/bronze/test/test_derived_dataset_io_partitioned_pdf.parquet"
+    f = "/dbfs/mnt/lab/unrestricted/ELM-Project/test/test_derived_dataset_io_partitioned_pdf.parquet"
     df = test_derived_dataset.pdf()
     df_read = _write_read_dataset(df, f, test_derived_dataset.is_geo, partition_cols=["class"])
     assert _tweak_df(df).equals(df_read)
+
+
+@pytest.mark.dbr
+def test_read_write_dataset_null_partition_gdf():
+    """Tests whether the schema for all partitions is the same
+    when a field for a partition if all null.
+    """
+    from elmo_geo.utils.dbr import spark
+    from elmo_geo.utils.register import register
+
+    register()
+
+    sdf = spark.createDataFrame(
+        pd.DataFrame(
+            {
+                "id": np.arange(1_000),
+                "class": ["a"] * 500 + ["b"] * 500,
+                "desc": [None] * 500 + ["a metric"] * 500,
+                "x": np.random.randint(100, size=(1_000)),
+                "y": np.random.randint(100, size=(1_000)),
+                "value": np.random.rand(1_000),
+            }
+        )
+    ).withColumn("geometry", F.expr("ST_Point(x,y)"))
+    f = "/dbfs/mnt/lab/unrestricted/ELM-Project/test/test_io_partitioned_schema_sdf.parquet"
+
+    start = time.time()
+    write_parquet(sdf, path=f, partition_cols=["class"])
+    LOG.info(f"test_read_write_dataset_null_partition_gdf: write_parquet time: {(time.time()-start)/1e9}s")
+
+    # Load data to test
+    descs = load_sdf(f).select("desc").dropDuplicates().toPandas()["desc"].sort_values(na_position="first").reset_index(drop=True)
+    s = pd.Series([None, "a metric"], name="desc")
+    assert descs.equals(s)
+
+    gdf = gpd.read_parquet(f)
+    descs = gdf["desc"].drop_duplicates().sort_values(na_position="first").reset_index(drop=True)
+    assert descs.equals(s)
+
+    # Check geometry
+    # assert gdf.crs is not None
+    assert gdf.geometry.area.sum() == 0
