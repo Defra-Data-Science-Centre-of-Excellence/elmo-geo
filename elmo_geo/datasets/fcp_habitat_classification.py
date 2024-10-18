@@ -477,7 +477,8 @@ fcp_is_phi_parcel = DerivedDataset(
 """Applies EVAST habitat name lookup datasets to assign an EVAST habitat type to parcels
 based on whether they intersect priority habitat inventory (PHI) geometries.
 
-Also provides total proportions of raw PHI habtiat types in each parcel.
+Also provides total proportions of raw PHI habtiat types in each parcel. Proportions should not
+be summed or subracted across habitat types since the geometries these are based on may overlap.
 
 This is used to model where priority habitats already exist and therefore where parcels are currently
 eligible for habitat management actions.
