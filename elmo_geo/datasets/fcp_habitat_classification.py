@@ -44,6 +44,7 @@ from .moor import is_upland_parcels
 from .rpa_reference_parcels import reference_parcels
 
 
+# Habitat creation
 class EVASTHabitatsMappingModel(DataFrameModel):
     """EVAST's mapping between different habitat classification model.
 
@@ -306,49 +307,144 @@ a lookup table provided by EVAST is used.
 """
 
 
-def _habitat_management_classification(
+# Habitat management
+class EVASTHabitatsManagementMappingModel(DataFrameModel):
+    """EVAST's mapping between PHI habitats and their habitat categories for management actions
+    data model.
+
+    Parameters:
+       action_group: The type of habitat. Is either "Wetland" or "SRG". SRG stands for species-rich grassland.
+       action_habitat: The habitat name used by EVAST in habitat management actions.
+       habitat_name: The Priority Habitats Inventory habitat name.
+    """
+
+    action_group: str = Field(isin=["Wetland", "SRG"])
+    action_habitat: str = Field(
+        isin=[
+            "Wet Acid Heath and Grassland",
+            "Wet Acid Heath and Grassland",
+            "Bogs",
+            "Wet Calcareous Fen",
+            "Wet Neutral Grassland",
+            "Wet Neutral Fen",
+            "Neutral Grassland",
+            "Damp Calcareous Grassland",
+            "Dry Calcareous Grassland",
+            "Dry Acid Heath and Grassland",
+        ],
+    )
+    habitat_name: str = Field()
+
+
+evast_habitat_management_mapping_raw = SourceDataset(
+    name="evast_habitat_management_mapping_raw",
+    level0="bronze",
+    level1="evast",
+    restricted=False,
+    is_geo=False,
+    model=EVASTHabitatsManagementMappingModel,
+    source_path="/dbfs/mnt/lab/unrestricted/elm_data/evast/EVAST_HabitatStocking_2024_08_29_M3_habitat_manage_classification.csv",
+)
+"""EVAST's mapping from PHI habitats to the categories they use for habitat management actions.
+
+This dataset was provided in the 'EVAST M3'
+tab of EVASTs [Habitat Stocking]:https://defra.sharepoint.com/:x:/r/teams/Team1645/_layouts/15/Doc.aspx?sourcedoc=%7B305701D9-E8E2-424B-8B3F-837B876133B6%7D&file=EVAST_HabitatStocking-2024_08_29.xlsx
+workbook but has been reformatted to one row per PHI habitat format to align with the analysis pipeline used here.
+"""
+
+
+def _is_phi(
     reference_parcels: DerivedDataset,
     defra_priority_habitat_parcels: DerivedDataset,
     evast_habitat_mapping_raw: DerivedDataset,
+    evast_habitat_management_mapping_raw: DerivedDataset,
 ):
-    """Assign a habitat management habitat type to each parcel.
+    """Calculates total proportion of different groups of Priority Habitat Inventory habitats intersecting parcels.
 
-    Assignment is based on the proportion of priority habitat inventory (PHI)
-    geometries overlapping the parcel. Where a PHI geometry corresponding to a
-    habitat that is covered by a habitat management action, that parcel can be considered
-    eligible management actions for that type of habitat. The parcel must be at least 10%
-    intersected by a habitat to be considered eligible for management of that habitat.
+    These proportions are used to identify which parcels already have habitats on them that may be managed
+    under habitat management actions.
 
-    The output data includes the area of each habitat type that overlaps the parcel as well as
-    the total area for each habitat action group (Create Heathland, Create SRG, Create Wetland).
+    There are different groupings/names of habitats that FCP and EVAST use:
+    - raw: these are the habitat names as given in the PHI
+    - evast_create: these are the habitat used for habitat creation actions by EVAST
+    - evast_manage: these are the habitat used for habitat management actions by EVAST
     """
 
-    sdf = (
+    sdf_raw = (
         reference_parcels.sdf()
-        .join(defra_priority_habitat_parcels.sdf().filter("proportion>=0.1"), on="id_parcel", how="inner")
+        .join(defra_priority_habitat_parcels.sdf(), on="id_parcel", how="inner")
+        .withColumnRenamed("habitat_name", "action_habitat")
+        .withColumn("grouping_category", F.lit("raw"))
+    )
+
+    sdf_create = (
+        reference_parcels.sdf()
+        .join(defra_priority_habitat_parcels.sdf(), on="id_parcel", how="inner")
         .join(
             evast_habitat_mapping_raw.sdf().filter(F.expr("source = 'phi'")).select("action_group", "action_habitat", "habitat_name"),
             on="habitat_name",
             how="inner",
         )
-        .selectExpr("id_parcel", "action_group", "action_habitat", "proportion", "area_ha*proportion as habitat_area_ha")
+        .withColumn("action_group", F.expr("REPLACE(action_group, 'Create ', '')"))
+        .withColumn("grouping_category", F.lit("evast_create"))
     )
-    return sdf.unionByName(
-        sdf.groupby("id_parcel", "action_group").agg(
-            F.expr("'action_group_total' AS action_habitat"),
-            F.expr("FIRST(proportion) AS proportion"),
-            F.expr("SUM(habitat_area_ha) AS habitat_area_ha"),
+
+    # setup habitat management categories with additional aggregations
+    sdf_manage_lookup = (
+        evast_habitat_management_mapping_raw.sdf()
+        .unionByName(
+            evast_habitat_management_mapping_raw.sdf().selectExpr(
+                "action_group",
+                "'action_group_total' as action_habitat",
+                "habitat_name",
+            ),
+            allowMissingColumns=False,
         )
-    ).toPandas()
+        .unionByName(
+            evast_habitat_management_mapping_raw.sdf()
+            .filter("action_group in ('Wetland', 'SRG')")
+            .selectExpr(
+                "'Wetland and SRG' as action_group",
+                "'action_group_total' as action_habitat",
+                "habitat_name",
+            ),
+            allowMissingColumns=False,
+        )
+    )
+
+    sdf_manage = (
+        reference_parcels.sdf()
+        .join(defra_priority_habitat_parcels.sdf(), on="id_parcel", how="inner")
+        .join(
+            sdf_manage_lookup.select("action_group", "action_habitat", "habitat_name"),
+            on="habitat_name",
+            how="inner",
+        )
+        .withColumn("grouping_category", F.lit("evast_manage"))
+    )
+
+    return (
+        sdf_raw.unionByName(sdf_create, allowMissingColumns=True)
+        .unionByName(sdf_manage, allowMissingColumns=True)
+        .dropDuplicates(subset=["id_parcel", "grouping_category", "action_group", "action_habitat", "fid"])
+        .groupby("id_parcel", "grouping_category", "action_group", "action_habitat")
+        .agg(
+            F.expr("FIRST(area_ha) as area_ha"),
+            F.expr("SUM(proportion) as proportion"),
+        )
+        .selectExpr("id_parcel", "grouping_category", "action_group", "action_habitat", "proportion", "area_ha*proportion as habitat_area_ha")
+        .filter("proportion>0")
+        .toPandas()
+    )
 
 
-class HabitatManagementTypeParcelModel(DataFrameModel):
-    """Datamodel for the habitat creation type dataset.
+class IsPHIParcelModel(DataFrameModel):
+    """Datamodel for the parcel level PHI aggregations.
 
     Attributes:
         id_parcel: The parcel ID.
-        action_group: The type of habitat creation action. Either 'Create Wetland',
-            'Create SRG', or 'Create Heathland'.
+        grouping_category: Used to select which group of habitat names to view proportions for.
+        action_group: The type of habitat creation action. Either 'Wetland', 'SRG', or 'Heathland'.
         action_habitat: The specific habitat type assigned to this parcel. This indicates
             what type of habitat is created on the parcel under the habitat creation action.
         proportion: Proportion of parcel intersected by this habitat.
@@ -356,47 +452,37 @@ class HabitatManagementTypeParcelModel(DataFrameModel):
     """
 
     id_parcel: str = Field()
-    action_group: str = Field(isin=["Create Heathland", "Create Wetland", "Create SRG"])
-    action_habitat: str = Field(
-        nullable=True,
-        isin=[
-            "lowland",
-            "lowland_meadow",
-            "upland_meadow",
-            "lowland_dry_acid_gr",
-            "fen",
-            "lowland_calc_gr",
-            "lowland_acid_gr",
-            "upland_acid_gr",
-            "upland_calc_gr",
-            "bog",
-            "upland",
-            "action_group_total",
-        ],
-    )
+    grouping_category: str = Field(isin=["raw", "evast_create", "evast_manage"])
+    action_group: str = Field(isin=["Heathland", "Wetland", "SRG", "Wetland and SRG"], nullable=True)
+    action_habitat: str = Field()
     proportion: float = Field()
     habitat_area_ha: float = Field()
 
 
-fcp_habitat_management_type_parcel = DerivedDataset(
-    name="fcp_habitat_management_type_parcel",
+fcp_is_phi_parcel = DerivedDataset(
+    name="fcp_is_phi_parcel",
     level0="silver",
     level1="fcp",
     restricted=False,
     is_geo=False,
-    func=_habitat_management_classification,
+    func=_is_phi,
     dependencies=[
         reference_parcels,
         defra_priority_habitat_parcels,
         evast_habitat_mapping_raw,
+        evast_habitat_management_mapping_raw,
     ],
-    model=HabitatManagementTypeParcelModel,
+    model=IsPHIParcelModel,
 )
-"""Applies the EVAST habitat name lookup dataset to assign an EVAST habitat type
-(refered to as factor level by EVAST) to parcels based on whether they intersect priority habitat
-inventory (PHI) geometries.
+"""Applies EVAST habitat name lookup datasets to assign an EVAST habitat type to parcels
+based on whether they intersect priority habitat inventory (PHI) geometries.
 
-This is used to model which parcels are eligible for habitat management actions.
+Also provides total proportions of raw PHI habtiat types in each parcel. Proportions should not
+be summed or subracted across habitat types since the geometries these are based on may overlap.
+
+This is used to model where priority habitats already exist and therefore where parcels are currently
+eligible for habitat management actions.
+
 Comparison to actual agreements show that parcels which do not intersect priority
 habitats do also successfully claim for habitat management actions. Due to the low
 coverage of PHI data we expect this dataset greatly underestimates the area eligible
