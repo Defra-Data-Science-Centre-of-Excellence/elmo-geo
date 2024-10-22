@@ -418,3 +418,55 @@ ewco_priority_habitat_network_parcels = DerivedDataset(
 """Spatial data supporting the England Woodland Creation Offer (EWCO) additional contribution targeting for Nature Recovery, where the layer
 indicates ‘High Spatial Priority’. ‘Higher’ and ‘Lower’ priority areas for woodland network expansion. 
 """
+
+
+# Water Quality
+class EwcoWaterQualityRaw(DataFrameModel):
+    """Model describing the EWCO water quality dataset.
+
+    Attributes:
+    cat: the targeting category
+    areaha: Area of the feature in hectares
+    geometry: polygons
+    """
+
+    cat: str = Field()
+    area: str = Field()
+    geometry: Geometry(crs=SRID) = Field()
+
+
+class EwcoWaterQualityParcels(DataFrameModel):
+    """Model describing the EWCO water quality dataset joined with Rural Payment Agency parcel dataset
+
+    Attributes:
+    id_parcel: 11 character RPA reference parcel ID (including the sheet ID) e.g. `SE12263419`.
+    proportion: The proportion of the parcel that intersects with water quality areas.
+    """
+
+    id_parcel: str = Field(unique=True)
+    proportion: float = Field(ge=0, le=1)
+
+
+ewco_waterquality_raw = SourceDataset(
+    name="ewco_waterquality_raw",
+    level0="bronze",
+    level1="forestry_commission",
+    restricted=False,
+    model=EwcoWaterQualityRaw,
+    source_path="/dbfs/mnt/lab/unrestricted/elm_data/ewco/water_quality/2023_02_27/EWCO__E2_80_93_Water_Quality.shp",
+)
+
+
+ewco_waterquality_parcels = DerivedDataset(
+    name="ewco_waterquality_parcels",
+    level0="silver",
+    level1="forestry_commission",
+    restricted=False,
+    func=sjoin_parcel_proportion,
+    dependencies=[reference_parcels, ewco_waterquality_raw],
+    model=EwcoWaterQualityParcels,
+)
+
+"""Spatial data supporting appropriately located and designed woodland creation to help reduce pollutants through land use
+change that reduces fertilizer application or by creating woodland that intercepts pollution and sediment before it reaches watercourses.
+"""

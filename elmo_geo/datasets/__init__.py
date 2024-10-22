@@ -59,6 +59,8 @@ from .fc_ewco import (
     ewco_priority_habitat_network_raw,
     ewco_red_squirrel_parcels,
     ewco_red_squirrel_raw,
+    ewco_waterquality_parcels,
+    ewco_waterquality_raw,
 )
 from .fc_woodland_sensitivity import (
     sfi_agroforestry,
@@ -207,6 +209,8 @@ catalogue = [
     ewco_keeping_rivers_cool_parcels,
     ewco_priority_habitat_network_raw,
     ewco_priority_habitat_network_parcels,
+    ewco_waterquality_raw,
+    ewco_waterquality_parcels,
     fcp_habitat_creation_type_parcel,
     fcp_habitat_management_type_parcel,
     flood_risk_areas_parcels,
