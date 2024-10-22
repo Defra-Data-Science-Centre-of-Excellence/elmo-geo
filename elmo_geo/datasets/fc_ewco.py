@@ -431,7 +431,7 @@ class EwcoWaterQualityRaw(DataFrameModel):
     """
 
     cat: str = Field()
-    areaha: str = Field()
+    areaha: float = Field()
     geometry: Geometry(crs=SRID) = Field()
 
 
