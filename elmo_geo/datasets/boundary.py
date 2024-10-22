@@ -165,7 +165,7 @@ boundary_water = DerivedDataset(
 
 # Wall
 def fn_pre_wall(sdf: SparkDataFrame) -> SparkDataFrame:
-    return sdf.filter("tags LIKE '%Wall'")
+    return sdf.filter("tags LIKE \"{%'barrier': 'wall'%}\" OR tags LIKE \"{%'wall':%}\"")
 
 
 boundary_walls = DerivedDataset(
