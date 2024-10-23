@@ -58,6 +58,7 @@ df_parcels.display()
 df_feature = (
     spark.read.parquet(sf_priority_habitat)
     .filter(F.expr("Main_Habit like '%heath%'"))
+    .withColumn("geometry", F.expr("ST_GeomFromWKB(geometry)"))
     .transform(st_clean)
     .withColumn("geometry", F.expr(f"ST_SubdivideExplode(geometry, {max_vertices})"))
     .repartition(n_partitions)

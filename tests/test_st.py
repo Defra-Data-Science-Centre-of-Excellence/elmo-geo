@@ -5,8 +5,8 @@ import pytest
 
 from elmo_geo.etl.transformations import sjoin_boundary_proportion, sjoin_parcel_proportion
 from elmo_geo.io.convert import to_sdf
-from elmo_geo.st.segmentise import segmentise_with_tolerance, st_udf
-from elmo_geo.st.udf import st_union
+from elmo_geo.st.segmentise import segmentise_with_tolerance
+from elmo_geo.st.udf import st_udf, st_union
 from elmo_geo.utils.register import register
 
 

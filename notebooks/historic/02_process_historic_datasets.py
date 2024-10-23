@@ -75,7 +75,9 @@ df_parcels.display()
 # COMMAND ----------
 
 # load each of the historic england datasets
-sdf_combined_sites = spark.read.format("parquet").load(dbfs(f_combined_sites, True)).transform(st_clean)
+sdf_combined_sites = (
+    spark.read.format("parquet").load(dbfs(f_combined_sites, True)).withColumn("geometry", F.expr("ST_GeomFromWKB(geometry)")).transform(st_clean)
+)
 sdf_combined_sites.display()
 
 historic_datasets = {

@@ -68,6 +68,7 @@ def _osm_transform(dataset: Dataset) -> SparkDataFrame:
         .withColumn("geometry", F.expr("ST_AsBinary(geometry)"))
         .mapInPandas(_cols_to_json, "fid:string,tags:string,geometry:binary")
         .transform(st_clean)
+        .withColumn("geometry", F.expr("ST_SubDivideExplode(geometry, 256)"))
     )
 
 

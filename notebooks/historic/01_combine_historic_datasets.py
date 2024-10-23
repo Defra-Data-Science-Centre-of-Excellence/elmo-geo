@@ -63,7 +63,11 @@ for dataset, p in filepaths_he.items():
         allowMissingColumns=False,
     )
 
-sdf_historical_sites = sdf_historical_sites.transform(st_clean).withColumn("geometry", F.expr("EXPLODE(ST_Dump(geometry))"))
+sdf_historical_sites = (
+    sdf_historical_sites.withColumn("geometry", F.expr("ST_GeomFromWKB(geometry)"))
+    .transform(st_clean)
+    .withColumn("geometry", F.expr("EXPLODE(ST_Dump(geometry))"))
+)
 
 (sdf_historical_sites.withColumn("geometry", F.expr("ST_AsBinary(geometry)")).write.mode("overwrite").parquet(dbfs(f_output_historic_combined, True)))
 

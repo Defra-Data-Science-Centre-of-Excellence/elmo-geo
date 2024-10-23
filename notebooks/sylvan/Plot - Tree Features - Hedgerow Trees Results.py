@@ -14,7 +14,6 @@ from matplotlib.ticker import FuncFormatter, PercentFormatter
 from pyspark.sql import functions as F
 
 # from elmo_geo import LOG, register
-# from elmo_geo.io.udf import st_clean
 # from elmo_geo.utils.dbr import spark
 # COMMAND ----------
 # register()

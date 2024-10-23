@@ -279,6 +279,7 @@ def _sjoin_bng_to_no_peat_parcel(
             "ST_AsBinary(geometry_right) as geometry_right",
         )
         .mapInPandas(_udf_difference, schema="id_parcel:string,geometry:binary")
+        .withColumn("geometry", F.expr("ST_GeomFromWKB(geometry)"))
         .transform(st_clean)
         .withColumn("nopeat_area", F.expr("ST_Area(geometry)/10000"))
     )
