@@ -38,6 +38,7 @@ from pyspark.sql import functions as F
 
 from elmo_geo.etl import SRID, Dataset, DerivedDataset
 from elmo_geo.etl.transformations import sjoin_boundary_proportion
+from elmo_geo.st.udf import st_clean
 from elmo_geo.st.segmentise import segmentise_with_tolerance, st_udf
 from elmo_geo.utils.types import SparkDataFrame
 
@@ -148,7 +149,7 @@ boundary_hedgerows = DerivedDataset(
 
 # Water
 def fn_pre_water(sdf: SparkDataFrame) -> SparkDataFrame:
-    return sdf.filter("theme = 'Water' AND description NOT LIKE '%Catchment'")
+    return sdf.filter("theme = 'Water' AND description NOT LIKE '%Catchment'").transform(st_clean)
 
 
 boundary_water = DerivedDataset(
