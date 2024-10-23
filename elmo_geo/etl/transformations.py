@@ -5,10 +5,10 @@ For use in `elmo.etl.DerivedDataset.func`.
 import geopandas as gpd
 from pyspark.sql import functions as F
 
-from elmo_geo.io.file import auto_repartition
 from elmo_geo.st.join import sjoin
-from elmo_geo.utils.types import PandasDataFrame, SparkDataFrame
 from elmo_geo.utils.misc import info_sdf
+from elmo_geo.utils.types import PandasDataFrame, SparkDataFrame
+
 from .etl import Dataset
 
 
@@ -113,8 +113,7 @@ def sjoin_parcels(
     sdf_feature = feature if isinstance(feature, SparkDataFrame) else feature.sdf()
     sdf_parcels = parcels if isinstance(parcels, SparkDataFrame) else parcels.sdf()
     return (
-        sdf_feature
-        .transform(fn_pre)
+        sdf_feature.transform(fn_pre)
         .transform(info_sdf, msg="pre")
         .transform(lambda sdf: sjoin(sdf_parcels, sdf, **kwargs))
         .transform(info_sdf, geometry_column="geometry_right", msg="sjoin")

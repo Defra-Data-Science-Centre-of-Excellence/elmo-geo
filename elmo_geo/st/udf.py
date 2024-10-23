@@ -38,16 +38,7 @@ def st_clean(sdf: SparkDataFrame, column: str = "geometry") -> SparkDataFrame:
 
     def _clean(iterator):
         for pdf in iterator:
-            pdf[column] = (
-                gpd.GeoSeries
-                .from_wkb(pdf[column])
-                .force_2d()
-                .simplify(1)
-                .set_precision(1)
-                .remove_repeated_points(1)
-                .make_valid()
-                .to_wkb()
-            )
+            pdf[column] = gpd.GeoSeries.from_wkb(pdf[column]).force_2d().simplify(1).set_precision(1).remove_repeated_points(1).make_valid().to_wkb()
             yield pdf
 
     return (
