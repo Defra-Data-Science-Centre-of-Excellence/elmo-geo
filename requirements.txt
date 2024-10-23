@@ -16,6 +16,12 @@ attrs==24.2.0
     #   rasterio
 beautifulsoup4==4.12.3
     # via elmo_geo (pyproject.toml)
+boto3==1.35.36
+    # via elmo_geo (pyproject.toml)
+botocore==1.35.36
+    # via
+    #   boto3
+    #   s3transfer
 branca==0.7.2
     # via folium
 build==1.2.1
@@ -81,6 +87,10 @@ jinja2==3.1.4
     # via
     #   branca
     #   folium
+jmespath==1.0.1
+    # via
+    #   boto3
+    #   botocore
 joblib==1.4.2
     # via
     #   contextily
@@ -200,6 +210,7 @@ pytest==8.3.2
     # via elmo_geo (pyproject.toml)
 python-dateutil==2.9.0.post0
     # via
+    #   botocore
     #   matplotlib
     #   pandas
 python-dotenv==1.0.1
@@ -224,6 +235,8 @@ rsa==4.9
     # via google-auth
 ruff==0.1.15
     # via elmo_geo (pyproject.toml)
+s3transfer==0.10.3
+    # via boto3
 scikit-learn==1.5.1
     # via mapclassify
 scipy==1.14.1
@@ -260,7 +273,9 @@ tzdata==2024.1
     #   pandas
     #   pydantic
 urllib3==2.2.2
-    # via requests
+    # via
+    #   botocore
+    #   requests
 wheel==0.44.0
     # via pip-tools
 wrapt==1.16.0

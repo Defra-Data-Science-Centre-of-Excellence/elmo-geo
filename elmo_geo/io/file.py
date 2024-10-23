@@ -12,7 +12,7 @@ from pyspark.errors import AnalysisException
 from pyspark.serializers import AutoBatchedSerializer, PickleSerializer
 from pyspark.sql import functions as F
 
-from elmo_geo.st.geometry import load_geometry
+from elmo_geo.st.geometry import gpd_clean, load_geometry
 from elmo_geo.utils.dbr import spark
 from elmo_geo.utils.log import LOG
 from elmo_geo.utils.misc import dbfs
@@ -111,14 +111,14 @@ def read_file(source_path: str, is_geo: bool, layer: int | str | None = None, cl
             raise UnknownFileExtension()
     df = to_sdf(df) if is_geo else spark.createDataFrame(df)
     if is_geo and clean_geometry:
-        df = df.withColumn("geometry", load_geometry(encoding_fn="", subdivide=True))
+        df = df.withColumn("geometry", load_geometry(encoding_fn="", subdivide=True)).transform(gpd_clean)
     return df
 
 
 def _get_arrow_schema(sdf: SparkDataFrame) -> pa.Schema:
     """Produce a pyarrow schema for a spark dataframe that contains a geometry field.
 
-    This function combines two methods for getting a pyarrow schema. THe methods need to be combined
+    This function combines two methods for getting a pyarrow schema. The methods need to be combined
     because going from a spark dataframe to arrow table produces the correct schema for non-geometry
     fields, while converting from a geodataframe to an arrow table produces the correct geometry
     field schema.
