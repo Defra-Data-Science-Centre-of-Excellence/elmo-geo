@@ -25,7 +25,7 @@ class S3Handler:
     | --------- | ---- | -------- |
     |           |      |          |
 
-    >>> s3.write_file(gdf, "test-elmo_geo-test.parquet", fn_write=gpd.GeoDataFrane.to_parquet)
+    >>> s3.write_file(gdf, "test-elmo_geo-test.parquet", fn_write=gpd.GeoDataFrame.to_parquet)
     ```
     """
 
@@ -50,7 +50,7 @@ class S3Handler:
             )
 
     def list_files(self, prefix=""):
-        """List files in the S3 bucket, with pagination support to access more than 1000 responces."""
+        """List files in the S3 bucket, with pagination support to access more than 1000 responses."""
         files = []
         response = self.s3_client.list_objects_v2(Bucket=self.bucket, Prefix=prefix)
         while response.get("IsTruncated"):
@@ -63,15 +63,15 @@ class S3Handler:
                 files.extend([f"s3://{self.bucket}/{obj['Key']}" for obj in response["Contents"] if not obj["Key"].endswith("/")])
         return files
 
-    def read_file(self, file_key: str, fn_read: callable = pd.read_parquet) -> pd.DataFrame:
+    def read_file(self, path: str, fn_read: callable = pd.read_parquet) -> pd.DataFrame:
         """Read a file from S3 and return its content as a DataFrame."""
-        obj = self.s3_client.get_object(Bucket=self.bucket, Key=file_key)
+        obj = self.s3_client.get_object(Bucket=self.bucket, Key=path)
         buf = io.BytesIO(obj["Body"].read())
         return fn_read(buf)
 
-    def write_file(self, df: pd.DataFrame, file_key: str, fn_write: callable = pd.DataFrame.to_parquet):
+    def write_file(self, df: pd.DataFrame, path: str, fn_write: callable = pd.DataFrame.to_parquet):
         """Write a DataFrame to the S3 bucket as a Parquet file."""
         buf = io.BytesIO()
         fn_write(df, buf)
         buf.seek(0)
-        self.s3_client.put_object(Bucket=self.bucket, Key=file_key, Body=buf.getvalue())
+        self.s3_client.put_object(Bucket=self.bucket, Key=path, Body=buf.getvalue())
