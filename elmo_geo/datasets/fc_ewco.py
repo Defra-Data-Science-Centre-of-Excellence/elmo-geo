@@ -13,7 +13,7 @@ from pandera import DataFrameModel, Field
 from pandera.engines.geopandas_engine import Geometry
 
 from elmo_geo.etl import SRID, Dataset, DerivedDataset, SourceDataset
-from elmo_geo.etl.transformations import sjoin_parcel_proportion
+from elmo_geo.etl.transformations import combine_wide, sjoin_parcel_proportion
 
 from .rpa_reference_parcels import reference_parcels
 
@@ -524,3 +524,50 @@ to indicate where there are likely to be fewer sensitivities to woodland creatio
 These maps will help to indicate to landowners whether there is likely to be potential to establish new woodland on their land,
 and where there may be sensitivities that would preclude woodland creation.
 """
+
+
+# EWCO datsets joined to Parcels in one big table
+class EwcoParcels(DataFrameModel):
+    """Model for one wide table that pulls together the proportion fields for each EWCO derived dataset linked to parcels.
+    Attributes:
+        id_parcel: 11 character RPA reference parcel ID (including the sheet ID) e.g. `SE12263419`.
+        proportion_rs: The proportion of the parcel that intersects with red squirrel sites.
+        proportion_amm: The proportion of the parcel that intersects with ammonia emmissions sites.
+        proportion_soc: The proportion of the parcel that intersects with nfc social sites.
+        proportion_wq The proportion of the parcel that intersects with the water quality sites.
+        proportion_krc: The proportion of the parcel that intersects with keeping rivers cool sites.
+        proportion_fr: The proportion of the parcel that intersects with floodrisk sites.
+        proportion_phn: The proportion of the parcel that intersects with the priority habitat network sites.
+        proportion_sense: The proportion of the parcel that intersects with the social sustainability sites.
+    """
+
+    id_parcel: str = Field(unique=True)
+    proportion_rs: float = Field(ge=0, le=1)
+    proportion_amm: float = Field(ge=0, le=1)
+    proportion_soc: float = Field(ge=0, le=1)
+    proportion_wq: float = Field(ge=0, le=1)
+    proportion_krc: float = Field(ge=0, le=1)
+    proportion_fr: float = Field(ge=0, le=1)
+    proportion_phn: float = Field(ge=0, le=1)
+    proportion_sense: float = Field(ge=0, le=1)
+
+
+ewco_parcels = DerivedDataset(
+    is_geo=False,
+    name="ewco_parcels",
+    level0="silver",
+    level1="forestry_commission",
+    restricted=False,
+    func=partial(combine_wide, sources=["rs", "amm", "soc", "wq", "krc", "fr", "phn", "sense"]),
+    dependencies=[
+        ewco_red_squirrel_parcels,
+        ewco_ammonia_emmesions_parcels,
+        ewco_nfc_social_parcels,
+        ewco_waterquality_parcels,
+        ewco_keeping_rivers_cool_parcels,
+        ewco_flood_risk_parcels,
+        ewco_priority_habitat_network_parcels,
+        ewco_sensativity_parcels,
+    ],
+    model=EwcoParcels,
+)
