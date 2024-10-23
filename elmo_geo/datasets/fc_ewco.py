@@ -20,6 +20,18 @@ from .rpa_reference_parcels import reference_parcels
 _join_parcels = partial(sjoin_parcel_proportion, columns=["spatial_priority"])
 
 
+class EwcoParcels(DataFrameModel):
+   """Model describing the parcel-level dataset.
+
+    Attributes:
+        id_parcel: 11 character RPA reference parcel ID (including the sheet ID) e.g. `SE12263419`.
+        proportion: The proportion of the parcel that intersects with the spatial priority.
+    """
+
+    id_parcel: str = Field(unique=True)
+    proportion: float = Field(ge=0, le=1) 
+
+
 class EwcoClean(DataFrameModel):
     """Model describing the Forestry Commission's EWCO Nature Recovery Priority Habitat dataset.
 
@@ -113,18 +125,6 @@ class EwcoAmmoniaEmmesionsRaw(DataFrameModel):
     geometry: Geometry(crs=SRID) = Field()
 
 
-class EwcoAmmoniaEmmesionsParcels(DataFrameModel):
-    """Model describing the EWCO NfC Ammonia Emissions Capture for SSSI Protection dataset joined with Rural Payment Agency parcel dataset
-
-    Attributes:
-    id_parcel: 11 character RPA reference parcel ID (including the sheet ID) e.g. `SE12263419`.
-    proportion: The proportion of the parcel that intersects with the red squiell areas
-    """
-
-    id_parcel: str = Field(unique=True)
-    proportion: float = Field(ge=0, le=1)
-
-
 ewco_ammonia_emmesions_raw = SourceDataset(
     name="ewco_ammonia_emmesions_raw",
     level0="bronze",
@@ -143,7 +143,7 @@ ewco_ammonia_emmesions_parcels = DerivedDataset(
     restricted=False,
     func=sjoin_parcel_proportion,
     dependencies=[reference_parcels, ewco_ammonia_emmesions_raw],
-    model=EwcoAmmoniaEmmesionsParcels,
+    model=EwcoParcels,
 )
 """Spatial data supporting the England Woodland Creation Offer (EWCO) additional point scoring for ammonia capture.
 There is no Additional Contribution for ammonia capture but EWCO supports action to address air pollution.
@@ -168,18 +168,6 @@ class EwcoFloodRiskRaw(DataFrameModel):
     geometry: Geometry(crs=SRID) = Field()
 
 
-class EwcoFloodRiskParcels(DataFrameModel):
-    """Model describing the EWCO Flood Risk Management dataset joined with Rural Payment Agency parcel dataset.
-
-    Attributes:
-        id_parcel: 11 character RPA reference parcel ID (including the sheet ID) e.g. `SE12263419`.
-        proportion: The proportion of the parcel that intersects with the floos risk management areas
-    """
-
-    id_parcel: str = Field(unique=True)
-    proportion: float = Field(ge=0, le=1)
-
-
 ewco_flood_risk_raw = SourceDataset(
     name="ewco_flood_risk_raw",
     level0="bronze",
@@ -198,7 +186,7 @@ ewco_flood_risk_parcels = DerivedDataset(
     restricted=False,
     func=sjoin_parcel_proportion,
     dependencies=[reference_parcels, ewco_flood_risk_raw],
-    model=EwcoFloodRiskParcels,
+    model=EwcoParcels,
 )
 """Spatial data supporting appropriately located and designed woodland creation to help reduce flood risk by slowing
 flood flows and increasing the retention and infiltration of water on the land.
@@ -224,18 +212,6 @@ class EwcoRedSquirrelRaw(DataFrameModel):
     geometry: Geometry(crs=SRID) = Field()
 
 
-class EwcoRedSquirrelParcels(DataFrameModel):
-    """Model describing the EWCO priority species red squirrel dataset joined with Rural Payment Agency parcel dataset
-
-    Attributes:
-    id_parcel: 11 character RPA reference parcel ID (including the sheet ID) e.g. `SE12263419`.
-    proportion: The proportion of the parcel that intersects with the red squiell areas
-    """
-
-    id_parcel: str = Field(unique=True)
-    proportion: float = Field(ge=0, le=1)
-
-
 ewco_red_squirrel_raw = SourceDataset(
     name="ewco_red_squirrel_raw",
     level0="bronze",
@@ -254,7 +230,7 @@ ewco_red_squirrel_parcels = DerivedDataset(
     restricted=False,
     func=sjoin_parcel_proportion,
     dependencies=[reference_parcels, ewco_red_squirrel_raw],
-    model=EwcoRedSquirrelParcels,
+    model=EwcoParcels,
 )
 """Spatial data supporting the England Woodland Creation Offer (EWCO) additional contribution targeting for Nature Recovery.
 This layer is identical to that titled ‘CS WCM Biodiversity - Priority Species - Red Squirrel """
@@ -271,18 +247,6 @@ class EwcoNfcSocialRaw(DataFrameModel):
 
     status: str = Field()
     geometry: Geometry(crs=SRID) = Field()
-
-
-class EwcoNfcSocialParcels(DataFrameModel):
-    """Model describing the EWCO NfC Social dataset joined with Rural Payment Agency parcel dataset
-
-    Attributes:
-    id_parcel: 11 character RPA reference parcel ID (including the sheet ID) e.g. `SE12263419`.
-    proportion: The proportion of the parcel that intersects with nfc social areas
-    """
-
-    id_parcel: str = Field(unique=True)
-    proportion: float = Field(ge=0, le=1)
 
 
 ewco_nfc_social_raw = SourceDataset(
@@ -303,7 +267,7 @@ ewco_nfc_social_parcels = DerivedDataset(
     restricted=False,
     func=sjoin_parcel_proportion,
     dependencies=[reference_parcels, ewco_nfc_social_raw],
-    model=EwcoNfcSocialParcels,
+    model=EwcoParcels,
 )
 
 """Spatial data supporting the England Woodland Creation Offer (EWCO)
@@ -324,18 +288,6 @@ class EwcoKeepingRiversCoolRaw(DataFrameModel):
     geometry: Geometry(crs=SRID) = Field()
 
 
-class EwcoKeepingRiversCoolParcels(DataFrameModel):
-    """Model describing the EWCO keeping rivers cool riparian buffers dataset joined with Rural Payment Agency parcel dataset
-
-    Attributes:
-    id_parcel: 11 character RPA reference parcel ID (including the sheet ID) e.g. `SE12263419`.
-    proportion: The proportion of the parcel that intersects with keeping rivers cool areas
-    """
-
-    id_parcel: str = Field(unique=True)
-    proportion: float = Field(ge=0, le=1)
-
-
 ewco_keeping_rivers_cool_raw = SourceDataset(
     name="ewco_keeping_rivers_cool_raw",
     level0="bronze",
@@ -354,7 +306,7 @@ ewco_keeping_rivers_cool_parcels = DerivedDataset(
     restricted=False,
     func=sjoin_parcel_proportion,
     dependencies=[reference_parcels, ewco_keeping_rivers_cool_raw],
-    model=EwcoKeepingRiversCoolParcels,
+    model=EwcoParcels,
 )
 
 """Spatial data supporting appropriately located and designed woodland creation where this will provide dappled shade to improve aquatic
@@ -381,18 +333,6 @@ class EwcoPriorityHabitatNetworkRaw(DataFrameModel):
     geometry: Geometry(crs=SRID) = Field()
 
 
-class EwcoPriorityHabitatNetworkParcels(DataFrameModel):
-    """Model describing the EWCO Biodiversity Priority Habitat Network dataset joined with Rural Payment Agency parcel dataset
-
-    Attributes:
-    id_parcel: 11 character RPA reference parcel ID (including the sheet ID) e.g. `SE12263419`.
-    proportion: The proportion of the parcel that intersects with Priority Habitat Network
-    """
-
-    id_parcel: str = Field(unique=True)
-    proportion: float = Field(ge=0, le=1)
-
-
 ewco_priority_habitat_network_raw = SourceDataset(
     name="ewco_priority_habitat_network_raw",
     level0="bronze",
@@ -411,7 +351,7 @@ ewco_priority_habitat_network_parcels = DerivedDataset(
     restricted=False,
     func=sjoin_parcel_proportion,
     dependencies=[reference_parcels, ewco_priority_habitat_network_raw],
-    model=EwcoPriorityHabitatNetworkParcels,
+    model=EwcoParcels,
 )
 
 """Spatial data supporting the England Woodland Creation Offer (EWCO) additional contribution targeting for Nature Recovery, this layer
@@ -434,18 +374,6 @@ class EwcoWaterQualityRaw(DataFrameModel):
     geometry: Geometry(crs=SRID) = Field()
 
 
-class EwcoWaterQualityParcels(DataFrameModel):
-    """Model describing the EWCO water quality dataset joined with Rural Payment Agency parcel dataset
-
-    Attributes:
-    id_parcel: 11 character RPA reference parcel ID (including the sheet ID) e.g. `SE12263419`.
-    proportion: The proportion of the parcel that intersects with water quality areas.
-    """
-
-    id_parcel: str = Field(unique=True)
-    proportion: float = Field(ge=0, le=1)
-
-
 ewco_waterquality_raw = SourceDataset(
     name="ewco_waterquality_raw",
     level0="bronze",
@@ -463,7 +391,7 @@ ewco_waterquality_parcels = DerivedDataset(
     restricted=False,
     func=sjoin_parcel_proportion,
     dependencies=[reference_parcels, ewco_waterquality_raw],
-    model=EwcoWaterQualityParcels,
+    model=EwcoParcels,
 )
 
 """Spatial data supporting appropriately located and designed woodland creation to help reduce pollutants through land use
@@ -486,18 +414,6 @@ class EwcoSensativityRaw(DataFrameModel):
     geometry: Geometry(crs=SRID) = Field()
 
 
-class EwcoSensativityParcels(DataFrameModel):
-    """Model describing the EWCO woodland sensativity dataset joined with Rural Payment Agency parcel dataset
-
-    Attributes:
-    id_parcel: 11 character RPA reference parcel ID (including the sheet ID) e.g. `SE12263419`.
-    proportion: The proportion of the parcel that intersects with woodland sensativity areas.
-    """
-
-    id_parcel: str = Field(unique=True)
-    proportion: float = Field(ge=0, le=1)
-
-
 ewco_sensativity_raw = SourceDataset(
     name="ewco_sensativity_raw",
     level0="bronze",
@@ -515,7 +431,7 @@ ewco_sensativity_parcels = DerivedDataset(
     restricted=False,
     func=sjoin_parcel_proportion,
     dependencies=[reference_parcels, ewco_sensativity_raw],
-    model=EwcoSensativityParcels,
+    model=EwcoParcels,
 )
 
 """The Forestry Commission has developed a series of sensitivity maps, based on nationally available and consistent datasets,
@@ -526,7 +442,7 @@ and where there may be sensitivities that would preclude woodland creation.
 
 
 # EWCO datsets joined to Parcels in one big table
-class EwcoParcels(DataFrameModel):
+class EwcoMergedParcels(DataFrameModel):
     """Model for one wide table that pulls together the proportion fields for each EWCO derived dataset linked to parcels.
     Attributes:
         id_parcel: 11 character RPA reference parcel ID (including the sheet ID) e.g. `SE12263419`.
@@ -568,5 +484,5 @@ ewco_parcels = DerivedDataset(
         ewco_priority_habitat_network_parcels,
         ewco_sensativity_parcels,
     ],
-    model=EwcoParcels,
+    model=EwcoMergedParcels,
 )
