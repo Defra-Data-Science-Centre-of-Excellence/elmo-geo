@@ -31,6 +31,32 @@ def st_dump_to_list(col):
     return gs.explode().wkb.tolist()
 
 
+def st_clean(sdf: SparkDataFrame, column: str = "geometry") -> SparkDataFrame:
+    """Uses mapInPandas to clean a spark geometry field to 1m precision
+    using Geopanas functions.
+    """
+
+    def _clean(iterator):
+        for pdf in iterator:
+            pdf[column] = (
+                gpd.GeoSeries
+                .from_wkb(pdf[column])
+                .force_2d()
+                .simplify(1)
+                .set_precision(1)
+                .remove_repeated_points(1)
+                .make_valid()
+                .to_wkb()
+            )
+            yield pdf
+
+    return (
+        sdf.withColumn(column, F.expr(f"ST_AsBinary({column})"))
+        .transform(lambda sdf: sdf.mapInPandas(_clean, sdf.schema))
+        .withColumn(column, F.expr(f"ST_GeomFromWKB({column})"))
+    )
+
+
 def st_explode(sdf: SparkDataFrame) -> SparkDataFrame:
     return (
         sdf.withColumn("geometry", F.expr("ST_AsBinary(geometry)"))
