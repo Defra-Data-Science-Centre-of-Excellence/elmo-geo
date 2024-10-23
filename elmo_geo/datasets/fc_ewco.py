@@ -471,7 +471,8 @@ ewco_waterquality_parcels = DerivedDataset(
 change that reduces fertilizer application or by creating woodland that intercepts pollution and sediment before it reaches watercourses.
 """
 
-#Woodland Sensativity
+
+# Woodland Sensativity
 class EwcoSensativityRaw(DataFrameModel):
     """Model describing the EWCO woodland sensativity dataset.
 
@@ -484,6 +485,7 @@ class EwcoSensativityRaw(DataFrameModel):
     sensitivit: str = Field()
     areaha: float = Field()
     geometry: Geometry(crs=SRID) = Field()
+
 
 class EwcoSensativityParcels(DataFrameModel):
     """Model describing the EWCO woodland sensativity dataset joined with Rural Payment Agency parcel dataset
@@ -515,10 +517,10 @@ ewco_sensativity_parcels = DerivedDataset(
     func=sjoin_parcel_proportion,
     dependencies=[reference_parcels, ewco_sensativity_raw],
     model=EwcoSensativityParcels,
-    )
+)
 
-"""The Forestry Commission has developed a series of sensitivity maps, based on nationally available and consistent datasets, to indicate where there are likely to be fewer sensitivities to woodland creation.
-These maps will help to indicate to landowners whether there is likely to be potential to establish new woodland on their land, and where there may be sensitivities that would preclude woodland creation.
+"""The Forestry Commission has developed a series of sensitivity maps, based on nationally available and consistent datasets,
+to indicate where there are likely to be fewer sensitivities to woodland creation.
+These maps will help to indicate to landowners whether there is likely to be potential to establish new woodland on their land,
+and where there may be sensitivities that would preclude woodland creation.
 """
-
-
