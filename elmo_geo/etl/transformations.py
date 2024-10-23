@@ -6,7 +6,6 @@ import geopandas as gpd
 from pyspark.sql import functions as F
 
 from elmo_geo.io.file import auto_repartition
-from elmo_geo.st.geometry import load_geometry
 from elmo_geo.st.join import sjoin
 from elmo_geo.utils.types import PandasDataFrame, SparkDataFrame
 
@@ -115,7 +114,6 @@ def sjoin_parcels(
     sdf_parcels = parcels if isinstance(parcels, SparkDataFrame) else parcels.sdf()
     return (
         sdf_feature.transform(auto_repartition)
-        .withColumn("geometry", load_geometry(encoding_fn="", subdivide=True))
         .transform(fn_pre)
         .transform(lambda sdf: sjoin(sdf_parcels.transform(auto_repartition), sdf, **kwargs))
         .selectExpr(
@@ -147,8 +145,8 @@ def sjoin_parcel_proportion(
 
 
 def sjoin_boundary_proportion(
-    boundary_segments: Dataset | SparkDataFrame,
     parcel: Dataset | SparkDataFrame,
+    boundary_segments: Dataset | SparkDataFrame,
     features: Dataset | SparkDataFrame,
     buffers: list[float] = [0, 2, 8, 12, 24],
     **kwargs,

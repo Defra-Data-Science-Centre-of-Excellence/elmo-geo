@@ -6,7 +6,14 @@ from pathlib import Path
 from elmo_geo import register
 from elmo_geo.utils.log import LOG
 
-from .catchment_based_approach import wetland_vision_parcels, wetland_vision_raw
+from .boundary import (
+    boundary_adjacencies,
+    boundary_segments,
+)
+from .catchment_based_approach import (
+    wetland_vision_parcels,
+    wetland_vision_raw,
+)
 from .cec_soilscapes import (
     cec_soilscapes_habitats_parcels,
     cec_soilscapes_parcels,
@@ -30,9 +37,7 @@ from .defra_national_character_areas import (
     nca_raw,
 )
 from .defra_priority_habitats import (
-    defra_grassland_proximity_parcels,
     defra_habitat_area_parcels,
-    defra_heathland_proximity_parcels,
     defra_priority_habitat_england_raw,
     defra_priority_habitat_parcels,
 )
@@ -59,9 +64,10 @@ from .fc_woodland_sensitivity import (
     woodland_creation_sensitivity_var3_raw,
 )
 from .fcp_habitat_classification import (
+    evast_habitat_management_mapping_raw,
     evast_habitat_mapping_raw,
     fcp_habitat_creation_type_parcel,
-    fcp_habitat_management_type_parcel,
+    fcp_is_phi_parcel,
 )
 from .fr_esc_m3_trees import (
     esc_carbon_parcels,
@@ -106,6 +112,10 @@ from .os import (
     os_bng_raw,
     os_ngd_raw,
 )
+from .osm import (
+    osm_raw,
+    osm_tidy,
+)
 from .peat import (
     peaty_soils_parcels,
     peaty_soils_raw,
@@ -131,6 +141,11 @@ from .protected_landscapes import (
     protected_landscapes_parcels,
     protected_landscapes_tidy,
 )
+from .rpa_land_cover import (
+    rpa_land_cover_codes_raw,
+    rpa_land_cover_parcels,
+    rpa_land_cover_parcels_raw,
+)
 from .rpa_reference_parcels import (
     reference_parcels,
     reference_parcels_raw,
@@ -140,6 +155,8 @@ from .rpa_reference_parcels import (
 catalogue = [
     alc_parcels,
     alc_raw,
+    boundary_adjacencies,
+    boundary_segments,
     bua_parcels,
     bua_raw,
     cec_soilscapes_habitats_parcels,
@@ -151,9 +168,7 @@ catalogue = [
     country_raw,
     cua_parcels,
     cua_raw,
-    defra_grassland_proximity_parcels,
     defra_habitat_area_parcels,
-    defra_heathland_proximity_parcels,
     defra_priority_habitat_england_raw,
     defra_priority_habitat_parcels,
     esc_m3_geo,
@@ -161,12 +176,13 @@ catalogue = [
     esc_carbon_parcels,
     esc_species_parcels,
     esc_tree_suitability,
+    evast_habitat_management_mapping_raw,
     evast_habitat_mapping_raw,
     ewco_nature_recovery_priority_habitat_parcels,
     ewco_nature_recovery_priority_habitat_raw,
     ewco_nature_recovery_priority_habitat,
     fcp_habitat_creation_type_parcel,
-    fcp_habitat_management_type_parcel,
+    fcp_is_phi_parcel,
     flood_risk_areas_parcels,
     flood_risk_areas_raw,
     is_upland_parcels,
@@ -199,6 +215,8 @@ catalogue = [
     os_bng_parcels,
     os_bng_raw,
     os_ngd_raw,
+    osm_raw,
+    osm_tidy,
     peaty_soils_parcels,
     peaty_soils_raw,
     protected_areas_parcels,
@@ -209,6 +227,9 @@ catalogue = [
     reference_parcels,
     region_parcels,
     region_raw,
+    rpa_land_cover_codes_raw,
+    rpa_land_cover_parcels,
+    rpa_land_cover_parcels_raw,
     rpa_hedges_raw,  # snapshot
     sfi_agroforestry_parcels,
     sfi_agroforestry_raw,
