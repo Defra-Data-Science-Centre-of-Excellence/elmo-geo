@@ -115,7 +115,7 @@ class EwcoAmmoniaEmmesionsRaw(DataFrameModel):
     """Model describing the EWCO NfC Ammonia Emissions Capture for SSSI Protection dataset.
 
     Attributes:
-        status: features assigned as ‘Meets air quality criteria’
+        status: features assigned as 'Meets air quality criteria'
         pnts: point value awarded to applications Attribution statement
         geometry: polygons
     """
@@ -159,7 +159,7 @@ class EwcoFloodRiskRaw(DataFrameModel):
 
     Attributes:
         LANDSCAPE: the targeting category: Opportunity for Floodplain Woodland / Opportunity for Wider Catchment Woodland
-        AreaHa: ‘AreaHa’ – Area of the feature in hectares
+        AreaHa: 'AreaHa' – Area of the feature in hectares
         geometry: polygons
     """
 
@@ -190,7 +190,7 @@ ewco_flood_risk_parcels = DerivedDataset(
 )
 """Spatial data supporting appropriately located and designed woodland creation to help reduce flood risk by slowing
 flood flows and increasing the retention and infiltration of water on the land.
-The layer shows where the proportion of ‘Opportunity for Floodplain’ woodland creation and ‘Opportunity for Wider Catchment’"""
+The layer shows where the proportion of 'Opportunity for Floodplain' woodland creation and 'Opportunity for Wider Catchment'"""
 
 
 # EWCO Red Squirrels
@@ -198,7 +198,7 @@ class EwcoRedSquirrelRaw(DataFrameModel):
     """Model describing the EWCO priority species red squirrel dataset.
 
     Attributes:
-        sitename: name of the red squirrel reserve/stronghold and it’s buffer
+        sitename: name of the red squirrel reserve/stronghold and it's buffer
         cat: title of the targeting used for this feature
         cswcm_pnts: scoring values relating to Countryside Stewardship schemes
         ewco_val:EWCO £ value the additional contribution provides per Ha if awarded
@@ -233,7 +233,7 @@ ewco_red_squirrel_parcels = DerivedDataset(
     model=EwcoParcels,
 )
 """Spatial data supporting the England Woodland Creation Offer (EWCO) additional contribution targeting for Nature Recovery.
-This layer is identical to that titled ‘CS WCM Biodiversity - Priority Species - Red Squirrel """
+This layer is identical to that titled 'CS WCM Biodiversity - Priority Species - Red Squirrel'"""
 
 
 # EWCO NfC Social
@@ -241,7 +241,7 @@ class EwcoNfcSocialRaw(DataFrameModel):
     """Model describing the EWCO NfC Social dataset.
 
     Attributes:
-    status: features assigned as ‘Meets social criteria’
+    status: features assigned as 'Meets social criteria'
     geometry: polygons
     """
 
@@ -271,7 +271,7 @@ ewco_nfc_social_parcels = DerivedDataset(
 )
 
 """Spatial data supporting the England Woodland Creation Offer (EWCO)
-‘Close to settlements’ Additional Contribution. This contribution is
+'Close to settlements' Additional Contribution. This contribution is
 available where woodland creation will provide social and environmental benefits by being close to people. """
 
 
@@ -319,7 +319,7 @@ class EwcoPriorityHabitatNetworkRaw(DataFrameModel):
     """Model describing the EWCO Biodiversity Priority Habitat Network dataset.
 
     Attributes:
-    cat: ‘Higher’ and ‘Lower’ priority area for woodland network expansion
+    cat: 'Higher' and 'Lower' priority area for woodland network expansion
     csht_pnts: base scoring value for Countryside Stewardship Higher Tier
     cswc_mpnts: scoring value per Ha for Countryside Stewardship woodland creation
     ewco_val: £ value the additional contribution provides per Ha if awarded
@@ -355,7 +355,7 @@ ewco_priority_habitat_network_parcels = DerivedDataset(
 )
 
 """Spatial data supporting the England Woodland Creation Offer (EWCO) additional contribution targeting for Nature Recovery, this layer
-indicates the proportion of ‘High Spatial Priority’, ‘Higher’ and ‘Lower’ priority areas for woodland network expansion. 
+indicates the proportion of 'High Spatial Priority', 'Higher' and 'Lower' priority areas for woodland network expansion. 
 """
 
 
