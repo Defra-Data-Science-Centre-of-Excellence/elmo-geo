@@ -8,7 +8,7 @@ from pyspark.sql import functions as F
 from elmo_geo.io.file import auto_repartition
 from elmo_geo.st.join import sjoin
 from elmo_geo.utils.types import PandasDataFrame, SparkDataFrame
-
+from elmo_geo.utils.misc import info_sdf
 from .etl import Dataset
 
 
@@ -113,9 +113,11 @@ def sjoin_parcels(
     sdf_feature = feature if isinstance(feature, SparkDataFrame) else feature.sdf()
     sdf_parcels = parcels if isinstance(parcels, SparkDataFrame) else parcels.sdf()
     return (
-        sdf_feature.transform(auto_repartition)
+        sdf_feature
         .transform(fn_pre)
-        .transform(lambda sdf: sjoin(sdf_parcels.transform(auto_repartition), sdf, **kwargs))
+        .transform(info_sdf, msg="pre")
+        .transform(lambda sdf: sjoin(sdf_parcels, sdf, **kwargs))
+        .transform(info_sdf, geometry_column="geometry_right", msg="sjoin")
         .selectExpr(
             *cols,
             "ST_AsBinary(geometry_left) AS geometry_left",
@@ -128,6 +130,7 @@ def sjoin_parcels(
             "ST_GeomFromWKB(geometry_right) AS geometry_right",
         )
         .transform(fn_post)
+        .transform(info_sdf, geometry_column="geometry_right", msg="post")
     )
 
 
@@ -141,7 +144,13 @@ def sjoin_parcel_proportion(
     expr = f"ST_Intersection(geometry_left, {expr})"
     expr = f"ST_Area({expr}) / ST_Area(geometry_left)"
     expr = f"LEAST(GREATEST({expr}, 0), 1)"
-    return sjoin_parcels(parcel, features, **kwargs).withColumn("proportion", F.expr(expr)).drop("geometry_left", "geometry_right").toPandas()
+    return (
+        sjoin_parcels(parcel, features, **kwargs)
+        .withColumn("proportion", F.expr(expr))
+        .transform(info_sdf, geometry_column="geometry_right", msg="proportion")
+        .drop("geometry_left", "geometry_right")
+        .toPandas()
+    )
 
 
 def sjoin_boundary_proportion(
@@ -156,13 +165,15 @@ def sjoin_boundary_proportion(
     """
     sdf_segments = boundary_segments if isinstance(boundary_segments, SparkDataFrame) else boundary_segments.sdf()
 
-    expr = "ST_Buffer(geometry_right, {})"  # This feels nicer, I don't know what happens with geometry collections.
+    expr = "ST_Buffer(geometry_right, {})"
     expr = f"ST_Intersection(geometry, {expr})"
     expr = f"ST_Length({expr}) / ST_Length(geometry)"
     expr = f"LEAST(GREATEST({expr}, 0), 1)"
     return (
         sjoin_parcels(parcel, features, distance=max(buffers), **kwargs)
         .join(sdf_segments, on="id_parcel")
+        .transform(info_sdf, geometry_column="geometry_right", msg="segments")
         .withColumns({f"proportion_{buf}m": F.expr(expr.format(buf)) for buf in buffers})
+        .transform(info_sdf, geometry_column="geometry_right", msg="proportion")
         .drop("geometry", "geometry_left", "geometry_right")
     )
