@@ -202,8 +202,7 @@ ewco_flood_risk_parcels = DerivedDataset(
 )
 """Spatial data supporting appropriately located and designed woodland creation to help reduce flood risk by slowing
 flood flows and increasing the retention and infiltration of water on the land.
-The layer shows where there is ‘Opportunity for Floodplain’ woodland creation and ‘Opportunity for Wider Catchment’
-woodland creation."""
+The layer shows where the proportion of ‘Opportunity for Floodplain’ woodland creation and ‘Opportunity for Wider Catchment’"""
 
 
 # EWCO Red Squirrels
@@ -212,7 +211,7 @@ class EwcoRedSquirrelRaw(DataFrameModel):
 
     Attributes:
         sitename: name of the red squirrel reserve/stronghold and it’s buffer
-        cat: title of the targeting use for this feature
+        cat: title of the targeting used for this feature
         cswcm_pnts: scoring values relating to Countryside Stewardship schemes
         ewco_val:EWCO £ value the additional contribution provides per Ha if awarded
         geometry: polygons
@@ -415,8 +414,8 @@ ewco_priority_habitat_network_parcels = DerivedDataset(
     model=EwcoPriorityHabitatNetworkParcels,
 )
 
-"""Spatial data supporting the England Woodland Creation Offer (EWCO) additional contribution targeting for Nature Recovery, where the layer
-indicates ‘High Spatial Priority’. ‘Higher’ and ‘Lower’ priority areas for woodland network expansion. 
+"""Spatial data supporting the England Woodland Creation Offer (EWCO) additional contribution targeting for Nature Recovery, this layer
+indicates the proportion of ‘High Spatial Priority’, ‘Higher’ and ‘Lower’ priority areas for woodland network expansion. 
 """
 
 
