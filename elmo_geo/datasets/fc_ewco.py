@@ -470,3 +470,55 @@ ewco_waterquality_parcels = DerivedDataset(
 """Spatial data supporting appropriately located and designed woodland creation to help reduce pollutants through land use
 change that reduces fertilizer application or by creating woodland that intercepts pollution and sediment before it reaches watercourses.
 """
+
+#Woodland Sensativity
+class EwcoSensativityRaw(DataFrameModel):
+    """Model describing the EWCO woodland sensativity dataset.
+
+    Attributes:
+    sensitivity: The sensitivity to woodland creation level the land has been assigned.
+    areaha: the area in hectares of the polygon.
+    geometry: polygons
+    """
+
+    sensitivity: str = Field()
+    areaha: float = Field()
+    geometry: Geometry(crs=SRID) = Field()
+
+class EwcoSensativityParcels(DataFrameModel):
+    """Model describing the EWCO woodland sensativity dataset joined with Rural Payment Agency parcel dataset
+
+    Attributes:
+    id_parcel: 11 character RPA reference parcel ID (including the sheet ID) e.g. `SE12263419`.
+    proportion: The proportion of the parcel that intersects with woodland sensativity areas.
+    """
+
+    id_parcel: str = Field(unique=True)
+    proportion: float = Field(ge=0, le=1)
+
+
+ewco_sensativity_raw = SourceDataset(
+    name="ewco_sensativity_raw",
+    level0="bronze",
+    level1="forestry_commission",
+    restricted=False,
+    model=EwcoSensativityRaw,
+    source_path="/dbfs/mnt/lab/unrestricted/elm_data/forestry_commission/woodland_creation_full_sensitivity/England_Woodland_Creation_Full_Sensitivity_Map_v4.0.shp",
+)
+
+
+ewco_sensativity_parcels = DerivedDataset(
+    name="ewco_sensativity_parcels",
+    level0="silver",
+    level1="forestry_commission",
+    restricted=False,
+    func=sjoin_parcel_proportion,
+    dependencies=[reference_parcels, ewco_sensativity_raw],
+    model=EwcoSensativityParcels,
+    )
+
+"""The Forestry Commission has developed a series of sensitivity maps, based on nationally available and consistent datasets, to indicate where there are likely to be fewer sensitivities to woodland creation.
+These maps will help to indicate to landowners whether there is likely to be potential to establish new woodland on their land, and where there may be sensitivities that would preclude woodland creation.
+"""
+
+
