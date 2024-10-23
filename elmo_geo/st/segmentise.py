@@ -1,7 +1,3 @@
-import geopandas as gpd
-from pyspark.sql import DataFrame as SparkDataFrame
-from pyspark.sql import functions as F
-from pyspark.sql import types as T
 from shapely import LineString, MultiLineString, MultiPoint, Point, segmentize
 
 
@@ -63,25 +59,3 @@ def segmentise_with_tolerance(geometry: LineString, tolerance: float = 10, lengt
     indices = sorted(list(set(indices)))
     slices = zip(indices[:-1], indices[1:])
     return MultiLineString([original.geoms[i : j + 1].geoms for i, j in slices])
-
-
-def st_udf(sdf: SparkDataFrame, fn: callable, geometry_column: str = "geometry"):
-    """Applies a shapely geometry function to a SparkDataFrame.
-    # Example using shapely.segmentize
-    ```py
-    (sdf
-        .withColumn("geometry", F.expr("ST_Boundary(geometry)"))
-        .transform(st_udf, lambda g: shapely.segmentize(g, 100))
-    )
-    ```
-    """
-
-    @F.pandas_udf(T.BinaryType())
-    def _udf(col):
-        return gpd.GeoSeries.from_wkb(col).apply(fn).to_wkb()
-
-    return (
-        sdf.withColumn(geometry_column, F.expr(f"ST_AsBinary({geometry_column})"))
-        .withColumn(geometry_column, _udf(geometry_column))
-        .withColumn(geometry_column, F.expr(f"ST_GeomFromWKB({geometry_column})"))
-    )
