@@ -23,7 +23,7 @@ _join_parcels = partial(sjoin_parcel_proportion, columns=["spatial_priority"])
 
 
 class EwcoParcels(DataFrameModel):
-   """Model describing the parcel-level dataset.
+    """Model describing the parcel-level dataset.
 
     Attributes:
         id_parcel: 11 character RPA reference parcel ID (including the sheet ID) e.g. `SE12263419`.
@@ -31,7 +31,7 @@ class EwcoParcels(DataFrameModel):
     """
 
     id_parcel: str = Field(unique=True)
-    proportion: float = Field(ge=0, le=1) 
+    proportion: float = Field(ge=0, le=1)
 
 
 class EwcoClean(DataFrameModel):
