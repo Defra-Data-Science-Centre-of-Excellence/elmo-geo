@@ -57,8 +57,8 @@ from .fc_ewco import (
     ewco_priority_habitat_network_raw,
     ewco_red_squirrel_parcels,
     ewco_red_squirrel_raw,
-    ewco_sensativity_raw,
     ewco_sensativity_parcels,
+    ewco_sensativity_raw,
     ewco_waterquality_parcels,
     ewco_waterquality_raw,
 )
