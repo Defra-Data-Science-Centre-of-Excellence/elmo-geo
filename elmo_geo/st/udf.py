@@ -31,7 +31,7 @@ def st_udf(
     )
 
 
-def dump_to_list(gs: gpd.GeoSeries) -> gpd.GeoSeries:
+def explode_geometries(gs: gpd.GeoSeries) -> gpd.GeoSeries:
     return gs.explode().wkb.tolist()
 
 
@@ -47,7 +47,7 @@ def st_clean(sdf: SparkDataFrame, column: str = "geometry") -> SparkDataFrame:
 def st_explode(sdf: SparkDataFrame) -> SparkDataFrame:
     return (
         sdf.withColumn("geometry", F.expr("ST_AsBinary(geometry)"))
-        .withColumn("geometry", dump_to_list("geometry"))
+        .withColumn("geometry", explode_geometries("geometry"))
         .withColumn("geometry", F.explode("geometry"))
         .withColumn("geometry", F.expr("ST_GeomFromWKB(geometry)"))
     )

@@ -63,8 +63,8 @@ from pandera.engines.geopandas_engine import Geometry
 
 from elmo_geo.etl import Dataset, DerivedDataset, SourceGlobDataset
 from elmo_geo.etl.transformations import sjoin_parcel_proportion, sjoin_parcels
-from elmo_geo.st.geometry import load_geometry
 from elmo_geo.st.join import sjoin
+from elmo_geo.st.udf import st_clean
 from elmo_geo.utils.types import PandasDataFrame, SparkDataFrame
 
 from .os import os_bng_raw
@@ -272,14 +272,14 @@ def _sjoin_bng_to_no_peat_parcel(
     sdf_peat = (
         reference_parcels.sdf()
         .select("id_parcel", "geometry")
-        .transform(sjoin_parcels, peaty_soils_raw.sdf().withColumn("geometry", load_geometry(encoding_fn="")))
+        .transform(sjoin_parcels, peaty_soils_raw.sdf().transform(st_clean))
         .selectExpr(
             "id_parcel",
             "ST_AsBinary(geometry_left) as geometry_left",
             "ST_AsBinary(geometry_right) as geometry_right",
         )
         .mapInPandas(_udf_difference, schema="id_parcel:string,geometry:binary")
-        .withColumn("geometry", load_geometry())
+        .transform(st_clean)
         .withColumn("nopeat_area", F.expr("ST_Area(geometry)/10000"))
     )
 

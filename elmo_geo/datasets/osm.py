@@ -17,7 +17,7 @@ from pandera.engines.geopandas_engine import Geometry
 from pyspark.sql import functions as F
 
 from elmo_geo.etl import SRID, Dataset, DerivedDataset, SourceGlobDataset
-from elmo_geo.st.geometry import load_geometry
+from elmo_geo.st.udf import st_clean
 from elmo_geo.utils.types import PandasDataFrame, SparkDataFrame
 
 
@@ -67,7 +67,7 @@ def _osm_transform(dataset: Dataset) -> SparkDataFrame:
         dataset.sdf()
         .withColumn("geometry", F.expr("ST_AsBinary(geometry)"))
         .mapInPandas(_cols_to_json, "fid:string,tags:string,geometry:binary")
-        .withColumn("geometry", load_geometry(subdivide=True))
+        .transform(st_clean)
     )
 
 

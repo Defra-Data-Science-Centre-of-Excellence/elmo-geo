@@ -12,7 +12,7 @@ from pyspark.errors import AnalysisException
 from pyspark.serializers import AutoBatchedSerializer, PickleSerializer
 from pyspark.sql import functions as F
 
-from elmo_geo.st.geometry import gpd_clean, load_geometry
+from elmo_geo.st.udf import st_clean
 from elmo_geo.utils.dbr import spark
 from elmo_geo.utils.log import LOG
 from elmo_geo.utils.misc import dbfs
@@ -111,7 +111,7 @@ def read_file(source_path: str, is_geo: bool, layer: int | str | None = None, cl
             raise UnknownFileExtension()
     df = to_sdf(df) if is_geo else spark.createDataFrame(df)
     if is_geo and clean_geometry:
-        df = df.withColumn("geometry", load_geometry(encoding_fn="", subdivide=True)).transform(gpd_clean)
+        df = df.transform(st_clean)
     return df
 
 

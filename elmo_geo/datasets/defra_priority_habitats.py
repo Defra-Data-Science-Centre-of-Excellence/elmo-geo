@@ -13,8 +13,8 @@ from pyspark.sql import functions as F
 
 from elmo_geo.etl import SRID, Dataset, DerivedDataset, SourceDataset
 from elmo_geo.etl.transformations import sjoin_parcel_proportion
-from elmo_geo.st.geometry import load_geometry
 from elmo_geo.st.join import sjoin
+from elmo_geo.st.udf import st_clean
 from elmo_geo.utils.types import SparkDataFrame
 
 from .rpa_reference_parcels import reference_parcels
@@ -116,12 +116,7 @@ def _habitat_area_within_distances(
     distances: list[int] = [1_000, 2_000, 3_000, 5_000],
 ) -> SparkDataFrame:
     """Calculates the area of priority habitat within each threshold distance to parcels."""
-    sdf_phi = (
-        priority_habitats_raw.sdf()
-        .withColumn("geometry", load_geometry(encoding_fn=""))
-        .withColumn("geometry", F.expr("ST_SubDivideExplode(geometry, 256)"))
-        .transform(split_mainhabs)
-    )
+    sdf_phi = priority_habitats_raw.sdf().transform(st_clean).withColumn("geometry", F.expr("ST_SubDivideExplode(geometry, 256)")).transform(split_mainhabs)
 
     def union(sdf1: SparkDataFrame, sdf2: SparkDataFrame) -> SparkDataFrame:
         return sdf1.unionByName(sdf2, allowMissingColumns=False)
