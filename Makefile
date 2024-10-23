@@ -19,7 +19,7 @@ fmt:
 	ruff format .
 
 freeze:
-	pip-compile -qU --all-extras --no-strip-extras
+	pip-compile -q --all-extras --no-strip-extras
 
 verify_gh:
 	ruff check .
