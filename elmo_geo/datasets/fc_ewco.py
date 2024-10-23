@@ -481,7 +481,7 @@ class EwcoSensativityRaw(DataFrameModel):
     geometry: polygons
     """
 
-    sensitivity: str = Field()
+    sensitivit: str = Field()
     areaha: float = Field()
     geometry: Geometry(crs=SRID) = Field()
 
