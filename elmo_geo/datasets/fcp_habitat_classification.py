@@ -281,15 +281,15 @@ def _assign_parcel_habitat_types_from_candidates(
             "action_habitat",
             F.expr(
                 f"""
-                                                    CASE 
-                                                    WHEN ((habitat_name IN ('{default_acid_gr_habitats}')) AND is_upland) 
-                                                    THEN 'upland_acid_gr' 
-                                                    WHEN ((habitat_name IN ('{default_acid_gr_habitats}')) AND (NOT is_upland))
-                                                    THEN 'lowland_acid_gr'
-                                                    WHEN ((habitat_name NOT IN ('{default_acid_gr_habitats}')) AND is_upland) 
-                                                    THEN 'upland_meadow'
-                                                    ELSE 'lowland_meadow'
-                                                    END"""
+                CASE 
+                WHEN ((habitat_name IN ('{default_acid_gr_habitats}')) AND is_upland) 
+                THEN 'upland_acid_gr' 
+                WHEN ((habitat_name IN ('{default_acid_gr_habitats}')) AND (NOT is_upland))
+                THEN 'lowland_acid_gr'
+                WHEN ( ((habitat_name NOT IN ('{default_acid_gr_habitats}')) OR (habitat_name IS NULL))  AND is_upland)
+                THEN 'upland_meadow'
+                ELSE 'lowland_meadow'
+                END"""
             ),
         )
         .withColumn("rank_default", F.row_number().over(window))
@@ -315,9 +315,12 @@ def _assign_parcel_habitat_types_from_candidates(
         .select("id_parcel", "unit", "action_group", "action_habitat")
     )
 
+    # Checks
     msg = "Unexpected parcel habitat assignments occuring."
     assert sdf.filter("( NOT matches_action_habitat) AND (NOT matches_soilscape_habitat)  AND (NOT is_default)").count() == 0, msg
     assert sdf.filter("(id_parcel is NULL) OR (action_group is NULL) OR (action_habitat is NULL)").display()
+    assert sdf.filter("(rank_final=1) AND (is_upland) AND (action_habitat like '%lowland%')").count()==0, "Unexpected lowland habitat assignment"
+    assert sdf.filter("(rank_final=1) AND (NOT is_upland) AND (action_habitat like '%upland%')").count()==0, "Unexpected upland habitat assignment"
     return sdf
 
 
