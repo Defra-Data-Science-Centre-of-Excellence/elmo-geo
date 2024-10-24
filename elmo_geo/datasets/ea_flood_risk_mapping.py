@@ -25,12 +25,13 @@ from elmo_geo.etl.transformations import sjoin_parcel_proportion
 
 from .rpa_reference_parcels import reference_parcels
 
+from functools import partial
 
 # RoFRS
 class EARoFRSRaw(DataFrameModel):
     """Model for the Risk of Flooding from Rivers and Sea (RoFRS) dataset
     Attributes:
-      prob_4band: risk of flooding split into 4 likelihood categories high(>3.3% AEP),
+      prob_4band: risk of flooding split into 4 likelihood categories high(>3.3% AEP (annual exceedance probability)),
                   medium(between 3.3% and 1% AEP), low(between 1% and 0.1% AEP), very low(<0.1% AEP)
       suitabilit: an indication of what geographic scale the data is suitable for
       pub_date: date model extent was published
@@ -71,11 +72,12 @@ ea_rofrs_parcels = DerivedDataset(
     level0="silver",
     level1="ea",
     restricted=False,
-    func=sjoin_parcel_proportion,
+    func=sjoin_parcel_proportion,columns = ['prob_4band'],
     dependencies=[reference_parcels, ea_rofrs_raw],
     model=EARoFRSParcels,
 )
-
+"""Indicates the proportion of each parcel intersected by the Risk of Flooding from Rivers and Sea dataset. Risk may be low or high
+"""
 
 # Flood Zone 3
 class EAFZ3Raw(DataFrameModel):
@@ -123,3 +125,5 @@ ea_fz3_parcels = DerivedDataset(
     dependencies=[reference_parcels, ea_fz3_raw],
     model=EAFZ3Parcels,
 )
+"""Indicates the proportion of each parcel intersected by the flood zone 3 dataset.
+"""
