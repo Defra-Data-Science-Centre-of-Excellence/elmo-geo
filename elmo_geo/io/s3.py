@@ -95,7 +95,7 @@ def sync_datasets(catalogue):
         path = "data/ELM-Project/" + dataset.path.split("ELM-Project/")[1]
         path = path.replace("/silver/", "/gold/")  # TODO: Issue #320
         path_latest = "-".join(path.split("-")[:-2]) + "-latest.parquet"  # TODO: untested
-        if not dataset.is_geo and isinstance(dataset, DerivedDataset) and dataset.is_fresh and path in s3_files:
+        if not dataset.is_geo and isinstance(dataset, DerivedDataset) and dataset.is_fresh and path not in s3_files:
             df = dataset.pdf()
             s3.write_file(df, path)
             s3.copy_obj(path, path_latest)
