@@ -147,6 +147,7 @@ def _get_parcel_candidate_habitats(
     sdf_habitat_lu = (
         evast_habitat_mapping_raw.sdf()
         .filter(F.expr("source = 'soilscapes'"))
+        .withColumn("action_group", F.expr("REPLACE(action_group, 'Create ', '')"))
         .selectExpr("action_group", "action_habitat", "is_upland as is_upland_lu", "habitat_code", "soilscape_habitat_code")
     )
 
@@ -192,6 +193,7 @@ def _get_phi_area_with_soilscapes_habitats(
         evast_habitat_mapping_raw.sdf()
         .withColumn("habitat_name", _clean_habitat_name("habitat_name"))
         .filter(F.expr("source = 'phi'"))
+        .withColumn("action_group", F.expr("REPLACE(action_group, 'Create ', '')"))
         .select("action_group", "action_habitat", "habitat_name", "source", "soilscape_habitat_code")
         .dropDuplicates()
     )
@@ -274,7 +276,7 @@ def _assign_parcel_habitat_types_from_candidates(
 
     window = Window.partitionBy("id_parcel", "action_group").orderBy(F.col("distance_threshold").asc(), F.col("area").desc())
     sdf_defaults = (
-        sdf_candidates.filter("action_group='Create SRG'")
+        sdf_candidates.filter("action_group='SRG'")
         # join on id_parcel so non-SRG PHI habitats get included
         .join(sdf_phi_lu.select("id_parcel", "habitat_name", "distance_threshold", "area"), on=["id_parcel"], how="left")
         .withColumn(
@@ -312,19 +314,19 @@ def _assign_parcel_habitat_types_from_candidates(
         sdf_assigned.unionByName(sdf_defaults, allowMissingColumns=True)
         .withColumn("rank", F.row_number().over(window))
         .filter("rank=1")
-        .select("id_parcel", "unit", "action_group", "action_habitat")
     )
 
     # Checks
     msg = "Unexpected parcel habitat assignments occuring."
-    assert sdf.filter("( NOT matches_action_habitat) AND (NOT matches_soilscape_habitat)  AND (NOT is_default)").count() == 0, msg
+    assert sdf.filter("(NOT matches_action_habitat) AND (NOT matches_soilscape_habitat)  AND (NOT is_default)").count() == 0, msg
     assert sdf.filter("(id_parcel is NULL) OR (action_group is NULL) OR (action_habitat is NULL)").count() == 0
-    assert sdf.filter("(rank_final=1) AND (is_upland) AND (action_habitat like '%lowland%')").count() == 0, "Unexpected lowland habitat assignment"
-    assert sdf.filter("(rank_final=1) AND (NOT is_upland) AND (action_habitat like '%upland%')").count() == 0, "Unexpected upland habitat assignment"
-    assert sdf.filter("(rank_final=1) AND (is_default) AND (action_group != 'Create SRG')").count() == 0, "Unexpected default habitat assignment"
-    assert sdf.filter("(action_habitat_phi IS NULL) AND (rank_final=1) AND (NOT is_default)").count() == 0, "Unexpected null phi habitat"
+    assert sdf.filter("(is_upland) AND (action_habitat like '%lowland%')").count() == 0, "Unexpected lowland habitat assignment"
+    assert sdf.filter("(NOT is_upland) AND (action_habitat like '%upland%')").count() == 0, "Unexpected upland habitat assignment"
+    assert sdf.filter("(is_default) AND (action_group != 'SRG')").count() == 0, "Unexpected default habitat assignment"
+    assert sdf.filter("is_default").count()>0, "Zero defaul assignment habitats."
+    assert sdf.filter("(action_habitat_phi IS NULL) AND (NOT is_default)").count() == 0, "Unexpected null phi habitat"
 
-    return sdf
+    return sdf.select("id_parcel", "unit", "action_group", "action_habitat")
 
 
 def _habitat_creation_classification(
@@ -376,14 +378,16 @@ class HabitatCreationTypeParcelModel(DataFrameModel):
 
     Attributes:
         id_parcel: The parcel ID.
-        action_group: The type of habitat creation action. Either 'Create Wetland',
-            'Create SRG', or 'Create Heathland'.
+        unit: SoilScapes soil units the habitat assignment is based on.
+        action_group: The type of habitat creation action. Either 'Wetland',
+            'SRG', or 'Heathland'.
         action_habitat: The specific habitat type assigned to this parcel. This indicates
             what type of habitat is created on the parcel under the habitat creation action.
     """
 
     id_parcel: str = Field()
-    action_group: str = Field(coerce=True, isin=["Create Heathland", "Create Wetland", "Create SRG"])
+    unit: float = Field(isin=set(range(1, 32)).difference([29]))
+    action_group: str = Field(coerce=True, isin=["Heathland", "Wetland", "SRG"])
     action_habitat: str = Field(
         coerce=True,
         isin=[
