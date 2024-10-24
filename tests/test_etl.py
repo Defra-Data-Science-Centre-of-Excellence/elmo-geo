@@ -135,11 +135,11 @@ def test_all_datasets_path_most_recent():
 @pytest.mark.dbr
 def test_source_dataset_geometry_cleaning():
     """Refreshes the test source geodataset and checks that geometries have been cleaned."""
-    gdf_raw = gpd.read_file(test_source_geodataset.source_path)
-    test_source_dataset.refresh()
+    gdf_raw = gpd.read_file(test_source_geodataset.source_path).set_index("id")
+    test_source_geodataset.refresh()
 
-    gs_fresh = test_source_dataset.gdf().geometry
+    gs_fresh = test_source_geodataset.gdf().set_index("id").geometry
     gs_raw_cleaned = clean_geometries(gdf_raw)
 
     assert gs_raw_cleaned.is_valid.all()
-    assert gs_raw_cleaned.equals(gs_fresh.geometry)
+    assert gs_raw_cleaned.geom_equals(gs_fresh.geometry, align=True).all()
