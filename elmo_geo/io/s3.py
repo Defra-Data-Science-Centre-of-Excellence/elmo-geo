@@ -80,10 +80,7 @@ class S3Handler:
     def copy_obj(self, key_from: str, key_to: str):
         """Rather than writing twice, you can copy the object."""
         self.s3_client.copy_object(
-            CopySource={
-                'Bucket': self.bucket,
-                'Key': key_from
-            },
+            CopySource={"Bucket": self.bucket, "Key": key_from},
             Bucket=self.bucket,
             Key=key_to,
         )
@@ -96,6 +93,7 @@ def sync_datasets(catalogue):
 
     for dataset in catalogue:
         path = "data/ELM-Project/" + dataset.path.split("ELM-Project/")[1]
+        path = path.replace("/silver/", "/gold/")  # TODO: Issue #320
         path_latest = "-".join(path.split("-")[:-2]) + "-latest.parquet"  # TODO: untested
         if not dataset.is_geo and isinstance(dataset, DerivedDataset) and dataset.is_fresh and path in s3_files:
             df = dataset.pdf()
