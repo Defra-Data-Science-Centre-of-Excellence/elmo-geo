@@ -3,6 +3,7 @@ from datetime import datetime as dt
 from glob import iglob
 from importlib import import_module
 
+import geopandas as gpd
 import numpy as np
 import pandas as pd
 import pytest
@@ -26,7 +27,7 @@ test_source_dataset = SourceDataset(
 """
 
 test_source_geodataset = SourceDataset(
-    name="test_source_dataset",
+    name="test_source_geodataset",
     level0="test",
     level1="test",
     restricted=False,
@@ -128,3 +129,14 @@ def test_all_datasets_path_most_recent():
                 fails.append(dataset)
     msg = "\n".join(d.name for d in fails)
     assert not fails, f"Not all datasets loading most recent files. Failing datasets:\n{msg}"
+
+@pytest.mark.dbr
+def test_source_dataset_geometry_cleaning():
+    """Refreshes the test source geodataset and checks that geometries have been cleaned.
+    """
+    gdf_raw = gpd.read_file(test_source_geodataset.source_path)
+    test_source_dataset.refresh()
+    gdf_clean = test_source_dataset.gdf()
+    assert (gdf_raw.geometry
+            .force_2d().simplify(1).set_precision(1).remove_repeated_points(1).make_valid()
+            .equals(gdf_clean.geometry))
