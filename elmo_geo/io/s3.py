@@ -5,6 +5,7 @@ import dotenv
 import pandas as pd
 
 from elmo_geo import LOG
+from elmo_geo.etl import DerivedDataset
 
 
 class S3Handler:
@@ -75,3 +76,28 @@ class S3Handler:
         fn_write(df, buf)
         buf.seek(0)
         self.s3_client.put_object(Bucket=self.bucket, Key=path, Body=buf.getvalue())
+
+    def copy_obj(self, key_from: str, key_to: str):
+        """Rather than writing twice, you can copy the object."""
+        self.s3_client.copy_object(
+            CopySource={
+                'Bucket': self.bucket,
+                'Key': key_from
+            },
+            Bucket=self.bucket,
+            Key=key_to,
+        )
+
+
+def sync_datasets(catalogue):
+    """TODO: Doc String"""
+    s3 = S3Handler()
+    s3_files = s3.list_files("data/ELM-Project/")  # TODO: untested
+
+    for dataset in catalogue:
+        path = "data/ELM-Project/" + dataset.path.split("ELM-Project/")[1]
+        path_latest = "-".join(path.split("-")[:-2]) + "-latest.parquet"  # TODO: untested
+        if not dataset.is_geo and isinstance(dataset, DerivedDataset) and dataset.is_fresh and path in s3_files:
+            df = dataset.pdf()
+            s3.write_file(df, path)
+            s3.copy_obj(path, path_latest)
