@@ -111,7 +111,7 @@ def read_file(source_path: str, is_geo: bool, layer: int | str | None = None, cl
             raise UnknownFileExtension()
     df = to_sdf(df) if is_geo else spark.createDataFrame(df)
     if is_geo and clean_geometry:
-        df = df.transform(st_clean).withColumn("geometry", F.expr("ST_SubDivideExplode(geometry, 256)"))
+        df = df.withColumn("geometry", F.expr("ST_SubDivideExplode(geometry, 256)")).transform(st_clean)
     return df
 
 
