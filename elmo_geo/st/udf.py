@@ -4,13 +4,7 @@ from pyspark.sql import functions as F
 from pyspark.sql import types as T
 
 
-def st_udf(
-    sdf: SparkDataFrame,
-    fn: callable,
-    geometry_column: str = "geometry",
-    return_type: str = T.BinaryType(),
-    geometry_not_geoseries: bool = True
-):
+def st_udf(sdf: SparkDataFrame, fn: callable, geometry_column: str = "geometry", return_type: str = T.BinaryType(), geometry_not_geoseries: bool = True):
     """Applies a shapely geometry function to a SparkDataFrame.
     # Example using shapely.segmentize
     ```py
