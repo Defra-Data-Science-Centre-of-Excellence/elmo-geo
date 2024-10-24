@@ -9,6 +9,7 @@ def st_udf(
     fn: callable,
     geometry_column: str = "geometry",
     return_type: str = T.BinaryType(),
+    geometry_not_geoseries: bool = True
 ):
     """Applies a shapely geometry function to a SparkDataFrame.
     # Example using shapely.segmentize
@@ -21,33 +22,38 @@ def st_udf(
     """
 
     @F.pandas_udf(return_type)
-    def _pudf(col):
-        return gpd.GeoSeries.from_wkb(col).apply(fn).to_wkb()
+    def _udf(col):
+        if geometry_not_geoseries:
+            return gpd.GeoSeries.from_wkb(col).apply(fn).to_wkb()
+        else:
+            return gpd.GeoSeries.from_wkb(col).pipe(fn).to_wkb()
 
     return (
         sdf.withColumn(geometry_column, F.expr(f"ST_AsBinary({geometry_column})"))
-        .withColumn(geometry_column, _pudf(geometry_column))
+        .withColumn(geometry_column, _udf(geometry_column))
         .withColumn(geometry_column, F.expr(f"ST_GeomFromWKB({geometry_column})"))
     )
 
 
-def explode_geometries(gs: gpd.GeoSeries) -> gpd.GeoSeries:
-    return gs.explode().wkb.tolist()
-
-
 def clean_geometries(gs: gpd.GeoSeries) -> gpd.GeoSeries:
-    return gs.force_2d().simplify(1).set_precision(1).remove_repeated_points(1).make_valid().to_wkb()
+    return gs.force_2d().simplify(1).set_precision(1).remove_repeated_points(1).make_valid()
 
 
 def st_clean(sdf: SparkDataFrame, column: str = "geometry") -> SparkDataFrame:
     """Clean a spark geometry field to 1m precision using GeoPandas functions."""
-    return sdf.transform(st_udf, clean_geometries)
+    return sdf.transform(st_udf, clean_geometries, geometry_not_geoseries=False)
+
+
+@F.udf(T.ArrayType(T.BinaryType()))
+def dump_to_list(col):
+    gs = gpd.GeoSeries.from_wkb([col])
+    return gs.explode().wkb.tolist()
 
 
 def st_explode(sdf: SparkDataFrame) -> SparkDataFrame:
     return (
         sdf.withColumn("geometry", F.expr("ST_AsBinary(geometry)"))
-        .withColumn("geometry", explode_geometries("geometry"))
+        .withColumn("geometry", dump_to_list("geometry"))
         .withColumn("geometry", F.explode("geometry"))
         .withColumn("geometry", F.expr("ST_GeomFromWKB(geometry)"))
     )

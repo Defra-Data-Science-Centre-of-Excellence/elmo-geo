@@ -142,7 +142,7 @@ def test_sjoin_boundary_segments():
     sdf_parcels, sdf_features = prep_data(parcel_geoms, feature_geoms)
     sdf_boundaries = (
         sdf_parcels.withColumn("geometry", F.expr("ST_Boundary(geometry)"))
-        .transform(st_udf, lambda g: segmentise_with_tolerance(g))
+        .transform(st_udf, segmentise_with_tolerance)
         .withColumn("geometry", F.expr("EXPLODE(ST_DUMP(geometry))"))
     )
 

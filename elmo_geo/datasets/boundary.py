@@ -52,7 +52,7 @@ def segmentise_boundary(dataset: Dataset) -> SparkDataFrame:
         dataset.sdf()
         .withColumn("geometry", F.expr("ST_Boundary(geometry)"))
         .withColumn("geometry", F.expr("EXPLODE(ST_Dump(geometry))"))
-        .transform(lambda sdf: st_udf(sdf, segmentise_with_tolerance, "geometry"))
+        .transform(st_udf, segmentise_with_tolerance)
         .withColumn("geometry", F.expr("EXPLODE(ST_Dump(geometry))"))
         .selectExpr(
             "monotonically_increasing_id() AS id_boundary",
