@@ -87,7 +87,7 @@ def info_sdf(
         if geometry_column
         else None
     )
-    LOG.debug(
+    LOG.info(
         f"""{msg}
         Wrote Parquet: {f}
         Count: {sdf.count()}
