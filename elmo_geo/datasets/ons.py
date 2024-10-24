@@ -224,7 +224,7 @@ class ITL3Raw(DataFrameModel):
 
 
 itl3_raw = SourceDataset(
-    name="itl2_raw",
+    name="itl3_raw",
     level0="bronze",
     level1="ons",
     model=ITL3Raw,
