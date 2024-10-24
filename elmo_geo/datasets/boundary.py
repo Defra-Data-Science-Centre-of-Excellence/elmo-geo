@@ -34,12 +34,13 @@ from functools import partial
 
 from pandera import DataFrameModel, Field
 from pandera.engines.geopandas_engine import Geometry
+from pyspark.sql import DataFrame as SparkDataFrame
 from pyspark.sql import functions as F
 
 from elmo_geo.etl import SRID, Dataset, DerivedDataset
 from elmo_geo.etl.transformations import sjoin_boundary_proportion
-from elmo_geo.st.segmentise import segmentise_with_tolerance, st_udf
-from elmo_geo.utils.types import SparkDataFrame
+from elmo_geo.st.segmentise import segmentise_with_tolerance
+from elmo_geo.st.udf import st_udf
 
 from .rpa_reference_parcels import reference_parcels
 
@@ -51,7 +52,7 @@ def segmentise_boundary(dataset: Dataset) -> SparkDataFrame:
         dataset.sdf()
         .withColumn("geometry", F.expr("ST_Boundary(geometry)"))
         .withColumn("geometry", F.expr("EXPLODE(ST_Dump(geometry))"))
-        .transform(lambda sdf: st_udf(sdf, segmentise_with_tolerance, "geometry"))
+        .transform(st_udf, segmentise_with_tolerance)
         .withColumn("geometry", F.expr("EXPLODE(ST_Dump(geometry))"))
         .selectExpr(
             "monotonically_increasing_id() AS id_boundary",

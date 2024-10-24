@@ -5,8 +5,8 @@ import pytest
 
 from elmo_geo.etl.transformations import sjoin_boundary_proportion, sjoin_parcel_proportion
 from elmo_geo.io.convert import to_sdf
-from elmo_geo.st.segmentise import segmentise_with_tolerance, st_udf
-from elmo_geo.st.udf import st_union
+from elmo_geo.st.segmentise import segmentise_with_tolerance
+from elmo_geo.st.udf import st_udf, st_union
 from elmo_geo.utils.register import register
 
 
@@ -142,7 +142,7 @@ def test_sjoin_boundary_segments():
     sdf_parcels, sdf_features = prep_data(parcel_geoms, feature_geoms)
     sdf_boundaries = (
         sdf_parcels.withColumn("geometry", F.expr("ST_Boundary(geometry)"))
-        .transform(st_udf, lambda g: segmentise_with_tolerance(g))
+        .transform(st_udf, segmentise_with_tolerance)
         .withColumn("geometry", F.expr("EXPLODE(ST_DUMP(geometry))"))
     )
 
