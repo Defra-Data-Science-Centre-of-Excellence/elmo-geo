@@ -41,6 +41,12 @@ from .defra_priority_habitats import (
     defra_priority_habitat_england_raw,
     defra_priority_habitat_parcels,
 )
+from .ea_flood_risk_mapping import (
+    ea_fz3_parcels,
+    ea_fz3_raw,
+    ea_rofrs_parcels,
+    ea_rofrs_raw,
+)
 from .fc_ewco import (
     ewco_ammonia_emmesions_parcels,
     ewco_ammonia_emmesions_raw,
@@ -188,6 +194,10 @@ catalogue = [
     defra_habitat_area_parcels,
     defra_priority_habitat_england_raw,
     defra_priority_habitat_parcels,
+    ea_rofrs_raw,
+    ea_rofrs_parcels,
+    ea_fz3_raw,
+    ea_fz3_parcels,
     esc_m3_geo,
     esc_m3_raw,
     esc_carbon_parcels,
