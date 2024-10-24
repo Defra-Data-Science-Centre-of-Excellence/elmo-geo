@@ -318,9 +318,12 @@ def _assign_parcel_habitat_types_from_candidates(
     # Checks
     msg = "Unexpected parcel habitat assignments occuring."
     assert sdf.filter("( NOT matches_action_habitat) AND (NOT matches_soilscape_habitat)  AND (NOT is_default)").count() == 0, msg
-    assert sdf.filter("(id_parcel is NULL) OR (action_group is NULL) OR (action_habitat is NULL)").display()
-    assert sdf.filter("(rank_final=1) AND (is_upland) AND (action_habitat like '%lowland%')").count()==0, "Unexpected lowland habitat assignment"
-    assert sdf.filter("(rank_final=1) AND (NOT is_upland) AND (action_habitat like '%upland%')").count()==0, "Unexpected upland habitat assignment"
+    assert sdf.filter("(id_parcel is NULL) OR (action_group is NULL) OR (action_habitat is NULL)").count() == 0
+    assert sdf.filter("(rank_final=1) AND (is_upland) AND (action_habitat like '%lowland%')").count() == 0, "Unexpected lowland habitat assignment"
+    assert sdf.filter("(rank_final=1) AND (NOT is_upland) AND (action_habitat like '%upland%')").count() == 0, "Unexpected upland habitat assignment"
+    assert sdf.filter("(rank_final=1) AND (is_default) AND (action_group != 'Create SRG')").count() == 0, "Unexpected default habitat assignment"
+    assert sdf.filter("(action_habitat_phi IS NULL) AND (rank_final=1) AND (NOT is_default)").count() == 0, "Unexpected null phi habitat"
+
     return sdf
 
 
