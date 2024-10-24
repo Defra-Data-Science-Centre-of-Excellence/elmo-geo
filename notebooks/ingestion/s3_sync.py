@@ -7,10 +7,10 @@
 
 # COMMAND ----------
 
-from elmo_geo.io.s3 import sync_datasets
-from elmo_geo.datasets import catalogue
-
 from elmo_geo import register
+from elmo_geo.datasets import catalogue
+from elmo_geo.io.s3 import sync_datasets
+
 register()
 
 
