@@ -5,7 +5,7 @@ import dotenv
 import pandas as pd
 
 from elmo_geo import LOG
-from elmo_geo.etl import DerivedDataset, Dataset
+from elmo_geo.etl import Dataset, DerivedDataset
 
 
 class S3Handler:
@@ -88,7 +88,7 @@ class S3Handler:
 
 def sync_datasets(catalogue: list[Dataset]):
     """Writes datasets to S3 ranch-013 bucket.
-    
+
     Loops through all datasets in the catalogue and writes fresh non-geographic
     DerivedDatasets to S3, if they are not already present in the bucket.
 
@@ -109,5 +109,5 @@ def sync_datasets(catalogue: list[Dataset]):
             df = dataset.pdf()
             s3.write_file(df, path)
             s3.copy_obj(path, path_latest)
-            count+=1
+            count += 1
     LOG.info(f"Exported {count} datasets to {s3.bucket}.")
