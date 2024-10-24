@@ -12,14 +12,13 @@ import pandas as pd
 from pandera import DataFrameModel
 from pyspark.sql import DataFrame as SparkDataFrame
 
-from elmo_geo.io import S3Handler, clean_geometry, ogr_to_geoparquet, read_file, write_parquet
+from elmo_geo.io import clean_geometry, ogr_to_geoparquet, read_file, write_parquet
 from elmo_geo.utils.log import LOG
 from elmo_geo.utils.misc import dbmtime, is_snake_case
 
-from .transforms import sjoin_boundary_proportion, sjoin_parcel_proportion
-from .io import read_ogr, write_geoparquet
+from .io import read_ogr, write_geoparquet  # noqa
 from .s3 import S3Handler
-
+from .transforms import sjoin_boundary_proportion, sjoin_parcel_proportion
 
 DATE_FMT: str = r"%Y_%m_%d"
 PATH_FMT: str = "/dbfs/mnt/lab/{license}/ELM-Project/{medallion}/{source}-{dataset}-{date}.parquet/"

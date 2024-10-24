@@ -139,10 +139,6 @@ from .osm import (
     osm_raw,
     osm_tidy,
 )
-from .osm import (
-    osm_raw,
-    osm_tidy,
-)
 from .peat import (
     peaty_soils_parcels,
     peaty_soils_raw,
