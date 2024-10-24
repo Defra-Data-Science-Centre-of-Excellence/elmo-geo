@@ -218,7 +218,7 @@ class ITL3Raw(DataFrameModel):
         geometry: MultiPolygons in EPSG:27700 at BFE.
     """
 
-    fid: str = Field(unique=True, alias="ITL321CD")
+    fid: str = Field(alias="ITL321CD")
     name: str = Field(alias="ITL321NM")
     geometry: Geometry(crs=SRID) = Field()
 
