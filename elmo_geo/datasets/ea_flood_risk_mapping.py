@@ -17,6 +17,8 @@ There are two datasets described below:
 """
 
 
+from functools import partial
+
 from pandera import DataFrameModel, Field
 from pandera.engines.geopandas_engine import Geometry
 
@@ -25,7 +27,6 @@ from elmo_geo.etl.transformations import sjoin_parcel_proportion
 
 from .rpa_reference_parcels import reference_parcels
 
-from functools import partial
 
 # RoFRS
 class EARoFRSRaw(DataFrameModel):
@@ -72,12 +73,13 @@ ea_rofrs_parcels = DerivedDataset(
     level0="silver",
     level1="ea",
     restricted=False,
-    func=sjoin_parcel_proportion,columns = ['prob_4band'],
+    func=partial(sjoin_parcel_proportion, columns=["prob_4band"]),
     dependencies=[reference_parcels, ea_rofrs_raw],
     model=EARoFRSParcels,
 )
 """Indicates the proportion of each parcel intersected by the Risk of Flooding from Rivers and Sea dataset. Risk may be low or high
 """
+
 
 # Flood Zone 3
 class EAFZ3Raw(DataFrameModel):
