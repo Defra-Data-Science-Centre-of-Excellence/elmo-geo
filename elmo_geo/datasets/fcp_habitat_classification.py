@@ -310,11 +310,7 @@ def _assign_parcel_habitat_types_from_candidates(
         F.col("is_default").desc_nulls_last(),  # Is the default habitat (for SRG only)
     )
 
-    sdf = (
-        sdf_assigned.unionByName(sdf_defaults, allowMissingColumns=True)
-        .withColumn("rank", F.row_number().over(window))
-        .filter("rank=1")
-    )
+    sdf = sdf_assigned.unionByName(sdf_defaults, allowMissingColumns=True).withColumn("rank", F.row_number().over(window)).filter("rank=1")
 
     # Checks
     msg = "Unexpected parcel habitat assignments occuring."
@@ -323,7 +319,7 @@ def _assign_parcel_habitat_types_from_candidates(
     assert sdf.filter("(is_upland) AND (action_habitat like '%lowland%')").count() == 0, "Unexpected lowland habitat assignment"
     assert sdf.filter("(NOT is_upland) AND (action_habitat like '%upland%')").count() == 0, "Unexpected upland habitat assignment"
     assert sdf.filter("(is_default) AND (action_group != 'SRG')").count() == 0, "Unexpected default habitat assignment"
-    assert sdf.filter("is_default").count()>0, "Zero defaul assignment habitats."
+    assert sdf.filter("is_default").count() > 0, "Zero defaul assignment habitats."
     assert sdf.filter("(action_habitat_phi IS NULL) AND (NOT is_default)").count() == 0, "Unexpected null phi habitat"
 
     return sdf.select("id_parcel", "unit", "action_group", "action_habitat")
