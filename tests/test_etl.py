@@ -16,7 +16,7 @@ from elmo_geo.utils.dbr import spark
 
 test_source_dataset = SourceDataset(
     name="test_source_dataset",
-    level0="bronze",
+    level0="test",
     level1="test",
     restricted=False,
     is_geo=False,
@@ -27,7 +27,7 @@ test_source_dataset = SourceDataset(
 
 test_source_geodataset = SourceDataset(
     name="test_source_dataset",
-    level0="bronze",
+    level0="test",
     level1="test",
     restricted=False,
     is_geo=True,
@@ -45,7 +45,7 @@ def _make_test_dataset():
 
 test_derived_dataset = DerivedDataset(
     name="test_derived_dataset",
-    level0="silver",
+    level0="test",
     level1="test",
     restricted=False,
     is_geo=False,

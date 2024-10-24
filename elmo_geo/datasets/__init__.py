@@ -37,16 +37,37 @@ from .defra_national_character_areas import (
     nca_raw,
 )
 from .defra_priority_habitats import (
-    defra_grassland_proximity_parcels,
     defra_habitat_area_parcels,
-    defra_heathland_proximity_parcels,
     defra_priority_habitat_england_raw,
     defra_priority_habitat_parcels,
 )
+from .ea_flood_risk_mapping import (
+    ea_fz3_parcels,
+    ea_fz3_raw,
+    ea_rofrs_parcels,
+    ea_rofrs_raw,
+)
 from .fc_ewco import (
+    ewco_ammonia_emmesions_parcels,
+    ewco_ammonia_emmesions_raw,
+    ewco_flood_risk_parcels,
+    ewco_flood_risk_raw,
+    ewco_keeping_rivers_cool_parcels,
+    ewco_keeping_rivers_cool_raw,
     ewco_nature_recovery_priority_habitat,
     ewco_nature_recovery_priority_habitat_parcels,
     ewco_nature_recovery_priority_habitat_raw,
+    ewco_nfc_social_parcels,
+    ewco_nfc_social_raw,
+    ewco_parcels,
+    ewco_priority_habitat_network_parcels,
+    ewco_priority_habitat_network_raw,
+    ewco_red_squirrel_parcels,
+    ewco_red_squirrel_raw,
+    ewco_sensativity_parcels,
+    ewco_sensativity_raw,
+    ewco_waterquality_parcels,
+    ewco_waterquality_raw,
 )
 from .fc_woodland_sensitivity import (
     sfi_agroforestry,
@@ -66,9 +87,10 @@ from .fc_woodland_sensitivity import (
     woodland_creation_sensitivity_var3_raw,
 )
 from .fcp_habitat_classification import (
+    evast_habitat_management_mapping_raw,
     evast_habitat_mapping_raw,
     fcp_habitat_creation_type_parcel,
-    fcp_habitat_management_type_parcel,
+    fcp_is_phi_parcel,
 )
 from .fr_esc_m3_trees import (
     esc_carbon_parcels,
@@ -117,6 +139,10 @@ from .osm import (
     osm_raw,
     osm_tidy,
 )
+from .osm import (
+    osm_raw,
+    osm_tidy,
+)
 from .peat import (
     peaty_soils_parcels,
     peaty_soils_raw,
@@ -142,6 +168,11 @@ from .protected_landscapes import (
     protected_landscapes_parcels,
     protected_landscapes_tidy,
 )
+from .rpa_land_cover import (
+    rpa_land_cover_codes_raw,
+    rpa_land_cover_parcels,
+    rpa_land_cover_parcels_raw,
+)
 from .rpa_reference_parcels import (
     reference_parcels,
     reference_parcels_raw,
@@ -158,6 +189,8 @@ catalogue = [
     osm_tidy,
     alc_parcels,
     alc_raw,
+    boundary_adjacencies,
+    boundary_segments,
     bua_parcels,
     bua_raw,
     cec_soilscapes_habitats_parcels,
@@ -169,22 +202,42 @@ catalogue = [
     country_raw,
     cua_parcels,
     cua_raw,
-    defra_grassland_proximity_parcels,
     defra_habitat_area_parcels,
-    defra_heathland_proximity_parcels,
     defra_priority_habitat_england_raw,
     defra_priority_habitat_parcels,
+    ea_rofrs_raw,
+    ea_rofrs_parcels,
+    ea_fz3_raw,
+    ea_fz3_parcels,
     esc_m3_geo,
     esc_m3_raw,
     esc_carbon_parcels,
     esc_species_parcels,
     esc_tree_suitability,
+    evast_habitat_management_mapping_raw,
     evast_habitat_mapping_raw,
     ewco_nature_recovery_priority_habitat_parcels,
     ewco_nature_recovery_priority_habitat_raw,
     ewco_nature_recovery_priority_habitat,
+    ewco_red_squirrel_raw,
+    ewco_red_squirrel_parcels,
+    ewco_nfc_social_raw,
+    ewco_nfc_social_parcels,
+    ewco_ammonia_emmesions_raw,
+    ewco_ammonia_emmesions_parcels,
+    ewco_flood_risk_raw,
+    ewco_flood_risk_parcels,
+    ewco_keeping_rivers_cool_raw,
+    ewco_keeping_rivers_cool_parcels,
+    ewco_parcels,
+    ewco_priority_habitat_network_raw,
+    ewco_priority_habitat_network_parcels,
+    ewco_waterquality_raw,
+    ewco_waterquality_parcels,
+    ewco_sensativity_raw,
+    ewco_sensativity_parcels,
     fcp_habitat_creation_type_parcel,
-    fcp_habitat_management_type_parcel,
+    fcp_is_phi_parcel,
     flood_risk_areas_parcels,
     flood_risk_areas_raw,
     is_upland_parcels,
@@ -217,6 +270,8 @@ catalogue = [
     os_bng_parcels,
     os_bng_raw,
     os_ngd_raw,
+    osm_raw,
+    osm_tidy,
     peaty_soils_parcels,
     peaty_soils_raw,
     protected_areas_parcels,
@@ -227,6 +282,9 @@ catalogue = [
     reference_parcels,
     region_parcels,
     region_raw,
+    rpa_land_cover_codes_raw,
+    rpa_land_cover_parcels,
+    rpa_land_cover_parcels_raw,
     rpa_hedges_raw,  # snapshot
     sfi_agroforestry_parcels,
     sfi_agroforestry_raw,

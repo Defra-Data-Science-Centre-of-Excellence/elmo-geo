@@ -1,21 +1,24 @@
 import shutil
-from functools import reduce
+from functools import partial, reduce
 from glob import iglob
 from pathlib import Path
 
 import geopandas as gpd
 import pandas as pd
+import pyarrow as pa
 from geopandas.io.arrow import _geopandas_to_arrow
 from pyarrow.parquet import write_to_dataset
+from pyspark.errors import AnalysisException
 from pyspark.serializers import AutoBatchedSerializer, PickleSerializer
 from pyspark.sql import functions as F
 
+from elmo_geo.st.geometry import gpd_clean, load_geometry
 from elmo_geo.utils.dbr import spark
 from elmo_geo.utils.log import LOG
 from elmo_geo.utils.misc import dbfs
 from elmo_geo.utils.types import DataFrame, GeoDataFrame, PandasDataFrame, SparkDataFrame
 
-from .convert import to_gdf
+from .convert import to_gdf, to_sdf
 
 
 class UnknownFileExtension(Exception):
@@ -50,15 +53,16 @@ def auto_repartition(
         jobs_cap: limits the maximum number of jobs to fit within Spark's job limit.
         acceptance_ratio: don't repartition unless it exceeds this ratio.
     """
-    partitioners = (
-        round(sdf.rdd.countApprox(1000, 0.8) * count_ratio),  # 1s wait or 80% accurate.
-        round(memsize_sdf(sdf) * mem_ratio),
-        round(spark.sparkContext.defaultParallelism * thread_ratio),
-    )
-    suggested_partitions = int(min(max(partitioners), jobs_cap))
+    partitioners = {
+        "rows": round(sdf.rdd.countApprox(1000, 0.8) * count_ratio),  # 1s wait or 80% accurate.
+        "memory": round(memsize_sdf(sdf) * mem_ratio),
+        "cores": round(spark.sparkContext.defaultParallelism * thread_ratio),
+    }
+    suggested_partitions = int(min(max(partitioners.values()), jobs_cap))
     current_partitions = sdf.rdd.getNumPartitions()
     ratio = abs(suggested_partitions - current_partitions) / current_partitions
     if acceptance_ratio < ratio:
+        LOG.info(f"Repartitioning: {current_partitions} to {suggested_partitions}, due to {partitioners}.")
         return sdf.repartition(suggested_partitions)
     else:
         return sdf
@@ -79,7 +83,7 @@ def load_sdf(path: str, **kwargs) -> SparkDataFrame:
 
     try:
         sdf = read(path)
-    except Exception:  # TODO: pyspark.errors.AnalysisException, requires pyspark==3.4.1
+    except AnalysisException:
         sdf = reduce(union, [read(f) for f in iglob(path + "*")])
 
     if "geometry" in sdf.columns:
@@ -87,10 +91,10 @@ def load_sdf(path: str, **kwargs) -> SparkDataFrame:
     return sdf
 
 
-def read_file(source_path: str, is_geo: bool, layer: int | str | None = None) -> PandasDataFrame | GeoDataFrame:
+def read_file(source_path: str, is_geo: bool, layer: int | str | None = None, clean_geometry: bool = True) -> SparkDataFrame:
     path = Path(source_path)
     if is_geo:
-        if path.suffix == ".parquet" or path.is_dir():
+        if path.suffix == ".parquet" or list(path.glob("*.parquet")):
             df = gpd.read_parquet(path)
         else:
             layers = gpd.list_layers(path)["name"]
@@ -99,13 +103,34 @@ def read_file(source_path: str, is_geo: bool, layer: int | str | None = None) ->
             else:
                 df = gpd.read_file(path, layer=layer, use_arrow=True)
     else:
-        if path.suffix == ".parquet" or path.is_dir():
+        if path.suffix == ".parquet" or list(path.glob("*.parquet")):
             df = pd.read_parquet(path)
         elif path.suffix == ".csv":
             df = pd.read_csv(path)
         else:
             raise UnknownFileExtension()
+    df = to_sdf(df) if is_geo else spark.createDataFrame(df)
+    if is_geo and clean_geometry:
+        df = df.withColumn("geometry", load_geometry(encoding_fn="", subdivide=True)).transform(gpd_clean)
     return df
+
+
+def _get_arrow_schema(sdf: SparkDataFrame) -> pa.Schema:
+    """Produce a pyarrow schema for a spark dataframe that contains a geometry field.
+
+    This function combines two methods for getting a pyarrow schema. The methods need to be combined
+    because going from a spark dataframe to arrow table produces the correct schema for non-geometry
+    fields, while converting from a geodataframe to an arrow table produces the correct geometry
+    field schema.
+    """
+    adf = sdf.limit(1).toArrow()
+    main_schema = adf.schema
+
+    table = _geopandas_to_arrow(to_gdf(sdf.limit(1)))
+    geo_schema = table.schema
+
+    ind = geo_schema.get_field_index("geometry")
+    return main_schema.remove(ind).insert(ind, geo_schema.field("geometry")).with_metadata(geo_schema.metadata)
 
 
 def write_parquet(df: DataFrame, path: str, partition_cols: list[str] | None = None):
@@ -120,16 +145,18 @@ def write_parquet(df: DataFrame, path: str, partition_cols: list[str] | None = N
     if partition_cols is None:
         partition_cols = []
 
-    def to_gpqs(df):
+    def to_gpqs(df, schema=None):
         "GeoPandas writer as partial function, for applyInPandas."
         table = _geopandas_to_arrow(to_gdf(df))
+        if schema:
+            table = table.cast(schema)
         write_to_dataset(table, path, partition_cols=partition_cols)
         return pd.DataFrame([])
 
-    def map_to_gpqs(iterator):  # DONE: I forgot mapInPandas uses an iterator.
+    def map_to_gpqs(iterator, schema):
         "Iterator of to_gpqs, for mapInPandas."
         for pdf in iterator:
-            yield to_gpqs(pdf)
+            yield to_gpqs(pdf, schema)
 
     path = Path(path)
     if path.exists():
@@ -143,10 +170,21 @@ def write_parquet(df: DataFrame, path: str, partition_cols: list[str] | None = N
 
     if isinstance(df, SparkDataFrame):
         if "geometry" in df.columns:
+            arrow_schema = _get_arrow_schema(df)
             if partition_cols:
-                df.withColumn("geometry", F.expr("ST_AsBinary(geometry)")).groupby(partition_cols).applyInPandas(to_gpqs, "col struct<>").collect()
+                (
+                    df.withColumn("geometry", F.expr("ST_AsBinary(geometry)"))
+                    .groupby(partition_cols)
+                    .applyInPandas(partial(to_gpqs, schema=arrow_schema), "col struct<>")
+                    .collect()
+                )
             else:
-                df.withColumn("geometry", F.expr("ST_AsBinary(geometry)")).transform(auto_repartition).mapInPandas(map_to_gpqs, "col struct<>").collect()
+                (
+                    df.withColumn("geometry", F.expr("ST_AsBinary(geometry)"))
+                    .transform(auto_repartition)
+                    .mapInPandas(partial(map_to_gpqs, schema=arrow_schema), "col struct<>")
+                    .collect()
+                )
         else:
             if partition_cols:
                 df.write.parquet(dbfs(str(path), True), partitionBy=partition_cols)

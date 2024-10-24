@@ -1,4 +1,7 @@
+import geopandas as gpd
 from pyspark.sql import functions as F
+
+from elmo_geo.utils.types import SparkDataFrame
 
 
 def load_missing(column: str) -> callable:
@@ -35,6 +38,23 @@ def load_geometry(
     expr = f"ST_SubDivideExplode({expr}, 256)" if subdivide else expr
     expr = expr + " AS " + column
     return F.expr(expr)
+
+
+def gpd_clean(sdf: SparkDataFrame, column: str = "geometry") -> SparkDataFrame:
+    """Uses mapInPandas to clean a spark geometry field to 1m precision
+    using Geopanas functions.
+    """
+
+    def _clean(iterator):
+        for pdf in iterator:
+            pdf[column] = gpd.GeoSeries.from_wkb(pdf[column]).simplify(1).set_precision(1).remove_repeated_points(1).make_valid().to_wkb()
+            yield pdf
+
+    return (
+        sdf.withColumn(column, F.expr(f"ST_AsBinary({column})"))
+        .transform(lambda sdf: sdf.mapInPandas(_clean, sdf.schema))
+        .withColumn(column, F.expr(f"ST_GeomFromWKB({column})"))
+    )
 
 
 def get_boundary(column: str) -> callable:

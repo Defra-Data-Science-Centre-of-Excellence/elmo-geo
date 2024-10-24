@@ -229,6 +229,7 @@ class SourceDataset(Dataset):
     model: DataFrameModel | None = None
     partition_cols: list[str] | None = None
     is_geo: bool = True
+    clean_geometry: bool = True
 
     @property
     def _new_date(self) -> str:
@@ -266,8 +267,8 @@ class SourceDataset(Dataset):
 
     def refresh(self):
         LOG.info(f"Creating '{self.name}' dataset.")
-        df = read_file(self.source_path, self.is_geo)
-        df = self._validate(df).pipe(self.rename)
+        df = read_file(self.source_path, is_geo=self.is_geo, clean_geometry=self.clean_geometry)
+        df = self._validate(df).transform(self.rename)
         write_parquet(df, path=self._new_path, partition_cols=self.partition_cols)
         LOG.info(f"Saved to '{self.path}'.")
 
@@ -324,12 +325,11 @@ class SourceGlobDataset(SourceDataset):
             df = load_sdf(new_path)
             df = self._validate(df)
         else:
-            from elmo_geo.utils.dbr import spark
 
             def union(x: SparkDataFrame, y: SparkDataFrame) -> SparkDataFrame:
                 return x.unionByName(y, allowMissingColumns=True)
 
-            gen_sdfs = (spark.createDataFrame(read_file(f, self.is_geo)).withColumn("_path", F.lit(f)) for f in iglob(self.glob_path))
+            gen_sdfs = (read_file(f, is_geo=self.is_geo).withColumn("_path", F.lit(f)) for f in iglob(self.glob_path))
             df = reduce(union, gen_sdfs)
             df = self._validate(df)
             write_parquet(df, path=self._new_path, partition_cols=self.partition_cols)
