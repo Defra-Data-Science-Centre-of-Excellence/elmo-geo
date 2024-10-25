@@ -112,8 +112,9 @@ def sjoin_parcels(
     sdf_feature = feature if isinstance(feature, SparkDataFrame) else feature.sdf()
     sdf_parcels = parcels if isinstance(parcels, SparkDataFrame) else parcels.sdf()
     return (
-        sdf_feature.transform(fn_pre)
-        .transform(lambda sdf: sjoin(sdf_parcels, sdf, **kwargs))
+        sdf_feature.transform(auto_repartition)
+        .transform(fn_pre)
+        .transform(lambda sdf: sjoin(sdf_parcels.transform(auto_repartition), sdf, **kwargs))
         .selectExpr(
             *cols,
             "ST_AsBinary(geometry_left) AS geometry_left",
