@@ -4,28 +4,27 @@ This module contains an abstract DatasetLoader class and concrete subclasses of 
 designed to manage data loading and any updates needed due to changes to source files or their
 dependants.
 """
-import os
-import re
 import shutil
 import time
-from abc import ABC, abstractmethod, abstractproperty
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime
 from functools import reduce
-from glob import iglob
+from glob import glob, iglob
 from hashlib import sha256
 from pathlib import Path
 
 import geopandas as gpd
 import pandas as pd
-import pyspark.sql.functions as F
+from pyspark.sql import functions as F, types as T, DataFrame as SparkDataFrame
 from pandera import DataFrameModel
 
-from elmo_geo.io import download_link, load_sdf, ogr_to_geoparquet, read_file, to_gdf, write_parquet
+from elmo_geo.io import load_sdf, ogr_to_geoparquet, read_file, write_parquet
 from elmo_geo.utils.log import LOG
 from elmo_geo.utils.misc import dbmtime
-from elmo_geo.utils.types import DataFrame, GeoDataFrame, PandasDataFrame, SparkDataFrame
+from elmo_geo.utils.types import DataFrame
+from .io import convert_ogr
+
 
 DATE_FMT: str = r"%Y_%m_%d"
 SRC_HASH_FMT: str = r"%Y%m%d%H%M%S"
@@ -38,179 +37,96 @@ SRID: int = 27700
 
 
 @dataclass
-class Dataset(ABC):
+class BaseDataset:
     """Class for managing loading and validation of data.
 
     A Dataset manages the loading of datasets from the cache, and populates the cache when
     that dataset doesn't exist or needs to be refreshed.
     """
-
+    restricted: str
+    medallion: str
+    source: str
     name: str
-    level0: str
-    level1: str
-    restricted: bool
 
-    @abstractproperty
-    def _new_date(self) -> str:
-        """New date for parquet file being created."""
+    model: DataFrameModel
+    dependencies: list[object]
 
-    @abstractproperty
-    def _hash(self) -> str:
-        """A semi-unique identifier of the last modified dates of the data file(s) from which a dataset is derived."""
 
     @property
-    def date(self) -> str | None:
-        """Return the last-modified date from the filename in ISO string format.
-
-        If the dataset has not been generated yet, return `None`."""
-        pat = re.compile(PAT_DATE.format(name=self.name, hsh=self._hash))
-        try:
-            return pat.findall(self.filename)[0]
-        except IndexError:
-            return None
-
-    @abstractproperty
-    def dict(self) -> dict:
-        """A dictionary representation of the dataset."""
-
-    @abstractmethod
-    def refresh(self) -> None:
-        """Populate the cache with a fresh version of this dataset."""
+    def timestamp(self) -> int:
+        raise NotImplementedError("Dataset.transform")
 
     @property
-    def path_dir(self) -> str:
-        """Path to the directory where the data will be saved."""
-        restricted = "restricted" if self.restricted else "unrestricted"
-        return PATH_FMT.format(restricted=restricted, level0=self.level0, level1=self.level1)
-
-    @property
-    def is_fresh(self) -> bool:
-        """Check whether this dataset needs to be refreshed in the cache."""
-        return len(self.file_matches) > 0
-
-    @property
-    def file_matches(self) -> list[str]:
-        """List of files that match the file path but may have different dates.
-
-        Return in order of newest to oldest by the modified date of the path. Does
-        not take into account modified dates of the dataset dependencies.
-        """
-        if not os.path.exists(self.path_dir):
-            return []
-
-        pat = re.compile(PAT_FMT.format(name=self.name, hsh=self._hash))
-        return sorted(
-            [y.group(0) for y in [pat.fullmatch(x) for x in os.listdir(self.path_dir)] if y is not None],
-            key=lambda x: dbmtime(self.path_dir + x),
-            reverse=True,
-        )
-
-    @property
-    def filename(self) -> str:
-        """Name of the file if it has been saved, else OSError."""
-        if not self.is_fresh:
-            msg = "The dataset has not been built yet. Please run `Dataset.refresh()`"
-            raise OSError(msg)
-        return next(iter(self.file_matches))
+    def date(self) -> str:
+        return datetime.fromtimestamp(self.timestamp).strftime(DATE_FMT)
 
     @property
     def path(self) -> str:
-        """Path to the file if it has been saved, else OSError."""
-        return self.path_dir + self.filename
+        return PATH_FMT.format(
+            restricted=self.restricted,
+            medallion=self.medallion,
+            source=self.source,
+            name=self.name,
+            version=self.date,
+        )
 
     @property
-    def _new_filename(self) -> str:
-        """New filename for parquet file being created."""
-        return FILE_FMT.format(name=self.name, date=self._new_date, hsh=self._hash)
+    def path_matches(self) -> list[str]:
+        return glob(PATH_FMT.format(
+            restricted=self.restricted,
+            medallion=self.medallion,
+            source=self.source,
+            name=self.name,
+            version="*",
+        ))
 
     @property
-    def _new_path(self) -> str:
-        """New filepath for parquet file being created."""
-        return self.path_dir + self._new_filename
+    def latest_path(self) -> str:
+        return self.path_matches[-1]
 
-    def gdf(self, **kwargs) -> GeoDataFrame:
-        """Load the dataset as a `geopandas.GeoDataFrame`
+    @property
+    def is_fresh(self) -> bool:
+        return self.path in self.path_matches
 
-        Columns and filters can be applied through `columns` and `filters` arguments, along with other options specified here:
-        https://arrow.apache.org/docs/python/generated/pyarrow.parquet.read_table.html#pyarrow.parquet.read_table
-        """
+    def refresh(self) -> SparkDataFrame:
+        if self.is_fresh:
+            return self.sdf()
+        for dataset in self.dependencies:
+            if not dataset.is_fresh:
+                dataset.refresh()
+        df = self.transform(self.dependencies)
+        self.model.validate(df)  # BUG: Doesn't support alias
+        return self.sdf()
+
+    def transform(self, *args) -> SparkDataFrame:
+        raise NotImplementedError("Dataset.transform")
+
+    def sdf(self) -> SparkDataFrame:
         if not self.is_fresh:
-            self.refresh()
-        return gpd.read_parquet(self.path, **kwargs)
-
-    def pdf(self, **kwargs) -> PandasDataFrame:
-        """Load the dataset as a `pandas.DataFrame`
-
-        Columns and filters can be applied through `columns` and `filters` arguments, along with other options specified here:
-        https://arrow.apache.org/docs/python/generated/pyarrow.parquet.read_table.html#pyarrow.parquet.read_table
-        """
-        if not self.is_fresh:
-            self.refresh()
-        return pd.read_parquet(self.path, **kwargs)
-
-    def sdf(self, **kwargs) -> SparkDataFrame:
-        """Load the dataset as a `pyspark.sql.dataframe.DataFrame`."""
-        if not self.is_fresh:
-            self.refresh()
-        return load_sdf(self.path, **kwargs)
-
-    def _validate(self, df: DataFrame) -> DataFrame:
-        """Validate the data against a model specification if one is defined."""
-        if self.model is not None:
-            if isinstance(df, SparkDataFrame):
-                LIMIT_SDF: int = 100_000
-                _df = to_gdf(df.limit(LIMIT_SDF)) if self.is_geo else df.limit(LIMIT_SDF).toPandas()
-                self.model.validate(_df)
-            else:
-                df = self.model.validate(df)
-        return df
+            LOG.info(f"Loading Latest: {self.path_latest}")
+        return spark.read.parquet(self.path_latest.replace("/dbfs/", "dbfs:/"))
 
     def destroy(self) -> None:
-        """Delete the cached dataset at `self.path`."""
-        if Path(self.path).exists():
-            shutil.rmtree(self.path)
-            msg = f"Destroyed '{self.name}' dataset."
-            LOG.warning(msg)
-            return
-        msg = f"'{self.name}' dataset cannot be destroyed as it doesn't exist yet."
-        LOG.warning(msg)
+        shutil.rmtree(self.path, ignore_errors=True)
 
-    def export(self, ext: str = "parquet") -> str:
-        """Create a copy of the dataset as a monolithic file in the /FileStore/elmo-geo-exports/ folder
-        and return a link to download the file from this location.
 
-        Parameters:
-            ext: File extension to use when saving the dataset.
+class SourceDataset(BaseDataset):
+    source_path: str
+    dependencies: list[object] = []
 
-        Returns:
-            HTML download link for exported data.
-        """
-        fname, _ = os.path.splitext(self.filename)
-        path_exp = f"/dbfs/FileStore/elmo-geo-downloads/{fname}.{ext}"
+    @property
+    def source_paths(self) -> list[str]:
+        return glob(self.source_path)
 
-        if os.path.exists(path_exp):
-            LOG.info("Export file already exists. Returning download link.")
-            return download_link(path_exp)
+    def timestamp(self):
+        return max(dbmtime(path) for path in self.source_paths)
 
-        LOG.info("Exporting file to FileStore/elmo-geo-downloads/.")
-        if ext == "parquet":
-            path_exp = self.path
-        elif self.is_geo:
-            if ext == "gpkg":
-                f_tmp = f"/tmp/{self.name}.{ext}"
-                self.gdf().to_file(f_tmp)
-                shutil.copy(f_tmp, path_exp)
-            else:
-                self.gdf().to_file(path_exp)
-        elif ext == "csv":
-            self.pdf().to_csv(path_exp)
-        else:
-            raise NotImplementedError(f"Requested export format '{ext}' for non-spatial data not currently supported.")
-        return download_link(path_exp)
+    def transform(self):
+        for path in self.source_paths:
+            convert_ogr(path, path_out)
+        raise NotImplemented
+        
 
-    @classmethod
-    def __type__(cls) -> str:
-        return cls.__name__
 
 
 @dataclass
