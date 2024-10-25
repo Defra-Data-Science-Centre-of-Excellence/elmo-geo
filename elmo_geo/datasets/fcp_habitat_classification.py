@@ -260,7 +260,7 @@ def _assign_parcel_habitat_types_from_candidates(
         .withColumn("matches_soilscape_habitat", F.expr("soilscape_habitat_code = soilscape_habitat_code_phi"))
         # Only assign habitat where there is a PHI instance that matches a soil type based candidate habitat
         # Or where it's an SRG type habitat (since last resort is default values for these so can be more permissive here)
-        .filter("matches_action_habitat OR (action_group='SRG')") 
+        .filter("matches_action_habitat OR (action_group='SRG')")
         .filter("matches_soilscape_habitat OR (action_group='SRG')")
     )
 
