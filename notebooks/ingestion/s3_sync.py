@@ -16,4 +16,9 @@ register()
 
 # COMMAND ----------
 
-sync_datasets(catalogue)
+filtered_catalogue = [d for d in catalogue if ("boundary" not in d.name) and ("esc" not in d.name)]
+filtered_catalogue
+
+# COMMAND ----------
+
+sync_datasets(filtered_catalogue)
