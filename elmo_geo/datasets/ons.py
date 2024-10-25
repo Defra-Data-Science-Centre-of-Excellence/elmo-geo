@@ -229,7 +229,7 @@ itl3_raw = SourceDataset(
     level1="ons",
     model=ITL3Raw,
     restricted=False,
-    source_path="/dbfs/FileStore/elmo_geo-uploads/ons_itl3_2021_11_11.geojson",
+    source_path="/dbfs/FileStore/elmo_geo-uploads/ons_itl3_2021_11_11.parquet",
 )
 
 
