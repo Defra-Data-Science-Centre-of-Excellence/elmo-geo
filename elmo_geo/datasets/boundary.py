@@ -42,6 +42,7 @@ from elmo_geo.etl.transformations import sjoin_boundary_proportion
 from elmo_geo.st.segmentise import segmentise_with_tolerance
 from elmo_geo.st.udf import st_udf
 
+from .fcp_sylvan import fcp_relict_hedge_raw
 from .hedges import rpa_hedges_raw
 from .osm import osm_tidy
 from .rpa_reference_parcels import reference_parcels
@@ -176,6 +177,22 @@ boundary_walls = DerivedDataset(
     restricted=False,
     func=partial(sjoin_boundary_proportion, fn_pre=fn_pre_wall),
     dependencies=[reference_parcels, boundary_segments, osm_tidy],
+    is_geo=False,
+)
+
+
+def fn_pre_relict(sdf: SparkDataFrame) -> SparkDataFrame:
+    return sdf.drop("id_parcel")
+
+
+boundary_relict = DerivedDataset(
+    level0="gold",
+    level1="fcp",
+    name="boundary_relict",
+    model=SjoinBoundaries,
+    restricted=False,
+    func=partial(sjoin_boundary_proportion, fn_pre=fn_pre_relict),
+    dependencies=[reference_parcels, boundary_segments, fcp_relict_hedge_raw],
     is_geo=False,
 )
 

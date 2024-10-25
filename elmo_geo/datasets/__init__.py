@@ -9,6 +9,7 @@ from elmo_geo.utils.log import LOG
 from .boundary import (
     boundary_adjacencies,
     boundary_hedgerows,
+    boundary_relict,
     boundary_segments,
     boundary_walls,
 )
@@ -94,6 +95,7 @@ from .fcp_habitat_classification import (
     fcp_habitat_creation_type_parcel,
     fcp_is_phi_parcel,
 )
+from .fcp_sylvan import fcp_relict_hedge_raw
 from .fr_esc_m3_trees import (
     esc_carbon_parcels,
     esc_m3_geo,
@@ -186,6 +188,7 @@ catalogue = [
     boundary_hedgerows,
     boundary_segments,
     boundary_walls,
+    boundary_relict,
     bua_parcels,
     bua_raw,
     cec_soilscapes_habitats_parcels,
@@ -233,6 +236,7 @@ catalogue = [
     ewco_sensitivity_parcels,
     fcp_habitat_creation_type_parcel,
     fcp_is_phi_parcel,
+    fcp_relict_hedge_raw,
     flood_risk_areas_parcels,
     flood_risk_areas_raw,
     is_upland_parcels,
