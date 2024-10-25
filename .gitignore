@@ -17,3 +17,6 @@ __pycache__/
 # *$py.class
 /build/
 /*.egg-info/
+
+
+!.env

@@ -63,7 +63,8 @@ class EARoFRSParcels(DataFrameModel):
         proportion: The proportion of the parcel that intersects with the RoFRS
     """
 
-    id_parcel: str = Field(unique=True)
+    id_parcel: str = Field()
+    prob_4band: str = Field(isin=["Low", "Medium", "High"])
     proportion: float = Field(ge=0, le=1)
 
 

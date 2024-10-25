@@ -1,7 +1,11 @@
+from functools import partial
+
 import geopandas as gpd
 from pyspark.sql import DataFrame as SparkDataFrame
 from pyspark.sql import functions as F
 from pyspark.sql import types as T
+
+from_wkb = partial(gpd.GeoSeries.from_wkb, crs=27700)
 
 
 def st_udf(sdf: SparkDataFrame, fn: callable, geometry_column: str = "geometry", return_type: str = T.BinaryType(), geometry_not_geoseries: bool = True):
@@ -18,9 +22,9 @@ def st_udf(sdf: SparkDataFrame, fn: callable, geometry_column: str = "geometry",
     @F.pandas_udf(return_type)
     def _udf(col):
         if geometry_not_geoseries:
-            return gpd.GeoSeries.from_wkb(col).apply(fn).to_wkb()
+            return from_wkb(col).apply(fn).to_wkb()
         else:
-            return gpd.GeoSeries.from_wkb(col).pipe(fn).to_wkb()
+            return from_wkb(col).pipe(fn).to_wkb()
 
     return (
         sdf.withColumn(geometry_column, F.expr(f"ST_AsBinary({geometry_column})"))
@@ -40,7 +44,7 @@ def st_clean(sdf: SparkDataFrame, column: str = "geometry") -> SparkDataFrame:
 
 @F.udf(T.ArrayType(T.BinaryType()))
 def dump_to_list(col):
-    gs = gpd.GeoSeries.from_wkb([col])
+    gs = from_wkb([col], crs=27700)
     return gs.explode().wkb.tolist()
 
 
@@ -77,7 +81,7 @@ def st_union(sdf: SparkDataFrame, keys: list[str] | str = ["id_parcel"], col: st
         keys = [keys]
 
     def _fn(pdf):
-        gdf = gpd.GeoDataFrame(pdf, geometry=gpd.GeoSeries.from_wkb(pdf[col]))
+        gdf = gpd.GeoDataFrame(pdf, geometry=from_wkb(pdf[col]))
         return gdf.dissolve(by=keys).reset_index().to_wkb()
 
     _sdf = sdf.select(*keys, col).withColumn(col, F.expr(f"ST_AsBinary({col})"))

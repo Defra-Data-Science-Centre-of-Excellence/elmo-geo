@@ -109,7 +109,7 @@ def read_file(source_path: str, is_geo: bool, layer: int | str | None = None, su
             df = pd.read_csv(path)
         else:
             raise UnknownFileExtension()
-    df = to_sdf(df) if is_geo else spark.createDataFrame(df)
+    df = to_sdf(df.to_crs(27700)) if is_geo else spark.createDataFrame(df)
     if is_geo:
         if subdivide:
             df = df.withColumn("geometry", F.expr("ST_SubDivideExplode(geometry, 256)"))
