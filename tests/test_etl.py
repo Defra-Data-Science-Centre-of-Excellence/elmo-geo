@@ -3,6 +3,7 @@ from datetime import datetime as dt
 from glob import iglob
 from importlib import import_module
 
+import geopandas as gpd
 import numpy as np
 import pandas as pd
 import pytest
@@ -12,6 +13,7 @@ from elmo_geo.datasets import catalogue
 from elmo_geo.etl import Dataset, DerivedDataset, SourceDataset
 from elmo_geo.etl.etl import DATE_FMT, PAT_DATE
 from elmo_geo.etl.transformations import pivot_long_sdf, pivot_wide_sdf
+from elmo_geo.st.udf import clean_geometries
 from elmo_geo.utils.dbr import spark
 
 test_source_dataset = SourceDataset(
@@ -26,7 +28,7 @@ test_source_dataset = SourceDataset(
 """
 
 test_source_geodataset = SourceDataset(
-    name="test_source_dataset",
+    name="test_source_geodataset",
     level0="test",
     level1="test",
     restricted=False,
@@ -126,3 +128,16 @@ def test_all_datasets_path_most_recent():
             if not _dataset_date_is_most_recent(dataset):
                 fails.append(dataset)
     assert not fails, f"Not all datasets loading most recent files. Failing datasets: {[d.name for d in fails]}"
+
+
+@pytest.mark.dbr
+def test_source_dataset_geometry_cleaning():
+    """Refreshes the test source geodataset and checks that geometries have been cleaned."""
+    gdf_raw = gpd.read_file(test_source_geodataset.source_path).set_index("id")
+    test_source_geodataset.refresh()
+
+    gs_fresh = test_source_geodataset.gdf().set_index("id").geometry
+    gs_raw_cleaned = clean_geometries(gdf_raw)
+
+    assert gs_raw_cleaned.is_valid.all()
+    assert gs_raw_cleaned.geom_equals(gs_fresh.geometry, align=True).all()
