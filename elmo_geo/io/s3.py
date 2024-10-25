@@ -1,7 +1,7 @@
 import io
 
-import botocore
 import boto3
+import botocore
 import dotenv
 import pandas as pd
 
@@ -47,13 +47,15 @@ class S3Handler:
         try:
             self.s3_client.list_objects_v2(Bucket=self.bucket)
         except (botocore.exception.BotoCoreError, botocore.exceptions.ClientError) as error:
-            LOG.error(f"""S3HandlerError: update .env AWS credentials.
+            LOG.error(
+                f"""S3HandlerError: update .env AWS credentials.
                 Login and click 'Access keys' (next to 'ELMModelling').
                 Copy option 2 into .env
                 https://sso-int-sce-network.awsapps.com/start#/
 
                 {error}
-            """)
+            """
+            )
 
     def list_files(self, prefix=""):
         """List files in the S3 bucket, with pagination support to access more than 1000 responses."""
