@@ -112,8 +112,8 @@ ewco_nature_recovery_priority_habitat_parcels = DerivedDataset(
 """Definition for Forestry Commission's SFI Agroforestry dataset joined to RPA Parcels."""
 
 
-# EWCO nfc_ammonia_emmissions
-class EwcoAmmoniaEmmesionsRaw(DataFrameModel):
+# EWCO nfc_ammonia_emissions
+class EwcoAmmoniaEmissionsRaw(DataFrameModel):
     """Model describing the EWCO NfC Ammonia Emissions Capture for SSSI Protection dataset.
 
     Attributes:
@@ -127,31 +127,31 @@ class EwcoAmmoniaEmmesionsRaw(DataFrameModel):
     geometry: Geometry(crs=SRID) = Field()
 
 
-ewco_ammonia_emmesions_raw = SourceDataset(
-    name="ewco_ammonia_emmesions_raw",
+ewco_ammonia_emissions_raw = SourceDataset(
+    name="ewco_ammonia_emissions_raw",
     level0="bronze",
     level1="forestry_commission",
     restricted=False,
-    model=EwcoAmmoniaEmmesionsRaw,
+    model=EwcoAmmoniaEmissionsRaw,
     source_path="/dbfs/mnt/lab/unrestricted/elm_data/ewco/nfc_ammonia_emmissions/2022_03_14/EWCO___NfC_Ammonia_Emissions_Capture_for_SSSI_Protection.shp",
 )
 
 
-ewco_ammonia_emmesions_parcels = DerivedDataset(
+ewco_ammonia_emissions_parcels = DerivedDataset(
     is_geo=False,
-    name="ewco_ammonia_emmesions_parcels",
+    name="ewco_ammonia_emissions_parcels",
     level0="silver",
     level1="forestry_commission",
     restricted=False,
     func=sjoin_parcel_proportion,
-    dependencies=[reference_parcels, ewco_ammonia_emmesions_raw],
+    dependencies=[reference_parcels, ewco_ammonia_emissions_raw],
     model=EwcoParcels,
 )
 """Spatial data supporting the England Woodland Creation Offer (EWCO) additional point scoring for ammonia capture.
 There is no Additional Contribution for ammonia capture but EWCO supports action to address air pollution.
 Additional points are available for creating shelterbelts designed to capture ammonia emissions from farm sources in
 locations where there is a potential risk of air pollution impacting a Site of Special Scientific Interest (SSSI)
-– where sensitive habitats or species could be impacted by direct toxic effects of ammonia, nitrogen deposition or
+- where sensitive habitats or species could be impacted by direct toxic effects of ammonia, nitrogen deposition or
 acidification from ammonia emissions."""
 
 
@@ -161,7 +161,7 @@ class EwcoFloodRiskRaw(DataFrameModel):
 
     Attributes:
         LANDSCAPE: the targeting category: Opportunity for Floodplain Woodland / Opportunity for Wider Catchment Woodland
-        AreaHa: 'AreaHa' – Area of the feature in hectares
+        AreaHa: 'AreaHa' - Area of the feature in hectares
         geometry: polygons
     """
 
@@ -376,8 +376,8 @@ class EwcoWaterQualityRaw(DataFrameModel):
     geometry: Geometry(crs=SRID) = Field()
 
 
-ewco_waterquality_raw = SourceDataset(
-    name="ewco_waterquality_raw",
+ewco_water_quality_raw = SourceDataset(
+    name="ewco_water_quality_raw",
     level0="bronze",
     level1="forestry_commission",
     restricted=False,
@@ -386,13 +386,13 @@ ewco_waterquality_raw = SourceDataset(
 )
 
 
-ewco_waterquality_parcels = DerivedDataset(
-    name="ewco_waterquality_parcels",
+ewco_water_quality_parcels = DerivedDataset(
+    name="ewco_water_quality_parcels",
     level0="silver",
     level1="forestry_commission",
     restricted=False,
     func=sjoin_parcel_proportion,
-    dependencies=[reference_parcels, ewco_waterquality_raw],
+    dependencies=[reference_parcels, ewco_water_quality_raw],
     model=EwcoParcels,
 )
 
@@ -401,9 +401,9 @@ change that reduces fertilizer application or by creating woodland that intercep
 """
 
 
-# Woodland Sensativity
-class EwcoSensativityRaw(DataFrameModel):
-    """Model describing the EWCO woodland sensativity dataset.
+# Woodland Sensitivity
+class EwcoSensitivityRaw(DataFrameModel):
+    """Model describing the EWCO woodland sensitivity dataset.
 
     Attributes:
     sensitivity: The sensitivity to woodland creation level the land has been assigned.
@@ -416,23 +416,23 @@ class EwcoSensativityRaw(DataFrameModel):
     geometry: Geometry(crs=SRID) = Field()
 
 
-ewco_sensativity_raw = SourceDataset(
-    name="ewco_sensativity_raw",
+ewco_sensitivity_raw = SourceDataset(
+    name="ewco_sensitivity_raw",
     level0="bronze",
     level1="forestry_commission",
     restricted=False,
-    model=EwcoSensativityRaw,
+    model=EwcoSensitivityRaw,
     source_path="/dbfs/mnt/lab/unrestricted/elm_data/forestry_commission/woodland_creation_full_sensitivity/England_Woodland_Creation_Full_Sensitivity_Map_v4.0.shp",
 )
 
 
-ewco_sensativity_parcels = DerivedDataset(
-    name="ewco_sensativity_parcels",
+ewco_sensitivity_parcels = DerivedDataset(
+    name="ewco_sensitivity_parcels",
     level0="silver",
     level1="forestry_commission",
     restricted=False,
     func=sjoin_parcel_proportion,
-    dependencies=[reference_parcels, ewco_sensativity_raw],
+    dependencies=[reference_parcels, ewco_sensitivity_raw],
     model=EwcoParcels,
 )
 
@@ -443,13 +443,13 @@ and where there may be sensitivities that would preclude woodland creation.
 """
 
 
-# EWCO datsets joined to Parcels in one big table
+# EWCO datasets joined to Parcels in one big table
 class EwcoMergedParcels(DataFrameModel):
     """Model for one wide table that pulls together the proportion fields for each EWCO derived dataset linked to parcels.
     Attributes:
         id_parcel: 11 character RPA reference parcel ID (including the sheet ID) e.g. `SE12263419`.
         proportion_rs: The proportion of the parcel that intersects with red squirrel sites.
-        proportion_amm: The proportion of the parcel that intersects with ammonia emmissions sites.
+        proportion_amm: The proportion of the parcel that intersects with ammonia emissions sites.
         proportion_soc: The proportion of the parcel that intersects with nfc social sites.
         proportion_wq The proportion of the parcel that intersects with the water quality sites.
         proportion_krc: The proportion of the parcel that intersects with keeping rivers cool sites.
@@ -478,13 +478,13 @@ ewco_parcels = DerivedDataset(
     func=partial(combine_wide, sources=["rs", "amm", "soc", "wq", "krc", "fr", "phn", "sense"]),
     dependencies=[
         ewco_red_squirrel_parcels,
-        ewco_ammonia_emmesions_parcels,
+        ewco_ammonia_emissions_parcels,
         ewco_nfc_social_parcels,
-        ewco_waterquality_parcels,
+        ewco_water_quality_parcels,
         ewco_keeping_rivers_cool_parcels,
         ewco_flood_risk_parcels,
         ewco_priority_habitat_network_parcels,
-        ewco_sensativity_parcels,
+        ewco_sensitivity_parcels,
     ],
     model=EwcoMergedParcels,
 )
