@@ -156,7 +156,7 @@ def sjoin_boundary_proportion(
     """
     sdf_segments = boundary_segments if isinstance(boundary_segments, SparkDataFrame) else boundary_segments.sdf()
 
-    expr = "ST_Buffer(geometry_right, {})"  # This feels nicer, I don't know what happens with geometry collections.
+    expr = "ST_Buffer(geometry_right, {})"
     expr = f"ST_Intersection(geometry, {expr})"
     expr = f"ST_Length({expr}) / ST_Length(geometry)"
     expr = f"LEAST(GREATEST({expr}, 0), 1)"

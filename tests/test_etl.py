@@ -94,18 +94,17 @@ def test_dataset_imports():
     }
 
     catalogue_diff = init_datasets - catalogue_datasets
-    assert catalogue_diff == set(), f"The following datasets are imported but not added to the catalogue:\n{catalogue_diff}"
+    assert catalogue_diff == set(), f"The following datasets are imported but not added to the catalogue: {catalogue_diff}"
 
     init_diff = submodule_datasets - init_datasets
-    assert init_diff == set(), f"The following datasets are created but not added to the __init__:\n{init_diff}"
+    assert init_diff == set(), f"The following datasets are created but not added to the __init__: {init_diff}"
 
 
 @pytest.mark.dbr
 def test_all_fresh():
     "Test all datasets are fresh."
     unfresh = [d.name for d in catalogue if not d.is_fresh]
-    msg = "\n".join(unfresh)
-    assert not unfresh, f"Un-fresh datasets:\n{msg}"
+    assert not unfresh, f"Unfresh datasets: {unfresh}"
 
 
 def _dataset_date_is_most_recent(dataset):
@@ -126,5 +125,4 @@ def test_all_datasets_path_most_recent():
         if dataset.is_fresh:
             if not _dataset_date_is_most_recent(dataset):
                 fails.append(dataset)
-    msg = "\n".join(d.name for d in fails)
-    assert not fails, f"Not all datasets loading most recent files. Failing datasets:\n{msg}"
+    assert not fails, f"Not all datasets loading most recent files. Failing datasets: {[d.name for d in fails]}"
