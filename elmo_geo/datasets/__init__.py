@@ -11,7 +11,7 @@ from .boundary import (
     boundary_hedgerows,
     boundary_segments,
     boundary_walls,
-    boundary_water,
+    # boundary_water,
 )
 from .catchment_based_approach import (
     wetland_vision_parcels,
@@ -162,7 +162,7 @@ catalogue = [
     boundary_hedgerows,
     boundary_segments,
     boundary_walls,
-    boundary_water,
+    # boundary_water,
     bua_parcels,
     bua_raw,
     cec_soilscapes_habitats_parcels,
