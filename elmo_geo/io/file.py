@@ -91,7 +91,7 @@ def load_sdf(path: str, **kwargs) -> SparkDataFrame:
     return sdf
 
 
-def read_file(source_path: str, is_geo: bool, layer: int | str | None = None, clean_geometry: bool = True) -> SparkDataFrame:
+def read_file(source_path: str, is_geo: bool, layer: int | str | None = None, subdivide: bool = False, clean_geometry: bool = True) -> SparkDataFrame:
     path = Path(source_path)
     if is_geo:
         if path.suffix == ".parquet" or list(path.glob("*.parquet")):
@@ -110,8 +110,11 @@ def read_file(source_path: str, is_geo: bool, layer: int | str | None = None, cl
         else:
             raise UnknownFileExtension()
     df = to_sdf(df) if is_geo else spark.createDataFrame(df)
-    if is_geo and clean_geometry:
-        df = df.withColumn("geometry", F.expr("ST_SubDivideExplode(geometry, 256)")).transform(st_clean)
+    if is_geo
+        if subdivide:
+            df = df.withColumn("geometry", F.expr("ST_SubDivideExplode(geometry, 256)"))
+        if clean_geometry:
+            df = df.transform(st_clean)
     return df
 
 
