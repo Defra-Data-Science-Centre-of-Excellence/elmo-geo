@@ -32,9 +32,7 @@ def st_dump_to_list(col):
 
 
 def st_clean(sdf: SparkDataFrame, column: str = "geometry") -> SparkDataFrame:
-    """Uses mapInPandas to clean a spark geometry field to 1m precision
-    using Geopanas functions.
-    """
+    """Uses mapInPandas to clean a spark geometry field to 1m precision using GeoPandas functions."""
 
     def _clean(iterator):
         for pdf in iterator:
