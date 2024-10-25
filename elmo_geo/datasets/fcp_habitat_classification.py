@@ -300,7 +300,7 @@ def _assign_parcel_habitat_types_from_candidates(
         )
         .withColumn("rank_default", F.row_number().over(window))
         .filter("rank_default=1")
-        .selectExpr("id_parcel", "action_group", "action_habitat", "is_upland", "TRUE as is_default", "habitat_name")
+        .selectExpr("id_parcel", "unit", "action_group", "action_habitat", "is_upland", "TRUE as is_default", "habitat_name")
     )
 
     # Combine the assigned habitats with the default habitats
