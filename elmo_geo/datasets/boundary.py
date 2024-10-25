@@ -42,7 +42,6 @@ from elmo_geo.st.segmentise import segmentise_with_tolerance, st_udf
 from elmo_geo.utils.types import SparkDataFrame
 
 from .hedges import rpa_hedges_raw
-from .os import os_ngd_raw
 from .osm import osm_tidy
 from .rpa_reference_parcels import reference_parcels
 
@@ -151,16 +150,16 @@ def fn_pre_water(sdf: SparkDataFrame) -> SparkDataFrame:
     return sdf.filter("theme = 'Water' AND description NOT LIKE '%Catchment'")
 
 
-boundary_water = DerivedDataset(
-    level0="silver",
-    level1="elmo_geo",
-    name="boundary_water",
-    model=SjoinBoundaries,
-    restricted=True,
-    func=partial(sjoin_boundary_proportion, fn_pre=fn_pre_water),
-    dependencies=[reference_parcels, boundary_segments, os_ngd_raw],
-    is_geo=False,
-)
+# boundary_water = DerivedDataset(
+#     level0="silver",
+#     level1="elmo_geo",
+#     name="boundary_water",
+#     model=SjoinBoundaries,
+#     restricted=True,
+#     func=partial(sjoin_boundary_proportion, fn_pre=fn_pre_water),
+#     dependencies=[reference_parcels, boundary_segments, os_ngd_raw],
+#     is_geo=False,
+# )
 
 
 # Wall
