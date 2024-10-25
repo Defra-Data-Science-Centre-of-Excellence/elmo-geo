@@ -31,7 +31,7 @@ def register_no_coalesce(no_coalesce: bool):
         LOG.info("spark.sql.adaptive.coalescePartitions.enabled = false")
 
 
-def register(spark: SparkSession = spark, dir: str = "/elmo-geo", no_coalesce: bool = False):
+def register(spark: SparkSession = spark, dir: str = "/elmo-geo", no_coalesce: bool = True):
     register_dir(dir)
     register_no_coalesce(no_coalesce)
     register_sedona(spark)

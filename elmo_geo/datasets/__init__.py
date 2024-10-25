@@ -8,7 +8,9 @@ from elmo_geo.utils.log import LOG
 
 from .boundary import (
     boundary_adjacencies,
+    boundary_hedgerows,
     boundary_segments,
+    boundary_walls,
 )
 from .catchment_based_approach import (
     wetland_vision_parcels,
@@ -40,6 +42,12 @@ from .defra_priority_habitats import (
     defra_habitat_area_parcels,
     defra_priority_habitat_england_raw,
     defra_priority_habitat_parcels,
+)
+from .ea_flood_risk_mapping import (
+    ea_fz3_parcels,
+    ea_fz3_raw,
+    ea_rofrs_parcels,
+    ea_rofrs_raw,
 )
 from .fc_ewco import (
     ewco_ammonia_emissions_parcels,
@@ -93,8 +101,8 @@ from .fr_esc_m3_trees import (
     esc_species_parcels,
     os_bng_no_peat_parcels,
 )
-from .fr_esc_m3_trees_suitability import (
-    esc_tree_suitability,
+from .fr_esc_m3_woodland_suitability import (
+    esc_woodland_suitability,
 )
 from .hedges import (
     rpa_hedges_raw,
@@ -175,7 +183,9 @@ catalogue = [
     alc_parcels,
     alc_raw,
     boundary_adjacencies,
+    boundary_hedgerows,
     boundary_segments,
+    boundary_walls,
     bua_parcels,
     bua_raw,
     cec_soilscapes_habitats_parcels,
@@ -190,11 +200,15 @@ catalogue = [
     defra_habitat_area_parcels,
     defra_priority_habitat_england_raw,
     defra_priority_habitat_parcels,
+    ea_rofrs_raw,
+    ea_rofrs_parcels,
+    ea_fz3_raw,
+    ea_fz3_parcels,
     esc_m3_geo,
     esc_m3_raw,
     esc_carbon_parcels,
     esc_species_parcels,
-    esc_tree_suitability,
+    esc_woodland_suitability,
     evast_habitat_management_mapping_raw,
     evast_habitat_mapping_raw,
     ewco_nature_recovery_priority_habitat_parcels,
