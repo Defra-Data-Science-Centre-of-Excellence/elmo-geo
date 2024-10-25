@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from elmo_geo import datasets
+from elmo_geo import datasets, register
 from elmo_geo.datasets import catalogue
 from elmo_geo.etl import Dataset, DerivedDataset, SourceDataset
 from elmo_geo.etl.etl import DATE_FMT, PAT_DATE
@@ -133,7 +133,9 @@ def test_all_datasets_path_most_recent():
 @pytest.mark.dbr
 def test_source_dataset_geometry_cleaning():
     """Refreshes the test source geodataset and checks that geometries have been cleaned."""
-    gdf_raw = gpd.read_file(test_source_geodataset.source_path).set_index("id")
+    register()
+
+    gdf_raw = gpd.read_file(test_source_geodataset.source_path).set_index("id").to_crs(27700)  # Source is lat,lng
     test_source_geodataset.refresh()
 
     gs_fresh = test_source_geodataset.gdf().set_index("id").geometry

@@ -5,6 +5,7 @@
 /data/
 
 # Manual
+!.env-template
 !/.github/workflows/verify.yaml
 !/.devcontainer/devcontainer.json
 !/.vscode/settings.json
