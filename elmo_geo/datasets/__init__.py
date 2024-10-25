@@ -99,8 +99,8 @@ from .fr_esc_m3_trees import (
     esc_species_parcels,
     os_bng_no_peat_parcels,
 )
-from .fr_esc_m3_trees_suitability import (
-    esc_tree_suitability,
+from .fr_esc_m3_woodland_suitability import (
+    esc_woodland_suitability,
 )
 from .hedges import (
     rpa_hedges_raw,
@@ -202,7 +202,7 @@ catalogue = [
     esc_m3_raw,
     esc_carbon_parcels,
     esc_species_parcels,
-    esc_tree_suitability,
+    esc_woodland_suitability,
     evast_habitat_management_mapping_raw,
     evast_habitat_mapping_raw,
     ewco_nature_recovery_priority_habitat_parcels,
