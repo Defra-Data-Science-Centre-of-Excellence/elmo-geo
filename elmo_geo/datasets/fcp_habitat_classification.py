@@ -258,6 +258,10 @@ def _assign_parcel_habitat_types_from_candidates(
         sdf_candidates.join(sdf_phi_lu, on=["id_parcel", "action_group"], how="inner")
         .withColumn("matches_action_habitat", F.expr("action_habitat = action_habitat_phi"))
         .withColumn("matches_soilscape_habitat", F.expr("soilscape_habitat_code = soilscape_habitat_code_phi"))
+        # Only assign habitat where there is a PHI instance that matches a soil type based candidate habitat
+        # Or where it's an SRG type habitat (since last resort is default values for these so can be more permissive here)
+        .filter("matches_action_habitat OR (action_group='SRG')") 
+        .filter("matches_soilscape_habitat OR (action_group='SRG')")
     )
 
     # Create a dataset of deafult SRG habitat types for parcels that are on SRG compatible soils
@@ -314,7 +318,14 @@ def _assign_parcel_habitat_types_from_candidates(
 
     # Checks
     msg = "Unexpected parcel habitat assignments occuring."
-    assert sdf.filter("(NOT matches_action_habitat) AND (NOT matches_soilscape_habitat)  AND (NOT is_default)").count() == 0, msg
+    assert (
+        sdf.filter(
+            """((NOT matches_action_habitat) OR (matches_action_habitat IS NULL)) AND 
+                      ((NOT matches_soilscape_habitat) OR (matches_soilscape_habitat IS NULL)) AND 
+                      (NOT is_default)"""
+        ).count()
+        == 0
+    ), msg
     assert sdf.filter("(id_parcel is NULL) OR (action_group is NULL) OR (action_habitat is NULL)").count() == 0
     assert sdf.filter("(is_upland) AND (action_habitat like '%lowland%')").count() == 0, "Unexpected lowland habitat assignment"
     assert sdf.filter("(NOT is_upland) AND (action_habitat like '%upland%')").count() == 0, "Unexpected upland habitat assignment"
