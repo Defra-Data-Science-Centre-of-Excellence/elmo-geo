@@ -510,7 +510,10 @@ def _is_phi(
                                  .withColumn("habitat_name_clean", _clean_habitat_name("habitat_name"))
                                  .withColumn("action_group", F.expr("REPLACE(action_group, 'Create ', '')"))
                                  .filter(F.expr("source = 'phi'"))
-                                 .select("action_group", "action_habitat", "habitat_name"))
+                                 .select("action_group", "action_habitat", "habitat_name_clean")
+                                 )
+    sdf_evast_habitat_mapping = (sdf_evast_habitat_mapping
+                                 .unionByName(sdf_evast_habitat_mapping.selectExpr("action_group", "'action_group_total' as action_habitat", "habitat_name_clean")))
 
     sdf_raw = (
         reference_parcels.sdf()
@@ -521,7 +524,7 @@ def _is_phi(
 
     sdf_create = (
         reference_parcels.sdf()
-        .join(defra_priority_habitat_parcels.sdf(), on="id_parcel", how="inner")
+        .join(sdf_defra_priority_habitat_parcels, on="id_parcel", how="inner")
         .join(sdf_evast_habitat_mapping, on="habitat_name_clean", how="inner",)
         .withColumn("grouping_category", F.lit("evast_create"))
     )
@@ -551,7 +554,7 @@ def _is_phi(
 
     sdf_manage = (
         reference_parcels.sdf()
-        .join(defra_priority_habitat_parcels.sdf(), on="id_parcel", how="inner")
+        .join(sdf_defra_priority_habitat_parcels, on="id_parcel", how="inner")
         .join(
             sdf_manage_lookup.select("action_group", "action_habitat", "habitat_name"),
             on="habitat_name",
@@ -598,7 +601,7 @@ class IsPHIParcelModel(DataFrameModel):
 
 fcp_is_phi_parcel = DerivedDataset(
     name="fcp_is_phi_parcel",
-    level0="silver",
+    level0="gold",
     level1="fcp",
     restricted=False,
     is_geo=False,

@@ -46,7 +46,7 @@ class S3Handler:
         """Test the connection works."""
         try:
             self.s3_client.list_objects_v2(Bucket=self.bucket)
-        except (botocore.exception.BotoCoreError, botocore.exceptions.ClientError) as error:
+        except (botocore.exceptions.BotoCoreError, botocore.exceptions.ClientError) as error:
             LOG.error(
                 f"""S3HandlerError: update .env AWS credentials.
                 Login and click 'Access keys' (next to 'ELMModelling').
