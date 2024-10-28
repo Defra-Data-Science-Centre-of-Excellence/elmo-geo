@@ -182,7 +182,7 @@ boundary_walls = DerivedDataset(
 
 
 def fn_pre_relict(sdf: SparkDataFrame) -> SparkDataFrame:
-    return sdf.drop("id_parcel")
+    return sdf.drop("id_parcel").filter("geometry IS NOT NULL")
 
 
 boundary_relict = DerivedDataset(

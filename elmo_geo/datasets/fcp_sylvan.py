@@ -21,12 +21,12 @@ class RelictHedgeRaw(DataFrameModel):
         geometry: Section of parcel boundary classified as a relict hedge.
     """
 
-    geometry: Geometry(crs=SRID) = Field(alias="geometry_relict_boundary")
+    geometry: Geometry(crs=SRID) = Field(nullable=True)
 
 
 fcp_relict_hedge_raw = SourceDataset(
     name="fcp_relict_hedge_raw",
-    level0="bronze",
+    level0="silver",
     level1="fcp",
     model=RelictHedgeRaw,
     restricted=False,
