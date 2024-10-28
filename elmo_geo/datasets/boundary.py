@@ -34,13 +34,17 @@ from functools import partial
 
 from pandera import DataFrameModel, Field
 from pandera.engines.geopandas_engine import Geometry
+from pyspark.sql import DataFrame as SparkDataFrame
 from pyspark.sql import functions as F
 
 from elmo_geo.etl import SRID, Dataset, DerivedDataset
 from elmo_geo.etl.transformations import sjoin_boundary_proportion
-from elmo_geo.st.segmentise import segmentise_with_tolerance, st_udf
-from elmo_geo.utils.types import SparkDataFrame
+from elmo_geo.st.segmentise import segmentise_with_tolerance
+from elmo_geo.st.udf import st_udf
 
+from .fcp_sylvan import fcp_relict_hedge_raw
+from .hedges import rpa_hedges_raw
+from .osm import osm_tidy
 from .rpa_reference_parcels import reference_parcels
 
 
@@ -51,7 +55,7 @@ def segmentise_boundary(dataset: Dataset) -> SparkDataFrame:
         dataset.sdf()
         .withColumn("geometry", F.expr("ST_Boundary(geometry)"))
         .withColumn("geometry", F.expr("EXPLODE(ST_Dump(geometry))"))
-        .transform(lambda sdf: st_udf(sdf, segmentise_with_tolerance, "geometry"))
+        .transform(st_udf, segmentise_with_tolerance)
         .withColumn("geometry", F.expr("EXPLODE(ST_Dump(geometry))"))
         .selectExpr(
             "monotonically_increasing_id() AS id_boundary",
@@ -82,7 +86,7 @@ boundary_segments = DerivedDataset(
     level0="silver",
     level1="elmo_geo",
     model=BoundarySegments,
-    restricted=True,
+    restricted=False,
     func=segmentise_boundary,
     dependencies=[reference_parcels],
 )
@@ -122,9 +126,75 @@ boundary_adjacencies = DerivedDataset(
     level0="silver",
     level1="elmo_geo",
     model=SjoinBoundaries,
-    restricted=True,
+    restricted=False,
     func=partial(sjoin_boundary_proportion, columns=["id_parcel_right"], fn_pre=fn_pre_adj, fn_post=fn_post_adj),
     dependencies=[reference_parcels, boundary_segments, boundary_segments],
     is_geo=False,
 )
 """Proportion of parcel boundaries intersected by boundaries of other parcels at different buffer distances."""
+
+
+# Hedge
+boundary_hedgerows = DerivedDataset(
+    level0="silver",
+    level1="elmo_geo",
+    name="boundary_hedgerows",
+    model=SjoinBoundaries,
+    restricted=False,
+    func=sjoin_boundary_proportion,
+    dependencies=[reference_parcels, boundary_segments, rpa_hedges_raw],
+    is_geo=False,
+)
+
+
+# Water
+def fn_pre_water(sdf: SparkDataFrame) -> SparkDataFrame:
+    return sdf.filter("theme = 'Water' AND description NOT LIKE '%Catchment'")
+
+
+# boundary_water = DerivedDataset(
+#     level0="silver",
+#     level1="elmo_geo",
+#     name="boundary_water",
+#     model=SjoinBoundaries,
+#     restricted=True,
+#     func=partial(sjoin_boundary_proportion, fn_pre=fn_pre_water),
+#     dependencies=[reference_parcels, boundary_segments, os_ngd_raw],
+#     is_geo=False,
+# )
+
+
+# Wall
+def fn_pre_wall(sdf: SparkDataFrame) -> SparkDataFrame:
+    return sdf.filter("tags LIKE \"{%'barrier': 'wall'%}\" OR tags LIKE \"{%'wall':%}\"")
+
+
+boundary_walls = DerivedDataset(
+    level0="silver",
+    level1="elmo_geo",
+    name="boundary_walls",
+    model=SjoinBoundaries,
+    restricted=False,
+    func=partial(sjoin_boundary_proportion, fn_pre=fn_pre_wall),
+    dependencies=[reference_parcels, boundary_segments, osm_tidy],
+    is_geo=False,
+)
+
+
+def fn_pre_relict(sdf: SparkDataFrame) -> SparkDataFrame:
+    return sdf.drop("id_parcel").filter("geometry IS NOT NULL")
+
+
+boundary_relict = DerivedDataset(
+    level0="gold",
+    level1="fcp",
+    name="boundary_relict",
+    model=SjoinBoundaries,
+    restricted=False,
+    func=partial(sjoin_boundary_proportion, fn_pre=fn_pre_relict),
+    dependencies=[reference_parcels, boundary_segments, fcp_relict_hedge_raw],
+    is_geo=False,
+)
+
+
+# TODO: Merge

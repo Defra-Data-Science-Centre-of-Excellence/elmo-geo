@@ -8,7 +8,10 @@ from elmo_geo.utils.log import LOG
 
 from .boundary import (
     boundary_adjacencies,
+    boundary_hedgerows,
+    boundary_relict,
     boundary_segments,
+    boundary_walls,
 )
 from .catchment_based_approach import (
     wetland_vision_parcels,
@@ -41,10 +44,33 @@ from .defra_priority_habitats import (
     defra_priority_habitat_england_raw,
     defra_priority_habitat_parcels,
 )
+from .ea_flood_risk_mapping import (
+    ea_fz3_parcels,
+    ea_fz3_raw,
+    ea_rofrs_parcels,
+    ea_rofrs_raw,
+)
 from .fc_ewco import (
+    ewco_ammonia_emissions_parcels,
+    ewco_ammonia_emissions_raw,
+    ewco_flood_risk_parcels,
+    ewco_flood_risk_raw,
+    ewco_keeping_rivers_cool_parcels,
+    ewco_keeping_rivers_cool_raw,
     ewco_nature_recovery_priority_habitat,
     ewco_nature_recovery_priority_habitat_parcels,
     ewco_nature_recovery_priority_habitat_raw,
+    ewco_nfc_social_parcels,
+    ewco_nfc_social_raw,
+    ewco_parcels,
+    ewco_priority_habitat_network_parcels,
+    ewco_priority_habitat_network_raw,
+    ewco_red_squirrel_parcels,
+    ewco_red_squirrel_raw,
+    ewco_sensitivity_parcels,
+    ewco_sensitivity_raw,
+    ewco_water_quality_parcels,
+    ewco_water_quality_raw,
 )
 from .fc_woodland_sensitivity import (
     sfi_agroforestry,
@@ -69,6 +95,7 @@ from .fcp_habitat_classification import (
     fcp_habitat_creation_type_parcel,
     fcp_is_phi_parcel,
 )
+from .fcp_sylvan import fcp_relict_hedge_raw
 from .fr_esc_m3_trees import (
     esc_carbon_parcels,
     esc_m3_geo,
@@ -76,8 +103,8 @@ from .fr_esc_m3_trees import (
     esc_species_parcels,
     os_bng_no_peat_parcels,
 )
-from .fr_esc_m3_trees_suitability import (
-    esc_tree_suitability,
+from .fr_esc_m3_woodland_suitability import (
+    esc_woodland_suitability,
 )
 from .hedges import (
     rpa_hedges_raw,
@@ -100,6 +127,8 @@ from .ons import (
     cua_raw,
     itl2_parcels,
     itl2_raw,
+    itl3_parcels,
+    itl3_raw,
     lad_parcels,
     lad_raw,
     region_parcels,
@@ -156,7 +185,10 @@ catalogue = [
     alc_parcels,
     alc_raw,
     boundary_adjacencies,
+    boundary_hedgerows,
     boundary_segments,
+    boundary_walls,
+    boundary_relict,
     bua_parcels,
     bua_raw,
     cec_soilscapes_habitats_parcels,
@@ -171,23 +203,47 @@ catalogue = [
     defra_habitat_area_parcels,
     defra_priority_habitat_england_raw,
     defra_priority_habitat_parcels,
+    ea_rofrs_raw,
+    ea_rofrs_parcels,
+    ea_fz3_raw,
+    ea_fz3_parcels,
     esc_m3_geo,
     esc_m3_raw,
     esc_carbon_parcels,
     esc_species_parcels,
-    esc_tree_suitability,
+    esc_woodland_suitability,
     evast_habitat_management_mapping_raw,
     evast_habitat_mapping_raw,
     ewco_nature_recovery_priority_habitat_parcels,
     ewco_nature_recovery_priority_habitat_raw,
     ewco_nature_recovery_priority_habitat,
+    ewco_red_squirrel_raw,
+    ewco_red_squirrel_parcels,
+    ewco_nfc_social_raw,
+    ewco_nfc_social_parcels,
+    ewco_ammonia_emissions_raw,
+    ewco_ammonia_emissions_parcels,
+    ewco_flood_risk_raw,
+    ewco_flood_risk_parcels,
+    ewco_keeping_rivers_cool_raw,
+    ewco_keeping_rivers_cool_parcels,
+    ewco_parcels,
+    ewco_priority_habitat_network_raw,
+    ewco_priority_habitat_network_parcels,
+    ewco_water_quality_raw,
+    ewco_water_quality_parcels,
+    ewco_sensitivity_raw,
+    ewco_sensitivity_parcels,
     fcp_habitat_creation_type_parcel,
     fcp_is_phi_parcel,
+    fcp_relict_hedge_raw,  # temporary, until methodology is reproduced
     flood_risk_areas_parcels,
     flood_risk_areas_raw,
     is_upland_parcels,
     itl2_parcels,
     itl2_raw,
+    itl3_parcels,
+    itl3_raw,
     jncc_spa_parcels,
     jncc_spa_raw,
     lad_parcels,

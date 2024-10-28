@@ -28,7 +28,7 @@ from elmo_geo import LOG, register
 from elmo_geo.datasets.datasets import datasets, parcels
 from elmo_geo.io import download_link
 from elmo_geo.st import sjoin
-from elmo_geo.st.geometry import load_geometry
+from elmo_geo.st.udf import st_clean
 from elmo_geo.utils.misc import dbfs
 
 register()
@@ -75,7 +75,9 @@ df_parcels.display()
 # COMMAND ----------
 
 # load each of the historic england datasets
-sdf_combined_sites = spark.read.format("parquet").load(dbfs(f_combined_sites, True)).withColumn("geometry", load_geometry("geometry"))
+sdf_combined_sites = (
+    spark.read.format("parquet").load(dbfs(f_combined_sites, True)).withColumn("geometry", F.expr("ST_GeomFromWKB(geometry)")).transform(st_clean)
+)
 sdf_combined_sites.display()
 
 historic_datasets = {

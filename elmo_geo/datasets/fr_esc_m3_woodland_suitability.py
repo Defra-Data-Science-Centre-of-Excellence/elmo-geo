@@ -110,8 +110,8 @@ def _transform(esc_species_parcels: Dataset) -> pd.DataFrame:
     return esc_species_parcels.sdf().filter("species <> 'OPENSPACE'").transform(_calculate_mean_suitability).toPandas()
 
 
-esc_tree_suitability = DerivedDataset(
-    name="esc_tree_suitability",
+esc_woodland_suitability = DerivedDataset(
+    name="esc_woodland_suitability",
     level0="silver",
     level1="forest_research",
     restricted=False,
@@ -120,6 +120,6 @@ esc_tree_suitability = DerivedDataset(
     dependencies=[esc_species_parcels],
     model=ESCTreeSuitabilityModel,
 )
-"""The Ecological Site Classification (ESC) tree suitability datasets aggregated to provide tree suitability scores 
+"""The Ecological Site Classification (ESC) tree suitability datasets aggregated to provide suitability scores 
 for native broadleaved, productive conifer, riparian, woodland pasture, and silvoarable woodland types over different modelled
 time periods for each parcel."""

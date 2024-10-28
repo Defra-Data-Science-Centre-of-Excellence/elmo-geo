@@ -19,8 +19,8 @@ from pyspark.sql import functions as F
 
 from elmo_geo import LOG, register
 from elmo_geo.io import download_link
-from elmo_geo.st.geometry import load_geometry
 from elmo_geo.st.join import knn
+from elmo_geo.st.udf import st_clean
 
 register()
 
@@ -46,26 +46,21 @@ spark.read.parquet(sf_priority_habitat).display()
 
 # COMMAND ----------
 
-# process the parcels dataset to ensure validity, simplify the vertices to a tolerence,
+# process the parcels dataset to ensure validity, simplify the vertices to a tolerance,
 # and subdivide large geometries
-df_parcels = (
-    spark.read.format("geoparquet")
-    .load(sf_parcels)
-    .withColumn("geometry", load_geometry("geometry", encoding_fn=""))  # already geometry type so encoding function set to blank
-    .select("id_parcel", "geometry")
-    .repartition(1_000)
-)
+df_parcels = spark.read.format("geoparquet").load(sf_parcels).transform(st_clean).select("id_parcel", "geometry").repartition(1_000)
 df_parcels.display()
 
 # COMMAND ----------
 
-# process the feature dataset to ensure validity, simplify the vertices to a tolerence,
+# process the feature dataset to ensure validity, simplify the vertices to a tolerance,
 # and subdivide large geometries
 df_feature = (
     spark.read.parquet(sf_priority_habitat)
     .filter(F.expr("Main_Habit like '%heath%'"))
-    .withColumn("geometry", load_geometry("geometry"))
+    .withColumn("geometry", F.expr("ST_GeomFromWKB(geometry)"))
     .withColumn("geometry", F.expr(f"ST_SubdivideExplode(geometry, {max_vertices})"))
+    .transform(st_clean)
     .repartition(n_partitions)
     .select(
         F.col("Main_Habit").alias(groupby_variable),
