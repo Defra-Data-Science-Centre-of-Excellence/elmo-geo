@@ -236,7 +236,7 @@ catalogue = [
     ewco_sensitivity_parcels,
     fcp_habitat_creation_type_parcel,
     fcp_is_phi_parcel,
-    fcp_relict_hedge_raw, # temporary, until methodology is reproduced
+    fcp_relict_hedge_raw,  # temporary, until methodology is reproduced
     flood_risk_areas_parcels,
     flood_risk_areas_raw,
     is_upland_parcels,
