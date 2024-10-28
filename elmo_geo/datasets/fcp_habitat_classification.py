@@ -164,17 +164,19 @@ def _get_parcel_candidate_habitats(
 
 
 def _clean_habitat_name(col: str) -> callable:
-    expr = f"REPLACE({col}, '&', 'and')"
+    expr = f"LOWER({col})"
+    expr = f"REPLACE({expr}, '&', 'and')"
     expr = f"REPLACE({expr}, ',', '')"
-    expr = f"LOWER({expr})"
     expr = f"REPLACE({expr}, 'calaminarian grass', 'calaminarian grassland')"
     expr = f"REPLACE({expr}, 'grasslandland', 'grassland')"
     expr = f"TRIM( TRAILING 's' FROM {expr})"
-    return F.expr(f"{expr}")
+    return F.expr(expr)
 
 
 def _get_phi_area_with_soilscapes_habitats(
-    defra_habitat_area_parcels: Dataset, evast_habitat_mapping_raw: Dataset, distance_thresholds: list[int] = [1_000, 3_000]
+    defra_habitat_area_parcels: Dataset,
+    evast_habitat_mapping_raw: Dataset,
+    distance_thresholds: list[int] = [1_000, 3_000],
 ) -> SparkDataFrame:
     """Produce lookup from PHI habitat names to soilscape habitat codes for the PHI area within threshol distances dataset.
 
@@ -267,15 +269,13 @@ def _assign_parcel_habitat_types_from_candidates(
     # Create a dataset of deafult SRG habitat types for parcels that are on SRG compatible soils
     # Used in cases where parcels do not have instances of PHI within threshold distances but are on SRG compatible soil
     # Assign these habitats to acid grassland, everything else meadow
-    default_acid_gr_habitats = "','".join(
-        [
-            "blanket bog",
-            "lowland raised bog",
-            "fragmented heath",
-            "lowland heathland",
-            "mountain heaths and willow scrub",
-            "upland heathland",
-        ]
+    default_acid_gr_habitats = (
+        "blanket bog",
+        "lowland raised bog",
+        "fragmented heath",
+        "lowland heathland",
+        "mountain heaths and willow scrub",
+        "upland heathland",
     )
 
     window = Window.partitionBy("id_parcel", "action_group").orderBy(F.col("distance_threshold").asc(), F.col("area").desc())
@@ -288,11 +288,11 @@ def _assign_parcel_habitat_types_from_candidates(
             F.expr(
                 f"""
                 CASE 
-                WHEN ((habitat_name IN ('{default_acid_gr_habitats}')) AND is_upland) 
+                WHEN ((habitat_name IN {default_acid_gr_habitats}) AND is_upland) 
                 THEN 'upland_acid_gr' 
-                WHEN ((habitat_name IN ('{default_acid_gr_habitats}')) AND (NOT is_upland))
+                WHEN ((habitat_name IN {default_acid_gr_habitats}) AND (NOT is_upland))
                 THEN 'lowland_acid_gr'
-                WHEN ( ((habitat_name NOT IN ('{default_acid_gr_habitats}')) OR (habitat_name IS NULL))  AND is_upland)
+                WHEN ( ((habitat_name NOT IN {default_acid_gr_habitats}) OR (habitat_name IS NULL))  AND is_upland)
                 THEN 'upland_meadow'
                 ELSE 'lowland_meadow'
                 END"""
@@ -317,20 +317,21 @@ def _assign_parcel_habitat_types_from_candidates(
     sdf = sdf_assigned.unionByName(sdf_defaults, allowMissingColumns=True).withColumn("rank", F.row_number().over(window)).filter("rank=1")
 
     # Checks
-    msg = "Unexpected parcel habitat assignments occuring."
+    msg = """Habitat assignment should only occur where PHI habitat group and corresponding soilscape habitat match the candidate habitat
+            group and soilscape habitat type OR where a default habitat is assigned."""
     assert (
         sdf.filter(
-            """((NOT matches_action_habitat) OR (matches_action_habitat IS NULL)) AND 
-                      ((NOT matches_soilscape_habitat) OR (matches_soilscape_habitat IS NULL)) AND 
-                      (NOT is_default)"""
+            """((NOT matches_action_habitat) OR (matches_action_habitat IS NULL)) AND
+               ((NOT matches_soilscape_habitat) OR (matches_soilscape_habitat IS NULL)) AND 
+               (NOT is_default)"""
         ).count()
         == 0
     ), msg
-    assert sdf.filter("(id_parcel is NULL) OR (action_group is NULL) OR (action_habitat is NULL)").count() == 0
-    assert sdf.filter("(is_upland) AND (action_habitat like '%lowland%')").count() == 0, "Unexpected lowland habitat assignment"
-    assert sdf.filter("(NOT is_upland) AND (action_habitat like '%upland%')").count() == 0, "Unexpected upland habitat assignment"
+    assert sdf.filter("(id_parcel is NULL) OR (action_group is NULL) OR (action_habitat is NULL)").count() == 0, "Unexpected nulls in assignment"
+    assert sdf.filter("(is_upland) AND (action_habitat like '%lowland%')").count() == 0, "Lowland habitat cannot be assigned to upland parcel"
+    assert sdf.filter("(NOT is_upland) AND (action_habitat like '%upland%')").count() == 0, "Upland habitat cannot be assigned to lowland parcel"
     assert sdf.filter("(is_default) AND (action_group != 'SRG')").count() == 0, "Unexpected default habitat assignment"
-    assert sdf.filter("is_default").count() > 0, "Zero defaul assignment habitats."
+    assert sdf.filter("is_default").count() > 0, "Zero default assignment habitats"
     assert sdf.filter("(action_habitat_phi IS NULL) AND (NOT is_default)").count() == 0, "Unexpected null phi habitat"
 
     return sdf.select("id_parcel", "unit", "action_group", "action_habitat")
