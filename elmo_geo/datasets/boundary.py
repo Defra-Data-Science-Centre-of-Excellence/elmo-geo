@@ -186,7 +186,7 @@ def fn_pre_relict(sdf: SparkDataFrame) -> SparkDataFrame:
 
 
 boundary_relict = DerivedDataset(
-    level0="gold",
+    level0="silver",
     level1="fcp",
     name="boundary_relict",
     model=SjoinBoundaries,
@@ -197,4 +197,102 @@ boundary_relict = DerivedDataset(
 )
 
 
-# TODO: Merge
+def _aggregate_boundary(sdf_boundary: SparkDataFrame, type: str, width: int = 2, bufs: tuple[int] = (0, 2, 4, 8, 12, 24)) -> SparkDataFrame:
+    """Aggregate boundary proportions to give length and area totals for parcels."""
+    return sdf_boundary.groupby("id_parcel").agg(
+        *[F.expr(f"SUM(proportion_{b}m * m) as m_{type}_{b}m") for b in bufs],
+        *[F.expr(f"SUM(proportion_{b}m * m * {width} / 1000) as ha_{type}_{b}m") for b in bufs],
+    )
+
+
+def _combine_boundary_length_and_area_totals(
+    boundary_hedgerows: DerivedDataset,
+    boundary_walls: DerivedDataset,
+    boundary_relict: DerivedDataset,
+) -> SparkDataFrame:
+    """Joined boundary datasets together into single wider dataset.
+
+    Additionally calculate areas of feature overlap based on proportion of boundary and
+    assumed distance from boundary that features are relevant within. For example,
+    area within 2m of a hedgerow field boundary is assigned hedgerow.
+    """
+    return (
+        boundary_hedgerows.sdf()
+        .transform(_aggregate_boundary, type="hedge")
+        .join(
+            boundary_walls.sdf().transform(_aggregate_boundary, type="wall"),
+            on=["id_parcel"],
+            how="outer",
+        )
+        .join(
+            boundary_relict.sdf().transform(_aggregate_boundary, type="relict"),
+            on=["id_parcel"],
+            how="outer",
+        )
+    )
+
+
+class BoundaryTotalsModel(DataFrameModel):
+    """Model for boudnary length and area totals for parcels.
+    Attributes:
+        id_parcel: Parcel id in which that boundary came from.
+        m_hedge_*m: The length of the boundary intersected by hedgerows buffered at "*"
+        m_wall_*m: The length of the boundary intersected by walls buffered at "*"
+        m_relict_*m: The length of the boundary intersected by relict hedgerows buffered at "*"
+        ha_hedge_*m: The area of the parcel within 2m of a boundary intersected by hedgerows buffered at "*"
+        ha_wall_*m: The area of the parcel within 2m of a boundary intersected by walls buffered at "*"
+        ha_relict_*m: The area of the parcel within 2m of a boundary intersected by relict hedgerow buffered at "*"
+    """
+
+    id_parcel: str = Field()
+
+    m_hedge_0m: float = Field()
+    m_hedge_2m: float = Field()
+    m_hedge_4m: float = Field()
+    m_hedge_8m: float = Field()
+    m_hedge_12m: float = Field()
+    m_hedge_24m: float = Field()
+    ha_hedge_0m: float = Field()
+    ha_hedge_2m: float = Field()
+    ha_hedge_4m: float = Field()
+    ha_hedge_8m: float = Field()
+    ha_hedge_12m: float = Field()
+    ha_hedge_24m: float = Field()
+
+    m_wall_0m: float = Field()
+    m_wall_2m: float = Field()
+    m_wall_4m: float = Field()
+    m_wall_8m: float = Field()
+    m_wall_12m: float = Field()
+    m_wall_24m: float = Field()
+    ha_wall_0m: float = Field()
+    ha_wall_2m: float = Field()
+    ha_wall_4m: float = Field()
+    ha_wall_8m: float = Field()
+    ha_wall_12m: float = Field()
+    ha_wall_24m: float = Field()
+
+    m_relict_0m: float = Field()
+    m_relict_2m: float = Field()
+    m_relict_4m: float = Field()
+    m_relict_8m: float = Field()
+    m_relict_12m: float = Field()
+    m_relict_24m: float = Field()
+    ha_relict_0m: float = Field()
+    ha_relict_2m: float = Field()
+    ha_relict_4m: float = Field()
+    ha_relict_8m: float = Field()
+    ha_relict_12m: float = Field()
+    ha_relict_24m: float = Field()
+
+
+boundary_parcel_totals = DerivedDataset(
+    level0="gold",
+    level1="fcp",
+    name="boundary_parcel_totals",
+    model=BoundaryTotalsModel,
+    restricted=False,
+    func=_combine_boundary_length_and_area_totals,
+    dependencies=[boundary_hedgerows, boundary_walls, boundary_relict],
+    is_geo=False,
+)
