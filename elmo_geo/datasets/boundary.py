@@ -199,16 +199,15 @@ boundary_relict = DerivedDataset(
 
 def _aggregate_boundary(sdf_boundary: SparkDataFrame, type: str, width: int = 2, bufs: tuple[int] = (0, 2, 4, 8, 12, 24)) -> SparkDataFrame:
     """Aggregate boundary proportions to give length and area totals for parcels."""
-    return sdf_boundary.groupby("id_parcel").agg(
-        *[F.expr(f"SUM(proportion_{b}m * m) as m_{type}_{b}m") for b in bufs],
-        *[F.expr(f"SUM(proportion_{b}m * m * {width} / 1000) as ha_{type}_{b}m") for b in bufs],
-    )
+    return sdf_boundary.groupby("id_parcel").agg()
 
 
 def _combine_boundary_length_and_area_totals(
     boundary_hedgerows: DerivedDataset,
     boundary_walls: DerivedDataset,
     boundary_relict: DerivedDataset,
+    width: int = 2,
+    buffers: list[int] = [0, 2, 4, 8, 12, 24],
 ) -> SparkDataFrame:
     """Joined boundary datasets together into single wider dataset.
 
@@ -216,19 +215,18 @@ def _combine_boundary_length_and_area_totals(
     assumed distance from boundary that features are relevant within. For example,
     area within 2m of a hedgerow field boundary is assigned hedgerow.
     """
+
+    sdf = (
+        boundary_hedgerows.sdf().withColumn("type", F.lit("hedge"))
+        .unionByName(boundary_walls.sdf().withColumn("type", F.lit("wall")))
+        .unionByName(boundary_relict.sdf().withColumn("type", F.lit("relict_hedge")))
+    )
     return (
-        boundary_hedgerows.sdf()
-        .transform(_aggregate_boundary, type="hedge")
-        .join(
-            boundary_walls.sdf().transform(_aggregate_boundary, type="wall"),
-            on=["id_parcel"],
-            how="outer",
+        sdf.groupby("id_parcel", "type").agg(
+            *[F.expr(f"SUM(proportion_{b}m * m) as m_{b}m") for b in buffers],
+            *[F.expr(f"SUM(proportion_{b}m * m * {width} / 1000) as ha_{b}m") for b in buffers],
         )
-        .join(
-            boundary_relict.sdf().transform(_aggregate_boundary, type="relict"),
-            on=["id_parcel"],
-            how="outer",
-        )
+        # .groupby("id_parcel").pivot("type")
     )
 
 
