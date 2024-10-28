@@ -148,7 +148,7 @@ def sjoin_boundary_proportion(
     parcel: Dataset | SparkDataFrame,
     boundary_segments: Dataset | SparkDataFrame,
     features: Dataset | SparkDataFrame,
-    buffers: list[float] = [0, 2, 8, 12, 24],
+    buffers: list[float] = [0, 2, 4, 8, 12, 24],
     **kwargs,
 ):
     """Spatially joins with parcels, groups, key joins with boundaries, calculating proportional overlap for multiple buffer distances.
