@@ -160,7 +160,8 @@ def sjoin_boundary_proportion(
     expr = "ST_Intersection(geometry, geometry_right)"
     expr = f"ST_Length({expr}) / ST_Length(geometry)"
     expr = f"LEAST(GREATEST({expr}, 0), 1)"
-    return (sjoin_parcels(parcel, features, distance=max(buffers), **kwargs)
+    return (
+        sjoin_parcels(parcel, features, distance=max(buffers), **kwargs)
         .withColumn("buffer", F.expr(f"EXPLODE(ARRAY{tuple(buffers)})"))
         .withColumn("geometry_right", F.expr("ST_Buffer(geometry_right, buffer)"))
         .join(sdf_segments, on="id_parcel")

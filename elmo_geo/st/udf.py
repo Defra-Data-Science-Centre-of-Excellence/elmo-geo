@@ -38,7 +38,10 @@ def clean_geometries(gs: gpd.GeoSeries, tollerance=1) -> gpd.GeoSeries:
 
 
 def st_clean(sdf: SparkDataFrame, column: str = "geometry", tollerance=1) -> SparkDataFrame:
-    """Clean a spark geometry field to 1m precision using GeoPandas functions."""
+    """Clean a spark geometry field to chosen precision using GeoPandas functions.
+
+    Default precision is 1m.
+    """
     return sdf.transform(st_udf, partial(clean_geometries, tollerance=tollerance), geometry_not_geoseries=False)
 
 
