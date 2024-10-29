@@ -503,17 +503,18 @@ def _is_phi(
     - evast_manage: these are the habitat used for habitat management actions by EVAST
     """
 
-    sdf_defra_priority_habitat_parcels = (defra_priority_habitat_parcels.sdf()
-                                          .withColumn("habitat_name_clean", _clean_habitat_name("habitat_name")))
+    sdf_defra_priority_habitat_parcels = defra_priority_habitat_parcels.sdf().withColumn("habitat_name_clean", _clean_habitat_name("habitat_name"))
 
-    sdf_evast_habitat_mapping = (evast_habitat_mapping_raw.sdf()
-                                 .withColumn("habitat_name_clean", _clean_habitat_name("habitat_name"))
-                                 .withColumn("action_group", F.expr("REPLACE(action_group, 'Create ', '')"))
-                                 .filter(F.expr("source = 'phi'"))
-                                 .select("action_group", "action_habitat", "habitat_name_clean")
-                                 )
-    sdf_evast_habitat_mapping = (sdf_evast_habitat_mapping
-                                 .unionByName(sdf_evast_habitat_mapping.selectExpr("action_group", "'action_group_total' as action_habitat", "habitat_name_clean")))
+    sdf_evast_habitat_mapping = (
+        evast_habitat_mapping_raw.sdf()
+        .withColumn("habitat_name_clean", _clean_habitat_name("habitat_name"))
+        .withColumn("action_group", F.expr("REPLACE(action_group, 'Create ', '')"))
+        .filter(F.expr("source = 'phi'"))
+        .select("action_group", "action_habitat", "habitat_name_clean")
+    )
+    sdf_evast_habitat_mapping = sdf_evast_habitat_mapping.unionByName(
+        sdf_evast_habitat_mapping.selectExpr("action_group", "'action_group_total' as action_habitat", "habitat_name_clean")
+    )
 
     sdf_raw = (
         reference_parcels.sdf()
@@ -525,7 +526,11 @@ def _is_phi(
     sdf_create = (
         reference_parcels.sdf()
         .join(sdf_defra_priority_habitat_parcels, on="id_parcel", how="inner")
-        .join(sdf_evast_habitat_mapping, on="habitat_name_clean", how="inner",)
+        .join(
+            sdf_evast_habitat_mapping,
+            on="habitat_name_clean",
+            how="inner",
+        )
         .withColumn("grouping_category", F.lit("evast_create"))
     )
 
