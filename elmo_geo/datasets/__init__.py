@@ -9,9 +9,11 @@ from elmo_geo.utils.log import LOG
 from .boundary import (
     boundary_adjacencies,
     boundary_hedgerows,
+    boundary_parcel_totals,
     boundary_relict,
     boundary_segments,
     boundary_walls,
+    boundary_water,
 )
 from .catchment_based_approach import (
     wetland_vision_parcels,
@@ -189,6 +191,8 @@ catalogue = [
     boundary_segments,
     boundary_walls,
     boundary_relict,
+    boundary_parcel_totals,
+    boundary_water,
     bua_parcels,
     bua_raw,
     cec_soilscapes_habitats_parcels,

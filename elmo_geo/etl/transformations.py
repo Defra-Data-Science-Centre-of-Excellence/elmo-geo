@@ -2,6 +2,7 @@
 
 For use in `elmo.etl.DerivedDataset.func`.
 """
+
 import geopandas as gpd
 from pyspark.sql import functions as F
 
@@ -148,7 +149,7 @@ def sjoin_boundary_proportion(
     parcel: Dataset | SparkDataFrame,
     boundary_segments: Dataset | SparkDataFrame,
     features: Dataset | SparkDataFrame,
-    buffers: list[float] = [0, 2, 8, 12, 24],
+    buffers: list[float] = [0, 2, 4, 8, 12, 24],
     **kwargs,
 ):
     """Spatially joins with parcels, groups, key joins with boundaries, calculating proportional overlap for multiple buffer distances.
@@ -156,13 +157,17 @@ def sjoin_boundary_proportion(
     """
     sdf_segments = boundary_segments if isinstance(boundary_segments, SparkDataFrame) else boundary_segments.sdf()
 
-    expr = "ST_Buffer(geometry_right, {})"
-    expr = f"ST_Intersection(geometry, {expr})"
+    expr = "ST_Intersection(geometry, geometry_right)"
     expr = f"ST_Length({expr}) / ST_Length(geometry)"
     expr = f"LEAST(GREATEST({expr}, 0), 1)"
     return (
         sjoin_parcels(parcel, features, distance=max(buffers), **kwargs)
+        .withColumn("buffer", F.expr(f"EXPLODE(ARRAY{tuple(buffers)})"))
+        .withColumn("geometry_right", F.expr("ST_Buffer(geometry_right, buffer)"))
         .join(sdf_segments, on="id_parcel")
-        .withColumns({f"proportion_{buf}m": F.expr(expr.format(buf)) for buf in buffers})
+        .transform(auto_repartition)
+        .withColumn("proportion", F.expr(expr))
         .drop("geometry", "geometry_left", "geometry_right")
+        .transform(pivot_wide_sdf, name_col="buffer", value_col="proportion")
+        .withColumnsRenamed({str(b): f"proportion_{b}m" for b in buffers})
     )

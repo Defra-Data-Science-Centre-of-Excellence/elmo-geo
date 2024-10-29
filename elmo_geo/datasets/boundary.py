@@ -30,20 +30,22 @@ OS field boundaries is not yet included in NGD.  Only OSM data is used.
 This is a combined dataset, useful for land change analysis.
 This includes assumptions such as setting a strict feature distance.
 """
-from functools import partial
+from functools import partial, reduce
 
 from pandera import DataFrameModel, Field
 from pandera.engines.geopandas_engine import Geometry
+from pandera.typing import Int32
 from pyspark.sql import DataFrame as SparkDataFrame
 from pyspark.sql import functions as F
 
 from elmo_geo.etl import SRID, Dataset, DerivedDataset
 from elmo_geo.etl.transformations import sjoin_boundary_proportion
 from elmo_geo.st.segmentise import segmentise_with_tolerance
-from elmo_geo.st.udf import st_udf
+from elmo_geo.st.udf import st_clean, st_udf
 
 from .fcp_sylvan import fcp_relict_hedge_raw
 from .hedges import rpa_hedges_raw
+from .os import os_ngd_raw
 from .osm import osm_tidy
 from .rpa_reference_parcels import reference_parcels
 
@@ -149,19 +151,23 @@ boundary_hedgerows = DerivedDataset(
 
 # Water
 def fn_pre_water(sdf: SparkDataFrame) -> SparkDataFrame:
-    return sdf.filter("theme = 'Water' AND description NOT LIKE '%Catchment'")
+    return sdf.filter("theme = 'Water' AND description NOT LIKE '%Catchment'").transform(st_clean, tollerance=5)
 
 
-# boundary_water = DerivedDataset(
-#     level0="silver",
-#     level1="elmo_geo",
-#     name="boundary_water",
-#     model=SjoinBoundaries,
-#     restricted=True,
-#     func=partial(sjoin_boundary_proportion, fn_pre=fn_pre_water),
-#     dependencies=[reference_parcels, boundary_segments, os_ngd_raw],
-#     is_geo=False,
-# )
+boundary_water = DerivedDataset(
+    level0="silver",
+    level1="elmo_geo",
+    name="boundary_water",
+    model=SjoinBoundaries,
+    restricted=True,
+    func=partial(sjoin_boundary_proportion, fn_pre=fn_pre_water),
+    dependencies=[reference_parcels, boundary_segments, os_ngd_raw],
+    is_geo=False,
+)
+"""Proportion of parcel boundary segmetns intersected by simplified waterbody geometries.
+
+Simplified to 5m.
+"""
 
 
 # Wall
@@ -186,7 +192,7 @@ def fn_pre_relict(sdf: SparkDataFrame) -> SparkDataFrame:
 
 
 boundary_relict = DerivedDataset(
-    level0="gold",
+    level0="silver",
     level1="fcp",
     name="boundary_relict",
     model=SjoinBoundaries,
@@ -197,4 +203,110 @@ boundary_relict = DerivedDataset(
 )
 
 
-# TODO: Merge
+def _combine_boundary_length_and_area_totals(
+    *boundaries: list[DerivedDataset],
+    names: list[str],
+    width: int = 2,
+    buffers: list[int] = [0, 2, 4, 8, 12, 24],
+) -> SparkDataFrame:
+    """Joined boundary datasets together into single wider dataset.
+
+    Additionally calculate areas of feature overlap based on proportion of boundary and
+    assumed distance from boundary that features are relevant within. For example,
+    area within 2m of a hedgerow field boundary is assigned hedgerow.
+    """
+
+    sdf = reduce(SparkDataFrame.unionByName, [boundaries[i].sdf().withColumn("type", F.lit(names[i])) for i in range(len(boundaries))])
+    return (
+        sdf.groupby("id_parcel", "type")
+        .agg(
+            *[F.expr(f"CAST(ROUND(SUM(proportion_{b}m * m),0) AS INTEGER) as m_{b}m") for b in buffers],
+            *[F.expr(f"ROUND(SUM(proportion_{b}m * m * {width} / 1000), 4) as ha_{b}m") for b in buffers],
+        )
+        .groupby("id_parcel")
+        .pivot("type")
+        .agg(
+            *[F.expr(f"FIRST(m_{b}m) AS m_{b}m") for b in buffers],
+            *[F.expr(f"FIRST(ha_{b}m) AS ha_{b}m") for b in buffers],
+        )
+        .na.fill(0)
+    )
+
+
+class BoundaryTotalsModel(DataFrameModel):
+    """Model for boudnary length and area totals for parcels.
+    Attributes:
+        id_parcel: Parcel id in which that boundary came from.
+        hedgerow_m_*m: The length of the boundary intersected by hedgerows buffered at "*"
+        wall_m_*m: The length of the boundary intersected by walls buffered at "*"
+        relict_m_*m: The length of the boundary intersected by relict hedgerows buffered at "*"
+        hedgerow_ha_*m: The area of the parcel within 2m of a boundary intersected by hedgerows buffered at "*"
+        wall_ha_*m: The area of the parcel within 2m of a boundary intersected by walls buffered at "*"
+        relict_ha_*m: The area of the parcel within 2m of a boundary intersected by relict hedgerow buffered at "*"
+    """
+
+    id_parcel: str = Field()
+
+    hedgerow_m_0m: Int32 = Field()
+    hedgerow_m_2m: Int32 = Field()
+    hedgerow_m_4m: Int32 = Field()
+    hedgerow_m_8m: Int32 = Field()
+    hedgerow_m_12m: Int32 = Field()
+    hedgerow_m_24m: Int32 = Field()
+    hedgerow_ha_0m: float = Field()
+    hedgerow_ha_2m: float = Field()
+    hedgerow_ha_4m: float = Field()
+    hedgerow_ha_8m: float = Field()
+    hedgerow_ha_12m: float = Field()
+    hedgerow_ha_24m: float = Field()
+
+    wall_m_0m: Int32 = Field()
+    wall_m_2m: Int32 = Field()
+    wall_m_4m: Int32 = Field()
+    wall_m_8m: Int32 = Field()
+    wall_m_12m: Int32 = Field()
+    wall_m_24m: Int32 = Field()
+    wall_ha_0m: float = Field()
+    wall_ha_2m: float = Field()
+    wall_ha_4m: float = Field()
+    wall_ha_8m: float = Field()
+    wall_ha_12m: float = Field()
+    wall_ha_24m: float = Field()
+
+    relict_m_0m: Int32 = Field()
+    relict_m_2m: Int32 = Field()
+    relict_m_4m: Int32 = Field()
+    relict_m_8m: Int32 = Field()
+    relict_m_12m: Int32 = Field()
+    relict_m_24m: Int32 = Field()
+    relict_ha_0m: float = Field()
+    relict_ha_2m: float = Field()
+    relict_ha_4m: float = Field()
+    relict_ha_8m: float = Field()
+    relict_ha_12m: float = Field()
+    relict_ha_24m: float = Field()
+
+    water_m_0m: Int32 = Field()
+    water_m_2m: Int32 = Field()
+    water_m_4m: Int32 = Field()
+    water_m_8m: Int32 = Field()
+    water_m_12m: Int32 = Field()
+    water_m_24m: Int32 = Field()
+    water_ha_0m: float = Field()
+    water_ha_2m: float = Field()
+    water_ha_4m: float = Field()
+    water_ha_8m: float = Field()
+    water_ha_12m: float = Field()
+    water_ha_24m: float = Field()
+
+
+boundary_parcel_totals = DerivedDataset(
+    level0="gold",
+    level1="fcp",
+    name="boundary_parcel_totals",
+    model=BoundaryTotalsModel,
+    restricted=False,
+    func=partial(_combine_boundary_length_and_area_totals, names=["hedgerow", "wall", "relict", "water"]),
+    dependencies=[boundary_hedgerows, boundary_walls, boundary_relict, boundary_water],
+    is_geo=False,
+)
