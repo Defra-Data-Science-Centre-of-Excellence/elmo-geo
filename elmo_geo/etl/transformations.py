@@ -2,6 +2,8 @@
 
 For use in `elmo.etl.DerivedDataset.func`.
 """
+from functools import reduce
+
 import geopandas as gpd
 from pyspark.sql import functions as F
 
@@ -156,13 +158,24 @@ def sjoin_boundary_proportion(
     """
     sdf_segments = boundary_segments if isinstance(boundary_segments, SparkDataFrame) else boundary_segments.sdf()
 
-    expr = "ST_Buffer(geometry_right, {})"
-    expr = f"ST_Intersection(geometry, {expr})"
+    sdf_sjoin = sjoin_parcels(parcel, features, distance=max(buffers), **kwargs)
+
+    def _union(sdf1, sdf2):
+        return sdf2.unionByName(sdf1, allowMissingColumns=False)
+
+    sdf_buffered = reduce(_union, (sdf_sjoin.withColumn("buffer", F.lit(b)) for b in buffers)).withColumn(
+        "geometry_right", F.expr("ST_Buffer(geometry_right, buffer)")
+    )
+
+    # expr = "ST_Buffer(geometry_right, {})"
+    expr = "ST_Intersection(geometry, geometry_right)"
     expr = f"ST_Length({expr}) / ST_Length(geometry)"
     expr = f"LEAST(GREATEST({expr}, 0), 1)"
     return (
-        sjoin_parcels(parcel, features, distance=max(buffers), **kwargs)
-        .join(sdf_segments, on="id_parcel")
-        .withColumns({f"proportion_{buf}m": F.expr(expr.format(buf)) for buf in buffers})
+        sdf_buffered.join(sdf_segments, on="id_parcel")
+        .transform(auto_repartition)
+        .withColumn("proportion", F.expr(expr))
         .drop("geometry", "geometry_left", "geometry_right")
+        .transform(pivot_wide_sdf, name_col="buffer", value_col="proportion")
+        .withColumnsRenamed({str(b): f"proportion_{b}m" for b in buffers})
     )
