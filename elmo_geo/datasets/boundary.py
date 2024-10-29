@@ -41,10 +41,11 @@ from pyspark.sql import functions as F
 from elmo_geo.etl import SRID, Dataset, DerivedDataset
 from elmo_geo.etl.transformations import sjoin_boundary_proportion
 from elmo_geo.st.segmentise import segmentise_with_tolerance
-from elmo_geo.st.udf import st_udf
+from elmo_geo.st.udf import st_clean, st_udf
 
 from .fcp_sylvan import fcp_relict_hedge_raw
 from .hedges import rpa_hedges_raw
+from .os import os_ngd_raw
 from .osm import osm_tidy
 from .rpa_reference_parcels import reference_parcels
 
@@ -150,19 +151,23 @@ boundary_hedgerows = DerivedDataset(
 
 # Water
 def fn_pre_water(sdf: SparkDataFrame) -> SparkDataFrame:
-    return sdf.filter("theme = 'Water' AND description NOT LIKE '%Catchment'")
+    return sdf.filter("theme = 'Water' AND description NOT LIKE '%Catchment'").transform(st_clean, tollerance=5)
 
 
-# boundary_water = DerivedDataset(
-#     level0="silver",
-#     level1="elmo_geo",
-#     name="boundary_water",
-#     model=SjoinBoundaries,
-#     restricted=True,
-#     func=partial(sjoin_boundary_proportion, fn_pre=fn_pre_water),
-#     dependencies=[reference_parcels, boundary_segments, os_ngd_raw],
-#     is_geo=False,
-# )
+boundary_water = DerivedDataset(
+    level0="silver",
+    level1="elmo_geo",
+    name="boundary_water",
+    model=SjoinBoundaries,
+    restricted=True,
+    func=partial(sjoin_boundary_proportion, fn_pre=fn_pre_water),
+    dependencies=[reference_parcels, boundary_segments, os_ngd_raw],
+    is_geo=False,
+)
+"""Proportion of parcel boundary segmetns intersected by simplified waterbody geometries.
+
+Simplified to 5m.
+"""
 
 
 # Wall
@@ -196,11 +201,6 @@ boundary_relict = DerivedDataset(
     dependencies=[reference_parcels, boundary_segments, fcp_relict_hedge_raw],
     is_geo=False,
 )
-
-
-def _aggregate_boundary(sdf_boundary: SparkDataFrame, type: str, width: int = 2, bufs: tuple[int] = (0, 2, 4, 8, 12, 24)) -> SparkDataFrame:
-    """Aggregate boundary proportions to give length and area totals for parcels."""
-    return sdf_boundary.groupby("id_parcel").agg()
 
 
 def _combine_boundary_length_and_area_totals(
@@ -286,6 +286,19 @@ class BoundaryTotalsModel(DataFrameModel):
     relict_ha_12m: float = Field()
     relict_ha_24m: float = Field()
 
+    water_m_0m: Int32 = Field()
+    water_m_2m: Int32 = Field()
+    water_m_4m: Int32 = Field()
+    water_m_8m: Int32 = Field()
+    water_m_12m: Int32 = Field()
+    water_m_24m: Int32 = Field()
+    water_ha_0m: float = Field()
+    water_ha_2m: float = Field()
+    water_ha_4m: float = Field()
+    water_ha_8m: float = Field()
+    water_ha_12m: float = Field()
+    water_ha_24m: float = Field()
+
 
 boundary_parcel_totals = DerivedDataset(
     level0="gold",
@@ -293,7 +306,7 @@ boundary_parcel_totals = DerivedDataset(
     name="boundary_parcel_totals",
     model=BoundaryTotalsModel,
     restricted=False,
-    func=partial(_combine_boundary_length_and_area_totals, names=["hedgerow", "wall", "relict"]),
-    dependencies=[boundary_hedgerows, boundary_walls, boundary_relict],
+    func=partial(_combine_boundary_length_and_area_totals, names=["hedgerow", "wall", "relict", "water"]),
+    dependencies=[boundary_hedgerows, boundary_walls, boundary_relict, boundary_water],
     is_geo=False,
 )
