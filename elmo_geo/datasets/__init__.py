@@ -192,6 +192,7 @@ catalogue = [
     boundary_walls,
     boundary_relict,
     boundary_parcel_totals,
+    boundary_water,
     bua_parcels,
     bua_raw,
     cec_soilscapes_habitats_parcels,
