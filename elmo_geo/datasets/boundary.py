@@ -30,9 +30,10 @@ OS field boundaries is not yet included in NGD.  Only OSM data is used.
 This is a combined dataset, useful for land change analysis.
 This includes assumptions such as setting a strict feature distance.
 """
-from functools import partial
+from functools import partial, reduce
 
 from pandera import DataFrameModel, Field
+from pandera.typing import Int32
 from pandera.engines.geopandas_engine import Geometry
 from pyspark.sql import DataFrame as SparkDataFrame
 from pyspark.sql import functions as F
@@ -203,9 +204,8 @@ def _aggregate_boundary(sdf_boundary: SparkDataFrame, type: str, width: int = 2,
 
 
 def _combine_boundary_length_and_area_totals(
-    boundary_hedgerows: DerivedDataset,
-    boundary_walls: DerivedDataset,
-    boundary_relict: DerivedDataset,
+    *boundaries: list[DerivedDataset],
+    names: list[str],
     width: int = 2,
     buffers: list[int] = [0, 2, 4, 8, 12, 24],
 ) -> SparkDataFrame:
@@ -216,17 +216,21 @@ def _combine_boundary_length_and_area_totals(
     area within 2m of a hedgerow field boundary is assigned hedgerow.
     """
 
-    sdf = (
-        boundary_hedgerows.sdf().withColumn("type", F.lit("hedge"))
-        .unionByName(boundary_walls.sdf().withColumn("type", F.lit("wall")))
-        .unionByName(boundary_relict.sdf().withColumn("type", F.lit("relict_hedge")))
-    )
+    sdf = reduce(SparkDataFrame.unionByName, 
+                 [boundaries[i].sdf().withColumn("type", F.lit(names[i])) for i in range(len(boundaries))])
     return (
-        sdf.groupby("id_parcel", "type").agg(
-            *[F.expr(f"SUM(proportion_{b}m * m) as m_{b}m") for b in buffers],
-            *[F.expr(f"SUM(proportion_{b}m * m * {width} / 1000) as ha_{b}m") for b in buffers],
+        sdf.groupby("id_parcel", "type")
+        .agg(
+            *[F.expr(f"CAST(ROUND(SUM(proportion_{b}m * m),0) AS INTEGER) as m_{b}m") for b in buffers],
+            *[F.expr(f"ROUND(SUM(proportion_{b}m * m * {width} / 1000), 4) as ha_{b}m") for b in buffers],
         )
-        # .groupby("id_parcel").pivot("type")
+        .groupby("id_parcel")
+        .pivot("type")
+        .agg(
+            *[F.expr(f"FIRST(m_{b}m) AS m_{b}m") for b in buffers],
+            *[F.expr(f"FIRST(ha_{b}m) AS ha_{b}m") for b in buffers],
+        )
+        .na.fill(0)
     )
 
 
@@ -234,54 +238,54 @@ class BoundaryTotalsModel(DataFrameModel):
     """Model for boudnary length and area totals for parcels.
     Attributes:
         id_parcel: Parcel id in which that boundary came from.
-        m_hedge_*m: The length of the boundary intersected by hedgerows buffered at "*"
-        m_wall_*m: The length of the boundary intersected by walls buffered at "*"
-        m_relict_*m: The length of the boundary intersected by relict hedgerows buffered at "*"
-        ha_hedge_*m: The area of the parcel within 2m of a boundary intersected by hedgerows buffered at "*"
-        ha_wall_*m: The area of the parcel within 2m of a boundary intersected by walls buffered at "*"
-        ha_relict_*m: The area of the parcel within 2m of a boundary intersected by relict hedgerow buffered at "*"
+        hedgerow_m_*m: The length of the boundary intersected by hedgerows buffered at "*"
+        wall_m_*m: The length of the boundary intersected by walls buffered at "*"
+        relict_m_*m: The length of the boundary intersected by relict hedgerows buffered at "*"
+        hedgerow_ha_*m: The area of the parcel within 2m of a boundary intersected by hedgerows buffered at "*"
+        wall_ha_*m: The area of the parcel within 2m of a boundary intersected by walls buffered at "*"
+        relict_ha_*m: The area of the parcel within 2m of a boundary intersected by relict hedgerow buffered at "*"
     """
 
     id_parcel: str = Field()
 
-    m_hedge_0m: float = Field()
-    m_hedge_2m: float = Field()
-    m_hedge_4m: float = Field()
-    m_hedge_8m: float = Field()
-    m_hedge_12m: float = Field()
-    m_hedge_24m: float = Field()
-    ha_hedge_0m: float = Field()
-    ha_hedge_2m: float = Field()
-    ha_hedge_4m: float = Field()
-    ha_hedge_8m: float = Field()
-    ha_hedge_12m: float = Field()
-    ha_hedge_24m: float = Field()
+    hedgerow_m_0m: Int32 = Field()
+    hedgerow_m_2m: Int32= Field()
+    hedgerow_m_4m: Int32= Field()
+    hedgerow_m_8m: Int32= Field()
+    hedgerow_m_12m: Int32= Field()
+    hedgerow_m_24m: Int32 = Field()
+    hedgerow_ha_0m: float = Field()
+    hedgerow_ha_2m: float = Field()
+    hedgerow_ha_4m: float = Field()
+    hedgerow_ha_8m: float = Field()
+    hedgerow_ha_12m: float = Field()
+    hedgerow_ha_24m: float = Field()
 
-    m_wall_0m: float = Field()
-    m_wall_2m: float = Field()
-    m_wall_4m: float = Field()
-    m_wall_8m: float = Field()
-    m_wall_12m: float = Field()
-    m_wall_24m: float = Field()
-    ha_wall_0m: float = Field()
-    ha_wall_2m: float = Field()
-    ha_wall_4m: float = Field()
-    ha_wall_8m: float = Field()
-    ha_wall_12m: float = Field()
-    ha_wall_24m: float = Field()
+    wall_m_0m: Int32 = Field()
+    wall_m_2m: Int32 = Field()
+    wall_m_4m: Int32 = Field()
+    wall_m_8m: Int32= Field()
+    wall_m_12m: Int32 = Field()
+    wall_m_24m: Int32 = Field()
+    wall_ha_0m: float = Field()
+    wall_ha_2m: float = Field()
+    wall_ha_4m: float = Field()
+    wall_ha_8m: float = Field()
+    wall_ha_12m: float = Field()
+    wall_ha_24m: float = Field()
 
-    m_relict_0m: float = Field()
-    m_relict_2m: float = Field()
-    m_relict_4m: float = Field()
-    m_relict_8m: float = Field()
-    m_relict_12m: float = Field()
-    m_relict_24m: float = Field()
-    ha_relict_0m: float = Field()
-    ha_relict_2m: float = Field()
-    ha_relict_4m: float = Field()
-    ha_relict_8m: float = Field()
-    ha_relict_12m: float = Field()
-    ha_relict_24m: float = Field()
+    relict_m_0m: Int32 = Field()
+    relict_m_2m: Int32 = Field()
+    relict_m_4m: Int32 = Field()
+    relict_m_8m: Int32 = Field()
+    relict_m_12m: Int32 = Field()
+    relict_m_24m: Int32 = Field()
+    relict_ha_0m: float = Field()
+    relict_ha_2m: float = Field()
+    relict_ha_4m: float = Field()
+    relict_ha_8m: float = Field()
+    relict_ha_12m: float = Field()
+    relict_ha_24m: float = Field()
 
 
 boundary_parcel_totals = DerivedDataset(
@@ -290,7 +294,7 @@ boundary_parcel_totals = DerivedDataset(
     name="boundary_parcel_totals",
     model=BoundaryTotalsModel,
     restricted=False,
-    func=_combine_boundary_length_and_area_totals,
+    func=partial(_combine_boundary_length_and_area_totals, names=["hedgerow", "wall", "relict"]),
     dependencies=[boundary_hedgerows, boundary_walls, boundary_relict],
     is_geo=False,
 )
