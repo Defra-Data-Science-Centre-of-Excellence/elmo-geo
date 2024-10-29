@@ -33,8 +33,8 @@ This includes assumptions such as setting a strict feature distance.
 from functools import partial, reduce
 
 from pandera import DataFrameModel, Field
-from pandera.typing import Int32
 from pandera.engines.geopandas_engine import Geometry
+from pandera.typing import Int32
 from pyspark.sql import DataFrame as SparkDataFrame
 from pyspark.sql import functions as F
 
@@ -216,8 +216,7 @@ def _combine_boundary_length_and_area_totals(
     area within 2m of a hedgerow field boundary is assigned hedgerow.
     """
 
-    sdf = reduce(SparkDataFrame.unionByName, 
-                 [boundaries[i].sdf().withColumn("type", F.lit(names[i])) for i in range(len(boundaries))])
+    sdf = reduce(SparkDataFrame.unionByName, [boundaries[i].sdf().withColumn("type", F.lit(names[i])) for i in range(len(boundaries))])
     return (
         sdf.groupby("id_parcel", "type")
         .agg(
@@ -249,10 +248,10 @@ class BoundaryTotalsModel(DataFrameModel):
     id_parcel: str = Field()
 
     hedgerow_m_0m: Int32 = Field()
-    hedgerow_m_2m: Int32= Field()
-    hedgerow_m_4m: Int32= Field()
-    hedgerow_m_8m: Int32= Field()
-    hedgerow_m_12m: Int32= Field()
+    hedgerow_m_2m: Int32 = Field()
+    hedgerow_m_4m: Int32 = Field()
+    hedgerow_m_8m: Int32 = Field()
+    hedgerow_m_12m: Int32 = Field()
     hedgerow_m_24m: Int32 = Field()
     hedgerow_ha_0m: float = Field()
     hedgerow_ha_2m: float = Field()
@@ -264,7 +263,7 @@ class BoundaryTotalsModel(DataFrameModel):
     wall_m_0m: Int32 = Field()
     wall_m_2m: Int32 = Field()
     wall_m_4m: Int32 = Field()
-    wall_m_8m: Int32= Field()
+    wall_m_8m: Int32 = Field()
     wall_m_12m: Int32 = Field()
     wall_m_24m: Int32 = Field()
     wall_ha_0m: float = Field()
