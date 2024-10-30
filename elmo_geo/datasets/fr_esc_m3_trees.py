@@ -646,7 +646,7 @@ class ESCCarbonParcels50YrTotals(DataFrameModel):
     T1_wood_only: float = Field()
 
 
-def _add_50_year_carbon_totals(esc_carbon_parcels: DerivedDataset) -> SparkDataFrame:
+def _add_50_year_carbon_totals(esc_carbon_parcels: DerivedDataset) -> pd.DataFrame:
     sdf = esc_carbon_parcels.sdf().select(
         "id_parcel",
         "rcp",
@@ -676,7 +676,7 @@ def _add_50_year_carbon_totals(esc_carbon_parcels: DerivedDataset) -> SparkDataF
         )
         .withColumns({c.replace("AA", "T1"): F.expr(f"period_A_T1_duration * {c}") for c in aa_cols}),
         allowMissingColumns=False,
-    )
+    ).toPandas()
 
 
 esc_carbon_parcels_w_50yr_totals = DerivedDataset(
