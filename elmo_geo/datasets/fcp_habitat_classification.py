@@ -563,7 +563,7 @@ def _is_phi(
         .groupby("id_parcel", "grouping_category", "action_group", "action_habitat")
         .agg(
             F.expr("FIRST(area_ha) as area_ha"),
-            F.expr("SUM(proportion) as proportion"),
+            F.expr("LEAST(GREATEST(SUM(proportion), 0), 1) as proportion"),
         )
         .selectExpr("id_parcel", "grouping_category", "action_group", "action_habitat", "proportion", "area_ha*proportion as habitat_area_ha")
         .filter("proportion>0")
