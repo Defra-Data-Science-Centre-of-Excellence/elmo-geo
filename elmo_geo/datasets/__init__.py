@@ -13,7 +13,7 @@ from .boundary import (
     boundary_relict,
     boundary_segments,
     boundary_walls,
-    boundary_water,
+    boundary_water_2m,
 )
 from .catchment_based_approach import (
     wetland_vision_parcels,
@@ -192,7 +192,7 @@ catalogue = [
     boundary_walls,
     boundary_relict,
     boundary_parcel_totals,
-    boundary_water,
+    boundary_water_2m,
     bua_parcels,
     bua_raw,
     cec_soilscapes_habitats_parcels,

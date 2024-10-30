@@ -151,13 +151,13 @@ boundary_hedgerows = DerivedDataset(
 
 # Water
 def fn_pre_water(sdf: SparkDataFrame) -> SparkDataFrame:
-    return sdf.filter("theme = 'Water' AND description NOT LIKE '%Catchment'").transform(st_clean, tollerance=5)
+    return sdf.filter("theme = 'Water' AND description NOT LIKE '%Catchment'").transform(st_clean, tollerance=2)
 
 
-boundary_water = DerivedDataset(
+boundary_water_2m = DerivedDataset(
     level0="silver",
     level1="elmo_geo",
-    name="boundary_water",
+    name="boundary_water_2m",
     model=SjoinBoundaries,
     restricted=True,
     func=partial(sjoin_boundary_proportion, fn_pre=fn_pre_water),
@@ -166,7 +166,7 @@ boundary_water = DerivedDataset(
 )
 """Proportion of parcel boundary segmetns intersected by simplified waterbody geometries.
 
-Simplified to 5m.
+Simplified to 2m.
 """
 
 
@@ -307,6 +307,11 @@ boundary_parcel_totals = DerivedDataset(
     model=BoundaryTotalsModel,
     restricted=False,
     func=partial(_combine_boundary_length_and_area_totals, names=["hedgerow", "wall", "relict", "water"]),
-    dependencies=[boundary_hedgerows, boundary_walls, boundary_relict, boundary_water],
+    dependencies=[boundary_hedgerows, boundary_walls, boundary_relict, boundary_water_2m],
     is_geo=False,
 )
+"""Total length of parcel boundaries intersected by hedgerows, walls, relict hedgerows and waterbodies at different buffer distances.
+
+Also provide hectarage of parcel intersected by these features, given by the length of intersected boundary * 2m. This assumed the space within 2m
+of parcel boundaries is affected by these boundary features.
+"""
