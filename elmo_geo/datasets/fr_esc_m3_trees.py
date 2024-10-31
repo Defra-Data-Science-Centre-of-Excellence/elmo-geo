@@ -343,9 +343,9 @@ def _join_esc_outputs(
         sdf_parcel_tiles.join(sdf_esc.drop("geometry", "layer"), on="tile_name")
         .join(
             sdf_esc.filter("(AA_grass=0) OR (AA_crop=0) OR (AA_grass_wood=0) OR (AA_crop_wood=0)")
-            .dropDuplicates(subset=["tile_name"])
-            .selectExpr("tile_name", "TRUE AS missing_data"),
-            on="tile_name",
+            .selectExpr("tile_name", "rcp", "woodland_type", "TRUE AS missing_data")
+            .dropDuplicates(),
+            on=["tile_name", "rcp", "woodland_type"],
             how="left",
         )
         .filter("missing_data IS NULL")
