@@ -34,7 +34,6 @@ from functools import partial, reduce
 
 from pandera import DataFrameModel, Field
 from pandera.engines.geopandas_engine import Geometry
-from pandera.typing import Int32
 from pyspark.sql import DataFrame as SparkDataFrame
 from pyspark.sql import functions as F
 
@@ -206,14 +205,11 @@ boundary_relict = DerivedDataset(
 
 # Merger
 def _transform_boundary_merger(
-    wfm: Dataset,
-    boundary_adjacency: Dataset,
+    boundary_adjacencies: Dataset,
     boundary_hedgerows: Dataset,
     boundary_relict: Dataset,
     boundary_walls: Dataset,
     boundary_water: Dataset,
-    proportion_buffer_threshold: int = 4,
-    buffers: list[int] = [0, 2, 4, 8, 12, 24],
 ) -> SparkDataFrame:
     """Joined boundary datasets together into single wider dataset.
 
@@ -225,24 +221,28 @@ def _transform_boundary_merger(
     parcel corners where a feature is on adjacent boundary segments around a corner.
     """
     return (
-        reduce(SparkDataFrame.join, (
-            boundary_adjacency.sdf().selectExpr("id_parcel", "id_boundary", "m", "0.5 < proportion_buf12m AS bool_adjacency"),  # Assumption: 0.5<p12m
-            boundary_hedgerows.sdf().selectExpr("id_parcel", "0.5 < proportion_buf12m AS bool_hedgerow"),                       # Assumption: 0.5<p12m
-            boundary_relict.sdf().selectExpr("id_parcel", "0.5 < proportion_buf12m AS bool_relict"),                            # Assumption: 0.5<p12m
-            boundary_walls.sdf().selectExpr("id_parcel", "0.5 < proportion_buf12m AS bool_wall"),                               # Assumption: 0.5<p12m
-            boundary_water.sdf().selectExpr("id_parcel", "0.5 < proportion_buf12m AS bool_water"),                              # Assumption: 0.5<p12m
-        ), on="id_parcel")
-        .withColumn("m_adj", F.expr("m * CAST(bool_adj AS INTEGER)/2)"))  # Buffer Strips are double sided, adjacency makes this single sided.
-        .groupby("id_parcel").agg(
-            F.expr("(m_adj * bool_hedgerow AS m_hedgerow"),
-            F.expr("(m_adj * bool_relict) AS m_relict"),
-            F.expr("(m_adj * bool_wall) AS m_wall"),
-            F.expr("(m_adj * bool_water) AS m_water"),
+        reduce(
+            lambda x, y: x.join(y, on="id_parcel"),
+            (
+                boundary_adjacencies.sdf().selectExpr("id_parcel", "id_boundary", "m", "0.5 < proportion_12m AS bool_adjacency"),  # Assumption: 0.5<p12m
+                boundary_hedgerows.sdf().selectExpr("id_parcel", "0.5 < proportion_12m AS bool_hedgerow"),  # Assumption: 0.5<p12m
+                boundary_relict.sdf().selectExpr("id_parcel", "0.5 < proportion_12m AS bool_relict"),  # Assumption: 0.5<p12m
+                boundary_walls.sdf().selectExpr("id_parcel", "0.5 < proportion_12m AS bool_wall"),  # Assumption: 0.5<p12m
+                boundary_water.sdf().selectExpr("id_parcel", "0.5 < proportion_12m AS bool_water"),  # Assumption: 0.5<p12m
+            ),
+        )
+        .withColumn("m_adj", F.expr("m * CAST(bool_adjacency AS INTEGER) / 2"))  # Buffer Strips are double sided, adjacency makes this single sided.
+        .groupby("id_parcel")
+        .agg(
+            F.expr("SUM(m_adj * CAST(bool_hedgerow AS INTEGER)) AS m_hedgerow"),
+            F.expr("SUM(m_adj * CAST(bool_relict AS INTEGER)) AS m_relict"),
+            F.expr("SUM(m_adj * CAST(bool_wall AS INTEGER)) AS m_wall"),
+            F.expr("SUM(m_adj * CAST(bool_water AS INTEGER)) AS m_water"),
         )
     )
 
 
-class BoundaryTotalsModel(DataFrameModel):
+class BoundaryMerger(DataFrameModel):
     """Model for boudnary length and area totals for parcels.
     Attributes:
         id_parcel: Parcel id in which that boundary came from.
@@ -259,14 +259,14 @@ class BoundaryTotalsModel(DataFrameModel):
     m_water: float = Field()
 
 
-boundary_parcel_totals = DerivedDataset(
+boundary_merger = DerivedDataset(
     level0="gold",
     level1="fcp",
-    name="boundary_parcel_totals",
-    model=BoundaryTotalsModel,
+    name="boundary_merger",
+    model=BoundaryMerger,
     restricted=False,
     func=_transform_boundary_merger,
-    dependencies=[boundary_adjacency, boundary_hedgerows, boundary_relict, boundary_walls, boundary_water_2m],
+    dependencies=[boundary_adjacencies, boundary_hedgerows, boundary_relict, boundary_walls, boundary_water_2m],
     is_geo=False,
 )
 """Total length of parcel boundaries intersected by hedgerows, walls, relict hedgerows and waterbodies at different buffer distances.
