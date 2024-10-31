@@ -187,6 +187,7 @@ boundary_walls = DerivedDataset(
 )
 
 
+# Relict
 def fn_pre_relict(sdf: SparkDataFrame) -> SparkDataFrame:
     return sdf.drop("id_parcel").filter("geometry IS NOT NULL")
 
@@ -203,9 +204,14 @@ boundary_relict = DerivedDataset(
 )
 
 
-def _combine_boundary_length_and_area_totals(
-    *boundaries: list[DerivedDataset],
-    names: list[str],
+# Merger
+def _transform_boundary_merger(
+    wfm: Dataset,
+    boundary_adjacency: Dataset,
+    boundary_hedgerows: Dataset,
+    boundary_relict: Dataset,
+    boundary_walls: Dataset,
+    boundary_water: Dataset,
     proportion_buffer_threshold: int = 4,
     buffers: list[int] = [0, 2, 4, 8, 12, 24],
 ) -> SparkDataFrame:
@@ -218,21 +224,21 @@ def _combine_boundary_length_and_area_totals(
     area of aprcel within different buffer distances from the feature boundary. This estimate double counts
     parcel corners where a feature is on adjacent boundary segments around a corner.
     """
-
-    sdf = reduce(SparkDataFrame.unionByName, [boundaries[i].sdf().withColumn("type", F.lit(names[i])) for i in range(len(boundaries))])
     return (
-        sdf.groupby("id_parcel", "type")
-        .agg(
-            F.expr(f"CAST(ROUND(SUM(proportion_{proportion_buffer_threshold}m * m),0) AS INTEGER) as m"),
-            *[F.expr(f"ROUND(SUM(proportion_{proportion_buffer_threshold}m * m * {b} / 1000), 4) as ha_{b}m") for b in buffers],
+        reduce(SparkDataFrame.unionByName, (
+            boundary_adjacency.sdf().selectExpr("id_parcel", "id_boundary", "m", "0.5 < proportion_buf12m AS bool_adjacency"),  # Assumption: 0.5<p12m
+            boundary_hedgerows.sdf().selectExpr("id_parcel", "0.5 < proportion_buf12m AS bool_hedgerow"),                       # Assumption: 0.5<p12m
+            boundary_relict.sdf().selectExpr("id_parcel", "0.5 < proportion_buf12m AS bool_relict"),                            # Assumption: 0.5<p12m
+            boundary_walls.sdf().selectExpr("id_parcel", "0.5 < proportion_buf12m AS bool_wall"),                               # Assumption: 0.5<p12m
+            boundary_water.sdf().selectExpr("id_parcel", "0.5 < proportion_buf12m AS bool_water"),                              # Assumption: 0.5<p12m
+        ))
+        .withColumn("m_adj", F.expr("m * CAST(bool_adj AS INTEGER)/2)"))  # Buffer Strips are double sided, adjacency makes this single sided.
+        .groupby("id_parcel").agg(
+            F.expr("(m_adj * bool_hedgerow AS m_hedgerow"),
+            F.expr("(m_adj * bool_relict) AS m_relict"),
+            F.expr("(m_adj * bool_wall) AS m_wall"),
+            F.expr("(m_adj * bool_water) AS m_water"),
         )
-        .groupby("id_parcel")
-        .pivot("type")
-        .agg(
-            F.expr("FIRST(m) AS m"),
-            *[F.expr(f"FIRST(ha_{b}m) AS ha_{b}m") for b in buffers],
-        )
-        .na.fill(0)
     )
 
 
@@ -240,49 +246,17 @@ class BoundaryTotalsModel(DataFrameModel):
     """Model for boudnary length and area totals for parcels.
     Attributes:
         id_parcel: Parcel id in which that boundary came from.
-        hedgerow_m: The length of the boundary intersected by hedgerows buffered by 4m
-        wall_m: The length of the boundary intersected by walls buffered by 4m
-        relict_m: The length of the boundary intersected by relict hedgerows buffered by 4m
-        water_m: The length of the boundary intersected by waterbodies buffered by 4m
-        hedgerow_ha_*m: The area of the parcel within *m of a boundary intersected by hedgerows
-        wall_ha_*m: The area of the parcel within *m of a boundary intersected by walls
-        relict_ha_*m: The area of the parcel within *m of a boundary intersected by relict hedgerow
-        water_ha_*m: The area of the parcel within *m of a boundary intersected by waterbodies
+        m_hedgerow: The length of the boundary intersected by hedgerows buffered by 4m
+        m_relict: The length of the boundary intersected by relict hedgerows buffered by 4m
+        m_wall: The length of the boundary intersected by walls buffered by 4m
+        m_water: The length of the boundary intersected by waterbodies buffered by 4m
     """
 
     id_parcel: str = Field()
-
-    hedgerow_m: Int32 = Field()
-    hedgerow_ha_0m: float = Field()
-    hedgerow_ha_2m: float = Field()
-    hedgerow_ha_4m: float = Field()
-    hedgerow_ha_8m: float = Field()
-    hedgerow_ha_12m: float = Field()
-    hedgerow_ha_24m: float = Field()
-
-    wall_m: Int32 = Field()
-    wall_ha_0m: float = Field()
-    wall_ha_2m: float = Field()
-    wall_ha_4m: float = Field()
-    wall_ha_8m: float = Field()
-    wall_ha_12m: float = Field()
-    wall_ha_24m: float = Field()
-
-    relict_m: Int32 = Field()
-    relict_ha_0m: float = Field()
-    relict_ha_2m: float = Field()
-    relict_ha_4m: float = Field()
-    relict_ha_8m: float = Field()
-    relict_ha_12m: float = Field()
-    relict_ha_24m: float = Field()
-
-    water_m: Int32 = Field()
-    water_ha_0m: float = Field()
-    water_ha_2m: float = Field()
-    water_ha_4m: float = Field()
-    water_ha_8m: float = Field()
-    water_ha_12m: float = Field()
-    water_ha_24m: float = Field()
+    m_hedgerow: float = Field()
+    m_relict: float = Field()
+    m_wall: float = Field()
+    m_water: float = Field()
 
 
 boundary_parcel_totals = DerivedDataset(
@@ -291,8 +265,8 @@ boundary_parcel_totals = DerivedDataset(
     name="boundary_parcel_totals",
     model=BoundaryTotalsModel,
     restricted=False,
-    func=partial(_combine_boundary_length_and_area_totals, names=["hedgerow", "wall", "relict", "water"]),
-    dependencies=[boundary_hedgerows, boundary_walls, boundary_relict, boundary_water_2m],
+    func=_transform_boundary_merger,
+    dependencies=[boundary_adjacency, boundary_hedgerows, boundary_relict, boundary_walls, boundary_water_2m],
     is_geo=False,
 )
 """Total length of parcel boundaries intersected by hedgerows, walls, relict hedgerows and waterbodies at different buffer distances.
