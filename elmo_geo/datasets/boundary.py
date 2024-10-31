@@ -231,7 +231,7 @@ def _transform_boundary_merger(
                 boundary_water.sdf().selectExpr("id_parcel", "0.5 < proportion_12m AS bool_water"),  # Assumption: 0.5<p12m
             ),
         )
-        .withColumn("m_adj", F.expr("m * CAST(bool_adjacency AS INTEGER) / 2"))  # Buffer Strips are double sided, adjacency makes this single sided.
+        .withColumn("m_adj", F.expr("m * (2 - CAST(bool_adjacency AS INTEGER)) / 2"))  # Buffer Strips are double sided, adjacency makes this single sided.
         .groupby("id_parcel")
         .agg(
             F.expr("SUM(m_adj * CAST(bool_hedgerow AS INTEGER)) AS m_hedgerow"),
