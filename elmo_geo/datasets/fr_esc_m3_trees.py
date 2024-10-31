@@ -56,6 +56,7 @@ the carbon and species varables, producing the `esc_species_parcels` and `esc_ca
 
 
 import geopandas as gpd
+import pandas as pd
 import pyspark.sql.functions as F
 from pandera import DataFrameModel, Field
 from pandera.dtypes import Category, Int8, Int16, Int32
@@ -577,13 +578,13 @@ esc_carbon_parcels = DerivedDataset(
 
 
 class ESCCarbonParcels50YrTotals(DataFrameModel):
-    """ESC M3 carbon metrics for parcels data model.
+    """ESC M3 carbon metrics for parcels data model with an additional 2021-2071 T1 time period
+    and filtered to only RCP 4.5 and 'native_broadleaved' and 'productive_conifer' woodland types.
 
     Attributes:
         id_parcel: Parcel ID
-        nopeat_area: Geographic area of parcel excluding intersecting peaty soils geometries.
         woodland_type: Type of woodland modelled.
-        rcp: Representating concetration pathway scenario (i.e cliamte change scenario)
+        rcp: Representative Concentration Pathway scenario (i.e climate change scenario). Fixed to 4.5 (45).
         period_AA_T1: Time periods for annual average (AA) and T1 carbon values
         period_AA_T1_duration: Number of years in each time period (AA_T1)
         tiles: Concatenated names of 1km tiles aggregated to this parcel
@@ -610,18 +611,14 @@ class ESCCarbonParcels50YrTotals(DataFrameModel):
     """
 
     id_parcel: str = Field()
-    nopeat_area: float = Field()
     woodland_type: Category = Field(
         isin=[
             "productive_conifer",
             "native_broadleaved",
-            "riparian",
-            "silvoarable",
-            "wood_pasture",
         ],
         coerce=True,
     )
-    rcp: Int8 = Field(isin=[26, 45, 60, 85], coerce=True)
+    rcp: Int8 = Field(isin=[45], coerce=True)
     period_AA_T1: str = Field(
         isin=[
             "2021_2028",
@@ -632,12 +629,11 @@ class ESCCarbonParcels50YrTotals(DataFrameModel):
         ],
         coerce=True,
     )
-    period_AA_T1_duration: Int16 = Field()
+    period_AA_T1_duration: Int16 = Field(coerce=True)
     AA_grass: float = Field()
     AA_crop: float = Field()
     AA_grass_wood: float = Field()
     AA_crop_wood: float = Field()
-    AA_grass_wood_only: float = Field()
     AA_wood_only: float = Field()
     T1_grass: float = Field()
     T1_crop: float = Field()
@@ -646,8 +642,8 @@ class ESCCarbonParcels50YrTotals(DataFrameModel):
     T1_wood_only: float = Field()
 
 
-def _add_50_year_carbon_totals(esc_carbon_parcels: DerivedDataset) -> pd.DataFrame:
-    sdf = esc_carbon_parcels.sdf().select(
+def _add_50_year_carbon_totals_and_filter(esc_carbon_parcels: DerivedDataset) -> pd.DataFrame:
+    sdf = esc_carbon_parcels.sdf().selectExpr(
         "id_parcel",
         "rcp",
         "woodland_type",
@@ -666,30 +662,35 @@ def _add_50_year_carbon_totals(esc_carbon_parcels: DerivedDataset) -> pd.DataFra
     )
 
     aa_cols = ["AA_grass", "AA_crop", "AA_grass_wood", "AA_crop_wood", "AA_wood_only"]
-    return sdf.unionByName(
-        sdf.withColumn("period_T1_duration_weight", F.expr("CASE period_AA_T1 WHEN '2051_2100' THEN 20/50 ELSE 1 END"))
-        .groupby("id_parcel", "rcp", "woodland_type")
-        .agg(
-            F.expr("'2021_2071' AS period_AA_T1"),
-            F.expr("50 AS period_A_T1_duration"),
-            *[F.expr(f"SUM(period_AA_T1_duration * period_T1_duration_weight * {c} / 50) AS {c}") for c in aa_cols],
+    return (
+        sdf.unionByName(
+            sdf.withColumn("period_T1_duration_weight", F.expr("CASE period_AA_T1 WHEN '2051_2100' THEN 20/50 ELSE 1 END"))
+            .groupby("id_parcel", "rcp", "woodland_type")
+            .agg(
+                F.expr("'2021_2071' AS period_AA_T1"),
+                F.expr("50 AS period_AA_T1_duration"),
+                *[F.expr(f"SUM(period_AA_T1_duration * period_T1_duration_weight * {c} / 50) AS {c}") for c in aa_cols],
+                *[F.expr(f"SUM(period_AA_T1_duration * period_T1_duration_weight * {c}) AS {c.replace('AA', 'T1')}") for c in aa_cols],
+            ),
+            allowMissingColumns=False,
         )
-        .withColumns({c.replace("AA", "T1"): F.expr(f"period_A_T1_duration * {c}") for c in aa_cols}),
-        allowMissingColumns=False,
-    ).toPandas()
+        .filter("(rcp=45) AND (woodland_type IN ('productive_conifer', 'native_broadleaved'))")
+        .toPandas()
+    )
 
 
-esc_carbon_parcels_w_50yr_totals = DerivedDataset(
-    name="esc_carbon_parcels_w_50yr_totals",
+esc_carbon_parcels_w_50yr_total = DerivedDataset(
+    name="esc_carbon_parcels_w_50yr_total",
     level0="gold",
     level1="forest_research",
     restricted=False,
     is_geo=False,
     dependencies=[esc_carbon_parcels],
-    func=_add_50_year_carbon_totals,
+    func=_add_50_year_carbon_totals_and_filter,
     model=ESCCarbonParcels50YrTotals,
 )
-"""ESC M3 carbon metrics used in elmo, including totals for the 50 year perios 2021-2071.
+"""ESC M3 carbon metrics used in elmo, including totals for the 50 year perios 2021-2071, filtere to the RCP 4.5
+climate scenario and 'native_broadleaved' and 'productive_conifer' woodland types.
 """
 
 
