@@ -225,13 +225,13 @@ def _transform_boundary_merger(
     parcel corners where a feature is on adjacent boundary segments around a corner.
     """
     return (
-        reduce(SparkDataFrame.unionByName, (
+        reduce(SparkDataFrame.join, (
             boundary_adjacency.sdf().selectExpr("id_parcel", "id_boundary", "m", "0.5 < proportion_buf12m AS bool_adjacency"),  # Assumption: 0.5<p12m
             boundary_hedgerows.sdf().selectExpr("id_parcel", "0.5 < proportion_buf12m AS bool_hedgerow"),                       # Assumption: 0.5<p12m
             boundary_relict.sdf().selectExpr("id_parcel", "0.5 < proportion_buf12m AS bool_relict"),                            # Assumption: 0.5<p12m
             boundary_walls.sdf().selectExpr("id_parcel", "0.5 < proportion_buf12m AS bool_wall"),                               # Assumption: 0.5<p12m
             boundary_water.sdf().selectExpr("id_parcel", "0.5 < proportion_buf12m AS bool_water"),                              # Assumption: 0.5<p12m
-        ))
+        ), on="id_parcel")
         .withColumn("m_adj", F.expr("m * CAST(bool_adj AS INTEGER)/2)"))  # Buffer Strips are double sided, adjacency makes this single sided.
         .groupby("id_parcel").agg(
             F.expr("(m_adj * bool_hedgerow AS m_hedgerow"),
