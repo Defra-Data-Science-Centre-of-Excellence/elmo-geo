@@ -229,7 +229,7 @@ def _combine_boundary_length_and_area_totals(
         .groupby("id_parcel")
         .pivot("type")
         .agg(
-            F.expr(f"FIRST(m) AS m"),
+            F.expr("FIRST(m) AS m"),
             *[F.expr(f"FIRST(ha_{b}m) AS ha_{b}m") for b in buffers],
         )
         .na.fill(0)
