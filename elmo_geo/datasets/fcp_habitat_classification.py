@@ -503,22 +503,35 @@ def _is_phi(
     - evast_manage: these are the habitat used for habitat management actions by EVAST
     """
 
+    sdf_defra_priority_habitat_parcels = defra_priority_habitat_parcels.sdf().withColumn("habitat_name_clean", _clean_habitat_name("habitat_name"))
+
+    sdf_evast_habitat_mapping = (
+        evast_habitat_mapping_raw.sdf()
+        .withColumn("habitat_name_clean", _clean_habitat_name("habitat_name"))
+        .withColumn("action_group", F.expr("REPLACE(action_group, 'Create ', '')"))
+        .filter(F.expr("source = 'phi'"))
+        .select("action_group", "action_habitat", "habitat_name_clean")
+    )
+    # append lookup with single action_habiat entry so that totals for each action_group are calculated
+    sdf_evast_habitat_mapping = sdf_evast_habitat_mapping.unionByName(
+        sdf_evast_habitat_mapping.selectExpr("action_group", "'action_group_total' as action_habitat", "habitat_name_clean")
+    )
+
     sdf_raw = (
         reference_parcels.sdf()
-        .join(defra_priority_habitat_parcels.sdf(), on="id_parcel", how="inner")
+        .join(sdf_defra_priority_habitat_parcels, on="id_parcel", how="inner")
         .withColumnRenamed("habitat_name", "action_habitat")
         .withColumn("grouping_category", F.lit("raw"))
     )
 
     sdf_create = (
         reference_parcels.sdf()
-        .join(defra_priority_habitat_parcels.sdf(), on="id_parcel", how="inner")
+        .join(sdf_defra_priority_habitat_parcels, on="id_parcel", how="inner")
         .join(
-            evast_habitat_mapping_raw.sdf().filter(F.expr("source = 'phi'")).select("action_group", "action_habitat", "habitat_name"),
-            on="habitat_name",
+            sdf_evast_habitat_mapping,
+            on="habitat_name_clean",
             how="inner",
         )
-        .withColumn("action_group", F.expr("REPLACE(action_group, 'Create ', '')"))
         .withColumn("grouping_category", F.lit("evast_create"))
     )
 
@@ -547,7 +560,7 @@ def _is_phi(
 
     sdf_manage = (
         reference_parcels.sdf()
-        .join(defra_priority_habitat_parcels.sdf(), on="id_parcel", how="inner")
+        .join(sdf_defra_priority_habitat_parcels, on="id_parcel", how="inner")
         .join(
             sdf_manage_lookup.select("action_group", "action_habitat", "habitat_name"),
             on="habitat_name",
@@ -594,7 +607,7 @@ class IsPHIParcelModel(DataFrameModel):
 
 fcp_is_phi_parcel = DerivedDataset(
     name="fcp_is_phi_parcel",
-    level0="silver",
+    level0="gold",
     level1="fcp",
     restricted=False,
     is_geo=False,
