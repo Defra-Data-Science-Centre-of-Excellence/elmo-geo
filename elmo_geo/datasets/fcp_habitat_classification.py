@@ -512,6 +512,7 @@ def _is_phi(
         .filter(F.expr("source = 'phi'"))
         .select("action_group", "action_habitat", "habitat_name_clean")
     )
+    # append lookup with single action_habiat entry so that totals for each action_group are calculated
     sdf_evast_habitat_mapping = sdf_evast_habitat_mapping.unionByName(
         sdf_evast_habitat_mapping.selectExpr("action_group", "'action_group_total' as action_habitat", "habitat_name_clean")
     )
