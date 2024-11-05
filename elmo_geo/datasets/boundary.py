@@ -252,7 +252,8 @@ def _transform_boundary_merger(
 
 
 class BoundaryMerger(DataFrameModel):
-    """Model for boudnary length and area totals for parcels.
+    """Model for boundary features merged by parcels.
+
     Attributes:
         id_parcel: Parcel id in which that boundary came from.
         m_hedgerow: Length of boundary segments suitable for hedgerow actions, multiply this by the buffer width to approximate the area foregone.
