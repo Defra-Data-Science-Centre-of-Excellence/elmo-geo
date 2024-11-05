@@ -332,24 +332,30 @@ Used as an input to the ESC M3 data aggregation to parcels process.
 
 
 def _join_esc_outputs(
-    sdf_parcel_tiles: SparkDataFrame,
-    sdf_esc: SparkDataFrame,
-) -> SparkDataFrame:
+    sdf_parcel_tiles,
+    sdf_esc,
+):
     """Joins parcels to ESC outputs using 1km BNG tiles.
 
-    Exludes ESC data for tiles with have missing carbon values, as per EVAST methodology.
+    Exludes ESC data for scenarios and tiles with have missing carbon values, as per EVAST methodology.
     """
-    return (
-        sdf_parcel_tiles.join(sdf_esc.drop("geometry", "layer"), on="tile_name")
-        .join(
-            sdf_esc.filter("(AA_grass=0) OR (AA_crop=0) OR (AA_grass_wood=0) OR (AA_crop_wood=0)")
-            .selectExpr("tile_name", "rcp", "woodland_type", "TRUE AS missing_data")
-            .dropDuplicates(),
-            on=["tile_name", "rcp", "woodland_type"],
-            how="left",
-        )
-        .filter("missing_data IS NULL")
+    # Scenarios and tiles with non-zero carbon values for at least one time period.
+    sdf_esc_valid_scenario_tiles = (
+        sdf_esc.groupby("tile_name", "rcp", "woodland_type")  # sums over time periods
+        .agg(*[F.sum(c).alias(c) for c in ["AA_grass", "AA_crop", "AA_grass_wood", "AA_crop_wood"]])
+        .filter("(AA_grass<>0) OR (AA_crop<>0) OR (AA_grass_wood<>0) OR (AA_crop_wood<>0)")
+        .selectExpr("tile_name", "rcp", "woodland_type")
+        .dropDuplicates()
     )
+
+    sdf = sdf_parcel_tiles.join(sdf_esc.drop("geometry", "layer"), on="tile_name", how="inner").join(
+        sdf_esc_valid_scenario_tiles, on=["tile_name", "rcp", "woodland_type"], how="inner"
+    )
+
+    # Expect to have excluded entries with all null species fields
+    assert sdf.filter("(species_1 IS NULL) AND (species_2 IS NULL) AND (species_3 IS NULL)").count() == 0
+
+    return sdf
 
 
 def _aggregate_carbon_values(sdf_parcel_esc: SparkDataFrame) -> SparkDataFrame:
