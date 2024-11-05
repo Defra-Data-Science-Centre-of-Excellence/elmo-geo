@@ -255,10 +255,14 @@ class BoundaryMerger(DataFrameModel):
     """Model for boudnary length and area totals for parcels.
     Attributes:
         id_parcel: Parcel id in which that boundary came from.
-        m_hedgerow: The length of the boundary intersected by hedgerows buffered by 4m
-        m_relict: The length of the boundary intersected by relict hedgerows buffered by 4m
-        m_wall: The length of the boundary intersected by walls buffered by 4m
-        m_water: The length of the boundary intersected by waterbodies buffered by 4m
+        m_hedgerow: Length of boundary segments suitable for hedgerow actions, multiply this by the buffer width to approximate the area foregone.
+        m_relict: Same as above for relict hedgerow features.
+        m_wall: Same as above for OSM Wall features.
+        m_water: Same as above for OS Water features.
+        m_adj_hedgerow: This is the length of boundary segments suitable for hedgerow actions, but adjusted for adjacency, best for approximating the payment rate.
+        m_adj_relict: Same as above for relict hedgerow features.
+        m_adj_wall: Same as above for OSM Wall features.
+        m_adj_water: Same as above for OS Water features.
     """
 
     id_parcel: str = Field()
@@ -266,6 +270,10 @@ class BoundaryMerger(DataFrameModel):
     m_relict: float = Field()
     m_wall: float = Field()
     m_water: float = Field()
+    m_adj_hedgerow: float = Field()
+    m_adj_relict: float = Field()
+    m_adj_wall: float = Field()
+    m_adj_water: float = Field()
 
 
 boundary_merger = DerivedDataset(
@@ -278,11 +286,6 @@ boundary_merger = DerivedDataset(
     dependencies=[boundary_adjacencies, boundary_hedgerows, boundary_relict, boundary_walls, boundary_water_2m],
     is_geo=False,
 )
-"""Total length of parcel boundaries intersected by hedgerows, walls, relict hedgerows and waterbodies at different buffer distances.
-
-Also provide hectarage of parcel intersected by these features, given by the length of intersected boundary * buffer distances. This double
-counts field corners where both edges of a field have a boundary features.
-"""
 
 
 boundary_merger_50p24m = DerivedDataset(
