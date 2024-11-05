@@ -210,6 +210,7 @@ def _transform_boundary_merger(
     boundary_relict: Dataset,
     boundary_walls: Dataset,
     boundary_water: Dataset,
+    threshold_str_fn: str = "0.5 < proportion_12m",
 ) -> SparkDataFrame:
     """Joined boundary datasets together into single wider dataset.
 
@@ -219,17 +220,19 @@ def _transform_boundary_merger(
     Then calculate the total length of parcel boundary intersected by each feature. Additionally estiamate the
     area of aprcel within different buffer distances from the feature boundary. This estimate double counts
     parcel corners where a feature is on adjacent boundary segments around a corner.
+
+    Assumption: threshold_str_fn is the same for all datasets, the base assumption is that 50% of a boundary segment is within 12 meters of another feature.
+    Noted as `50p12m`.
     """
     return (
         reduce(
             lambda x, y: x.join(y, on="id_boundary", how="outer"),
             (
-                # Assumption: adjacent if 50% of the boundary is within 12m of another, i.e. 0.5<p12m.
-                boundary_adjacencies.sdf().selectExpr("id_parcel", "id_boundary", "m", "CAST(0.5 < proportion_12m AS DOUBLE) AS bool_adjacency"),
-                boundary_hedgerows.sdf().selectExpr("id_boundary", "CAST(0.5 < proportion_12m AS DOUBLE) AS bool_hedgerow"),  # Assumption: 0.5<p12m
-                boundary_relict.sdf().selectExpr("id_boundary", "CAST(0.5 < proportion_12m AS DOUBLE) AS bool_relict"),  # Assumption: 0.5<p12m
-                boundary_walls.sdf().selectExpr("id_boundary", "CAST(0.5 < proportion_12m AS DOUBLE) AS bool_wall"),  # Assumption: 0.5<p12m
-                boundary_water.sdf().selectExpr("id_boundary", "CAST(0.5 < proportion_12m AS DOUBLE) AS bool_water"),  # Assumption: 0.5<p12m
+                boundary_adjacencies.sdf().selectExpr("id_parcel", "id_boundary", "m", f"CAST({threshold_str_fn} AS DOUBLE) AS bool_adjacency"),
+                boundary_hedgerows.sdf().selectExpr("id_boundary", f"CAST({threshold_str_fn} AS DOUBLE) AS bool_hedgerow"),
+                boundary_relict.sdf().selectExpr("id_boundary", f"CAST({threshold_str_fn} AS DOUBLE) AS bool_relict"),
+                boundary_walls.sdf().selectExpr("id_boundary", f"CAST({threshold_str_fn} AS DOUBLE) AS bool_wall"),
+                boundary_water.sdf().selectExpr("id_boundary", f"CAST({threshold_str_fn} AS DOUBLE) AS bool_water"),
             ),
         )
         .withColumn("m_adj", F.expr("m * (2 - bool_adjacency) / 2 AS m_adj"))  # Buffer Strips are double sided, adjacency makes this single sided.
@@ -280,3 +283,26 @@ boundary_merger = DerivedDataset(
 Also provide hectarage of parcel intersected by these features, given by the length of intersected boundary * buffer distances. This double
 counts field corners where both edges of a field have a boundary features.
 """
+
+
+boundary_merger_90p12m = DerivedDataset(
+    level0="gold",
+    level1="fcp",
+    name="boundary_merger_90p12m",
+    model=BoundaryMerger,
+    restricted=False,
+    func=_transform_boundary_merger,
+    dependencies=[boundary_adjacencies, boundary_hedgerows, boundary_relict, boundary_walls, boundary_water_2m],
+    is_geo=False,
+)
+
+boundary_merger_50p24m = DerivedDataset(
+    level0="gold",
+    level1="fcp",
+    name="boundary_merger_50p24m",
+    model=BoundaryMerger,
+    restricted=False,
+    func=_transform_boundary_merger,
+    dependencies=[boundary_adjacencies, boundary_hedgerows, boundary_relict, boundary_walls, boundary_water_2m],
+    is_geo=False,
+)
