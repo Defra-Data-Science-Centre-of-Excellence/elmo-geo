@@ -647,7 +647,7 @@ class ESCCarbonParcels50YrTotals(DataFrameModel):
 def _add_50_year_carbon_totals_and_filter(esc_carbon_parcels: DerivedDataset) -> pd.DataFrame:
     sdf = esc_carbon_parcels.sdf().selectExpr(
         "id_parcel",
-        "nopeat_area"
+        "nopeat_area",
         "rcp",
         "woodland_type",
         "period_AA_T1",
@@ -670,7 +670,7 @@ def _add_50_year_carbon_totals_and_filter(esc_carbon_parcels: DerivedDataset) ->
             sdf.withColumn("period_T1_duration_weight", F.expr("CASE period_AA_T1 WHEN '2051_2100' THEN 20/50 ELSE 1 END"))
             .groupby("id_parcel", "rcp", "woodland_type")
             .agg(
-                F.first("nopeat_area"),
+                F.first("nopeat_area").alias("nopeat_area"),
                 F.expr("'2021_2071' AS period_AA_T1"),
                 F.expr("50 AS period_AA_T1_duration"),
                 *[F.expr(f"SUM(period_AA_T1_duration * period_T1_duration_weight * {c} / 50) AS {c}") for c in aa_cols],
