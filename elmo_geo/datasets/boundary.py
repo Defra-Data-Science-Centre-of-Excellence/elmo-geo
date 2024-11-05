@@ -235,10 +235,14 @@ def _transform_boundary_merger(
         .withColumn("m_adj", F.expr("m * (2 - bool_adjacency) / 2 AS m_adj"))  # Buffer Strips are double sided, adjacency makes this single sided.
         .groupby("id_parcel")
         .agg(
-            F.expr("SUM(m_adj * bool_hedgerow) AS m_hedgerow"),
-            F.expr("SUM(m_adj * bool_relict) AS m_relict"),
-            F.expr("SUM(m_adj * bool_wall) AS m_wall"),
-            F.expr("SUM(m_adj * bool_water) AS m_water"),
+            F.expr("SUM(m * bool_hedgerow) AS m_hedgerow"),
+            F.expr("SUM(m * bool_relict) AS m_relict"),
+            F.expr("SUM(m * bool_wall) AS m_wall"),
+            F.expr("SUM(m * bool_water) AS m_water"),
+            F.expr("SUM(m_adj * bool_hedgerow) AS m_adj_hedgerow"),
+            F.expr("SUM(m_adj * bool_relict) AS m_adj_relict"),
+            F.expr("SUM(m_adj * bool_wall) AS m_adj_wall"),
+            F.expr("SUM(m_adj * bool_water) AS m_adj_water"),
         )
         .na.fill(0)
     )
