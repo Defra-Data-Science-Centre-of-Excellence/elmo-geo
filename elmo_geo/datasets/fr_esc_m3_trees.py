@@ -351,18 +351,19 @@ def _join_esc_outputs(
     Exludes ESC data for scenarios and tiles with have missing carbon values, as per EVAST methodology.
     """
     # Scenarios and tiles with non-zero carbon values for at least one time period.
-    # Also exclude scenarios where species values are all null.
     sdf_esc_valid_scenario_tiles = (
         sdf_esc.groupby("tile_name", "rcp", "woodland_type")  # sums over time periods
         .agg(*[F.sum(c).alias(c) for c in ["AA_grass", "AA_crop", "AA_grass_wood", "AA_crop_wood"]])
         .filter("(AA_grass<>0) OR (AA_crop<>0) OR (AA_grass_wood<>0) OR (AA_crop_wood<>0)")
-        .filter("(species_1 IS NULL) AND (species_2 IS NULL) AND (species_3 IS NULL)")
         .selectExpr("tile_name", "rcp", "woodland_type")
         .dropDuplicates()
     )
 
-    return sdf_parcel_tiles.join(sdf_esc.drop("geometry", "layer"), on="tile_name", how="inner").join(
-        sdf_esc_valid_scenario_tiles, on=["tile_name", "rcp", "woodland_type"], how="inner"
+    # Also exclude any remainging scenarios where species values are all null (don't expect any at this stage)
+    return (
+        sdf_parcel_tiles.join(sdf_esc.drop("geometry", "layer"), on="tile_name", how="inner")
+        .join(sdf_esc_valid_scenario_tiles, on=["tile_name", "rcp", "woodland_type"], how="inner")
+        .filter("(species_1 IS NULL) AND (species_2 IS NULL) AND (species_3 IS NULL)")
     )
 
 
