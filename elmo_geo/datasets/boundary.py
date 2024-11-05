@@ -224,11 +224,12 @@ def _transform_boundary_merger(
         reduce(
             lambda x, y: x.join(y, on="id_boundary", how="outer"),
             (
-                boundary_adjacencies.sdf().selectExpr("id_parcel", "id_boundary", "m", "CAST(0.5 < proportion_12m AS SMALLINT) AS bool_adjacency"),  # Assumption: 0.5<p12m
-                boundary_hedgerows.sdf().selectExpr("id_boundary", "CAST(0.5 < proportion_12m AS SMALLINT) AS bool_hedgerow"),  # Assumption: 0.5<p12m
-                boundary_relict.sdf().selectExpr("id_boundary", "CAST(0.5 < proportion_12m AS SMALLINT) AS bool_relict"),  # Assumption: 0.5<p12m
-                boundary_walls.sdf().selectExpr("id_boundary", "CAST(0.5 < proportion_12m AS SMALLINT) AS bool_wall"),  # Assumption: 0.5<p12m
-                boundary_water.sdf().selectExpr("id_boundary", "CAST(0.5 < proportion_12m AS SMALLINT) AS bool_water"),  # Assumption: 0.5<p12m
+                # Assumption: adjacent if 50% of the boundary is within 12m of another, i.e. 0.5<p12m.
+                boundary_adjacencies.sdf().selectExpr("id_parcel", "id_boundary", "m", "CAST(0.5 < proportion_12m AS DOUBLE) AS bool_adjacency"),
+                boundary_hedgerows.sdf().selectExpr("id_boundary", "CAST(0.5 < proportion_12m AS DOUBLE) AS bool_hedgerow"),  # Assumption: 0.5<p12m
+                boundary_relict.sdf().selectExpr("id_boundary", "CAST(0.5 < proportion_12m AS DOUBLE) AS bool_relict"),  # Assumption: 0.5<p12m
+                boundary_walls.sdf().selectExpr("id_boundary", "CAST(0.5 < proportion_12m AS DOUBLE) AS bool_wall"),  # Assumption: 0.5<p12m
+                boundary_water.sdf().selectExpr("id_boundary", "CAST(0.5 < proportion_12m AS DOUBLE) AS bool_water"),  # Assumption: 0.5<p12m
             ),
         )
         .withColumn("m_adj", F.expr("m * (2 - bool_adjacency) / 2 AS m_adj"))  # Buffer Strips are double sided, adjacency makes this single sided.
