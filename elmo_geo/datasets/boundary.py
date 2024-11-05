@@ -222,23 +222,24 @@ def _transform_boundary_merger(
     """
     return (
         reduce(
-            lambda x, y: x.join(y, on="id_parcel"),
+            lambda x, y: x.join(y, on="id_boundary", how="outer"),
             (
-                boundary_adjacencies.sdf().selectExpr("id_parcel", "id_boundary", "m", "0.5 < proportion_12m AS bool_adjacency"),  # Assumption: 0.5<p12m
-                boundary_hedgerows.sdf().selectExpr("id_parcel", "0.5 < proportion_12m AS bool_hedgerow"),  # Assumption: 0.5<p12m
-                boundary_relict.sdf().selectExpr("id_parcel", "0.5 < proportion_12m AS bool_relict"),  # Assumption: 0.5<p12m
-                boundary_walls.sdf().selectExpr("id_parcel", "0.5 < proportion_12m AS bool_wall"),  # Assumption: 0.5<p12m
-                boundary_water.sdf().selectExpr("id_parcel", "0.5 < proportion_12m AS bool_water"),  # Assumption: 0.5<p12m
+                boundary_adjacencies.sdf().selectExpr("id_parcel", "id_boundary", "m", "CAST(0.5 < proportion_12m AS SMALLINT) AS bool_adjacency"),  # Assumption: 0.5<p12m
+                boundary_hedgerows.sdf().selectExpr("id_boundary", "CAST(0.5 < proportion_12m AS SMALLINT) AS bool_hedgerow"),  # Assumption: 0.5<p12m
+                boundary_relict.sdf().selectExpr("id_boundary", "CAST(0.5 < proportion_12m AS SMALLINT) AS bool_relict"),  # Assumption: 0.5<p12m
+                boundary_walls.sdf().selectExpr("id_boundary", "CAST(0.5 < proportion_12m AS SMALLINT) AS bool_wall"),  # Assumption: 0.5<p12m
+                boundary_water.sdf().selectExpr("id_boundary", "CAST(0.5 < proportion_12m AS SMALLINT) AS bool_water"),  # Assumption: 0.5<p12m
             ),
         )
-        .withColumn("m_adj", F.expr("m * (2 - CAST(bool_adjacency AS INTEGER)) / 2"))  # Buffer Strips are double sided, adjacency makes this single sided.
+        .withColumn("m_adj", F.expr("m * (2 - bool_adjacency) / 2 AS m_adj"))  # Buffer Strips are double sided, adjacency makes this single sided.
         .groupby("id_parcel")
         .agg(
-            F.expr("SUM(m_adj * CAST(bool_hedgerow AS INTEGER)) AS m_hedgerow"),
-            F.expr("SUM(m_adj * CAST(bool_relict AS INTEGER)) AS m_relict"),
-            F.expr("SUM(m_adj * CAST(bool_wall AS INTEGER)) AS m_wall"),
-            F.expr("SUM(m_adj * CAST(bool_water AS INTEGER)) AS m_water"),
+            F.expr("SUM(m_adj * bool_hedgerow) AS m_hedgerow"),
+            F.expr("SUM(m_adj * bool_relict) AS m_relict"),
+            F.expr("SUM(m_adj * bool_wall) AS m_wall"),
+            F.expr("SUM(m_adj * bool_water) AS m_water"),
         )
+        .na.fill(0)
     )
 
 
