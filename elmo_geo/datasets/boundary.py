@@ -260,7 +260,7 @@ class BoundaryMerger(DataFrameModel):
         m_relict: Same as above for relict hedgerow features.
         m_wall: Same as above for OSM Wall features.
         m_water: Same as above for OS Water features.
-        m_adj_hedgerow: This is the length of boundary segments suitable for hedgerow actions, but adjusted for adjacency, best for approximating the payment rate.
+        m_adj_hedgerow: This is the length of boundary segments suitable for hedgerow actions, but adjusted for adjacency for approximating the payment rate.
         m_adj_relict: Same as above for relict hedgerow features.
         m_adj_wall: Same as above for OSM Wall features.
         m_adj_water: Same as above for OS Water features.
