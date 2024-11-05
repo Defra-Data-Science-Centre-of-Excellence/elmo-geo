@@ -291,7 +291,7 @@ boundary_merger_90p12m = DerivedDataset(
     name="boundary_merger_90p12m",
     model=BoundaryMerger,
     restricted=False,
-    func=_transform_boundary_merger,
+    func=partial(_transform_boundary_merger, threshold_str_fn="0.9 < proportion_12m",
     dependencies=[boundary_adjacencies, boundary_hedgerows, boundary_relict, boundary_walls, boundary_water_2m],
     is_geo=False,
 )
@@ -302,7 +302,7 @@ boundary_merger_50p24m = DerivedDataset(
     name="boundary_merger_50p24m",
     model=BoundaryMerger,
     restricted=False,
-    func=_transform_boundary_merger,
+    func=partial(_transform_boundary_merger, threshold_str_fn="0.5 < proportion_24m",
     dependencies=[boundary_adjacencies, boundary_hedgerows, boundary_relict, boundary_walls, boundary_water_2m],
     is_geo=False,
 )
