@@ -1,20 +1,15 @@
 # Databricks notebook source
-import pyspark.sql.functions as F
-from pathlib import Path
-from elmo_geo.io.download import download_link
 import itertools
 import os
-import pandas as pd
+from pathlib import Path
 
 from elmo_geo import register
-from elmo_geo.datasets import catalogue
 from elmo_geo.datasets import (
-    esc_species_parcels,
     esc_carbon_parcels,
+    esc_species_parcels,
 )
-
-from elmo_geo.etl.transformations import combine_long, sjoin_parcels, sjoin_parcel_proportion
-from elmo_geo.st.join import sjoin
+from elmo_geo.etl.transformations import pivot_wide_sdf
+from elmo_geo.io.download import download_link
 
 register()
 
@@ -26,7 +21,8 @@ register()
 # MAGIC
 # MAGIC Datasets need to be filtered to single woodlant type + rcp scenario so that file sizes are manageable.
 # MAGIC
-# MAGIC For the species data, the dataset is pivoted from long to wide format so that there is a column for each metric (yield class, suitability, and area) for each species.
+# MAGIC For the species data, the dataset is pivoted from long to wide format so that there is a column for each metric (yield class,
+# MAGIC suitability, and area) for each species.
 # MAGIC
 
 # COMMAND ----------
@@ -60,8 +56,6 @@ for wt, rcp in itertools.product(woodland_types, rcps):
 
 # COMMAND ----------
 
-from elmo_geo.etl.transformations import pivot_wide_sdf
-
 groupby_cols = [
     "id_parcel",
     "nopeat_area",
@@ -77,15 +71,22 @@ sdf_species = esc_species_parcels.sdf().drop("tiles")
 
 species = sdf_species.select("species").dropDuplicates().toPandas()["species"]
 
-sdf_wide = (pivot_wide_sdf(sdf_species.drop("yield_class", "suitability"), name_col = "species", value_col = "area")
- .withColumnsRenamed(dict(zip(species, [f"{s}_area" for s in species])))
- .dropDuplicates()
- .join(pivot_wide_sdf(sdf_species.drop("yield_class", "area"), name_col = "species", value_col = "suitability")
-       .withColumnsRenamed(dict(zip(species, [f"{s}_suitability" for s in species])))
-       .dropDuplicates(), on = groupby_cols)
- .join(pivot_wide_sdf(sdf_species.drop("area", "suitability"), name_col="species", value_col="yield_class")
-       .withColumnsRenamed(dict(zip(species, [f"{s}_yield_class" for s in species])))
-       .dropDuplicates(), on = groupby_cols)
+sdf_wide = (
+    pivot_wide_sdf(sdf_species.drop("yield_class", "suitability"), name_col="species", value_col="area")
+    .withColumnsRenamed(dict(zip(species, [f"{s}_area" for s in species])))
+    .dropDuplicates()
+    .join(
+        pivot_wide_sdf(sdf_species.drop("yield_class", "area"), name_col="species", value_col="suitability")
+        .withColumnsRenamed(dict(zip(species, [f"{s}_suitability" for s in species])))
+        .dropDuplicates(),
+        on=groupby_cols,
+    )
+    .join(
+        pivot_wide_sdf(sdf_species.drop("area", "suitability"), name_col="species", value_col="yield_class")
+        .withColumnsRenamed(dict(zip(species, [f"{s}_yield_class" for s in species])))
+        .dropDuplicates(),
+        on=groupby_cols,
+    )
 )
 
 # COMMAND ----------
