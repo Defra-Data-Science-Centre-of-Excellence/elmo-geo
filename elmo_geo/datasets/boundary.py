@@ -221,8 +221,11 @@ def _transform_boundary_merger(
     area of aprcel within different buffer distances from the feature boundary. This estimate double counts
     parcel corners where a feature is on adjacent boundary segments around a corner.
 
-    Assumption: threshold_str_fn is the same for all datasets, the base assumption is that 50% of a boundary segment is within 12 meters of another feature.
+    Assumption 1: threshold_str_fn is the same for all datasets, the base assumption is that 50% of a boundary segment is within 12 meters of another feature.
     Noted as `50p12m`.
+
+    Assumption 2: segments with multiple adjacencies are independent, meaning the maximum proportion overlap is considered.
+    Alternative is assuming these are dependent and don't overlap, meaning the sum of proportion would be the proportion adjacency.
     """
     return (
         boundary_adjacencies.sdf()
