@@ -232,18 +232,10 @@ def _transform_boundary_merger(
             F.first("m").alias("m"),
             F.max("bool_adjacency").alias("bool_adjacency"),
         )
-        .transform(
-            lambda sdf: reduce(
-                lambda x, y: x.join(y, on="id_boundary", how="outer"),
-                (
-                    sdf,
-                    boundary_hedgerows.sdf().selectExpr("id_boundary", f"CAST({threshold_str_fn} AS DOUBLE) AS bool_hedgerow"),
-                    boundary_relict.sdf().selectExpr("id_boundary", f"CAST({threshold_str_fn} AS DOUBLE) AS bool_relict"),
-                    boundary_walls.sdf().selectExpr("id_boundary", f"CAST({threshold_str_fn} AS DOUBLE) AS bool_wall"),
-                    boundary_water.sdf().selectExpr("id_boundary", f"CAST({threshold_str_fn} AS DOUBLE) AS bool_water"),
-                ),
-            )
-        )
+        .join(boundary_hedgerows.sdf().selectExpr("id_boundary", f"CAST({threshold_str_fn} AS DOUBLE) AS bool_hedgerow"), on="id_boundary", how="outer")
+        .join(boundary_relict.sdf().selectExpr("id_boundary", f"CAST({threshold_str_fn} AS DOUBLE) AS bool_relict"), on="id_boundary", how="outer")
+        .join(boundary_walls.sdf().selectExpr("id_boundary", f"CAST({threshold_str_fn} AS DOUBLE) AS bool_wall"), on="id_boundary", how="outer")
+        .join(boundary_water.sdf().selectExpr("id_boundary", f"CAST({threshold_str_fn} AS DOUBLE) AS bool_water"), on="id_boundary", how="outer")
         .withColumn("m_adj", F.expr("m * (2 - bool_adjacency) / 2 AS m_adj"))  # Buffer Strips are double sided, adjacency makes this single sided.
         .groupby("id_parcel")
         .agg(
