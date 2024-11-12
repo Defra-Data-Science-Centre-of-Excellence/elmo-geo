@@ -30,7 +30,7 @@ OS field boundaries is not yet included in NGD.  Only OSM data is used.
 This is a combined dataset, useful for land change analysis.
 This includes assumptions such as setting a strict feature distance.
 """
-from functools import partial, reduce
+from functools import partial
 
 from pandera import DataFrameModel, Field
 from pandera.engines.geopandas_engine import Geometry
