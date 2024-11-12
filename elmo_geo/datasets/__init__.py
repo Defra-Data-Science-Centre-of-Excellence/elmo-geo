@@ -102,6 +102,7 @@ from .fcp_habitat_classification import (
 from .fcp_sylvan import fcp_relict_hedge_raw
 from .fr_esc_m3_trees import (
     esc_carbon_parcels,
+    esc_carbon_parcels_w_50yr_total,
     esc_m3_geo,
     esc_m3_raw,
     esc_species_parcels,
@@ -219,6 +220,7 @@ catalogue = [
     esc_m3_geo,
     esc_m3_raw,
     esc_carbon_parcels,
+    esc_carbon_parcels_w_50yr_total,
     esc_species_parcels,
     esc_woodland_suitability,
     esc_woodland_suitability_rcp45_2021_2028,
