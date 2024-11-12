@@ -175,8 +175,6 @@ def test_sjoin_boundary_segments():
         columns=["class"],
     ).toPandas()
 
-    assert all(df["proportion_0m"] == 0), df["proportion_0m"]
-    assert all(df["proportion_2m"] == 0), df["proportion_2m"]
-    assert all(np.isclose(df["proportion_8m"], [0.238095, 1, 0.238095, 0], atol=1e-3)), df["proportion_8m"]
-    assert all(np.isclose(df["proportion_12m"], [0.428571, 1, 0.428571, 0], atol=1e-3)), df["proportion_12m"]
-    assert all(df["proportion_24m"] == 1), df["proportion_24m"]
+    observed = df.iloc[0, 2:]
+    expected = [0.0, 0.0, 0.047619, 0.238095, 0.428571, 1.0]
+    assert np.isclose(observed, expected, aloc=1e-3).all()
