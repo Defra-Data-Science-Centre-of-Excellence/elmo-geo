@@ -175,6 +175,6 @@ def test_sjoin_boundary_segments():
         columns=["class"],
     ).toPandas()
 
-    observed = df.iloc[0, 2:]
-    expected = [0.0, 0.0, 0.047619, 0.238095, 0.428571, 1.0]
-    assert np.isclose(observed, expected, aloc=1e-3).all()
+    observed = df.iloc[:, 2:].values  # drop class, id_parcel
+    expected = [[0.0, 0.0, 0.047619, 0.238095, 0.428571, 1.0]]
+    assert np.isclose(observed, expected, atol=1e-3).all()
