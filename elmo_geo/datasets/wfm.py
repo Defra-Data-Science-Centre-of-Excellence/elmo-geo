@@ -1,4 +1,6 @@
-"""ELMO's Ingested WFM
+"""ELMO's[^elmo] ingested Whole Farm Model (WFM).
+
+[^elmo]: https://github.com/Defra-Data-Science-Centre-of-Excellence/elm_modelling_strategy/
 """
 from pandera import DataFrameModel, Field
 from pyspark.sql import DataFrame as SparkDataFrame
@@ -17,6 +19,10 @@ wfm_farms = SourceDataset(
     is_geo=False,
     source_path="/dbfs/FileStore/elmo_geo-uploads/wfm_farms_fe033c3b411c3a94de97ce4ac5573e0905bd78eb4c2dd0e88fb9d7b4529ee2a7.parquet",
 )
+"""WFM Farms created 2024-11-11.
+Business level data from WFM.
+This dataset is validated by ELMO.
+"""
 
 wfm_parcels = SourceDataset(
     name="wfm_parcels",
@@ -27,12 +33,22 @@ wfm_parcels = SourceDataset(
     is_geo=False,
     source_path="/dbfs/FileStore/elmo_geo-uploads/wfm_parcels_fe033c3b411c3a94de97ce4ac5573e0905bd78eb4c2dd0e88fb9d7b4529ee2a7.parquet",
 )
+"""WFM Parcels created 2024-11-11.
+Parcel level data from WFM.
+This dataset is validated by ELMO.
+"""
 
 
 # WFM Info
 class WfmInfo(DataFrameModel):
-    """Business Info for WFM"""
+    """Model for a simplified WFM.
 
+    Attributes:
+        id_business: custid from WFM, approximates SBI/CPH/FRN and such a business/"farm".
+        id_parcel: identifier for each parcel/field.
+        ha_arable: land area used for arable produce, merely the sum of arable products, may be greater than geo-area.
+        ha_grassland: land area used for grazing or fodder crops, which ignores grass purchases.
+    """
     id_business: int = Field(nullable=True)
     id_parcels: str = Field()
     ha_arable: float = Field()
@@ -118,3 +134,8 @@ wfm_info = DerivedDataset(
     func=_transform_wfm_info,
     dependencies=[reference_parcels, wfm_parcels, wfm_farms],
 )
+"""A simplified WFM at business level.
+This has often been used for reactive analysis, previously called "Business Info".
+ha_arable and ha_grassland are used to define a coarser farm type "livestock vs arable".
+The intention is that this is easier to digest than WFM in full.
+"""
