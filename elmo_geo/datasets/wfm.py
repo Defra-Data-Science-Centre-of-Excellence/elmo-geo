@@ -49,6 +49,7 @@ class WfmInfo(DataFrameModel):
         ha_arable: land area used for arable produce, merely the sum of arable products, may be greater than geo-area.
         ha_grassland: land area used for grazing or fodder crops, which ignores grass purchases.
     """
+
     id_business: int = Field(nullable=True)
     id_parcels: str = Field()
     ha_arable: float = Field()
