@@ -184,6 +184,11 @@ from .rpa_reference_parcels import (
     reference_parcels_raw,
     reference_parcels_raw_no_sbi,
 )
+from .wfm import (
+    wfm_farms,
+    wfm_info,
+    wfm_parcels,
+)
 
 catalogue = [
     alc_parcels,
@@ -302,6 +307,9 @@ catalogue = [
     ward_raw,
     wetland_vision_parcels,
     wetland_vision_raw,
+    wfm_farms,
+    wfm_info,
+    wfm_parcels,
     woodland_creation_sensitivity_parcels,
     woodland_creation_sensitivity_raw,
     woodland_creation_sensitivity_var1_parcels,
