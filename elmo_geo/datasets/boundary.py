@@ -30,11 +30,10 @@ OS field boundaries is not yet included in NGD.  Only OSM data is used.
 This is a combined dataset, useful for land change analysis.
 This includes assumptions such as setting a strict feature distance.
 """
-from functools import partial, reduce
+from functools import partial
 
 from pandera import DataFrameModel, Field
 from pandera.engines.geopandas_engine import Geometry
-from pandera.typing import Int32
 from pyspark.sql import DataFrame as SparkDataFrame
 from pyspark.sql import functions as F
 
@@ -187,6 +186,7 @@ boundary_walls = DerivedDataset(
 )
 
 
+# Relict
 def fn_pre_relict(sdf: SparkDataFrame) -> SparkDataFrame:
     return sdf.drop("id_parcel").filter("geometry IS NOT NULL")
 
@@ -203,11 +203,14 @@ boundary_relict = DerivedDataset(
 )
 
 
-def _combine_boundary_length_and_area_totals(
-    *boundaries: list[DerivedDataset],
-    names: list[str],
-    proportion_buffer_threshold: int = 4,
-    buffers: list[int] = [0, 2, 4, 8, 12, 24],
+# Merger
+def _transform_boundary_merger(
+    boundary_adjacencies: Dataset,
+    boundary_hedgerows: Dataset,
+    boundary_relict: Dataset,
+    boundary_walls: Dataset,
+    boundary_water: Dataset,
+    threshold_str_fn: str = "0.5 < proportion_12m",
 ) -> SparkDataFrame:
     """Joined boundary datasets together into single wider dataset.
 
@@ -217,86 +220,98 @@ def _combine_boundary_length_and_area_totals(
     Then calculate the total length of parcel boundary intersected by each feature. Additionally estiamate the
     area of aprcel within different buffer distances from the feature boundary. This estimate double counts
     parcel corners where a feature is on adjacent boundary segments around a corner.
-    """
 
-    sdf = reduce(SparkDataFrame.unionByName, [boundaries[i].sdf().withColumn("type", F.lit(names[i])) for i in range(len(boundaries))])
+    Assumption 1: threshold_str_fn is the same for all datasets, the base assumption is that 50% of a boundary segment is within 12 meters of another feature.
+    Noted as `50p12m`.
+
+    Assumption 2: segments with multiple adjacencies are independent, meaning the maximum proportion overlap is considered.
+    Alternative is assuming these are dependent and don't overlap, meaning the sum of proportion would be the proportion adjacency.
+    """
     return (
-        sdf.groupby("id_parcel", "type")
+        boundary_adjacencies.sdf()
+        .withColumn("bool_adjacency", F.expr(f"CAST({threshold_str_fn} AS DOUBLE)"))
+        .groupby("id_parcel", "id_boundary")
         .agg(
-            F.expr(f"CAST(ROUND(SUM(proportion_{proportion_buffer_threshold}m * m),0) AS INTEGER) as m"),
-            *[F.expr(f"ROUND(SUM(proportion_{proportion_buffer_threshold}m * m * {b} / 1000), 4) as ha_{b}m") for b in buffers],
+            F.first("m").alias("m"),
+            F.max("bool_adjacency").alias("bool_adjacency"),
         )
+        .join(boundary_hedgerows.sdf().selectExpr("id_boundary", f"CAST({threshold_str_fn} AS DOUBLE) AS bool_hedgerow"), on="id_boundary", how="outer")
+        .join(boundary_relict.sdf().selectExpr("id_boundary", f"CAST({threshold_str_fn} AS DOUBLE) AS bool_relict"), on="id_boundary", how="outer")
+        .join(boundary_walls.sdf().selectExpr("id_boundary", f"CAST({threshold_str_fn} AS DOUBLE) AS bool_wall"), on="id_boundary", how="outer")
+        .join(boundary_water.sdf().selectExpr("id_boundary", f"CAST({threshold_str_fn} AS DOUBLE) AS bool_water"), on="id_boundary", how="outer")
+        .withColumn("m_adj", F.expr("m * (2 - bool_adjacency) / 2 AS m_adj"))  # Buffer Strips are double sided, adjacency makes this single sided.
         .groupby("id_parcel")
-        .pivot("type")
         .agg(
-            F.expr("FIRST(m) AS m"),
-            *[F.expr(f"FIRST(ha_{b}m) AS ha_{b}m") for b in buffers],
+            F.expr("SUM(m * bool_hedgerow) AS m_hedgerow"),
+            F.expr("SUM(m * bool_relict) AS m_relict"),
+            F.expr("SUM(m * bool_wall) AS m_wall"),
+            F.expr("SUM(m * bool_water) AS m_water"),
+            F.expr("SUM(m_adj * bool_hedgerow) AS m_adj_hedgerow"),
+            F.expr("SUM(m_adj * bool_relict) AS m_adj_relict"),
+            F.expr("SUM(m_adj * bool_wall) AS m_adj_wall"),
+            F.expr("SUM(m_adj * bool_water) AS m_adj_water"),
         )
         .na.fill(0)
     )
 
 
-class BoundaryTotalsModel(DataFrameModel):
-    """Model for boudnary length and area totals for parcels.
+class BoundaryMerger(DataFrameModel):
+    """Model for boundary features merged by parcels.
+
     Attributes:
         id_parcel: Parcel id in which that boundary came from.
-        hedgerow_m: The length of the boundary intersected by hedgerows buffered by 4m
-        wall_m: The length of the boundary intersected by walls buffered by 4m
-        relict_m: The length of the boundary intersected by relict hedgerows buffered by 4m
-        water_m: The length of the boundary intersected by waterbodies buffered by 4m
-        hedgerow_ha_*m: The area of the parcel within *m of a boundary intersected by hedgerows
-        wall_ha_*m: The area of the parcel within *m of a boundary intersected by walls
-        relict_ha_*m: The area of the parcel within *m of a boundary intersected by relict hedgerow
-        water_ha_*m: The area of the parcel within *m of a boundary intersected by waterbodies
+        m_hedgerow: Length of boundary segments suitable for hedgerow actions, multiply this by the buffer width to approximate the area foregone.
+        m_relict: Same as above for relict hedgerow features.
+        m_wall: Same as above for OSM Wall features.
+        m_water: Same as above for OS Water features.
+        m_adj_hedgerow: This is the length of boundary segments suitable for hedgerow actions, but adjusted for adjacency for approximating the payment rate.
+        m_adj_relict: Same as above for relict hedgerow features.
+        m_adj_wall: Same as above for OSM Wall features.
+        m_adj_water: Same as above for OS Water features.
     """
 
     id_parcel: str = Field()
-
-    hedgerow_m: Int32 = Field()
-    hedgerow_ha_0m: float = Field()
-    hedgerow_ha_2m: float = Field()
-    hedgerow_ha_4m: float = Field()
-    hedgerow_ha_8m: float = Field()
-    hedgerow_ha_12m: float = Field()
-    hedgerow_ha_24m: float = Field()
-
-    wall_m: Int32 = Field()
-    wall_ha_0m: float = Field()
-    wall_ha_2m: float = Field()
-    wall_ha_4m: float = Field()
-    wall_ha_8m: float = Field()
-    wall_ha_12m: float = Field()
-    wall_ha_24m: float = Field()
-
-    relict_m: Int32 = Field()
-    relict_ha_0m: float = Field()
-    relict_ha_2m: float = Field()
-    relict_ha_4m: float = Field()
-    relict_ha_8m: float = Field()
-    relict_ha_12m: float = Field()
-    relict_ha_24m: float = Field()
-
-    water_m: Int32 = Field()
-    water_ha_0m: float = Field()
-    water_ha_2m: float = Field()
-    water_ha_4m: float = Field()
-    water_ha_8m: float = Field()
-    water_ha_12m: float = Field()
-    water_ha_24m: float = Field()
+    m_hedgerow: float = Field()
+    m_relict: float = Field()
+    m_wall: float = Field()
+    m_water: float = Field()
+    m_adj_hedgerow: float = Field()
+    m_adj_relict: float = Field()
+    m_adj_wall: float = Field()
+    m_adj_water: float = Field()
 
 
-boundary_parcel_totals = DerivedDataset(
+boundary_merger = DerivedDataset(
     level0="gold",
     level1="fcp",
-    name="boundary_parcel_totals",
-    model=BoundaryTotalsModel,
+    name="boundary_merger",
+    model=BoundaryMerger,
     restricted=False,
-    func=partial(_combine_boundary_length_and_area_totals, names=["hedgerow", "wall", "relict", "water"]),
-    dependencies=[boundary_hedgerows, boundary_walls, boundary_relict, boundary_water_2m],
+    func=_transform_boundary_merger,
+    dependencies=[boundary_adjacencies, boundary_hedgerows, boundary_relict, boundary_walls, boundary_water_2m],
     is_geo=False,
 )
-"""Total length of parcel boundaries intersected by hedgerows, walls, relict hedgerows and waterbodies at different buffer distances.
 
-Also provide hectarage of parcel intersected by these features, given by the length of intersected boundary * buffer distances. This double
-counts field corners where both edges of a field have a boundary features.
-"""
+
+boundary_merger_50p24m = DerivedDataset(
+    level0="gold",
+    level1="fcp",
+    name="boundary_merger_50p24m",
+    model=BoundaryMerger,
+    restricted=False,
+    func=partial(_transform_boundary_merger, threshold_str_fn="0.5 < proportion_24m"),
+    dependencies=[boundary_adjacencies, boundary_hedgerows, boundary_relict, boundary_walls, boundary_water_2m],
+    is_geo=False,
+)
+
+
+boundary_merger_90p12m = DerivedDataset(
+    level0="gold",
+    level1="fcp",
+    name="boundary_merger_90p12m",
+    model=BoundaryMerger,
+    restricted=False,
+    func=partial(_transform_boundary_merger, threshold_str_fn="0.9 < proportion_12m"),
+    dependencies=[boundary_adjacencies, boundary_hedgerows, boundary_relict, boundary_walls, boundary_water_2m],
+    is_geo=False,
+)
