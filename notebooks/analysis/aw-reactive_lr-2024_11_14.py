@@ -9,7 +9,8 @@ from functools import partial
 
 from pandera import DataFrameModel, Field
 from pandera.engines.geopandas_engine import Geometry
-from pyspark.sql import DataFrame as SparkDataFrame, functions as F
+from pyspark.sql import DataFrame as SparkDataFrame
+from pyspark.sql import functions as F
 
 from elmo_geo import register
 from elmo_geo.datasets import reference_parcels, wfm_parcels
@@ -21,9 +22,10 @@ register()
 
 # COMMAND ----------
 
+
 class LrModel(DataFrameModel):
-    """Model for geo+WFM subset.
-    """
+    """Model for geo+WFM subset."""
+
     id_business: str = Field(nullable=True)
     id_parcel: str = Field()
     geometry: Geometry(crs=SRID) = Field()
