@@ -78,7 +78,7 @@ def _transform(parcels: Dataset, olf: Dataset):
 
     return spark.sql(
         """
-        SELECT id_parcel, SUM(score) AS score
+        SELECT id_parcel, NTILE(5) OVER (ORDER BY MAX(score)) AS score
         FROM parcel JOIN olf
         ON ST_Intersects(parcel.geometry, olf.geometry)
         GROUP BY id_parcel
