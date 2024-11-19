@@ -10,8 +10,18 @@ from elmo_geo.etl import SRID, Dataset, DerivedDataset, SourceDataset
 
 from .rpa_reference_parcels import reference_parcels
 
-
 # OLF Source
+risk_options = ["1. Low", "2. Medium Low", "3. Medium", "4. Medium High", "5. High"]
+risk_options_slope = ['1. Low', '2. Medium', '3. High', '4.Very high']
+risk_options_local = [
+    "1. Very low local risk",
+    "2. Low local risk",
+    "3. Moderate local risk",
+    "4. High local risk",
+    "5. Very high local risk",
+]
+
+
 class OlfRaw(DataFrameModel):
     """Model for EA ALERT probable OverLand Flow pathways (OLF) dataset.
     This dataset is useful for eroasion risk assessment.
@@ -19,21 +29,34 @@ class OlfRaw(DataFrameModel):
     Currently using a pre-released version from Crispin Hambridge directly.
 
     Attributes:
+        CatchmenRiskDesc:
+        LandUseRisk:
+        SlopeRisk:
+        CombinedSoilRisk:
+        ReceptorDistanceRisk:
+        MeanRainfalRisk:
+        MaxFlowAcc:
         geometry: BNG LineStrings
     """
 
-    PermID: int = Field()
+    PermID: int = Field(unique=True)
     OPERATIONAL_CATCHMENT: str = Field()
     WATERBODY_NAME: str = Field()
-    CatchmentRiskDesc: str = Field()
-    LandUseRisk: str = Field()
-    SlopeRisk: str = Field()
-    SoilErosion: str = Field()
-    SoilRunoff: str = Field()
-    CombinedSoilRisk: str = Field()
-    ReceptorDistanceRisk: str = Field()
-    MeanRainfalRisk: str = Field()
-    # Unused; MajLandUse, MeanSlope, Slope1haWatershed, MinFlowWater, MinFlowRoad, SSSI_Intersect, FlowAccClass.
+    CatchmentRiskDesc: str = Field(nullable=True, isin=risk_options_local)
+    LandUseRisk: str = Field(nullable=True, isin=risk_options)
+    SlopeRisk: str = Field(nullable=True, isin=risk_options_slope)
+    SoilErosion: str = Field(nullable=True, isin=risk_options)
+    SoilRunoff: str = Field(nullable=True, isin=risk_options)
+    CombinedSoilRisk: str = Field(nullable=True, isin=risk_options)
+    ReceptorDistanceRisk: str = Field(nullable=True, isin=risk_options)
+    MeanRainfalRisk: float = Field(gt=0, lt=5)
+    MajLandUse: str = Field()
+    MeanSlope: float = Field()
+    Slope1haWatershed: float = Field()
+    MinFlowWater: float = Field()
+    MinFlowRoad: float = Field()
+    SSSI_Intersect: float = Field()
+    FlowAccClass: str = Field(isin=["1Ha", "1Km", "10Km"])
     MaxFlowAcc: float = Field()
     Shape_Length: float = Field()
     geometry: Geometry(crs=SRID) = Field(nullable=True)
@@ -51,34 +74,39 @@ ea_olf_raw = SourceDataset(
 
 # OLF Parcel
 class OlfParcel(DataFrameModel):
-    """OLF erosion model
-    OverLand Flow pathway are joined to parcel boundaries, and for distinct pathways the scores are summed.
-    """
+    """OLF erosion model"""
 
     id_parcel: str = Field()
     score: int = Field()
 
 
 def _transform(parcels: Dataset, olf: Dataset):
+    """OLF Scores are"""
+
     parcels.sdf().createOrReplaceTempView("parcel")
 
     olf.sdf().selectExpr(
-        "CAST(SUBSTRING(CatchmentRiskDesc, 1, 2) AS INT) AS CatchmentScore",
-        "CAST(SUBSTRING(LandUseRisk, 1, 2) AS INT) AS LandUseScore",
-        "CAST(SUBSTRING(SlopeRisk, 1, 2) AS INT) AS SlopeScore",
-        "CAST(SUBSTRING(CombinedSoilRisk, 1, 2) AS INT) AS CombinedSoilScore",
-        "CAST(SUBSTRING(MeanRainfalRisk, 1, 2) AS INT) AS MeanRainfallScore",
+        "CAST(SUBSTRING(CatchmentRiskDesc, 1, 2) AS INT) AS CatchmentQuintile",
+        "CAST(SUBSTRING(LandUseRisk, 1, 2) AS INT) AS LandUseQuintile",
+        "CAST(SUBSTRING(SlopeRisk, 1, 2) AS INT) AS SlopeQuintile",
+        "CAST(SUBSTRING(CombinedSoilRisk, 1, 2) AS INT) AS CombinedSoilQuintile",
+        "NTILE(5) OVER (ORDER BY MeanRainfalRisk) AS MeanRainfallQuintile",
         "NTILE(5) OVER (ORDER BY MaxFlowAcc) AS MaxFlowAccQuintile",
-        "(CatchmentScore + LandUseScore + SlopeScore + CombinedSoilScore + MeanRainfallScore + MaxFlowAccQuintile) AS score",
-        "geometry",
-    ).select(
-        "score",
+        "(CatchmentQuintile + LandUseQuintile + SlopeQuintile + CombinedSoilQuintile + MeanRainfallQuintile + MaxFlowAccQuintile) AS score",
         "geometry",
     ).createOrReplaceTempView("olf")
 
     return spark.sql(
         """
-        SELECT id_parcel, NTILE(5) OVER (ORDER BY MAX(score)) AS score
+        SELECT
+            id_parcel,
+            NTILE(5) OVER (ORDER BY MAX(score)) AS score,
+            MAX(CatchmentQuintile) AS CatchmentQuintile,
+            MAX(LandUseQuintile) AS LandUseQuintile,
+            MAX(SlopeQuintile) AS SlopeQuintile,
+            MAX(CombinedSoilQuintile) AS CombinedSoilQuintile,
+            MAX(MeanRainfallQuintile) AS MeanRainfallQuintile,
+            MAX(MaxFlowAccQuintile) AS MaxFlowAccQuintile
         FROM parcel JOIN olf
         ON ST_Intersects(parcel.geometry, olf.geometry)
         GROUP BY id_parcel
@@ -86,8 +114,8 @@ def _transform(parcels: Dataset, olf: Dataset):
     )
 
 
-ea_olf_parcel = DerivedDataset(
-    name="ea_olf_parcel",
+ea_olf_parcels = DerivedDataset(
+    name="ea_olf_parcels",
     level0="gold",
     level1="ea",
     model=OlfParcel,
