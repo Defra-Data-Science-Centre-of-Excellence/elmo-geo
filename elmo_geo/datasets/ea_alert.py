@@ -12,14 +12,6 @@ from .rpa_reference_parcels import reference_parcels
 
 # OLF Source
 risk_options = ["1. Low", "2. Medium Low", "3. Medium", "4. Medium High", "5. High"]
-risk_options_slope = ['1. Low', '2. Medium', '3. High', '4.Very high']
-risk_options_local = [
-    "1. Very low local risk",
-    "2. Low local risk",
-    "3. Moderate local risk",
-    "4. High local risk",
-    "5. Very high local risk",
-]
 
 
 class OlfRaw(DataFrameModel):
@@ -29,26 +21,43 @@ class OlfRaw(DataFrameModel):
     Currently using a pre-released version from Crispin Hambridge directly.
 
     Attributes:
-        CatchmenRiskDesc:
-        LandUseRisk:
-        SlopeRisk:
-        CombinedSoilRisk:
-        ReceptorDistanceRisk:
-        MeanRainfalRisk:
-        MaxFlowAcc:
+        CatchmentRiskDesc: A risk score 1-5, which defines how suseptible the river is to erosion.
+        LandUseRisk: A risk score 1-5, which is used to the risk due to potential runoff common on this land use.
+        SlopeRisk: A risk score 1-4, using both the immediate and local land slope.
+        CombinedSoilRisk: A risk score 1-5, for the risk of erosian for this type of soil.
+        ReceptorDistanceRisk: A risk score 1-5, for the closeness to a waterbody.
+        MeanRainfalRisk: A risk score 1-5, for the amount of rainfall expected in the area.
+        MaxFlowAcc: The area in which this particular pathway collects water from.
         geometry: BNG LineStrings
     """
 
     PermID: int = Field(unique=True)
     OPERATIONAL_CATCHMENT: str = Field()
     WATERBODY_NAME: str = Field()
-    CatchmentRiskDesc: str = Field(nullable=True, isin=risk_options_local)
+    CatchmentRiskDesc: str = Field(
+        nullable=True,
+        isin=[
+            "1. Very low local risk",
+            "2. Low local risk",
+            "3. Moderate local risk",
+            "4. High local risk",
+            "5. Very high local risk",
+        ],
+    )
     LandUseRisk: str = Field(nullable=True, isin=risk_options)
-    SlopeRisk: str = Field(nullable=True, isin=risk_options_slope)
-    SoilErosion: str = Field(nullable=True, isin=risk_options)
+    SlopeRisk: str = Field(
+        nullable=True,
+        isin=[
+            "1. Low",
+            "2. Medium",
+            "3. High",
+            "4.Very high",
+        ],
+    )
+    SoilErosion: str = Field(nullable=True, isin=[*risk_options, "6. Very high"])
     SoilRunoff: str = Field(nullable=True, isin=risk_options)
     CombinedSoilRisk: str = Field(nullable=True, isin=risk_options)
-    ReceptorDistanceRisk: str = Field(nullable=True, isin=risk_options)
+    ReceptorDistanceRisk: str = Field(nullable=True, isin=[f"{option} risk" for option in risk_options])
     MeanRainfalRisk: float = Field(gt=0, lt=5)
     MajLandUse: str = Field()
     MeanSlope: float = Field()
