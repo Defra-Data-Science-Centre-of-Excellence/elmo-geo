@@ -22,7 +22,7 @@ class OlfRaw(DataFrameModel):
 
     Attributes:
         CatchmentRiskDesc: A risk score 1-5, which defines how suseptible the river is to erosion.
-        LandUseRisk: A risk score 1-5, which is used to the risk due to potential runoff common on this land use.
+        LandUseRisk: A risk score 1-5, which defines the risk due to potential runoff common on this land use.
         SlopeRisk: A risk score 1-4, using both the immediate and local land slope.
         CombinedSoilRisk: A risk score 1-5, for the risk of erosian for this type of soil.
         ReceptorDistanceRisk: A risk score 1-5, for the closeness to a waterbody.
