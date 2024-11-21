@@ -76,8 +76,8 @@ class NESSSIUnitsParcels(DataFrameModel):
 
 ne_sssi_units_raw = SourceDataset(
     name="ne_sssi_units_raw",
-    level0="bronze",
-    level1="ne",
+    medallion="bronze",
+    source="ne",
     model=NESSSIUnitsRaw,
     restricted=False,
     source_path="/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_sites_of_special_scientific_interest_units/format_GEOPARQUET_sites_of_special_scientific_interest_units/SNAPSHOT_2024_08_10_sites_of_special_scientific_interest_units/",
@@ -86,8 +86,8 @@ ne_sssi_units_raw = SourceDataset(
 ne_sssi_units_parcels = DerivedDataset(
     is_geo=False,
     name="ne_sssi_units_parcels",
-    level0="silver",
-    level1="ne",
+    medallion="silver",
+    source="ne",
     restricted=False,
     func=sjoin_parcel_proportion,
     dependencies=[reference_parcels, ne_sssi_units_raw],
@@ -123,8 +123,8 @@ class NESSSINNRParcels(DataFrameModel):
 
 ne_nnr_raw = SourceDataset(
     name="ne_nnr_raw",
-    level0="bronze",
-    level1="ne",
+    medallion="bronze",
+    source="ne",
     model=NENNRRaw,
     restricted=False,
     source_path="/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_national_nature_reserves/format_GEOPARQUET_national_nature_reserves/LATEST_national_nature_reserves/",
@@ -134,8 +134,8 @@ ne_nnr_raw = SourceDataset(
 ne_nnr_parcels = DerivedDataset(
     is_geo=False,
     name="ne_nnr_parcels",
-    level0="silver",
-    level1="ne",
+    medallion="silver",
+    source="ne",
     restricted=False,
     func=sjoin_parcel_proportion,
     dependencies=[reference_parcels, ne_nnr_raw],
@@ -171,8 +171,8 @@ class NESACParcels(DataFrameModel):
 
 ne_sac_raw = SourceDataset(
     name="ne_sac_raw",
-    level0="bronze",
-    level1="ne",
+    medallion="bronze",
+    source="ne",
     model=NESACRaw,
     restricted=False,
     source_path="/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_special_areas_for_conservation/format_GEOPARQUET_special_areas_for_conservation/LATEST_special_areas_for_conservation/",
@@ -182,8 +182,8 @@ ne_sac_raw = SourceDataset(
 ne_sac_parcels = DerivedDataset(
     is_geo=False,
     name="ne_sac_parcels",
-    level0="silver",
-    level1="ne",
+    medallion="silver",
+    source="ne",
     restricted=False,
     func=sjoin_parcel_proportion,
     dependencies=[reference_parcels, ne_sac_raw],
@@ -218,8 +218,8 @@ class JNCCSPARParcels(DataFrameModel):
 
 jncc_spa_raw = SourceDataset(
     name="jncc_spa_raw",
-    level0="bronze",
-    level1="jncc",
+    medallion="bronze",
+    source="jncc",
     model=JNCCSPARaw,
     restricted=False,
     source_path="/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_special_protection_areas/format_GEOPARQUET_special_protection_areas/LATEST_special_protection_areas/",
@@ -229,8 +229,8 @@ jncc_spa_raw = SourceDataset(
 jncc_spa_parcels = DerivedDataset(
     is_geo=False,
     name="jncc_spa_parcels",
-    level0="silver",
-    level1="jncc",
+    medallion="silver",
+    source="jncc",
     restricted=False,
     func=sjoin_parcel_proportion,
     dependencies=[reference_parcels, jncc_spa_raw],
@@ -265,8 +265,8 @@ class NERamsarParcels(DataFrameModel):
 
 ne_ramsar_raw = SourceDataset(
     name="ne_ramsar_raw",
-    level0="bronze",
-    level1="ne",
+    medallion="bronze",
+    source="ne",
     model=NERamsarRaw,
     restricted=False,
     source_path="/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_ramsar/format_GEOPARQUET_ramsar/LATEST_ramsar/",
@@ -276,8 +276,8 @@ ne_ramsar_raw = SourceDataset(
 ne_ramsar_parcels = DerivedDataset(
     is_geo=False,
     name="ne_ramsar_parcels",
-    level0="silver",
-    level1="ne",
+    medallion="silver",
+    source="ne",
     restricted=False,
     func=sjoin_parcel_proportion,
     dependencies=[reference_parcels, ne_ramsar_raw],
@@ -312,8 +312,8 @@ class NEMarineConservationZonesParcels(DataFrameModel):
 
 ne_marine_conservation_zones_raw = SourceDataset(
     name="ne_marine_conservation_zones_raw",
-    level0="bronze",
-    level1="ne",
+    medallion="bronze",
+    source="ne",
     model=NEMarineConservationZonesRaw,
     restricted=False,
     source_path="/dbfs/mnt/base/unrestricted/source_natural_england_open_data_geoportal/dataset_marine_conservation_zones/format_GEOPARQUET_marine_conservation_zones/LATEST_marine_conservation_zones/",
@@ -323,8 +323,8 @@ ne_marine_conservation_zones_raw = SourceDataset(
 ne_marine_conservation_zones_parcels = DerivedDataset(
     is_geo=False,
     name="ne_marine_conservation_zones_parcels",
-    level0="silver",
-    level1="ne",
+    medallion="silver",
+    source="ne",
     restricted=False,
     func=sjoin_parcel_proportion,
     dependencies=[reference_parcels, ne_marine_conservation_zones_raw],
@@ -355,8 +355,8 @@ class ProtectedAreasParcels(DataFrameModel):
 protected_areas_parcels = DerivedDataset(
     is_geo=False,
     name="protected_areas_parcels",
-    level0="silver",
-    level1="protected_areas_combined",
+    medallion="silver",
+    source="protected_areas_combined",
     restricted=False,
     func=partial(combine_wide, sources=["sssi", "nnr", "sac", "spa", "ramsar", "mcz"]),
     dependencies=[ne_sssi_units_parcels, ne_nnr_parcels, ne_sac_parcels, jncc_spa_parcels, ne_ramsar_parcels, ne_marine_conservation_zones_parcels],

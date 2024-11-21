@@ -26,8 +26,8 @@ class RelictHedgeRaw(DataFrameModel):
 
 fcp_relict_hedge_raw = SourceDataset(
     name="fcp_relict_hedge_raw",
-    level0="silver",
-    level1="fcp",
+    medallion="silver",
+    source="fcp",
     model=RelictHedgeRaw,
     restricted=False,
     source_path="/dbfs/mnt/lab/unrestricted/ELM-Project/bronze/fcp/relict_parcel_boundaries.geojson",

@@ -109,8 +109,8 @@ class EVASTHabitatsMappingModel(DataFrameModel):
 
 evast_habitat_mapping_raw = SourceDataset(
     name="evast_habitat_mapping_raw",
-    level0="bronze",
-    level1="evast",
+    medallion="bronze",
+    source="evast",
     restricted=False,
     is_geo=False,
     model=EVASTHabitatsMappingModel,
@@ -416,8 +416,8 @@ class HabitatCreationTypeParcelModel(DataFrameModel):
 
 fcp_habitat_creation_type_parcel = DerivedDataset(
     name="fcp_habitat_creation_type_parcel",
-    level0="silver",
-    level1="fcp",
+    medallion="silver",
+    source="fcp",
     restricted=False,
     is_geo=False,
     func=_habitat_creation_classification,
@@ -471,8 +471,8 @@ class EVASTHabitatsManagementMappingModel(DataFrameModel):
 
 evast_habitat_management_mapping_raw = SourceDataset(
     name="evast_habitat_management_mapping_raw",
-    level0="bronze",
-    level1="evast",
+    medallion="bronze",
+    source="evast",
     restricted=False,
     is_geo=False,
     model=EVASTHabitatsManagementMappingModel,
@@ -607,8 +607,8 @@ class IsPHIParcelModel(DataFrameModel):
 
 fcp_is_phi_parcel = DerivedDataset(
     name="fcp_is_phi_parcel",
-    level0="gold",
-    level1="fcp",
+    medallion="gold",
+    source="fcp",
     restricted=False,
     is_geo=False,
     func=_is_phi,

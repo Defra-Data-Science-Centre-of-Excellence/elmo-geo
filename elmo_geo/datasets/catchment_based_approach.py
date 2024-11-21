@@ -27,8 +27,8 @@ class WetlandVisionRaw(DataFrameModel):
 
 wetland_vision_raw = SourceDataset(
     name="wetland_vision_raw",
-    level0="bronze",
-    level1="catchment_based_approach",
+    medallion="bronze",
+    source="catchment_based_approach",
     model=WetlandVisionRaw,
     restricted=False,
     is_geo=True,
@@ -56,8 +56,8 @@ class WetlandVisionParcels(DataFrameModel):
 wetland_vision_parcels = DerivedDataset(
     is_geo=False,
     name="wetland_vision_parcels",
-    level0="silver",
-    level1="catchment_based_approach",
+    medallion="silver",
+    source="catchment_based_approach",
     restricted=False,
     func=sjoin_parcel_proportion,
     dependencies=[reference_parcels, wetland_vision_raw],

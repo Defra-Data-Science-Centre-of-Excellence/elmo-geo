@@ -16,8 +16,8 @@ class RPALandCoverParcelsRaw(DataFrameModel):
 
 rpa_land_cover_parcels_raw = SourceDataset(
     name="rpa_land_cover_parcels_raw",
-    level0="bronze",
-    level1="rpa",
+    medallion="bronze",
+    source="rpa",
     model=RPALandCoverParcelsRaw,
     restricted=True,
     source_path="/dbfs/mnt/lab/unrestricted/ELM-Project/raw/LandCovers_Table.gdb",
@@ -33,8 +33,8 @@ class RPALandCoverCodesRaw(DataFrameModel):
 
 rpa_land_cover_codes_raw = SourceDataset(
     name="rpa_land_cover_codes_raw",
-    level0="bronze",
-    level1="rpa",
+    medallion="bronze",
+    source="rpa",
     model=RPALandCoverCodesRaw,
     restricted=True,
     is_geo=False,
@@ -75,8 +75,8 @@ def _transform(rpa_land_cover_parcels_raw, rpa_land_cover_codes_raw):
 
 rpa_land_cover_parcels = DerivedDataset(
     name="rpa_land_cover_parcels",
-    level0="silver",
-    level1="rpa",
+    medallion="silver",
+    source="rpa",
     model=RPALandCoverParcels,
     restricted=True,
     is_geo=False,

@@ -33,8 +33,8 @@ class NationalParksRaw(DataFrameModel):
 
 national_parks_raw = SourceDataset(
     name="national_parks_raw",
-    level0="bronze",
-    level1="defra",
+    medallion="bronze",
+    source="defra",
     model=NationalParksRaw,
     restricted=False,
     source_path="/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_national_parks/format_GEOPARQUET_national_parks/LATEST_national_parks/",
@@ -56,8 +56,8 @@ class NationalLandscapesRaw(DataFrameModel):
 
 national_landscapes_raw = SourceDataset(
     name="national_landscapes_raw",
-    level0="bronze",
-    level1="defra",
+    medallion="bronze",
+    source="defra",
     model=NationalLandscapesRaw,
     restricted=False,
     source_path="/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_areas_of_outstanding_natural_beauty/format_GEOPARQUET_areas_of_outstanding_natural_beauty/LATEST_areas_of_outstanding_natural_beauty",
@@ -84,8 +84,8 @@ class ProtectedLandscapesTidy(DataFrameModel):
 
 protected_landscapes_tidy = DerivedDataset(
     name="protected_landscapes_tidy",
-    level0="silver",
-    level1="defra",
+    medallion="silver",
+    source="defra",
     restricted=False,
     func=_combine_long_landscapes,
     dependencies=[national_parks_raw, national_landscapes_raw],
@@ -110,8 +110,8 @@ class ProtectedLandscapesParcel(DataFrameModel):
 protected_landscapes_parcels = DerivedDataset(
     is_geo=False,
     name="protected_landscapes_parcels",
-    level0="silver",
-    level1="defra",
+    medallion="silver",
+    source="defra",
     restricted=False,
     func=partial(sjoin_parcel_proportion, columns=["source"]),
     dependencies=[reference_parcels, protected_landscapes_tidy],

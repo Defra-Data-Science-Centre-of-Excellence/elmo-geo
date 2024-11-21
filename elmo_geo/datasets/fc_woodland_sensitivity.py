@@ -52,8 +52,8 @@ def _clean_dataset(ds: Dataset) -> gpd.GeoDataFrame:
 
 sfi_agroforestry_raw = SourceDataset(
     name="sfi_agroforestry_raw",
-    level0="bronze",
-    level1="forestry_commission",
+    medallion="bronze",
+    source="forestry_commission",
     restricted=False,
     source_path="/dbfs/mnt/lab/unrestricted/elm_data/forestry_commission/sfi_agroforestry/2024_04_15/SFI_Agroforestry.shp",
 )
@@ -65,8 +65,8 @@ Source:
 
 woodland_creation_sensitivity_raw = SourceDataset(
     name="woodland_creation_sensitivity_raw",
-    level0="bronze",
-    level1="forestry_commission",
+    medallion="bronze",
+    source="forestry_commission",
     restricted=False,
     source_path="/dbfs/mnt/lab/unrestricted/elm_data/forestry_commission/woodland_creation_full_sensitivity/England_Woodland_Creation_Full_Sensitivity_Map_v4.0.shp",
 )
@@ -78,8 +78,8 @@ Source:
 
 woodland_creation_sensitivity_var1_raw = SourceDataset(
     name="woodland_creation_sensitivity_var1_raw",
-    level0="bronze",
-    level1="forestry_commission",
+    medallion="bronze",
+    source="forestry_commission",
     restricted=False,
     source_path="/dbfs/mnt/lab/unrestricted/elm_data/forestry_commission/woodland_creation_full_sensitivity_variant_1/England_Woodland_Creation_Full_Sensitivity_Map_v4.0_variant_1.shp",
 )
@@ -94,8 +94,8 @@ Source:
 
 woodland_creation_sensitivity_var2_raw = SourceDataset(
     name="woodland_creation_sensitivity_var2_raw",
-    level0="bronze",
-    level1="forestry_commission",
+    medallion="bronze",
+    source="forestry_commission",
     restricted=False,
     source_path="/dbfs/mnt/lab/unrestricted/elm_data/forestry_commission/woodland_creation_full_sensitivity_variant_2/England_Woodland_Creation_Full_Sensitivity_Map_v4.0_variant_2.shp",
 )
@@ -110,8 +110,8 @@ Source:
 
 woodland_creation_sensitivity_var3_raw = SourceDataset(
     name="woodland_creation_sensitivity_var3_raw",
-    level0="bronze",
-    level1="forestry_commission",
+    medallion="bronze",
+    source="forestry_commission",
     restricted=False,
     source_path="/dbfs/mnt/lab/unrestricted/elm_data/forestry_commission/woodland_creation_full_sensitivity_variant_3/England_Woodland_Creation_Full_Sensitivity_Map_v4.0_variant_3.shp",
 )
@@ -123,8 +123,8 @@ Source:
 
 sfi_agroforestry = DerivedDataset(
     name="sfi_agroforestry",
-    level0="silver",
-    level1="forestry_commission",
+    medallion="silver",
+    source="forestry_commission",
     restricted=False,
     model=WoodlandSensitivityClean,
     func=_clean_dataset,
@@ -137,8 +137,8 @@ Columns have been renamed and dropped from the daw-version but the data/rows rem
 
 woodland_creation_sensitivity = DerivedDataset(
     name="woodland_creation_sensitivity",
-    level0="silver",
-    level1="forestry_commission",
+    medallion="silver",
+    source="forestry_commission",
     restricted=False,
     model=WoodlandSensitivityClean,
     func=_clean_dataset,
@@ -151,8 +151,8 @@ Columns have been renamed and dropped from the raw-version but the data/rows rem
 
 woodland_creation_sensitivity_var1 = DerivedDataset(
     name="woodland_creation_sensitivity_var1",
-    level0="silver",
-    level1="forestry_commission",
+    medallion="silver",
+    source="forestry_commission",
     restricted=False,
     model=WoodlandSensitivityClean,
     func=_clean_dataset,
@@ -165,8 +165,8 @@ Columns have been renamed and dropped from the raw-version but the data/rows rem
 
 woodland_creation_sensitivity_var2 = DerivedDataset(
     name="woodland_creation_sensitivity_var2",
-    level0="silver",
-    level1="forestry_commission",
+    medallion="silver",
+    source="forestry_commission",
     restricted=False,
     model=WoodlandSensitivityClean,
     func=_clean_dataset,
@@ -179,8 +179,8 @@ Columns have been renamed and dropped from the raw-version but the data/rows rem
 
 woodland_creation_sensitivity_var3 = DerivedDataset(
     name="woodland_creation_sensitivity_var3",
-    level0="silver",
-    level1="forestry_commission",
+    medallion="silver",
+    source="forestry_commission",
     restricted=False,
     model=WoodlandSensitivityClean,
     func=_clean_dataset,
@@ -193,8 +193,8 @@ Columns have been renamed and dropped from the raw-version but the data/rows rem
 
 sfi_agroforestry_parcels = DerivedDataset(
     name="sfi_agroforestry_parcels",
-    level0="silver",
-    level1="forestry_commission",
+    medallion="silver",
+    source="forestry_commission",
     restricted=False,
     func=_join_parcels,
     dependencies=[reference_parcels, sfi_agroforestry],
@@ -205,8 +205,8 @@ sfi_agroforestry_parcels = DerivedDataset(
 
 woodland_creation_sensitivity_parcels = DerivedDataset(
     name="woodland_creation_sensitivity_parcels",
-    level0="silver",
-    level1="forestry_commission",
+    medallion="silver",
+    source="forestry_commission",
     restricted=False,
     func=_join_parcels,
     dependencies=[reference_parcels, woodland_creation_sensitivity],
@@ -217,8 +217,8 @@ woodland_creation_sensitivity_parcels = DerivedDataset(
 
 woodland_creation_sensitivity_var1_parcels = DerivedDataset(
     name="woodland_creation_sensitivity_var1_parcels",
-    level0="silver",
-    level1="forestry_commission",
+    medallion="silver",
+    source="forestry_commission",
     restricted=False,
     func=_join_parcels,
     dependencies=[reference_parcels, woodland_creation_sensitivity_var1],
@@ -229,8 +229,8 @@ woodland_creation_sensitivity_var1_parcels = DerivedDataset(
 
 woodland_creation_sensitivity_var2_parcels = DerivedDataset(
     name="woodland_creation_sensitivity_var2_parcels",
-    level0="silver",
-    level1="forestry_commission",
+    medallion="silver",
+    source="forestry_commission",
     restricted=False,
     func=_join_parcels,
     dependencies=[reference_parcels, woodland_creation_sensitivity_var2],
@@ -241,8 +241,8 @@ woodland_creation_sensitivity_var2_parcels = DerivedDataset(
 
 woodland_creation_sensitivity_var3_parcels = DerivedDataset(
     name="woodland_creation_sensitivity_var3_parcels",
-    level0="silver",
-    level1="forestry_commission",
+    medallion="silver",
+    source="forestry_commission",
     restricted=False,
     func=_join_parcels,
     dependencies=[reference_parcels, woodland_creation_sensitivity_var3],

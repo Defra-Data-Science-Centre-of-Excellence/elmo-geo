@@ -115,8 +115,8 @@ def _transform(esc_species_parcels: Dataset) -> pd.DataFrame:
 
 esc_woodland_suitability = DerivedDataset(
     name="esc_woodland_suitability",
-    level0="silver",
-    level1="forest_research",
+    medallion="silver",
+    source="forest_research",
     restricted=False,
     is_geo=False,
     func=_transform,
@@ -134,8 +134,8 @@ def _filter_woodland_suitability_for_elmo(esc_woodland_suitability: DerivedDatas
 
 esc_woodland_suitability_rcp45_2021_2028 = DerivedDataset(
     name="esc_woodland_suitability_rcp45_2021_2028",
-    level0="gold",
-    level1="forest_research",
+    medallion="gold",
+    source="forest_research",
     restricted=False,
     is_geo=False,
     func=_filter_woodland_suitability_for_elmo,

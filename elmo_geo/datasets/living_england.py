@@ -55,8 +55,8 @@ class LivingEnglandHabitatMapPhase4Raw(DataFrameModel):
 
 living_england_habitat_map_phase_4_raw = SourceDataset(
     name="living_england_habitat_map_phase_4_raw",
-    level0="bronze",
-    level1="living_england",
+    medallion="bronze",
+    source="living_england",
     model=LivingEnglandHabitatMapPhase4Raw,
     restricted=False,
     source_path="/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_living_england_habitat_map_phase_4/format_GEOPARQUET_living_england_habitat_map_phase_4/LATEST_living_england_habitat_map_phase_4/",
@@ -80,8 +80,8 @@ class LivingEnglandHabitatMapPhase4Parcel(DataFrameModel):
 living_england_habitat_map_phase_4_parcels = DerivedDataset(
     is_geo=False,
     name="living_england_habitat_map_phase_4_parcel",
-    level0="silver",
-    level1="living_england",
+    medallion="silver",
+    source="living_england",
     restricted=False,
     func=partial(sjoin_parcel_proportion, columns=["A_pred"]),
     dependencies=[reference_parcels, living_england_habitat_map_phase_4_raw],

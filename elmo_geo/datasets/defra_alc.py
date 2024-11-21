@@ -40,8 +40,8 @@ class ALCRaw(DataFrameModel):
 
 alc_raw = SourceDataset(
     name="alc_raw",
-    level0="bronze",
-    level1="defra",
+    medallion="bronze",
+    source="defra",
     model=ALCRaw,
     restricted=False,
     source_path="/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_provisional_agricultural_land_classification_alc/format_GEOPARQUET_provisional_agricultural_land_classification_alc/LATEST_provisional_agricultural_land_classification_alc/",
@@ -76,8 +76,8 @@ class ALCParcels(DataFrameModel):
 alc_parcels = DerivedDataset(
     is_geo=False,
     name="alc_parcels",
-    level0="silver",
-    level1="defra",
+    medallion="silver",
+    source="defra",
     restricted=False,
     func=partial(sjoin_parcel_proportion, columns=["alc_grade"]),
     dependencies=[reference_parcels, alc_raw],
