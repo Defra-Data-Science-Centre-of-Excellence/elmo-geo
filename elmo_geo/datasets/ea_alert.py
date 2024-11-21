@@ -11,9 +11,6 @@ from elmo_geo.etl import SRID, Dataset, DerivedDataset, SourceDataset
 from .rpa_reference_parcels import reference_parcels
 
 # OLF Source
-risk_options = ["1. Low", "2. Medium Low", "3. Medium", "4. Medium High", "5. High"]
-
-
 class OlfRaw(DataFrameModel):
     """Model for EA ALERT probable OverLand Flow pathways (OLF) dataset.
     This dataset is useful for eroasion risk assessment.
@@ -34,41 +31,24 @@ class OlfRaw(DataFrameModel):
     PermID: int = Field(unique=True)
     OPERATIONAL_CATCHMENT: str = Field()
     WATERBODY_NAME: str = Field()
-    CatchmentRiskDesc: str = Field(
-        nullable=True,
-        isin=[
-            "1. Very low local risk",
-            "2. Low local risk",
-            "3. Moderate local risk",
-            "4. High local risk",
-            "5. Very high local risk",
-        ],
-    )
-    LandUseRisk: str = Field(nullable=True, isin=risk_options)
-    SlopeRisk: str = Field(
-        nullable=True,
-        isin=[
-            "1. Low",
-            "2. Medium",
-            "3. High",
-            "4.Very high",
-        ],
-    )
-    SoilErosion: str = Field(nullable=True, isin=[*risk_options, "6. Very high"])
-    SoilRunoff: str = Field(nullable=True, isin=risk_options)
-    CombinedSoilRisk: str = Field(nullable=True, isin=risk_options)
-    ReceptorDistanceRisk: str = Field(nullable=True, isin=[f"{option} risk" for option in risk_options])
-    MeanRainfalRisk: float = Field(gt=0, lt=5)
+    CatchmentRiskDesc: str = Field(nullable=True, str_matches=r"^[1-5].")
+    LandUseRisk: str = Field(nullable=True, str_matches=r"^[1-5].")
+    SlopeRisk: str = Field(nullable=True, str_matches=r"^[1-4].")
+    SoilErosion: str = Field(nullable=True, str_matches=r"^[1-6].")
+    SoilRunoff: str = Field(nullable=True, str_matches=r"^[1-5].")
+    CombinedSoilRisk: str = Field(nullable=True, str_matches=r"^[1-5].")
+    ReceptorDistanceRisk: str = Field(nullable=True, str_matches=r"^[1-5].")
+    MeanRainfalRisk: float = Field(ge=0, le=5)
     MajLandUse: str = Field()
     MeanSlope: float = Field()
-    Slope1haWatershed: float = Field()
+    Slope1haWatershed: float = Field(nullable=True)
     MinFlowWater: float = Field()
     MinFlowRoad: float = Field()
-    SSSI_Intersect: float = Field()
+    SSSI_Intersect: float = Field(nullable=True)
     FlowAccClass: str = Field(isin=["1Ha", "1Km", "10Km"])
-    MaxFlowAcc: float = Field()
+    MaxFlowAcc: int = Field()
     Shape_Length: float = Field()
-    geometry: Geometry(crs=SRID) = Field(nullable=True)
+    geometry: Geometry(crs=SRID) = Field()
 
 
 ea_olf_raw = SourceDataset(
