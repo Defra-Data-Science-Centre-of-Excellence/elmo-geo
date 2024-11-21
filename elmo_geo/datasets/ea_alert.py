@@ -4,11 +4,14 @@
 [^alert_map]: https://experience.arcgis.com/experience/fd8e7ede2548409f965275da8e8d35f7/page/ALERT/
 """
 from pandera import DataFrameModel, Field
+from pandera.dtypes import Int8
 from pandera.engines.geopandas_engine import Geometry
 
 from elmo_geo.etl import SRID, Dataset, DerivedDataset, SourceDataset
+from elmo_geo.utils.dbr import spark
 
 from .rpa_reference_parcels import reference_parcels
+
 
 # OLF Source
 class OlfRaw(DataFrameModel):
@@ -63,10 +66,16 @@ ea_olf_raw = SourceDataset(
 
 # OLF Parcel
 class OlfParcel(DataFrameModel):
-    """OLF erosion model"""
+    """OLF erosion joined and unioned to parcels"""
 
     id_parcel: str = Field()
-    score: int = Field()
+    erosion_score: Int8 = Field(ge=0, le=5)
+    CatchmentQuintile: Int8 = Field(ge=0, le=5)
+    LandUseQuintile: Int8 = Field(ge=0, le=5)
+    SlopeQuintile: Int8 = Field(ge=0, le=5)
+    CombinedSoilQuintile: Int8 = Field(ge=0, le=5)
+    MeanRainfallQuintile: Int8 = Field(ge=0, le=5)
+    MaxFlowAccQuintile: Int8 = Field(ge=0, le=5)
 
 
 def _transform(parcels: Dataset, olf: Dataset):
@@ -75,13 +84,20 @@ def _transform(parcels: Dataset, olf: Dataset):
     parcels.sdf().createOrReplaceTempView("parcel")
 
     olf.sdf().selectExpr(
-        "CAST(SUBSTRING(CatchmentRiskDesc, 1, 2) AS INT) AS CatchmentQuintile",
-        "CAST(SUBSTRING(LandUseRisk, 1, 2) AS INT) AS LandUseQuintile",
-        "CAST(SUBSTRING(SlopeRisk, 1, 2) AS INT) AS SlopeQuintile",
-        "CAST(SUBSTRING(CombinedSoilRisk, 1, 2) AS INT) AS CombinedSoilQuintile",
-        "NTILE(5) OVER (ORDER BY MeanRainfalRisk) AS MeanRainfallQuintile",
-        "NTILE(5) OVER (ORDER BY MaxFlowAcc) AS MaxFlowAccQuintile",
-        "(CatchmentQuintile + LandUseQuintile + SlopeQuintile + CombinedSoilQuintile + MeanRainfallQuintile + MaxFlowAccQuintile) AS score",
+        "COALESCE(SUBSTRING(CatchmentRiskDesc, 1, 2), 0) AS CatchmentQuintile",
+        "COALESCE(SUBSTRING(LandUseRisk, 1, 2), 0) AS LandUseQuintile",
+        """
+            CASE COALESCE(SUBSTRING(SlopeRisk, 1, 2), 0)
+                WHEN 1 THEN 1
+                WHEN 2 THEN 2
+                WHEN 3 THEN 4
+                WHEN 4 THEN 5
+            END AS SlopeQuintile
+        """,
+        "COALESCE(SUBSTRING(CombinedSoilRisk, 1, 2), 0) AS CombinedSoilQuintile",
+        "NTILE(5) OVER (ORDER BY COALESCE(MeanRainfalRisk, 0)) AS MeanRainfallQuintile",
+        "NTILE(5) OVER (ORDER BY COALESCE(MaxFlowAcc, 0)) AS MaxFlowAccQuintile",
+        "(CatchmentQuintile + LandUseQuintile + SlopeQuintile + CombinedSoilQuintile + MeanRainfallQuintile + MaxFlowAccQuintile) AS erosion_score",
         "geometry",
     ).createOrReplaceTempView("olf")
 
@@ -89,13 +105,13 @@ def _transform(parcels: Dataset, olf: Dataset):
         """
         SELECT
             id_parcel,
-            NTILE(5) OVER (ORDER BY MAX(score)) AS score,
-            MAX(CatchmentQuintile) AS CatchmentQuintile,
-            MAX(LandUseQuintile) AS LandUseQuintile,
-            MAX(SlopeQuintile) AS SlopeQuintile,
-            MAX(CombinedSoilQuintile) AS CombinedSoilQuintile,
-            MAX(MeanRainfallQuintile) AS MeanRainfallQuintile,
-            MAX(MaxFlowAccQuintile) AS MaxFlowAccQuintile
+            CAST(NTILE(5) OVER (ORDER BY MAX(erosion_score)) AS TINYINT) AS erosion_score,
+            CAST(MAX(CatchmentQuintile) AS TINYINT) AS CatchmentQuintile,
+            CAST(MAX(LandUseQuintile) AS TINYINT) AS LandUseQuintile,
+            CAST(MAX(SlopeQuintile) AS TINYINT) AS SlopeQuintile,
+            CAST(MAX(CombinedSoilQuintile) AS TINYINT) AS CombinedSoilQuintile,
+            CAST(MAX(MeanRainfallQuintile) AS TINYINT) AS MeanRainfallQuintile,
+            CAST(MAX(MaxFlowAccQuintile) AS TINYINT) AS MaxFlowAccQuintile
         FROM parcel JOIN olf
         ON ST_Intersects(parcel.geometry, olf.geometry)
         GROUP BY id_parcel
