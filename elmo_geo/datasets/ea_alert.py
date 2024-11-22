@@ -66,7 +66,21 @@ ea_olf_raw = SourceDataset(
 
 # OLF Parcel
 class OlfParcel(DataFrameModel):
-    """OLF erosion joined and unioned to parcels"""
+    """OLF erosion joined and unioned to parcels.
+
+    Parcels level values given by the maximum quintile value of intersection OLF geometries.
+    
+    Attributes:
+        id_parcel:
+        erosion_score: The quintile of the greatest sum of intersecting OLF quintile risk values
+            for catchment, land use, slope, soil, mean rainfall, and maximum flow accumulation area.
+        CatchmentQuintile: Maximum OLF catchment quntile.
+        LandUseQuintile: Maximum OLF land use quntile.
+        SlopeQuintile: Maximum OLF slope quntile.
+        CombinedSoilQuintile: Maximum OLF soil quntile.
+        MeanRainfallQuintile: Maximum OLF mean rainfall quntile.
+        MaxFlowAccQuintile: Maximum OLF max flow accumulation area quntile.
+    """
 
     id_parcel: str = Field()
     erosion_score: Int8 = Field(ge=0, le=5)
@@ -129,3 +143,8 @@ ea_olf_parcels = DerivedDataset(
     dependencies=[reference_parcels, ea_olf_raw],
     is_geo=False,
 )
+"""Overland flow pathway derived risk scores for parcels.
+
+Risks cover aspects of soil erosion, with an overcall soil erision score calculated.
+Higher values indicate greater risk.
+"""
