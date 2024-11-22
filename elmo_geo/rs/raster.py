@@ -1,3 +1,4 @@
+from pathlib import Path
 import shutil
 import tempfile
 from typing import Dict, Set, Union
@@ -5,12 +6,13 @@ from typing import Dict, Set, Union
 import matplotlib.pyplot as plt
 import numpy as np
 import rasterio
+from rioxarray.raster_array import RasterArray
+from scipy.interpolate import NearestNDInterpolator
 import seaborn as sns
 import xarray as xr
 from xarray.core.dataarray import DataArray
 
 from elmo_geo import LOG
-
 
 def write_array_to_raster(arr, filename, **meta):
     """Save an array of data to a .tif format raster file.
@@ -31,18 +33,26 @@ def write_array_to_raster(arr, filename, **meta):
         shutil.copy(tmp.name, filename)
 
 
-def to_raster(da: DataArray, path: str):
-    """Save a DataArray to dbfs e.g. .tif
-    temp file then move it...
+def to_raster(ra: RasterArray, path: str):
+    """Save a `xarray.raster_array.RasterArray` as cloud-optimised geo-tiff (COG) to dbfs.
+
+    Saves to `/tmp` first and then moves to avoid `/dbfs` limitations.
+
+    Parameters:
+      ra: The xarray array to save.
+      path: The `/dbfs` path to save to, should use the `.tif` extension.
     """
-    filename = path.split("/")[-1]
-    temp_loc = f"/tmp/{filename}"
-    da.rio.to_raster(temp_loc)
+    path = Path(path)
+    if path.suffix != ".tif":
+      msg = f"Expected a .tif file, recieved {path.suffix}."
+      raise ValueError(msg)
+    temp_loc = f"/tmp/{path.name}"
+    ra.rio.to_raster(temp_loc, driver="COG")
     shutil.move(temp_loc, path)
-    LOG.info(f"Saved DataArray to {path}")
+    LOG.info(f"Saved cloud-optimised geo-tiff (COG) to {path}")
 
 
-def get_raster_info(rst: DataArray, plot: bool = True):
+def get_raster_info(rst: RasterArray, plot: bool = True):
     """Log and plot raster information
     Parameters:
         rst: THe raster band
@@ -131,3 +141,12 @@ def apply_offset(da: DataArray, offset: int, floor0: bool = True) -> DataArray:
     if floor0:
         da.data = xr.where(da < 0, 0, da, keep_attrs=True)  # set negative values to 0
     return da
+
+
+def interp_nearest(ra: DataArray) -> DataArray:
+  """Returns the array with missing values filled form the nearest valid ones."""
+  rac = ra.copy()
+  indices = np.where(np.isfinite(rac))
+  interp = NearestNDInterpolator(np.transpose(indices), rac.data[indices])
+  rac.values = interp(*np.indices(rac.shape))
+  return rac
