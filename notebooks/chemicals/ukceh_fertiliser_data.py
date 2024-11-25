@@ -36,7 +36,14 @@ for i, c in enumerate(["nitrogen_kg_ha", "phosphorus_kg_ha", "potassium_kg_ha"])
 
 # COMMAND ----------
 
-import numpy as np
+# correlation plot
+fig, ax = plt.subplots(figsize=(8,8))
 corr = df.set_index("id_parcel").corr().rename(lambda c: c.split("_")[0].title(), axis=0).rename(lambda c: c.split("_")[0].title(), axis=1)
 matrix = np.triu(corr)
-sns.heatmap(corr, annot=True, vmin=0, vmax=1, cmap="Blues", mask=matrix)
+sns.heatmap(corr, annot=True, vmin=0, vmax=1, cmap="Blues", mask=matrix, ax=ax)
+ax.set_title("Pearson correlation coefficients between application rates.")
+fig.show()
+
+# COMMAND ----------
+
+
