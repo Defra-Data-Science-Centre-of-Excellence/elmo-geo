@@ -16,4 +16,4 @@ register()
 
 # COMMAND ----------
 
-sync_datasets(filtered_catalogue)
+sync_datasets(catalogue)
