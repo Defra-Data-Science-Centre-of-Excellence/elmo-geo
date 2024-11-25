@@ -30,7 +30,6 @@ from elmo_geo.utils.log import LOG
 from elmo_geo.utils.misc import dbmtime
 from elmo_geo.utils.types import DataFrame, GeoDataFrame, PandasDataFrame, SparkDataFrame
 
-SRID: int = 27700
 DATE_FMT: str = r"%Y_%m_%d"
 SRC_HASH_FMT: str = r"%Y%m%d%H%M%S"
 HASH_LENGTH = 8
@@ -38,6 +37,7 @@ PATH_FMT: str = "/dbfs/mnt/lab/{restricted}/ELM-Project/{level0}/{level1}/"
 FILE_FMT: str = "{name}-{date}-{hsh}.parquet"
 PAT_FMT: str = r"(^{name}-[\d_]+-{hsh}.parquet$)"
 PAT_DATE: str = r"(?<=^{name}-)([\d_]+)(?=-{hsh}.parquet$)"
+SRID: int = 27700
 
 FILE_FMT_RASTER: str = "{name}.tif"
 PAT_FMT_RASTER: str = r"(^{name}.tif$)"

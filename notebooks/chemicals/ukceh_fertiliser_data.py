@@ -33,3 +33,10 @@ for i, c in enumerate(["nitrogen_kg_ha", "phosphorus_kg_ha", "potassium_kg_ha"])
   ax.set_title("UKCEH fertiliser application by parcel, 2010-2015, kg/ha per annum.", loc="left")
   ax.set_xlabel("Application rate kg/ha per annum")
 
+
+# COMMAND ----------
+
+import numpy as np
+corr = df.set_index("id_parcel").corr().rename(lambda c: c.split("_")[0].title(), axis=0).rename(lambda c: c.split("_")[0].title(), axis=1)
+matrix = np.triu(corr)
+sns.heatmap(corr, annot=True, vmin=0, vmax=1, cmap="Blues", mask=matrix)
