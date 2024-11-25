@@ -20,8 +20,8 @@ from pathlib import Path
 import geopandas as gpd
 import pandas as pd
 import pyspark.sql.functions as F
-from pandera import DataFrameModel
 import rioxarray as rxr
+from pandera import DataFrameModel
 from rioxarray.raster_array import RasterArray
 
 from elmo_geo.io import download_link, load_sdf, ogr_to_geoparquet, read_file, to_gdf, write_parquet
@@ -42,6 +42,7 @@ PAT_DATE: str = r"(?<=^{name}-)([\d_]+)(?=-{hsh}.parquet$)"
 FILE_FMT_RASTER: str = "{name}.tif"
 PAT_FMT_RASTER: str = r"(^{name}.tif$)"
 
+
 @dataclass
 class Dataset(ABC):
     """Class for managing loading and validation of data.
@@ -56,12 +57,69 @@ class Dataset(ABC):
     restricted: bool
 
     @abstractproperty
-    def _new_date(self) -> str:
-        """New date for parquet file being created."""
-
-    @abstractproperty
     def _hash(self) -> str:
         """A semi-unique identifier of the last modified dates of the data file(s) from which a dataset is derived."""
+
+    @abstractproperty
+    def dict(self) -> dict:
+        """A dictionary representation of the dataset."""
+
+    @abstractmethod
+    def refresh(self) -> None:
+        """Populate the cache with a fresh version of this dataset."""
+
+    @property
+    def path_dir(self) -> str:
+        """Path to the directory where the data will be saved."""
+        restricted = "restricted" if self.restricted else "unrestricted"
+        return PATH_FMT.format(restricted=restricted, level0=self.level0, level1=self.level1)
+
+    @abstractproperty
+    def is_fresh(self) -> bool:
+        """Check whether this dataset needs to be refreshed in the cache."""
+
+    @property
+    def filename(self) -> str:
+        """Name of the file if it has been saved, else OSError."""
+        if not self.is_fresh:
+            msg = "The dataset has not been built yet. Please run `Dataset.refresh()`"
+            raise OSError(msg)
+        return next(iter(self.file_matches))
+
+    @property
+    def path(self) -> str:
+        """Path to the file if it has been saved, else OSError."""
+        return self.path_dir + self.filename
+
+    @abstractproperty
+    def _new_filename(self) -> str:
+        """New filename for file being created."""
+
+    @property
+    def _new_path(self) -> str:
+        """New filepath for parquet file being created."""
+        return self.path_dir + self._new_filename
+
+    def destroy(self) -> None:
+        """Delete the cached dataset at `self.path`."""
+        if Path(self.path).exists():
+            shutil.rmtree(self.path)
+            msg = f"Destroyed '{self.name}' dataset."
+            LOG.warning(msg)
+            return
+        msg = f"'{self.name}' dataset cannot be destroyed as it doesn't exist yet."
+        LOG.warning(msg)
+
+
+@dataclass
+class TabularDataset(Dataset, ABC):
+    """Class for managing loading and validation of tabular data."""
+
+    # model:  DataFrameModel | None
+
+    @abstractproperty
+    def _new_date(self) -> str:
+        """New date for parquet file being created."""
 
     @property
     def date(self) -> str | None:
@@ -81,12 +139,6 @@ class Dataset(ABC):
     @abstractmethod
     def refresh(self) -> None:
         """Populate the cache with a fresh version of this dataset."""
-
-    @property
-    def path_dir(self) -> str:
-        """Path to the directory where the data will be saved."""
-        restricted = "restricted" if self.restricted else "unrestricted"
-        return PATH_FMT.format(restricted=restricted, level0=self.level0, level1=self.level1)
 
     @property
     def is_fresh(self) -> bool:
@@ -119,19 +171,9 @@ class Dataset(ABC):
         return next(iter(self.file_matches))
 
     @property
-    def path(self) -> str:
-        """Path to the file if it has been saved, else OSError."""
-        return self.path_dir + self.filename
-
-    @property
     def _new_filename(self) -> str:
         """New filename for parquet file being created."""
         return FILE_FMT.format(name=self.name, date=self._new_date, hsh=self._hash)
-
-    @property
-    def _new_path(self) -> str:
-        """New filepath for parquet file being created."""
-        return self.path_dir + self._new_filename
 
     def gdf(self, **kwargs) -> GeoDataFrame:
         """Load the dataset as a `geopandas.GeoDataFrame`
@@ -169,16 +211,6 @@ class Dataset(ABC):
             else:
                 df = self.model.validate(df)
         return df
-
-    def destroy(self) -> None:
-        """Delete the cached dataset at `self.path`."""
-        if Path(self.path).exists():
-            shutil.rmtree(self.path)
-            msg = f"Destroyed '{self.name}' dataset."
-            LOG.warning(msg)
-            return
-        msg = f"'{self.name}' dataset cannot be destroyed as it doesn't exist yet."
-        LOG.warning(msg)
 
     def export(self, ext: str = "parquet") -> str:
         """Create a copy of the dataset as a monolithic file in the /FileStore/elmo-geo-exports/ folder
@@ -219,7 +251,7 @@ class Dataset(ABC):
 
 
 @dataclass
-class SourceDataset(Dataset):
+class SourceDataset(TabularDataset):
     """Dataset from outside of the managed environment.
 
     A SourceDataset is a Dataset for datasets that are not derived from other datasets
@@ -281,6 +313,7 @@ class SourceDataset(Dataset):
 @dataclass
 class SourceGlobDataset(SourceDataset):
     """SourceGlobDataset is to ingest multiple files using a glob path.
+
     - This is better suited for ingesting very large geographic file, as it uses ogr2ogr.
     - This does not support aliasing/renaming, as it writes before validating.
 
@@ -297,6 +330,7 @@ class SourceGlobDataset(SourceDataset):
 
     glob_path: str = None
     source_path: str = None
+    model: DataFrameModel | None = None
 
     @property
     def _new_date(self) -> str:
@@ -340,135 +374,12 @@ class SourceGlobDataset(SourceDataset):
             write_parquet(df, path=self._new_path, partition_cols=self.partition_cols)
         LOG.info(f"Saved to '{self.path}'.")
 
-@dataclass
-class SourceSingleFileRasterDataset():
-    """Class for managing loading and validation of raster data in a single file.
-
-    A Dataset manages the loading of datasets from the cache, and populates the cache when
-    that dataset doesn't exist or needs to be refreshed.
-    """
-
-    name: str
-    level0: str
-    level1: str
-    restricted: bool
-    source_path: str = None
-    model: None = None
-    
-    @property
-    def dict(self) -> dict:
-        """A dictionary representation of the dataset."""
-        return dict(
-            name=self.name,
-            level0=self.level0,
-            level1=self.level1,
-            restricted=self.restricted,
-            path=self.path,
-            type=str(type(self)),
-            source_path=self.source_path,
-        )
-
-    def refresh(self):
-        LOG.info(f"Creating '{self.name}' dataset.")
-        ra = rxr.open_rasterio(self.source_path).squeeze()
-        if (crs := ra.rio.crs) != SRID:
-            msg = f"Converting CRS from {crs} to {SRID}."
-            LOG.debug(msg)
-            ra = ra.rio.to_crs(SRID)
-        ra = self._validate(ra)
-        to_raster(ra, self._new_path)
-        LOG.info(f"Saved to '{self.path}'.")
-
-    @property
-    def path_dir(self) -> str:
-        """Path to the directory where the data will be saved."""
-        restricted = "restricted" if self.restricted else "unrestricted"
-        return PATH_FMT.format(
-            restricted=restricted, level0=self.level0, level1=self.level1
-        )
-
-    @property
-    def is_fresh(self) -> bool:
-        """Check whether this dataset needs to be refreshed in the cache."""
-        return len(self.file_matches) > 0
-
-    @property
-    def file_matches(self) -> list[str]:
-        """List of files that match the file path but may have different dates.
-
-        Return in order of newest to oldest by the modified date of the path. Does
-        not take into account modified dates of the dataset dependencies.
-        """
-        if not os.path.exists(self.path_dir):
-            return []
-
-        pat = re.compile(PAT_FMT_RASTER.format(name=self.name))
-        return [
-                y.group(0)
-                for y in [pat.fullmatch(x) for x in os.listdir(self.path_dir)]
-                if y is not None
-            ]
-
-    @property
-    def filename(self) -> str:
-        """Name of the file if it has been saved, else OSError."""
-        if not self.is_fresh:
-            msg = "The dataset has not been built yet. Please run `Dataset.refresh()`"
-            raise OSError(msg)
-        return next(iter(self.file_matches))
-
-    @property
-    def path(self) -> str:
-        """Path to the file if it has been saved, else OSError."""
-        return self.path_dir + self.filename
-
-    @property
-    def _new_filename(self) -> str:
-        """New filename for parquet file being created."""
-        return FILE_FMT_RASTER.format(name=self.name)
-
-    @property
-    def _new_path(self) -> str:
-        """New filepath for parquet file being created."""
-        return self.path_dir + self._new_filename
-    
-    @property
-    def _hash(self) -> str:
-        "Fixed hash as no updates required once built."
-        return "0"
-
-    def ra(self, **kwargs) -> RasterArray:
-        """Load the dataset as a `rioxarray.raster_array.RasterArray`
-        
-        By default the dataset na values are masked out from their stored _FillValue.
-        """
-        if not self.is_fresh:
-            self.refresh()
-        default_params = dict(masked= True)
-        [kwargs.setdefault(k, v) for k, v in default_params.items()]
-        return rxr.open_rasterio(self.path, **kwargs)
-
-    def _validate(self, ra: RasterArray) -> DataFrame:
-        """Validate the data against a model specification if one is defined."""
-        # TODO: Implement validation using https://github.com/xarray-contrib/xarray-schema
-        return ra
-
-    def destroy(self) -> None:
-        """Delete the cached dataset at `self.path`."""
-        if Path(self.path).exists():
-            shutil.rmtree(self.path)
-            msg = f"Destroyed '{self.name}' dataset."
-            LOG.warning(msg)
-            return
-        msg = f"'{self.name}' dataset cannot be destroyed as it doesn't exist yet."
-        LOG.warning(msg)
-
 
 @dataclass
-class DerivedDataset(Dataset):
+class DerivedDataset(TabularDataset):
     """Dataset derived (transformed) from others in the ETL pipeline.
 
-    A DerivedDataset is a DataSet for datasets that are derived other datasets.
+    A DerivedDataset is for tabular data that is derived other datasets.
     It is thus dependent on those datasets, and includes a function that transforms those
     dependencies when the dataset needs to be refreshed. A derived dataset needs refreshing
     if it is missing entirely, or if any of its dependencies need refreshing.
@@ -514,4 +425,150 @@ class DerivedDataset(Dataset):
         df = self.func(*self.dependencies)
         df = self._validate(df)
         write_parquet(df, path=self._new_path, partition_cols=self.partition_cols)
+        LOG.info(f"Saved to '{self.path}'.")
+
+
+@dataclass
+class RasterDataset(Dataset):
+    """Class for managing loading and validation of raster data."""
+
+    @property
+    def dict(self) -> dict:
+        """A dictionary representation of the dataset."""
+        return dict(
+            name=self.name,
+            level0=self.level0,
+            level1=self.level1,
+            restricted=self.restricted,
+            path=self.path,
+            type=str(type(self)),
+        )
+
+    @property
+    def is_fresh(self) -> bool:
+        """Check whether this dataset needs to be refreshed in the cache."""
+        return len(self.file_matches) > 0
+
+    @property
+    def file_matches(self) -> list[str]:
+        """List of files that match the file path but may have different dates.
+
+        Return in order of newest to oldest by the modified date of the path. Does
+        not take into account modified dates of the dataset dependencies.
+        """
+        if not os.path.exists(self.path_dir):
+            return []
+
+        pat = re.compile(PAT_FMT_RASTER.format(name=self.name))
+        return [y.group(0) for y in [pat.fullmatch(x) for x in os.listdir(self.path_dir)] if y is not None]
+
+    @property
+    def _new_filename(self) -> str:
+        """New filename for parquet file being created."""
+        return FILE_FMT_RASTER.format(name=self.name)
+
+    @property
+    def _hash(self) -> str:
+        "Fixed hash as no updates required once built."
+        return "0"
+
+    def ra(self, **kwargs) -> RasterArray:
+        """Load the dataset as a `rioxarray.raster_array.RasterArray`
+
+        By default the dataset na values are masked out from their stored _FillValue.
+        """
+        if not self.is_fresh:
+            self.refresh()
+        default_params = dict(masked=True)
+        [kwargs.setdefault(k, v) for k, v in default_params.items()]
+        return rxr.open_rasterio(self.path, **kwargs)
+
+    def _validate(self, ra: RasterArray) -> DataFrame:
+        """Validate the data against a model specification if one is defined."""
+        # TODO: Implement validation using https://github.com/xarray-contrib/xarray-schema
+        return ra
+
+
+@dataclass
+class SourceSingleFileRasterDataset(RasterDataset):
+    """Class for managing loading and validation of source raster data in a single file."""
+
+    source_path: str = None
+
+    @property
+    def dict(self) -> dict:
+        """A dictionary representation of the dataset."""
+        return dict(
+            name=self.name,
+            level0=self.level0,
+            level1=self.level1,
+            restricted=self.restricted,
+            path=self.path,
+            type=str(type(self)),
+            source_path=self.source_path,
+        )
+
+    def _validate(self, ra: RasterArray) -> DataFrame:
+        """Validate the data against a model specification if one is defined."""
+        # TODO: Implement validation using https://github.com/xarray-contrib/xarray-schema
+        return ra
+
+    def refresh(self):
+        LOG.info(f"Creating '{self.name}' dataset.")
+        ra = rxr.open_rasterio(self.source_path).squeeze()
+        if (crs := ra.rio.crs) != SRID:
+            msg = f"Converting CRS from {crs} to {SRID}."
+            LOG.debug(msg)
+            ra = ra.rio.to_crs(SRID)
+        ra = self._validate(ra)
+        to_raster(ra, self._new_path)
+        LOG.info(f"Saved to '{self.path}'.")
+
+
+@dataclass
+class DerivedRasterDataset(RasterDataset):
+    """Raster Dataset derived (transformed) from others in the ETL pipeline.
+
+    A DerivedRasterDataset is for raster data that is derived other datasets.
+    It is thus dependent on those datasets, and includes a function that transforms those
+    dependencies when the dataset needs to be refreshed. A derived dataset needs refreshing
+    if it is missing entirely, or if any of its dependencies need refreshing.
+    """
+
+    dependencies: list[Dataset]
+    func: Callable[[list[Dataset]], RasterArray]
+
+    @property
+    def _hash(self) -> str:
+        """A hash derived from this dataset's dependencies.
+
+        If any dependency's hashes change, then this hash will also change
+        """
+        hshs = "-".join(dependency._hash for dependency in self.dependencies)
+        return sha256(hshs.encode()).hexdigest()[:HASH_LENGTH]
+
+    @property
+    def dict(self) -> dict:
+        """A dictionary representation of the dataset."""
+        return dict(
+            name=self.name,
+            level0=self.level0,
+            level1=self.level1,
+            restricted=self.restricted,
+            path=self.path,
+            type=str(type(self)),
+            dependencies=[dep.name for dep in self.dependencies],
+        )
+
+    def _validate(self, ra: RasterArray) -> DataFrame:
+        """Validate the data against a model specification if one is defined."""
+        # TODO: Implement validation using https://github.com/xarray-contrib/xarray-schema
+        return ra
+
+    def refresh(self) -> None:
+        """Populate the cache with a fresh version of this dataset."""
+        LOG.info(f"Creating '{self.name}' dataset.")
+        ra = self.func(*self.dependencies)
+        ra = self._validate(ra)
+        to_raster(ra, self._new_path)
         LOG.info(f"Saved to '{self.path}'.")

@@ -187,8 +187,13 @@ from .rpa_reference_parcels import (
     reference_parcels_raw_no_sbi,
 )
 from .ukceh_fertilisers import (
-    ukceh_nitrogen_raw,
+    ukceh_fertilisers_parcels,
     ukceh_nitrogen_parcels,
+    ukceh_nitrogen_raw,
+    ukceh_phosphorus_parcels,
+    ukceh_phosphorus_raw,
+    ukceh_potassium_parcels,
+    ukceh_potassium_raw,
 )
 from .wfm import (
     wfm_farms,
@@ -311,7 +316,13 @@ catalogue = [
     sfi_agroforestry_parcels,
     sfi_agroforestry_raw,
     sfi_agroforestry,
+    ukceh_fertilisers_parcels,
     ukceh_nitrogen_raw,
+    ukceh_nitrogen_parcels,
+    ukceh_phosphorus_raw,
+    ukceh_phosphorus_parcels,
+    ukceh_potassium_raw,
+    ukceh_potassium_parcels,
     ward_parcels,
     ward_raw,
     wetland_vision_parcels,

@@ -1,18 +1,19 @@
-from pathlib import Path
 import shutil
 import tempfile
+from pathlib import Path
 from typing import Dict, Set, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
 import rasterio
-from rioxarray.raster_array import RasterArray
-from scipy.interpolate import NearestNDInterpolator
 import seaborn as sns
 import xarray as xr
+from rioxarray.raster_array import RasterArray
+from scipy.interpolate import NearestNDInterpolator
 from xarray.core.dataarray import DataArray
 
 from elmo_geo import LOG
+
 
 def write_array_to_raster(arr, filename, **meta):
     """Save an array of data to a .tif format raster file.
@@ -44,8 +45,8 @@ def to_raster(ra: RasterArray, path: str):
     """
     path = Path(path)
     if path.suffix != ".tif":
-      msg = f"Expected a .tif file, recieved {path.suffix}."
-      raise ValueError(msg)
+        msg = f"Expected a .tif file, recieved {path.suffix}."
+        raise ValueError(msg)
     temp_loc = f"/tmp/{path.name}"
     ra.rio.to_raster(temp_loc, driver="COG")
     shutil.move(temp_loc, path)
@@ -144,9 +145,9 @@ def apply_offset(da: DataArray, offset: int, floor0: bool = True) -> DataArray:
 
 
 def interp_nearest(ra: DataArray) -> DataArray:
-  """Returns the array with missing values filled form the nearest valid ones."""
-  rac = ra.copy()
-  indices = np.where(np.isfinite(rac))
-  interp = NearestNDInterpolator(np.transpose(indices), rac.data[indices])
-  rac.values = interp(*np.indices(rac.shape))
-  return rac
+    """Returns the array with missing values filled form the nearest valid ones."""
+    rac = ra.copy()
+    indices = np.where(np.isfinite(rac))
+    interp = NearestNDInterpolator(np.transpose(indices), rac.data[indices])
+    rac.values = interp(*np.indices(rac.shape))
+    return rac

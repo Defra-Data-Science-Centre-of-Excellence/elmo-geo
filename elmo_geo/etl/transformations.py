@@ -179,7 +179,13 @@ def sjoin_boundary_proportion(
 
 def get_centroid_value_from_raster(
     raster_dataset: SourceSingleFileRasterDataset,
-    raster_processing: Callable[[DataArray,], DataArray] | None = None,
+    raster_processing: Callable[
+        [
+            DataArray,
+        ],
+        DataArray,
+    ]
+    | None = None,
     resolution: float | None = None,
     simplify: float | None = None,
     batch_size: int = 500,
@@ -192,7 +198,7 @@ def get_centroid_value_from_raster(
     If the raster is of a higher resolution than the geometries, then this will still work but will only be using
     the cell closest to the middle of the geometry. Zonal statistics that perform calculations on all pixels within
     or tougching the geometry may be more appropriate in such cases.
-    
+
     Parameters:
         raster_dataset: A single file raster dataset to lookup values in.
         raster_processing: A function to pre-process the raset before lookin up, for example
@@ -200,16 +206,17 @@ def get_centroid_value_from_raster(
         resolution: Resolution to reproject the raster to.
         simplify: Tolerence to simplify the geometries to before calculating centroids.
         batch_size: How many rows to process on a node in one go. Default is 500.
-    
+
     Returns:
         An iterator of values from the raster which are closest to the geometry centroids.
     """
     spark.conf.set("spark.sql.execution.arrow.maxRecordsPerBatch", str(batch_size))
+
     @F.pandas_udf("float")
     def _get_centroid_value_from_raster(iterator: Iterator[pd.Series]) -> Iterator[pd.Series]:
         ra = raster_dataset.ra()
         if raster_processing is not None:
-          ra = raster_processing(ra)
+            ra = raster_processing(ra)
         if resolution is not None:
             ra = ra.rio.reproject(dst_crs=ra.rio.crs, resolution=resolution)
         for series in iterator:
@@ -217,4 +224,5 @@ def get_centroid_value_from_raster(
             if simplify is not None:
                 geoms = geoms.simplify(tolerance=simplify)
             yield geoms.map(lambda g: float(ra.sel(x=g.centroid.x, y=g.centroid.y, method="nearest")))
+
     return _get_centroid_value_from_raster
