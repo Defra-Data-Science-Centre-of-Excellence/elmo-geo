@@ -63,7 +63,7 @@ test_derived_from_source_dataset = DerivedDataset(
     level1="test",
     restricted=False,
     is_geo=False,
-    func=lambda dataset: dataset.pdf().assign(val_derived=dataset.pdf()["val"]*10),
+    func=lambda dataset: dataset.pdf().assign(val_derived=dataset.pdf()["val"] * 10),
     dependencies=[test_source_dataset],
 )
 """Test DerivedDataset that is derived from a source dataset.
@@ -75,7 +75,7 @@ test_derived_from_derived_dataset = DerivedDataset(
     level1="test",
     restricted=False,
     is_geo=False,
-    func=lambda dataset: dataset.pdf().assign(val_derived=dataset.pdf()["val"]*10),
+    func=lambda dataset: dataset.pdf().assign(val_derived=dataset.pdf()["val"] * 10),
     dependencies=[test_derived_from_source_dataset],
 )
 """Test DerivedDataset that is derived from a derived dataset.
@@ -179,7 +179,7 @@ def test_edit_source_dataset():
         test_derived_from_source_dataset.refresh()
     if not test_derived_from_derived_dataset.is_fresh:
         test_derived_from_derived_dataset.refresh()
-    
+
     # Resave the source data to change the modificaton time
     df = pd.read_parquet(test_source_dataset.source_path)
     df.to_parquet(test_source_dataset.source_path)
@@ -192,4 +192,3 @@ def test_edit_source_dataset():
     test_source_dataset.refresh()
     test_derived_from_source_dataset.refresh()
     test_derived_from_derived_dataset.refresh()
-
