@@ -8,7 +8,14 @@ from elmo_geo.utils.log import LOG
 
 from .boundary import (
     boundary_adjacencies,
+    boundary_hedgerows,
+    boundary_merger,
+    boundary_merger_50p24m,
+    boundary_merger_90p12m,
+    boundary_relict,
     boundary_segments,
+    boundary_walls,
+    boundary_water_2m,
 )
 from .catchment_based_approach import (
     wetland_vision_parcels,
@@ -48,8 +55,8 @@ from .ea_flood_risk_mapping import (
     ea_rofrs_raw,
 )
 from .fc_ewco import (
-    ewco_ammonia_emmesions_parcels,
-    ewco_ammonia_emmesions_raw,
+    ewco_ammonia_emissions_parcels,
+    ewco_ammonia_emissions_raw,
     ewco_flood_risk_parcels,
     ewco_flood_risk_raw,
     ewco_keeping_rivers_cool_parcels,
@@ -64,10 +71,10 @@ from .fc_ewco import (
     ewco_priority_habitat_network_raw,
     ewco_red_squirrel_parcels,
     ewco_red_squirrel_raw,
-    ewco_sensativity_parcels,
-    ewco_sensativity_raw,
-    ewco_waterquality_parcels,
-    ewco_waterquality_raw,
+    ewco_sensitivity_parcels,
+    ewco_sensitivity_raw,
+    ewco_water_quality_parcels,
+    ewco_water_quality_raw,
 )
 from .fc_woodland_sensitivity import (
     sfi_agroforestry,
@@ -92,15 +99,18 @@ from .fcp_habitat_classification import (
     fcp_habitat_creation_type_parcel,
     fcp_is_phi_parcel,
 )
+from .fcp_sylvan import fcp_relict_hedge_raw
 from .fr_esc_m3_trees import (
     esc_carbon_parcels,
+    esc_carbon_parcels_w_50yr_total,
     esc_m3_geo,
     esc_m3_raw,
     esc_species_parcels,
     os_bng_no_peat_parcels,
 )
-from .fr_esc_m3_trees_suitability import (
-    esc_tree_suitability,
+from .fr_esc_m3_woodland_suitability import (
+    esc_woodland_suitability,
+    esc_woodland_suitability_rcp45_2021_2028,
 )
 from .hedges import (
     rpa_hedges_raw,
@@ -123,6 +133,8 @@ from .ons import (
     cua_raw,
     itl2_parcels,
     itl2_raw,
+    itl3_parcels,
+    itl3_raw,
     lad_parcels,
     lad_raw,
     region_parcels,
@@ -174,12 +186,24 @@ from .rpa_reference_parcels import (
     reference_parcels_raw,
     reference_parcels_raw_no_sbi,
 )
+from .wfm import (
+    wfm_farms,
+    wfm_info,
+    wfm_parcels,
+)
 
 catalogue = [
     alc_parcels,
     alc_raw,
     boundary_adjacencies,
+    boundary_hedgerows,
+    boundary_merger,
+    boundary_merger_50p24m,
+    boundary_merger_90p12m,
+    boundary_relict,
     boundary_segments,
+    boundary_walls,
+    boundary_water_2m,
     bua_parcels,
     bua_raw,
     cec_soilscapes_habitats_parcels,
@@ -201,8 +225,10 @@ catalogue = [
     esc_m3_geo,
     esc_m3_raw,
     esc_carbon_parcels,
+    esc_carbon_parcels_w_50yr_total,
     esc_species_parcels,
-    esc_tree_suitability,
+    esc_woodland_suitability,
+    esc_woodland_suitability_rcp45_2021_2028,
     evast_habitat_management_mapping_raw,
     evast_habitat_mapping_raw,
     ewco_nature_recovery_priority_habitat_parcels,
@@ -212,8 +238,8 @@ catalogue = [
     ewco_red_squirrel_parcels,
     ewco_nfc_social_raw,
     ewco_nfc_social_parcels,
-    ewco_ammonia_emmesions_raw,
-    ewco_ammonia_emmesions_parcels,
+    ewco_ammonia_emissions_raw,
+    ewco_ammonia_emissions_parcels,
     ewco_flood_risk_raw,
     ewco_flood_risk_parcels,
     ewco_keeping_rivers_cool_raw,
@@ -221,17 +247,20 @@ catalogue = [
     ewco_parcels,
     ewco_priority_habitat_network_raw,
     ewco_priority_habitat_network_parcels,
-    ewco_waterquality_raw,
-    ewco_waterquality_parcels,
-    ewco_sensativity_raw,
-    ewco_sensativity_parcels,
+    ewco_water_quality_raw,
+    ewco_water_quality_parcels,
+    ewco_sensitivity_raw,
+    ewco_sensitivity_parcels,
     fcp_habitat_creation_type_parcel,
     fcp_is_phi_parcel,
+    fcp_relict_hedge_raw,  # temporary, until methodology is reproduced
     flood_risk_areas_parcels,
     flood_risk_areas_raw,
     is_upland_parcels,
     itl2_parcels,
     itl2_raw,
+    itl3_parcels,
+    itl3_raw,
     jncc_spa_parcels,
     jncc_spa_raw,
     lad_parcels,
@@ -282,6 +311,9 @@ catalogue = [
     ward_raw,
     wetland_vision_parcels,
     wetland_vision_raw,
+    wfm_farms,
+    wfm_info,
+    wfm_parcels,
     woodland_creation_sensitivity_parcels,
     woodland_creation_sensitivity_raw,
     woodland_creation_sensitivity_var1_parcels,

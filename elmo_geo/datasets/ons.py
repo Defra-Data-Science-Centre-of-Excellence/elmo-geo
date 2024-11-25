@@ -8,7 +8,7 @@ regional bias.
 | Countries[^country] | | UK, BFE | These are; England, Northern Ireland, Scotland, Wales. |
 | International Territorial Level 1[^region] | ITL1 / Regions | UK, BFE | ITL1s are also known as "Regions"[^ons_geographies] | |
 | International Territorial Level 2[^itl2] | ITL2 | UK, BGC | ITL2s are "counties and groups of counties"[^ons_geographies] | |
-| International Territorial Level 3[^itl2] | ITL3 | UK | ITL3s are "counties and groups of unitary authorities"<br>**Currently not available on DASH.** |
+| International Territorial Level 3[^itl3] | ITL3 | UK | ITL3s are "counties and groups of unitary authorities"<br>**Currently not available on DASH.** |
 | Counties and Unitary Authorities[^cua] | CUA | England, BFE |
 | Local Authority Districts[^lad] | LAD | England, BFE |
 | Wards[^ward] | | England, BFE |
@@ -205,6 +205,59 @@ itl2_parcels = DerivedDataset(
     func=partial(sjoin_parcel_proportion, columns=["fid", "name"]),
     dependencies=[reference_parcels, itl2_raw],
     model=ITL2Parcels,
+)
+
+
+# ITL3
+class ITL3Raw(DataFrameModel):
+    """Model for ONS ITL3 (counties and groups of unitary authorities) dataset.
+
+    Parameters:
+        fid: Reference unique id for each geographic area ie TLC11, from 2021.
+        name: Name of the counties and groups of unitary authorities ie Hartlepool and Stockton-on-Tees, from 2021.
+        geometry: MultiPolygons in EPSG:27700 at BFE.
+    """
+
+    fid: str = Field(alias="ITL321CD")
+    name: str = Field(alias="ITL321NM")
+    geometry: Geometry(crs=SRID) = Field()
+
+
+itl3_raw = SourceDataset(
+    name="itl3_raw",
+    level0="bronze",
+    level1="ons",
+    model=ITL3Raw,
+    restricted=False,
+    source_path="/dbfs/FileStore/elmo_geo-uploads/ons_itl3_2021_11_11.parquet",
+)
+
+
+class ITL3Parcels(DataFrameModel):
+    """Model for ONS ITL3 with parcel dataset.
+
+    Parameters:
+        id_parcel: 11 character RPA reference parcel ID (including the sheet ID) e.g. `SE12263419`.
+        fid: Reference unique id for each geographic area ie TLC11.
+        name: Name of the counties and groups of unitary authorities ie s of unitary authorities
+        proportion: The proportion of the parcel that intersects with the itl3 boundary.
+    """
+
+    id_parcel: str = Field()
+    fid: str = Field()
+    name: str = Field()
+    proportion: float = Field(ge=0, le=1)
+
+
+itl3_parcels = DerivedDataset(
+    is_geo=False,
+    name="itl3_parcels",
+    level0="silver",
+    level1="ons",
+    restricted=False,
+    func=partial(sjoin_parcel_proportion, columns=["fid", "name"]),
+    dependencies=[reference_parcels, itl3_raw],
+    model=ITL3Parcels,
 )
 
 

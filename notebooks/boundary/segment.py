@@ -132,7 +132,7 @@ sdf = (
     .agg(F.expr("ST_Union_Aggr(geometry) AS geometry"))
     # Segment boundary
     .withColumn("geometry", F.expr("ST_Boundary(geometry)"))
-    .transform(lambda sdf: st_udf(sdf, segmentize_with_tolerance, "geometry"))
+    .transform(st_udf, segmentize_with_tolerance)
     .withColumn("geometry", F.expr("EXPLODE(ST_Dump(geometry))"))
 )
 
