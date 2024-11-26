@@ -8,7 +8,7 @@ import os
 import re
 import shutil
 import time
-from abc import ABC, abstractmethod, abstractproperty
+from abc import ABC, abstractmethod
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime
@@ -56,11 +56,13 @@ class Dataset(ABC):
     level1: str
     restricted: bool
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def _hash(self) -> str:
         """A semi-unique identifier of the last modified dates of the data file(s) from which a dataset is derived."""
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def dict(self) -> dict:
         """A dictionary representation of the dataset."""
 
@@ -74,7 +76,8 @@ class Dataset(ABC):
         restricted = "restricted" if self.restricted else "unrestricted"
         return PATH_FMT.format(restricted=restricted, level0=self.level0, level1=self.level1)
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def is_fresh(self) -> bool:
         """Check whether this dataset needs to be refreshed in the cache."""
 
@@ -91,7 +94,8 @@ class Dataset(ABC):
         """Path to the file if it has been saved, else OSError."""
         return self.path_dir + self.filename
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def _new_filename(self) -> str:
         """New filename for file being created."""
 
@@ -117,7 +121,8 @@ class TabularDataset(Dataset, ABC):
 
     # model:  DataFrameModel | None
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def _new_date(self) -> str:
         """New date for parquet file being created."""
 
@@ -132,7 +137,8 @@ class TabularDataset(Dataset, ABC):
         except IndexError:
             return None
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def dict(self) -> dict:
         """A dictionary representation of the dataset."""
 
