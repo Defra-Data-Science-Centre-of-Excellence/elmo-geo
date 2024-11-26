@@ -35,20 +35,20 @@
 
 import json
 from functools import partial
-from geojson import Feature, FeatureCollection
-import h3
 
 import folium
 import geopandas as gpd
+import h3
 import numpy as np
 import pandas as pd
 import pyspark.sql.functions as F
 from folium import Map
 from folium.plugins import FeatureGroupSubGroup
-
+from geojson import FeatureCollection
 from pyspark.sql.functions import (
     pandas_udf,
 )
+from shapely import to_geojson
 
 from elmo_geo.datasets import (
     os_bng_parcels,
@@ -58,7 +58,6 @@ from elmo_geo.io.download import download_link
 from elmo_geo.st.udf import st_clean
 from elmo_geo.utils.register import register
 from elmo_geo.utils.types import SparkDataFrame
-from shapely import from_wkt, from_wkb, to_geojson
 
 register()
 
@@ -155,6 +154,7 @@ def _transform_to_simplified_json(reference_parcels, tollerance=50, os_grid="10k
         .transform(st_to_json, key="tile_name")
         .toPandas()
     )
+
 
 pdf_json = _transform_to_simplified_json(reference_parcels)
 geo_data = json.loads(pdf_json.set_index("tile_name").iloc[0]["geojson"])
@@ -274,26 +274,33 @@ df_eligibility = reference_parcels.sdf().selectExpr("id_parcel", "RAND() as elig
 # COMMAND ----------
 
 # map parcel centroids
-resolutions = [5,6,15]
+resolutions = [5, 6, 15]
 
-def geo_to_h3_udf(col, res = 15):
+
+def geo_to_h3_udf(col, res=15):
     @pandas_udf("string")
     def udf(s: pd.Series) -> pd.Series:
-        return gpd.GeoSeries.from_wkt(s, crs=27700).to_crs(4326).map(lambda p: h3.latlng_to_cell(lat = p.y,lng = p.x, res = res))
+        return gpd.GeoSeries.from_wkt(s, crs=27700).to_crs(4326).map(lambda p: h3.latlng_to_cell(lat=p.y, lng=p.x, res=res))
+
     return udf(col)
+
 
 def h3_to_geojson_udf(col):
     @pandas_udf("string")
     def udf(s: pd.Series) -> pd.Series:
         # return s.map(lambda hex_id: h3.cell_to_boundary(hex_id)).map(to_geojson).map(json.dumps)
-        return s.map( h3.cell_to_boundary).map(lambda cs: {'type': 'Polygon','coordinates':[tuple((lon, lat) for (lat,lon) in cs)]}).map(json.dumps)
+        return s.map(h3.cell_to_boundary).map(lambda cs: {"type": "Polygon", "coordinates": [tuple((lon, lat) for (lat, lon) in cs)]}).map(json.dumps)
+
     return udf(col)
+
 
 def to_geojson_udf(col):
     @pandas_udf("string")
     def udf(s: pd.Series) -> pd.Series:
         return gpd.GeoSeries.from_wkt(s, crs=27700).to_crs(4326).map(to_geojson)
+
     return udf(col)
+
 
 def _transform_to_centroid_json(reference_parcels, os_grid="10km_grid"):
     return (
@@ -308,19 +315,22 @@ def _transform_to_centroid_json(reference_parcels, os_grid="10km_grid"):
             F.expr("RAND() as profit"),
             F.expr("FIRST(tile_name) as tile_name"),
         )
-        .select("id_parcel", 
-                    "tile_name",
-                    "x",
-                    "y",
-                    to_geojson_udf("centroid").alias("geojson_centroid"),
-                    "profit", 
-                    *[geo_to_h3_udf('centroid', res=r).alias(f"h3_{r}") for r in resolutions],
-                    )
-        .select("*",
-                *[h3_to_geojson_udf(f"h3_{r}").alias(f"geojson_h3_{r}") for r in resolutions],
-                )
+        .select(
+            "id_parcel",
+            "tile_name",
+            "x",
+            "y",
+            to_geojson_udf("centroid").alias("geojson_centroid"),
+            "profit",
+            *[geo_to_h3_udf("centroid", res=r).alias(f"h3_{r}") for r in resolutions],
+        )
+        .select(
+            "*",
+            *[h3_to_geojson_udf(f"h3_{r}").alias(f"geojson_h3_{r}") for r in resolutions],
+        )
         .toPandas()
     )
+
 
 df_centroids = _transform_to_centroid_json(reference_parcels)
 
@@ -338,7 +348,7 @@ main_feature_group = folium.FeatureGroup(name="Main Layers", show=False).add_to(
 n = 2
 for tile_name in df_centroids.tile_name.unique()[:n]:
     layer_group = FeatureGroupSubGroup(main_feature_group, tile_name)
-    df = df_centroids.loc[ df_centroids.tile_name == tile_name]
+    df = df_centroids.loc[df_centroids.tile_name == tile_name]
     df["geojson_centroid_json"] = df["geojson_centroid"].map(json.loads)
     features = df.apply(lambda row: row["geojson_centroid_json"], axis=1).to_list()
     feature_collection = FeatureCollection(features)
@@ -365,5 +375,3 @@ m.save(f_out)
 download_link(f_out)  # 34Mb htlm file
 
 # COMMAND ----------
-
-
