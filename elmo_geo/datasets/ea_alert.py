@@ -69,7 +69,7 @@ class OlfParcel(DataFrameModel):
     """OLF erosion joined and unioned to parcels.
 
     Parcels level values given by the maximum quintile value of intersection OLF geometries.
-    
+
     Attributes:
         id_parcel:
         erosion_score: The quintile of the greatest sum of intersecting OLF quintile risk values
