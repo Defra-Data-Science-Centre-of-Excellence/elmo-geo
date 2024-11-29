@@ -180,6 +180,11 @@ def test_edit_source_dataset():
     if not test_derived_from_derived_dataset.is_fresh:
         test_derived_from_derived_dataset.refresh()
 
+    # record hash of original path for later checks
+    PAT = r"^(.*)-([\d_]{10})-(.{8}).parquet$"
+    hsh1 = re.search(PAT, test_derived_from_source_dataset.filename).groups()[2]
+    hsh2 = re.search(PAT, test_derived_from_derived_dataset.filename).groups()[2]
+
     # Resave the source data to change the modificaton time
     df = pd.read_parquet(test_source_dataset.source_path)
     df.to_parquet(test_source_dataset.source_path)
@@ -192,3 +197,7 @@ def test_edit_source_dataset():
     test_source_dataset.refresh()
     test_derived_from_source_dataset.refresh()
     test_derived_from_derived_dataset.refresh()
+
+    # hashes should have changed
+    assert hsh1 != re.search(PAT, test_derived_from_source_dataset.filename).groups()[2]
+    assert hsh2 != re.search(PAT, test_derived_from_derived_dataset.filename).groups()[2]
