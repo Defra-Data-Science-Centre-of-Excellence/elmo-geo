@@ -75,11 +75,16 @@ class Dataset(ABC):
         """Path to the directory where the data will be saved."""
         restricted = "restricted" if self.restricted else "unrestricted"
         return PATH_FMT.format(restricted=restricted, level0=self.level0, level1=self.level1)
-
+    
     @property
     @abstractmethod
+    def file_matches(self) -> list[str]:
+        """List of files that match the file path, used in is_fresh."""
+
+    @property
     def is_fresh(self) -> bool:
         """Check whether this dataset needs to be refreshed in the cache."""
+        return len(self.file_matches) > 0
 
     @property
     def filename(self) -> str:
@@ -145,11 +150,6 @@ class TabularDataset(Dataset, ABC):
     @abstractmethod
     def refresh(self) -> None:
         """Populate the cache with a fresh version of this dataset."""
-
-    @property
-    def is_fresh(self) -> bool:
-        """Check whether this dataset needs to be refreshed in the cache."""
-        return len(self.file_matches) > 0
 
     @property
     def file_matches(self) -> list[str]:
@@ -451,11 +451,6 @@ class RasterDataset(Dataset):
         )
 
     @property
-    def is_fresh(self) -> bool:
-        """Check whether this dataset needs to be refreshed in the cache."""
-        return len(self.file_matches) > 0
-
-    @property
     def file_matches(self) -> list[str]:
         """List of files that match the file path but may have different dates.
 
@@ -514,11 +509,6 @@ class SourceSingleFileRasterDataset(RasterDataset):
             source_path=self.source_path,
         )
 
-    def _validate(self, ra: RasterArray) -> DataFrame:
-        """Validate the data against a model specification if one is defined."""
-        # TODO: Implement validation using https://github.com/xarray-contrib/xarray-schema
-        return ra
-
     def refresh(self):
         LOG.info(f"Creating '{self.name}' dataset.")
         ra = rxr.open_rasterio(self.source_path).squeeze()
@@ -565,11 +555,6 @@ class DerivedRasterDataset(RasterDataset):
             type=str(type(self)),
             dependencies=[dep.name for dep in self.dependencies],
         )
-
-    def _validate(self, ra: RasterArray) -> DataFrame:
-        """Validate the data against a model specification if one is defined."""
-        # TODO: Implement validation using https://github.com/xarray-contrib/xarray-schema
-        return ra
 
     def refresh(self) -> None:
         """Populate the cache with a fresh version of this dataset."""

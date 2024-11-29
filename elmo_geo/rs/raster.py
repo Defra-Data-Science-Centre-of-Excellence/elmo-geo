@@ -37,6 +37,7 @@ def write_array_to_raster(arr, filename, **meta):
 def to_raster(ra: RasterArray, path: str):
     """Save a `xarray.raster_array.RasterArray` as cloud-optimised geo-tiff (COG) to dbfs.
 
+    Uses [GDAL driver](https://gdal.org/en/latest/drivers/raster/cog.html)
     Saves to `/tmp` first and then moves to avoid `/dbfs` limitations.
 
     Parameters:
@@ -145,7 +146,10 @@ def apply_offset(da: DataArray, offset: int, floor0: bool = True) -> DataArray:
 
 
 def interp_nearest(ra: DataArray) -> DataArray:
-    """Returns the array with missing values filled form the nearest valid ones."""
+    """Returns a copy of the array with missing values filled form the nearest valid ones.
+    
+    Nan and inf values will be replaced by the nearest finite value.
+    """
     rac = ra.copy()
     indices = np.where(np.isfinite(rac))
     interp = NearestNDInterpolator(np.transpose(indices), rac.data[indices])
