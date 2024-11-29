@@ -18,18 +18,12 @@
 # MAGIC - Parcel simplification: tollerance=100 is too high, parcels becomes messy and overlapping. tollerance=50 is roughly the upper limit.
 # MAGIC - Trying to display all parcels in a folium map resulted in this error in Databricks 'Command result size
 # MAGIC   exceeds limit: Exceeded 20971520 bytes (current = 20977394)'. Almost certain SCE machines also wouldn't be able to handle this.
-# MAGIC - Means that we need a way to displays sections of the country at a time as people scroll/move around the map.
+# MAGIC - Trying to display parcels centroids also not feasible. Leads to large html files and very long load times (even with Marker Clsutering)
 # MAGIC
 # MAGIC ## Conclusion
 # MAGIC
 # MAGIC It will be challenging to flexibly visualise parcel level data for the whole country.
 # MAGIC To view parcels we would likely need to restrict the map to a certain area of `<`100km2.
-# MAGIC
-# MAGIC ## Useful links for mapping with folium and leaflet
-# MAGIC
-# MAGIC - how to add custom functionality (eg load different layer on zoom): https://stackoverflow.com/questions/58774249/python-how-to-extend-folium-functionality-such-as-measuring-distance-by-using
-# MAGIC - how to change layer on zoom https://gis.stackexchange.com/questions/182628/leaflet-layers-on-different-zoom-levels-how
-# MAGIC - smoothing layer geometries: https://python-visualization.github.io/folium/latest/user_guide/geojson/smoothing.html
 
 # COMMAND ----------
 
