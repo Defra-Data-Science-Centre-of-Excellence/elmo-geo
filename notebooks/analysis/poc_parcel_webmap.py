@@ -138,7 +138,7 @@ def st_to_json(sdf: SparkDataFrame, key: str = "tile_name", col: str = "geometry
     return _sdf.groupby(key).applyInPandas(_fn, f"{key} String, geojson String")
 
 
-# create geo-data
+# create geo-data, with single geojson object for each tile.
 def _transform_to_simplified_json(reference_parcels, tollerance=50, os_grid="10km_grid"):
     return (
         reference_parcels.sdf()
@@ -372,6 +372,80 @@ folium.LayerControl(collapsed=False).add_to(m)
 # Save the map
 f_out = "/dbfs/FileStore/elmo-geo-downloads/poc_parcel_map_centroids.html"
 m.save(f_out)
-download_link(f_out)  # 34Mb htlm file
+download_link(f_out)  # 67kb htlm file
 
 # COMMAND ----------
+
+# Alternative method - all points on map along with hexs at different zoom level
+m = base_empty_map(None, None)
+
+# Add a main feature group for the base layers
+main_feature_group = folium.FeatureGroup(name="Main Layers", show=False).add_to(m)
+
+layer_group = FeatureGroupSubGroup(main_feature_group, "centroids")
+features = df_centroids['geojson_centroid'].map(json.loads).to_list()
+feature_collection = FeatureCollection(features)
+centroids = folium.GeoJson(
+    feature_collection,
+    name="centroid",
+    style_function=lambda feature: {
+        "fillColor": "#ffff00",
+        "color": "red",
+        "weight": 2,
+        "dashArray": "5, 5",
+    },
+    show=True,
+).add_to(layer_group)
+m.add_child(layer_group)
+
+layer_group = FeatureGroupSubGroup(main_feature_group, "hex")
+features = df_centroids.drop_duplicates(subset=['h3_6'])['geojson_h3_6'].map(json.loads).to_list()
+feature_collection = FeatureCollection(features)
+hexs = folium.GeoJson(
+    feature_collection,
+    name="hex",
+    style_function=lambda feature: {
+        "fillColor": "#ffff00",
+        "color": "red",
+        "weight": 2,
+        "dashArray": "5, 5",
+    },
+    show=True,
+).add_to(layer_group)
+m.add_child(layer_group)
+
+# Add a layer control
+folium.LayerControl(collapsed=False).add_to(m)
+
+# Save the map
+f_out = "/dbfs/FileStore/elmo-geo-downloads/poc_parcel_map_centroids_hex.html"
+m.save(f_out)
+download_link(f_out)  # doesn't work with all centroids
+
+
+# COMMAND ----------
+
+# All points plotted using marker cluster
+# html takes very long time to load in browser, not feasible 
+m = base_empty_map(None, None)
+
+marker_cluster = folium.plugins.MarkerCluster(name='mc').add_to(m)
+
+features = df_centroids['geojson_centroid'].map(json.loads).to_list()
+feature_collection = FeatureCollection(features)
+centroids = folium.GeoJson(
+    feature_collection,
+    name="centroid",
+    style_function=lambda feature: {
+        "fillColor": "#ffff00",
+        "color": "red",
+        "weight": 2,
+        "dashArray": "5, 5",
+    },
+    show=True,
+).add_to(marker_cluster)
+
+# Save the map
+f_out = "/dbfs/FileStore/elmo-geo-downloads/poc_parcel_map_centroids_marker_cluster.html"
+m.save(f_out)
+download_link(f_out)
