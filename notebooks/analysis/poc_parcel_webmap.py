@@ -377,7 +377,7 @@ m = base_empty_map(None, None)
 main_feature_group = folium.FeatureGroup(name="Main Layers", show=False).add_to(m)
 
 layer_group = FeatureGroupSubGroup(main_feature_group, "centroids")
-features = df_centroids['geojson_centroid'].map(json.loads).to_list()
+features = df_centroids["geojson_centroid"].map(json.loads).to_list()
 feature_collection = FeatureCollection(features)
 centroids = folium.GeoJson(
     feature_collection,
@@ -393,7 +393,7 @@ centroids = folium.GeoJson(
 m.add_child(layer_group)
 
 layer_group = FeatureGroupSubGroup(main_feature_group, "hex")
-features = df_centroids.drop_duplicates(subset=['h3_6'])['geojson_h3_6'].map(json.loads).to_list()
+features = df_centroids.drop_duplicates(subset=["h3_6"])["geojson_h3_6"].map(json.loads).to_list()
 feature_collection = FeatureCollection(features)
 hexs = folium.GeoJson(
     feature_collection,
@@ -420,12 +420,12 @@ download_link(f_out)  # doesn't work with all centroids
 # COMMAND ----------
 
 # All points plotted using marker cluster
-# html takes very long time to load in browser, not feasible 
+# html takes very long time to load in browser, not feasible
 m = base_empty_map(None, None)
 
-marker_cluster = folium.plugins.MarkerCluster(name='mc').add_to(m)
+marker_cluster = folium.plugins.MarkerCluster(name="mc").add_to(m)
 
-features = df_centroids['geojson_centroid'].map(json.loads).to_list()
+features = df_centroids["geojson_centroid"].map(json.loads).to_list()
 feature_collection = FeatureCollection(features)
 centroids = folium.GeoJson(
     feature_collection,
