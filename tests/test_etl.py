@@ -57,6 +57,30 @@ test_derived_dataset = DerivedDataset(
 """Test DerivedDataset
 """
 
+test_derived_from_source_dataset = DerivedDataset(
+    name="test_derived_from_source_dataset",
+    level0="test",
+    level1="test",
+    restricted=False,
+    is_geo=False,
+    func=lambda dataset: dataset.pdf().assign(val_derived=dataset.pdf()["val"] * 10),
+    dependencies=[test_source_dataset],
+)
+"""Test DerivedDataset that is derived from a source dataset.
+"""
+
+test_derived_from_derived_dataset = DerivedDataset(
+    name="test_derived_from_derived_dataset",
+    level0="test",
+    level1="test",
+    restricted=False,
+    is_geo=False,
+    func=lambda dataset: dataset.pdf().assign(val_derived=dataset.pdf()["val"] * 10),
+    dependencies=[test_derived_from_source_dataset],
+)
+"""Test DerivedDataset that is derived from a derived dataset.
+"""
+
 
 @pytest.mark.dbr
 def test_pivots():
@@ -143,3 +167,37 @@ def test_source_dataset_geometry_cleaning():
 
     assert gs_raw_cleaned.is_valid.all()
     assert gs_raw_cleaned.geom_equals(gs_fresh.geometry, align=True).all()
+
+
+@pytest.mark.dbr
+def test_edit_source_dataset():
+    """Tests that a derived dataset is flagged as not fresh if the modification date of a source dataset changes."""
+
+    if not test_source_dataset.is_fresh:
+        test_source_dataset.refresh()
+    if not test_derived_from_source_dataset.is_fresh:
+        test_derived_from_source_dataset.refresh()
+    if not test_derived_from_derived_dataset.is_fresh:
+        test_derived_from_derived_dataset.refresh()
+
+    # record hash of original path for later checks
+    PAT = r"^(.*)-([\d_]{10})-(.{8}).parquet$"
+    hsh1 = re.search(PAT, test_derived_from_source_dataset.filename).groups()[2]
+    hsh2 = re.search(PAT, test_derived_from_derived_dataset.filename).groups()[2]
+
+    # Resave the source data to change the modificaton time
+    df = pd.read_parquet(test_source_dataset.source_path)
+    df.to_parquet(test_source_dataset.source_path)
+
+    assert not test_source_dataset.is_fresh
+    assert not test_derived_from_source_dataset.is_fresh
+    assert not test_derived_from_derived_dataset.is_fresh
+
+    # finish by refreshing
+    test_source_dataset.refresh()
+    test_derived_from_source_dataset.refresh()
+    test_derived_from_derived_dataset.refresh()
+
+    # hashes should have changed
+    assert hsh1 != re.search(PAT, test_derived_from_source_dataset.filename).groups()[2]
+    assert hsh2 != re.search(PAT, test_derived_from_derived_dataset.filename).groups()[2]
