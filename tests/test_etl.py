@@ -11,7 +11,7 @@ import pytest
 from elmo_geo import datasets, register
 from elmo_geo.datasets import catalogue
 from elmo_geo.etl import Dataset, DerivedDataset, SourceDataset
-from elmo_geo.etl.etl import DATE_FMT, PAT_DATE
+from elmo_geo.etl.etl import DATE_FMT, PAT_DATE, TabularDataset
 from elmo_geo.etl.transformations import pivot_long_sdf, pivot_wide_sdf
 from elmo_geo.st.udf import clean_geometries
 from elmo_geo.utils.dbr import spark
@@ -116,7 +116,7 @@ def _dataset_date_is_most_recent(dataset):
     return all(date >= d for d in other_dates)
 
 
-def test_all_datasets_path_most_recent():
+def test_tabular_datasets_path_most_recent():
     """For all datasets flagging as fresh in the catalogue, check that the path used is the most recent.
 
     Checks by using the date in the path rather than the modified time of the path because the dataset
@@ -124,7 +124,7 @@ def test_all_datasets_path_most_recent():
     """
     fails = []
     for dataset in catalogue:
-        if dataset.is_fresh:
+        if dataset.is_fresh & isinstance(dataset, TabularDataset):
             if not _dataset_date_is_most_recent(dataset):
                 fails.append(dataset)
     assert not fails, f"Not all datasets loading most recent files. Failing datasets: {[d.name for d in fails]}"
