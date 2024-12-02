@@ -185,6 +185,7 @@ from .rpa_land_cover import (
     rpa_land_cover_parcels,
     rpa_land_cover_parcels_raw,
 )
+from .rpa_parcels_geojson import reference_parcels_bng_geojson
 from .rpa_reference_parcels import (
     reference_parcels,
     reference_parcels_raw,
@@ -313,6 +314,7 @@ catalogue = [
     reference_parcels_raw_no_sbi,
     reference_parcels_raw,
     reference_parcels,
+    reference_parcels_bng_geojson,
     region_parcels,
     region_raw,
     rpa_land_cover_codes_raw,
