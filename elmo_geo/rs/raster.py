@@ -147,7 +147,7 @@ def apply_offset(da: DataArray, offset: int, floor0: bool = True) -> DataArray:
 
 def interp_nearest(ra: DataArray) -> DataArray:
     """Returns a copy of the array with missing values filled form the nearest valid ones.
-    
+
     Nan and inf values will be replaced by the nearest finite value.
     """
     rac = ra.copy()

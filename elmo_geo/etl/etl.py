@@ -75,7 +75,7 @@ class Dataset(ABC):
         """Path to the directory where the data will be saved."""
         restricted = "restricted" if self.restricted else "unrestricted"
         return PATH_FMT.format(restricted=restricted, level0=self.level0, level1=self.level1)
-    
+
     @property
     @abstractmethod
     def file_matches(self) -> list[str]:

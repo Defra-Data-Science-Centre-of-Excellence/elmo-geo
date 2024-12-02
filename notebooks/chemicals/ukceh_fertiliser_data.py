@@ -27,12 +27,12 @@ sns.set_theme(context="notebook", style="white", palette="Dark2")
 fig, ax = plt.subplots(figsize=(10, 6))
 
 for c in ["nitrogen_kg_ha", "phosphorus_kg_ha", "potassium_kg_ha"]:
-  sns.histplot(df[c], stat="probability", bins=10, binrange=(0, 200), label=c.split('_')[0].title(), element="step", alpha=0.4)
-  ax.margins(x=0)
-  ax.set_frame_on(False)
-  ax.legend()
-  ax.set_title("UKCEH fertiliser application by parcel, 2010-2015, kg/ha per annum.", loc="left")
-  ax.set_xlabel("Application rate kg/ha per annum")
+    sns.histplot(df[c], stat="probability", bins=10, binrange=(0, 200), label=c.split("_")[0].title(), element="step", alpha=0.4)
+    ax.margins(x=0)
+    ax.set_frame_on(False)
+    ax.legend()
+    ax.set_title("UKCEH fertiliser application by parcel, 2010-2015, kg/ha per annum.", loc="left")
+    ax.set_xlabel("Application rate kg/ha per annum")
 
 # COMMAND ----------
 
