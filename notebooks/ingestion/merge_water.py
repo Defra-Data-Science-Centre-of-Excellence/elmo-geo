@@ -23,7 +23,7 @@ from pyspark.sql import functions as F
 from elmo_geo import register
 from elmo_geo.datasets.catalogue import add_to_catalogue, find_datasets
 from elmo_geo.io.file import write_parquet
-from elmo_geo.st.geometry import load_geometry
+from elmo_geo.st.udf import st_clean
 from elmo_geo.utils.misc import dbfs
 from elmo_geo.utils.settings import SILVER
 from elmo_geo.utils.types import SparkDataFrame
@@ -111,8 +111,8 @@ sdf_water = (
     .withColumn("geometry", F.expr("ST_Buffer(geometry, 0)"))
     .groupby("source", "class", "sindex")
     .agg(F.expr("ST_Union_Aggr(geometry)").alias("geometry"))
-    .withColumn("geometry", load_geometry(encoding_fn=""))
     .withColumn("geometry", F.expr("ST_SubDivideExplode(geometry, 256)"))
+    .transform(st_clean)
     .select(F.monotonically_increasing_id().alias("fid"), "*")
     .transform(write_parquet, dataset_water["silver"])
 )

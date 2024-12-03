@@ -14,7 +14,7 @@ ESC 1km grid resolution.
 
 import pandas as pd
 from pandera import DataFrameModel, Field
-from pandera.dtypes import Int32
+from pandera.dtypes import Category, Int8, Int16
 from pyspark.sql import functions as F
 
 from elmo_geo.etl import Dataset, DerivedDataset
@@ -51,36 +51,39 @@ class ESCTreeSuitabilityModel(DataFrameModel):
 
     id_parcel: str = Field()
     nopeat_area: float = Field()
-    woodland_type: str = Field(
+    woodland_type: Category = Field(
         isin=[
             "productive_conifer",
             "native_broadleaved",
             "riparian",
             "silvoarable",
             "wood_pasture",
-        ]
+        ],
+        coerce=True,
     )
-    rcp: Int32 = Field(isin=[26, 45, 60, 85])
-    period_AA_T1: str = Field(
+    rcp: Int8 = Field(isin=[26, 45, 60, 85], coerce=True)
+    period_AA_T1: Category = Field(
         isin=[
             "2021_2028",
             "2029_2036",
             "2037_2050",
             "2051_2100",
-        ]
+        ],
+        coerce=True,
     )
-    period_T2: str = Field(
+    period_T2: Category = Field(
         isin=[
             "2021_2050",
             "2021_2100",
             "2021_2036",
             "2021_2028",
-        ]
+        ],
+        coerce=True,
     )
-    period_AA_T1_duration: int = Field()
-    period_T2_duration: int = Field()
+    period_AA_T1_duration: Int16 = Field(coerce=True)
+    period_T2_duration: Int16 = Field(coerce=True)
     suitability: float = Field()
-    n_species: int = Field()
+    n_species: Int8 = Field(coerce=True)
 
 
 def _calculate_mean_suitability(sdf: SparkDataFrame) -> SparkDataFrame:
@@ -110,8 +113,8 @@ def _transform(esc_species_parcels: Dataset) -> pd.DataFrame:
     return esc_species_parcels.sdf().filter("species <> 'OPENSPACE'").transform(_calculate_mean_suitability).toPandas()
 
 
-esc_tree_suitability = DerivedDataset(
-    name="esc_tree_suitability",
+esc_woodland_suitability = DerivedDataset(
+    name="esc_woodland_suitability",
     level0="silver",
     level1="forest_research",
     restricted=False,
@@ -120,6 +123,25 @@ esc_tree_suitability = DerivedDataset(
     dependencies=[esc_species_parcels],
     model=ESCTreeSuitabilityModel,
 )
-"""The Ecological Site Classification (ESC) tree suitability datasets aggregated to provide tree suitability scores 
+"""The Ecological Site Classification (ESC) tree suitability datasets aggregated to provide suitability scores 
 for native broadleaved, productive conifer, riparian, woodland pasture, and silvoarable woodland types over different modelled
 time periods for each parcel."""
+
+
+def _filter_woodland_suitability_for_elmo(esc_woodland_suitability: DerivedDataset) -> pd.DataFrame:
+    return (esc_woodland_suitability.sdf().filter("(rcp = 45) AND (period_AA_T1 = '2021_2028') AND (period_T2 = '2021_2028')")).toPandas()
+
+
+esc_woodland_suitability_rcp45_2021_2028 = DerivedDataset(
+    name="esc_woodland_suitability_rcp45_2021_2028",
+    level0="gold",
+    level1="forest_research",
+    restricted=False,
+    is_geo=False,
+    func=_filter_woodland_suitability_for_elmo,
+    dependencies=[esc_woodland_suitability],
+    model=ESCTreeSuitabilityModel,
+)
+"""The Ecological Site Classification (ESC) tree suitability datasets aggregated to provide suitability scores 
+for native broadleaved, productive conifer, riparian, woodland pasture, and silvoarable woodland types for the RCP 4.5
+climate scenario and the 2021-2028 time period (forecast period closest to the present)."""
