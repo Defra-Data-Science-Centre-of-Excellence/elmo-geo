@@ -1,4 +1,4 @@
-from pandera import Field
+from pandera import DataFrameModel, Field
 
 from elmo_geo.etl import SourceDataset
 
@@ -11,7 +11,7 @@ notebooks/sylvan/tree_features.py file
 """
 
 
-class FCPTreeDetectionsRaw:
+class FCPTreeDetectionsRaw(DataFrameModel):
     """Model for raw tree detection data before parcel joins and counts.
     Attributes:
         top_x:easting spatial reference for point location of a tree
@@ -25,9 +25,9 @@ class FCPTreeDetectionsRaw:
 
     """
 
-    top_x: float = Field()
-    top_y: float = Field()
-    top_height: float = Field()
+    top_x: float = Field(coerce = True)
+    top_y: float = Field(coerce = True)
+    top_height: float = Field(coerce = True)
     chm_path: str = Field()
     msg: str = Field()
     top_point: str = Field()
@@ -42,5 +42,6 @@ fcp_tree_detection_raw = SourceDataset(
     model=FCPTreeDetectionsRaw,
     restricted=False,
     is_geo=False,
-    source_path="dbfs:/mnt/lab/unrestricted/elm/elmo/tree_features/tree_features_202311231323.parquet",
+    source_path="/dbfs/mnt/lab/unrestricted/elm/elmo/tree_features/tree_detections/tree_detections_202311231323.parquet/",
+    
 )

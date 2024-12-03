@@ -104,7 +104,7 @@ def read_file(source_path: str, is_geo: bool, layer: int | str | None = None, cl
         df = to_sdf(df)
     else:
         if path.suffix == ".parquet" or list(path.glob("*.parquet")):
-            df = spark.read.parquet(dbfs(path, True))
+            df = spark.read.parquet(dbfs(str(path), True))
         elif path.suffix == ".csv":
             df = spark.createDataFrame(pd.read_csv(path))
         else:
