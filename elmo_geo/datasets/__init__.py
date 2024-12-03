@@ -103,10 +103,10 @@ from .fcp_habitat_classification import (
     fcp_habitat_creation_type_parcel,
     fcp_is_phi_parcel,
 )
+from .fcp_sylvan import fcp_relict_hedge_raw
 from .fcp_tree_detection import (
     fcp_tree_detection_raw,
 )
-from .fcp_sylvan import fcp_relict_hedge_raw
 from .fr_esc_m3_trees import (
     esc_carbon_parcels,
     esc_carbon_parcels_w_50yr_total,
@@ -270,7 +270,6 @@ catalogue = [
     ewco_sensitivity_raw,
     ewco_sensitivity_parcels,
     fcp_habitat_creation_type_parcel,
-    fcp_habitat_management_type_parcel,
     fcp_tree_detection_raw,
     fcp_is_phi_parcel,
     fcp_relict_hedge_raw,  # temporary, until methodology is reproduced

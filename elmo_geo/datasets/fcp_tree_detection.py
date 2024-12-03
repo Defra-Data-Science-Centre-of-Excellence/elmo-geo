@@ -1,4 +1,5 @@
 from pandera import DataFrameModel, Field
+from pandera.dtypes import Float64
 
 from elmo_geo.etl import SourceDataset
 
@@ -25,9 +26,9 @@ class FCPTreeDetectionsRaw(DataFrameModel):
 
     """
 
-    top_x: float = Field(coerce = True)
-    top_y: float = Field(coerce = True)
-    top_height: float = Field(coerce = True)
+    top_x: Float64 = Field()
+    top_y: Float64 = Field()
+    top_height: Float64 = Field()
     chm_path: str = Field()
     msg: str = Field()
     top_point: str = Field()
@@ -43,5 +44,4 @@ fcp_tree_detection_raw = SourceDataset(
     restricted=False,
     is_geo=False,
     source_path="/dbfs/mnt/lab/unrestricted/elm/elmo/tree_features/tree_detections/tree_detections_202311231323.parquet/",
-    
 )
