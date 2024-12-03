@@ -101,14 +101,14 @@ def read_file(source_path: str, is_geo: bool, layer: int | str | None = None, cl
                 df = gpd.GeoDataFrame(pd.concat((gpd.read_file(path, layer=layer, use_arrow=True).assign(layer=layer) for layer in layers), ignore_index=True))
             else:
                 df = gpd.read_file(path, layer=layer, use_arrow=True)
+        df = to_sdf(df)
     else:
         if path.suffix == ".parquet" or list(path.glob("*.parquet")):
-            df = pd.read_parquet(path)
+            df = spark.read.parquet(dbfs(path, True))
         elif path.suffix == ".csv":
-            df = pd.read_csv(path)
+            df = spark.createDataFrame(pd.read_csv(path))
         else:
             raise UnknownFileExtension()
-    df = to_sdf(df) if is_geo else spark.createDataFrame(df)
     if is_geo and clean_geometry:
         df = df.withColumn("geometry", load_geometry(encoding_fn="", subdivide=True))
     return df
