@@ -1,7 +1,6 @@
 from pandera import Field
-from pandera.engines.geopandas_engine import Geometry
 
-from elmo_geo.etl import SRID, SourceDataset
+from elmo_geo.etl import SourceDataset
 
 # Tree Detctions Dataset
 """The 'tree_features' dataset is parcel level counts of the number of trees
@@ -42,6 +41,6 @@ fcp_tree_detection_raw = SourceDataset(
     level1="fcp",
     model=FCPTreeDetectionsRaw,
     restricted=False,
-    is_geo = False,
+    is_geo=False,
     source_path="/dbfs/mnt/lab/unrestricted/elm/elmo/tree_features/tree_detections/tree_detections_202311231323.parquet/",
 )
