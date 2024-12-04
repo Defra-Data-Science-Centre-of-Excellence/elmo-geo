@@ -140,6 +140,7 @@ def _dataset_date_is_most_recent(dataset):
     return all(date >= d for d in other_dates)
 
 
+@pytest.mark.dbr
 def test_tabular_datasets_path_most_recent():
     """For all datasets flagging as fresh in the catalogue, check that the path used is the most recent.
 
