@@ -177,6 +177,32 @@ def sjoin_boundary_proportion(
     )
 
 
+def sjoin_parcel_count(
+    parcel: Dataset | SparkDataFrame,
+    features: Dataset | SparkDataFrame,
+    **kwargs,
+):
+    """
+    Spatially joins datasets and counts individual point geometries within each parcel polygon.
+    Handles MultiPoint geometries by exploding them in the output of the spatial join.
+    Returns a non-geospatial dataframe.
+    """
+    # Perform the spatial join
+    joined = sjoin_parcels(parcel, features, **kwargs)
+    
+    # Explode MultiPoint geometries in the output
+    exploded = joined.withColumn("geometry_right", F.expr("ST_Explode(geometry_right)"))
+    
+    # Count the points for each polygon
+    return (
+        exploded
+        .groupBy("geometry_left")  # Group by polygons
+        .agg(F.count("*").alias("point_count"))  # Count the points
+        .drop("geometry_left", "geometry_right")  # Drop geometry columns if not needed
+        .toPandas()
+    )
+
+
 def get_centroid_value_from_raster(
     raster_dataset: SourceSingleFileRasterDataset,
     raster_processing: Callable[
