@@ -56,15 +56,16 @@ the carbon and species varables, producing the `esc_species_parcels` and `esc_ca
 
 
 import geopandas as gpd
+import pandas as pd
 import pyspark.sql.functions as F
 from pandera import DataFrameModel, Field
-from pandera.dtypes import Int32
+from pandera.dtypes import Category, Int8, Int16, Int32
 from pandera.engines.geopandas_engine import Geometry
 
 from elmo_geo.etl import Dataset, DerivedDataset, SourceGlobDataset
 from elmo_geo.etl.transformations import sjoin_parcel_proportion, sjoin_parcels
-from elmo_geo.st.geometry import load_geometry
 from elmo_geo.st.join import sjoin
+from elmo_geo.st.udf import st_clean
 from elmo_geo.utils.types import PandasDataFrame, SparkDataFrame
 
 from .os import os_bng_raw
@@ -93,26 +94,36 @@ class ESCM3WoodlandScenariosRaw(DataFrameModel):
     suitability_3: ESC suitability score for species 3
     period_AA_T1: Time periods for annual average (AA) and T1 carbon values
     period_AA_T1_duration: Number of years in each time period (AA_T1)
-    AA_grass: Carbon stored in trees, litter, deadwood & soil, annual average over time period (period_AA_T1), previous land use grassland
-    AA_crop: Carbon stored in trees, litter, deadwood & soil, annual average over time period (period_AA_T1), previous land use cropland
-    AA_grass_wood: Carbon stored in trees, litter, deadwood, soil & harvested wood products,
-    annual average over time period (period_AA_T1), previous land use grassland
-    AA_crop_wood: Carbon stored in trees, litter, deadwood, soil & harvested wood products,
-    annual average over time period (period_AA_T1), previous land use cropland
-    T1_grass: Carbon stored in trees, litter, deadwood & soil, sum over time period (period_AA_T1), previous land use grassland
-    T1_crop: Carbon stored in trees, litter, deadwood & soil, sum over time period (period_AA_T1), previous land use cropland
+    AA_grass: Carbon stored in trees, litter, deadwood & soil, annual average over time period (period_AA_T1), previous land use grassland in tCO2/ha.
+        This is given by `tree_carbon` + `litter_carbon` + `deadwood_carbon` + `grass_soil_carbon`.
+    AA_crop: Carbon stored in trees, litter, deadwood & soil, annual average over time period (period_AA_T1), previous land use cropland in tCO2/ha.
+        This is given by `tree_carbon` + `litter_carbon` + `deadwood_carbon` + `crop_soil_carbon`.
+    AA_grass_wood: Carbon stored in trees, litter, deadwood, soil & harvested wood products, annual average over time period (period_AA_T1), previous
+        land use grassland in tCO2/ha. This is given by `tree_carbon` + `litter_carbon` + `deadwood_carbon` + `grass_soil_carbon` +
+        `wood_product_carbon_ipcc`.
+    AA_crop_wood: Carbon stored in trees, litter, deadwood, soil & harvested wood products, annual average over time period (period_AA_T1), previous
+        land use cropland in tCO2/ha. This is given by `tree_carbon` + `litter_carbon` + `deadwood_carbon` + `crop_soil_carbon` +
+        `wood_product_carbon_ipcc`.
+    T1_grass: Carbon stored in trees, litter, deadwood & soil, sum over time period (period_AA_T1), previous land use grassland in tCO2/ha.
+        This is given by (`tree_carbon` + `litter_carbon` + `deadwood_carbon` + `grass_soil_carbon`) * `period_AA_T1_duration`.
+    T1_crop: Carbon stored in trees, litter, deadwood & soil, sum over time period (period_AA_T1), previous land use cropland in tCO2/ha.
+        This is given by (`tree_carbon` + `litter_carbon` + `deadwood_carbon` + `crop_soil_carbon`) * `period_AA_T1_duration`.
     T1_grass_wood: Carbon stored in trees, litter, deadwood, soil & harvested wood products, sum over time period (period_AA_T1), previous land use grassland
+        in tCO2/ha. This is given by (`tree_carbon` + `litter_carbon` + `deadwood_carbon` + `grass_soil_carbon` + `wood_product_carbon_ipcc`) *
+        `period_AA_T1_duration`.
     T1_crop_wood: Carbon stored in trees, litter, deadwood, soil & harvested wood products, sum over time period (period_AA_T1), previous land use cropland
+        in tCO2/ha. This is given by (`tree_carbon` + `litter_carbon` + `deadwood_carbon` + `crop_soil_carbon` + `wood_product_carbon_ipcc`) *
+        `period_AA_T1_duration`.
     period_T2: Time periods for T2 carbon values: 2021_2028, 2021_2036, 2021_2050, 2021_2100
     period_T2_duration: Number of years in each time period (T2): 8, 16, 30, 80
     T2_grass: Carbon stored in trees, litter, deadwood & soil, cumulative sum of T1 carbon values
-    over time period (period_T2), previous land use grassland
+        over time period (period_T2), previous land use grassland
     T2_crop: Carbon stored in trees, litter, deadwood & soil, cumulative sum of T1 carbon values
-    over time period (period_T2), previous land use cropland
+        over time period (period_T2), previous land use cropland
     T2_grass_wood: Carbon stored in trees, litter, deadwood, soil & harvested wood products,
-    cumulative sum of T1 carbon values over time period (period_T2), previous land use grassland
+        cumulative sum of T1 carbon values over time period (period_T2), previous land use grassland
     T2_crop_wood: Carbon stored in trees, litter, deadwood, soil & harvested wood products,
-    cumulative sum of T1 carbon values over time period (period_T2), previous land use cropland
+        cumulative sum of T1 carbon values over time period (period_T2), previous land use cropland
     tree_carbon: carbon sequestered into standing trees tCO2/ha average over period AA T1
     litter_carbon: carbon sequestered into litter tCO2/ha average over period AA T1
     deadwood_carbon: carbon sequestered into deadwood tCO2/ha average over period AA T1
@@ -272,14 +283,15 @@ def _sjoin_bng_to_no_peat_parcel(
     sdf_peat = (
         reference_parcels.sdf()
         .select("id_parcel", "geometry")
-        .transform(sjoin_parcels, peaty_soils_raw.sdf().withColumn("geometry", load_geometry(encoding_fn="")))
+        .transform(sjoin_parcels, peaty_soils_raw.sdf().transform(st_clean))
         .selectExpr(
             "id_parcel",
             "ST_AsBinary(geometry_left) as geometry_left",
             "ST_AsBinary(geometry_right) as geometry_right",
         )
         .mapInPandas(_udf_difference, schema="id_parcel:string,geometry:binary")
-        .withColumn("geometry", load_geometry())
+        .withColumn("geometry", F.expr("ST_GeomFromWKB(geometry)"))
+        .transform(st_clean)
         .withColumn("nopeat_area", F.expr("ST_Area(geometry)/10000"))
     )
 
@@ -336,18 +348,22 @@ def _join_esc_outputs(
 ) -> SparkDataFrame:
     """Joins parcels to ESC outputs using 1km BNG tiles.
 
-    Exludes ESC data for tiles with have missing carbon values, as per EVAST methodology.
+    Exludes ESC data for scenarios and tiles with have missing carbon values, as per EVAST methodology.
     """
+    # Scenarios and tiles with non-zero carbon values for at least one time period.
+    sdf_esc_valid_scenario_tiles = (
+        sdf_esc.groupby("tile_name", "rcp", "woodland_type")  # sums over time periods
+        .agg(*[F.sum(c).alias(c) for c in ["AA_grass", "AA_crop", "AA_grass_wood", "AA_crop_wood"]])
+        .filter("(AA_grass<>0) OR (AA_crop<>0) OR (AA_grass_wood<>0) OR (AA_crop_wood<>0)")
+        .selectExpr("tile_name", "rcp", "woodland_type")
+        .dropDuplicates()
+    )
+
+    # Also exclude any remainging scenarios where species values are all null (don't expect any at this stage)
     return (
-        sdf_parcel_tiles.join(sdf_esc.drop("geometry", "layer"), on="tile_name")
-        .join(
-            sdf_esc.filter("(AA_grass=0) OR (AA_crop=0) OR (AA_grass_wood=0) OR (AA_crop_wood=0)")
-            .dropDuplicates(subset=["tile_name"])
-            .selectExpr("tile_name", "TRUE AS missing_data"),
-            on="tile_name",
-            how="left",
-        )
-        .filter("missing_data IS NULL")
+        sdf_parcel_tiles.join(sdf_esc.drop("geometry", "layer"), on="tile_name", how="inner")
+        .join(sdf_esc_valid_scenario_tiles, on=["tile_name", "rcp", "woodland_type"], how="inner")
+        .filter("(species_1 IS NULL) AND (species_2 IS NULL) AND (species_3 IS NULL)")
     )
 
 
@@ -462,32 +478,40 @@ class ESCCarbonParcels(DataFrameModel):
         period_AA_T1_duration: Number of years in each time period (AA_T1)
         period_T2_duration: period_T2_duration: Number of years in each time period (T2): 8, 16, 30, 80
         tiles: Concatenated names of 1km tiles aggregated to this parcel
+        AA_grass: Carbon stored in trees, litter, deadwood & soil, annual average over time period (period_AA_T1), previous land use grassland in tCO2/ha.
+            This is given by `tree_carbon` + `litter_carbon` + `deadwood_carbon` + `grass_soil_carbon`.
+        AA_crop: Carbon stored in trees, litter, deadwood & soil, annual average over time period (period_AA_T1), previous land use cropland in tCO2/ha.
+            This is given by `tree_carbon` + `litter_carbon` + `deadwood_carbon` + `crop_soil_carbon`.
+        AA_grass_wood: Carbon stored in trees, litter, deadwood, soil & harvested wood products, annual average over time period (period_AA_T1), previous
+            land use grassland in tCO2/ha. This is given by `tree_carbon` + `litter_carbon` + `deadwood_carbon` + `grass_soil_carbon` +
+            `wood_product_carbon_ipcc`.
+        AA_crop_wood: Carbon stored in trees, litter, deadwood, soil & harvested wood products, annual average over time period (period_AA_T1), previous
+            land use cropland in tCO2/ha. This is given by `tree_carbon` + `litter_carbon` + `deadwood_carbon` + `crop_soil_carbon` +
+            `wood_product_carbon_ipcc`.
+        T1_grass: Carbon stored in trees, litter, deadwood & soil, sum over time period (period_AA_T1), previous land use grassland in tCO2/ha.
+            This is given by (`tree_carbon` + `litter_carbon` + `deadwood_carbon` + `grass_soil_carbon`) * `period_AA_T1_duration`.
+        T1_crop: Carbon stored in trees, litter, deadwood & soil, sum over time period (period_AA_T1), previous land use cropland in tCO2/ha.
+            This is given by (`tree_carbon` + `litter_carbon` + `deadwood_carbon` + `crop_soil_carbon`) * `period_AA_T1_duration`.
+        T1_grass_wood: Carbon stored in trees, litter, deadwood, soil & harvested wood products, sum over time period (period_AA_T1), previous land use
+            grassland in tCO2/ha. This is given by (`tree_carbon` + `litter_carbon` + `deadwood_carbon` + `grass_soil_carbon` + `wood_product_carbon_ipcc`) *
+            `period_AA_T1_duration`.
+        T1_crop_wood: Carbon stored in trees, litter, deadwood, soil & harvested wood products, sum over time period (period_AA_T1), previous land use cropland
+            in tCO2/ha. This is given by (`tree_carbon` + `litter_carbon` + `deadwood_carbon` + `crop_soil_carbon` + `wood_product_carbon_ipcc`) *
+            `period_AA_T1_duration`.
+        T2_grass: Carbon stored in trees, litter, deadwood & soil, cumulative sum of T1 carbon values
+            over time period (period_T2), previous land use grassland
+        T2_crop: Carbon stored in trees, litter, deadwood & soil, cumulative sum of T1 carbon values
+            over time period (period_T2), previous land use cropland
+        T2_grass_wood: Carbon stored in trees, litter, deadwood, soil & harvested wood products,
+            cumulative sum of T1 carbon values over time period (period_T2), previous land use grassland
+        T2_crop_wood: Carbon stored in trees, litter, deadwood, soil & harvested wood products,
+            cumulative sum of T1 carbon values over time period (period_T2), previous land use cropland
         tree_carbon: carbon sequestered into standing trees tCO2/ha average over period AA T1
         litter_carbon: carbon sequestered into litter tCO2/ha average over period AA T1
         deadwood_carbon: carbon sequestered into deadwood tCO2/ha average over period AA T1
         grass_soil_carbon: carbon sequestered into soil (previously land use grassland) tCO2/ha average over period AA T1
         crop_soil_carbon: carbon sequestered into soil (previous land use cropland) tCO2/ha average over period AA T1
         wood_product_carbon_ipcc: carbon sequestered into wood products tCO2/ha average over period AA T1
-        AA_grass: Carbon stored in trees, litter, deadwood & soil, annual average over time period (period_AA_T1), previous land use grassland
-        AA_crop: Carbon stored in trees, litter, deadwood & soil, annual average over time period (period_AA_T1), previous land use cropland
-        AA_grass_wood: Carbon stored in trees, litter, deadwood, soil & harvested wood products,
-        annual average over time period (period_AA_T1), previous land use grassland
-        AA_crop_wood: Carbon stored in trees, litter, deadwood, soil & harvested wood products,
-        annual average over time period (period_AA_T1), previous land use cropland
-        T1_grass: Carbon stored in trees, litter, deadwood & soil, sum over time period (period_AA_T1), previous land use grassland
-        T1_crop: Carbon stored in trees, litter, deadwood & soil, sum over time period (period_AA_T1), previous land use cropland
-        T1_grass_wood: Carbon stored in trees, litter, deadwood, soil & harvested wood products, sum over time period (period_AA_T1),
-        previous land use grassland.
-        T1_crop_wood: Carbon stored in trees, litter, deadwood, soil & harvested wood products, sum over time period (period_AA_T1),
-        previous land use cropland.
-        T2_grass: Carbon stored in trees, litter, deadwood & soil, cumulative sum of T1 carbon values
-        over time period (period_T2), previous land use grassland
-        T2_crop: Carbon stored in trees, litter, deadwood & soil, cumulative sum of T1 carbon values
-        over time period (period_T2), previous land use cropland
-        T2_grass_wood: Carbon stored in trees, litter, deadwood, soil & harvested wood products,
-        cumulative sum of T1 carbon values over time period (period_T2), previous land use grassland
-        T2_crop_wood: Carbon stored in trees, litter, deadwood, soil & harvested wood products,
-        cumulative sum of T1 carbon values over time period (period_T2), previous land use cropland
     """
 
     id_parcel: str = Field()
@@ -554,6 +578,127 @@ esc_carbon_parcels = DerivedDataset(
     model=ESCCarbonParcels,
 )
 """ESC M3 carbon metrics for parcels.
+"""
+
+
+class ESCCarbonParcels50YrTotals(DataFrameModel):
+    """ESC M3 carbon metrics for parcels data model with an additional 2021-2071 T1 time period
+    and filtered to only RCP 4.5 and 'native_broadleaved' and 'productive_conifer' woodland types.
+
+    Attributes:
+        id_parcel: Parcel ID
+        nopeat_area: Geographic area of parcel excluding intersecting peaty soils geometries.
+        woodland_type: Type of woodland modelled.
+        rcp: Representative Concentration Pathway scenario (i.e climate change scenario). Fixed to 4.5 (45).
+        period_AA_T1: Time periods for annual average (AA) and T1 carbon values
+        period_AA_T1_duration: Number of years in each time period (AA_T1)
+        tiles: Concatenated names of 1km tiles aggregated to this parcel
+        AA_grass: Carbon stored in trees, litter, deadwood & soil, annual average over time period (period_AA_T1), previous land use grassland
+        AA_crop: Carbon stored in trees, litter, deadwood & soil, annual average over time period (period_AA_T1), previous land use cropland
+        AA_grass_wood: Carbon stored in trees, litter, deadwood, soil & harvested wood products,
+            annual average over time period (period_AA_T1), previous land use grassland
+        AA_crop_wood: Carbon stored in trees, litter, deadwood, soil & harvested wood products,
+            annual average over time period (period_AA_T1), previous land use cropland
+        AA_wood_only: Carbon stored in harvested wood products, annual average over time period (period_AA_T1). This is equivalent to `wood_product_carbon_ipcc`
+            and does not vary between grassland and cropland.
+        T1_grass: Carbon stored in trees, litter, deadwood & soil, sum over time period (period_AA_T1), previous land use grassland in tCO2/ha.
+            This is given by (`tree_carbon` + `litter_carbon` + `deadwood_carbon` + `grass_soil_carbon`) * `period_AA_T1_duration`.
+        T1_crop: Carbon stored in trees, litter, deadwood & soil, sum over time period (period_AA_T1), previous land use cropland in tCO2/ha.
+            This is given by (`tree_carbon` + `litter_carbon` + `deadwood_carbon` + `crop_soil_carbon`) * `period_AA_T1_duration`.
+        T1_grass_wood: Carbon stored in trees, litter, deadwood, soil & harvested wood products, sum over time period (period_AA_T1), previous land use
+            grassland in tCO2/ha. This is given by (`tree_carbon` + `litter_carbon` + `deadwood_carbon` + `grass_soil_carbon` + `wood_product_carbon_ipcc`) *
+            `period_AA_T1_duration`.
+        T1_crop_wood: Carbon stored in trees, litter, deadwood, soil & harvested wood products, sum over time period (period_AA_T1), previous land use cropland
+            in tCO2/ha. This is given by (`tree_carbon` + `litter_carbon` + `deadwood_carbon` + `crop_soil_carbon` + `wood_product_carbon_ipcc`) *
+            `period_AA_T1_duration`.
+        T1_wood_only: Carbon stored in harvested wood products, sum over time period (period_AA_T1), previous land use cropland in tCO2/ha.
+            This is given by `wood_product_carbon_ipcc` * `period_AA_T1_duration`. This does not vary between grassland and cropland.
+    """
+
+    id_parcel: str = Field()
+    nopeat_area: float = Field()
+    woodland_type: Category = Field(
+        isin=[
+            "productive_conifer",
+            "native_broadleaved",
+        ],
+        coerce=True,
+    )
+    rcp: Int8 = Field(isin=[45], coerce=True)
+    period_AA_T1: str = Field(
+        isin=[
+            "2021_2028",
+            "2029_2036",
+            "2037_2050",
+            "2051_2100",
+            "2021_2071",
+        ],
+        coerce=True,
+    )
+    period_AA_T1_duration: Int16 = Field(coerce=True)
+    AA_grass: float = Field()
+    AA_crop: float = Field()
+    AA_grass_wood: float = Field()
+    AA_crop_wood: float = Field()
+    AA_wood_only: float = Field()
+    T1_grass: float = Field()
+    T1_crop: float = Field()
+    T1_grass_wood: float = Field()
+    T1_crop_wood: float = Field()
+    T1_wood_only: float = Field()
+
+
+def _add_50_year_carbon_totals_and_filter(esc_carbon_parcels: DerivedDataset) -> pd.DataFrame:
+    sdf = esc_carbon_parcels.sdf().selectExpr(
+        "id_parcel",
+        "nopeat_area",
+        "rcp",
+        "woodland_type",
+        "period_AA_T1",
+        "period_AA_T1_duration",
+        "AA_grass",
+        "AA_crop",
+        "AA_grass_wood",
+        "AA_crop_wood",
+        "T1_grass",
+        "T1_crop",
+        "T1_grass_wood",
+        "T1_crop_wood",
+        "wood_product_carbon_ipcc AS AA_wood_only",
+        "wood_product_carbon_ipcc * period_AA_T1_duration AS T1_wood_only",
+    )
+
+    aa_cols = ["AA_grass", "AA_crop", "AA_grass_wood", "AA_crop_wood", "AA_wood_only"]
+    return (
+        sdf.unionByName(
+            sdf.withColumn("period_T1_duration_weight", F.expr("CASE period_AA_T1 WHEN '2051_2100' THEN 20/50 ELSE 1 END"))
+            .groupby("id_parcel", "rcp", "woodland_type")
+            .agg(
+                F.first("nopeat_area").alias("nopeat_area"),
+                F.expr("'2021_2071' AS period_AA_T1"),
+                F.expr("50 AS period_AA_T1_duration"),
+                *[F.expr(f"SUM(period_AA_T1_duration * period_T1_duration_weight * {c} / 50) AS {c}") for c in aa_cols],
+                *[F.expr(f"SUM(period_AA_T1_duration * period_T1_duration_weight * {c}) AS {c.replace('AA_', 'T1_')}") for c in aa_cols],
+            ),
+            allowMissingColumns=False,
+        )
+        .filter("(rcp=45) AND (woodland_type IN ('productive_conifer', 'native_broadleaved'))")
+        .toPandas()
+    )
+
+
+esc_carbon_parcels_w_50yr_total = DerivedDataset(
+    name="esc_carbon_parcels_w_50yr_total",
+    level0="gold",
+    level1="forest_research",
+    restricted=False,
+    is_geo=False,
+    dependencies=[esc_carbon_parcels],
+    func=_add_50_year_carbon_totals_and_filter,
+    model=ESCCarbonParcels50YrTotals,
+)
+"""ESC M3 carbon metrics used in elmo, including totals for the 50 year perios 2021-2071, filtere to the RCP 4.5
+climate scenario and 'native_broadleaved' and 'productive_conifer' woodland types.
 """
 
 

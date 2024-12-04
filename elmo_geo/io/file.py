@@ -12,7 +12,7 @@ from pyspark.errors import AnalysisException
 from pyspark.serializers import AutoBatchedSerializer, PickleSerializer
 from pyspark.sql import functions as F
 
-from elmo_geo.st.geometry import gpd_clean, load_geometry
+from elmo_geo.st.udf import st_clean
 from elmo_geo.utils.dbr import spark
 from elmo_geo.utils.log import LOG
 from elmo_geo.utils.misc import dbfs
@@ -91,7 +91,7 @@ def load_sdf(path: str, **kwargs) -> SparkDataFrame:
     return sdf
 
 
-def read_file(source_path: str, is_geo: bool, layer: int | str | None = None, clean_geometry: bool = True) -> SparkDataFrame:
+def read_file(source_path: str, is_geo: bool, layer: int | str | None = None, subdivide: bool = False, clean_geometry: bool = True) -> SparkDataFrame:
     path = Path(source_path)
     if is_geo:
         if path.suffix == ".parquet" or list(path.glob("*.parquet")):
@@ -109,9 +109,12 @@ def read_file(source_path: str, is_geo: bool, layer: int | str | None = None, cl
             df = pd.read_csv(path)
         else:
             raise UnknownFileExtension()
-    df = to_sdf(df) if is_geo else spark.createDataFrame(df)
-    if is_geo and clean_geometry:
-        df = df.withColumn("geometry", load_geometry(encoding_fn="", subdivide=True)).transform(gpd_clean)
+    df = to_sdf(df.to_crs(27700)) if is_geo else spark.createDataFrame(df)
+    if is_geo:
+        if subdivide:
+            df = df.withColumn("geometry", F.expr("ST_SubDivideExplode(geometry, 256)"))
+        if clean_geometry:
+            df = df.transform(st_clean)
     return df
 
 

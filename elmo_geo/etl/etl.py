@@ -18,6 +18,7 @@ import geopandas as gpd
 import pandas as pd
 from pyspark.sql import functions as F, types as T, DataFrame as SparkDataFrame
 from pandera import DataFrameModel
+from rioxarray.raster_array import RasterArray
 
 from elmo_geo.io import load_sdf, ogr_to_geoparquet, read_file, write_parquet
 from elmo_geo.utils.log import LOG
@@ -34,6 +35,9 @@ FILE_FMT: str = "{name}-{date}-{hsh}.parquet"
 PAT_FMT: str = r"(^{name}-[\d_]+-{hsh}.parquet$)"
 PAT_DATE: str = r"(?<=^{name}-)([\d_]+)(?=-{hsh}.parquet$)"
 SRID: int = 27700
+
+FILE_FMT_RASTER: str = "{name}.tif"
+PAT_FMT_RASTER: str = r"(^{name}.tif$)"
 
 
 @dataclass
@@ -130,7 +134,7 @@ class SourceDataset(BaseDataset):
 
 
 @dataclass
-class SourceDataset(Dataset):
+class SourceDataset(TabularDataset):
     """Dataset from outside of the managed environment.
 
     A SourceDataset is a Dataset for datasets that are not derived from other datasets
@@ -192,6 +196,7 @@ class SourceDataset(Dataset):
 @dataclass
 class SourceGlobDataset(SourceDataset):
     """SourceGlobDataset is to ingest multiple files using a glob path.
+
     - This is better suited for ingesting very large geographic file, as it uses ogr2ogr.
     - This does not support aliasing/renaming, as it writes before validating.
 
@@ -208,6 +213,7 @@ class SourceGlobDataset(SourceDataset):
 
     glob_path: str = None
     source_path: str = None
+    model: DataFrameModel | None = None
 
     @property
     def _new_date(self) -> str:
@@ -253,10 +259,10 @@ class SourceGlobDataset(SourceDataset):
 
 
 @dataclass
-class DerivedDataset(Dataset):
+class DerivedDataset(TabularDataset):
     """Dataset derived (transformed) from others in the ETL pipeline.
 
-    A DerivedDataset is a DataSet for datasets that are derived other datasets.
+    A DerivedDataset is for tabular data that is derived other datasets.
     It is thus dependent on those datasets, and includes a function that transforms those
     dependencies when the dataset needs to be refreshed. A derived dataset needs refreshing
     if it is missing entirely, or if any of its dependencies need refreshing.
@@ -302,4 +308,135 @@ class DerivedDataset(Dataset):
         df = self.func(*self.dependencies)
         df = self._validate(df)
         write_parquet(df, path=self._new_path, partition_cols=self.partition_cols)
+        LOG.info(f"Saved to '{self.path}'.")
+
+
+@dataclass
+class RasterDataset(Dataset):
+    """Class for managing loading and validation of raster data."""
+
+    @property
+    def dict(self) -> dict:
+        """A dictionary representation of the dataset."""
+        return dict(
+            name=self.name,
+            level0=self.level0,
+            level1=self.level1,
+            restricted=self.restricted,
+            path=self.path,
+            type=str(type(self)),
+        )
+
+    @property
+    def file_matches(self) -> list[str]:
+        """List of files that match the file path but may have different dates.
+
+        Return in order of newest to oldest by the modified date of the path. Does
+        not take into account modified dates of the dataset dependencies.
+        """
+        if not os.path.exists(self.path_dir):
+            return []
+
+        pat = re.compile(PAT_FMT_RASTER.format(name=self.name))
+        return [y.group(0) for y in [pat.fullmatch(x) for x in os.listdir(self.path_dir)] if y is not None]
+
+    @property
+    def _new_filename(self) -> str:
+        """New filename for parquet file being created."""
+        return FILE_FMT_RASTER.format(name=self.name)
+
+    @property
+    def _hash(self) -> str:
+        "Fixed hash as no updates required once built."
+        return "0"
+
+    def ra(self, **kwargs) -> RasterArray:
+        """Load the dataset as a `rioxarray.raster_array.RasterArray`
+
+        By default the dataset na values are masked out from their stored _FillValue.
+        """
+        if not self.is_fresh:
+            self.refresh()
+        default_params = dict(masked=True)
+        [kwargs.setdefault(k, v) for k, v in default_params.items()]
+        return rxr.open_rasterio(self.path, **kwargs)
+
+    def _validate(self, ra: RasterArray) -> DataFrame:
+        """Validate the data against a model specification if one is defined."""
+        # TODO: Implement validation using https://github.com/xarray-contrib/xarray-schema
+        return ra
+
+
+@dataclass
+class SourceSingleFileRasterDataset(RasterDataset):
+    """Class for managing loading and validation of source raster data in a single file."""
+
+    source_path: str = None
+
+    @property
+    def dict(self) -> dict:
+        """A dictionary representation of the dataset."""
+        return dict(
+            name=self.name,
+            level0=self.level0,
+            level1=self.level1,
+            restricted=self.restricted,
+            path=self.path,
+            type=str(type(self)),
+            source_path=self.source_path,
+        )
+
+    def refresh(self):
+        LOG.info(f"Creating '{self.name}' dataset.")
+        ra = rxr.open_rasterio(self.source_path).squeeze()
+        if (crs := ra.rio.crs) != SRID:
+            msg = f"Converting CRS from {crs} to {SRID}."
+            LOG.debug(msg)
+            ra = ra.rio.to_crs(SRID)
+        ra = self._validate(ra)
+        to_raster(ra, self._new_path)
+        LOG.info(f"Saved to '{self.path}'.")
+
+
+@dataclass
+class DerivedRasterDataset(RasterDataset):
+    """Raster Dataset derived (transformed) from others in the ETL pipeline.
+
+    A DerivedRasterDataset is for raster data that is derived other datasets.
+    It is thus dependent on those datasets, and includes a function that transforms those
+    dependencies when the dataset needs to be refreshed. A derived dataset needs refreshing
+    if it is missing entirely, or if any of its dependencies need refreshing.
+    """
+
+    dependencies: list[Dataset]
+    func: Callable[[list[Dataset]], RasterArray]
+
+    @property
+    def _hash(self) -> str:
+        """A hash derived from this dataset's dependencies.
+
+        If any dependency's hashes change, then this hash will also change
+        """
+        hshs = "-".join(dependency._hash for dependency in self.dependencies)
+        return sha256(hshs.encode()).hexdigest()[:HASH_LENGTH]
+
+    @property
+    def dict(self) -> dict:
+        """A dictionary representation of the dataset."""
+        return dict(
+            name=self.name,
+            level0=self.level0,
+            level1=self.level1,
+            restricted=self.restricted,
+            path=self.path,
+            type=str(type(self)),
+            dependencies=[dep.name for dep in self.dependencies],
+        )
+
+    def refresh(self) -> None:
+        """Populate the cache with a fresh version of this dataset."""
+        LOG.info(f"Creating '{self.name}' dataset.")
+        ra = self.func(*self.dependencies)
+        ra = self._validate(ra)
+        to_raster(ra, self._new_path)
         LOG.info(f"Saved to '{self.path}'.")

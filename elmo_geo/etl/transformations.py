@@ -2,14 +2,19 @@
 
 For use in `elmo.etl.DerivedDataset.func`.
 """
+from typing import Callable, Iterator
+
 import geopandas as gpd
+import pandas as pd
 from pyspark.sql import functions as F
+from xarray.core.dataarray import DataArray
 
 from elmo_geo.io.file import auto_repartition
 from elmo_geo.st.join import sjoin
+from elmo_geo.utils.dbr import spark
 from elmo_geo.utils.types import PandasDataFrame, SparkDataFrame
 
-from .etl import Dataset
+from .etl import Dataset, SourceSingleFileRasterDataset
 
 
 def pivot_long_sdf(
@@ -148,7 +153,7 @@ def sjoin_boundary_proportion(
     parcel: Dataset | SparkDataFrame,
     boundary_segments: Dataset | SparkDataFrame,
     features: Dataset | SparkDataFrame,
-    buffers: list[float] = [0, 2, 8, 12, 24],
+    buffers: list[float] = [0, 2, 4, 8, 12, 24],
     **kwargs,
 ):
     """Spatially joins with parcels, groups, key joins with boundaries, calculating proportional overlap for multiple buffer distances.
@@ -162,7 +167,55 @@ def sjoin_boundary_proportion(
     expr = f"LEAST(GREATEST({expr}, 0), 1)"
     return (
         sjoin_parcels(parcel, features, distance=max(buffers), **kwargs)
+        .withColumn("buffer", F.expr(f"EXPLODE(ARRAY{tuple(buffers)})"))
+        .withColumn("geometry_right", F.expr("ST_Buffer(geometry_right, buffer)"))
         .join(sdf_segments, on="id_parcel")
-        .withColumns({f"proportion_{buf}m": F.expr(expr.format(buf)) for buf in buffers})
+        .transform(auto_repartition)
+        .withColumn("proportion", F.expr(expr))
         .drop("geometry", "geometry_left", "geometry_right")
+        .transform(pivot_wide_sdf, name_col="buffer", value_col="proportion")
+        .withColumnsRenamed({str(b): f"proportion_{b}m" for b in buffers})
     )
+
+
+def get_centroid_value_from_raster(
+    raster_dataset: SourceSingleFileRasterDataset,
+    raster_processing: Callable[
+        [
+            DataArray,
+        ],
+        DataArray,
+    ] = lambda x: x,
+    resolution: float | None = None,
+    batch_size: int = 500,
+):
+    """UDF for looking up centroids in a WKB sedona column in a raster.
+
+    This is intended for use with a single file raster dataset where the raster resolution is larger than the geometries as it is just using centroids.
+
+    If the raster is of a higher resolution than the geometries, then this will still work but will only be using
+    the cell closest to the middle of the geometry. Zonal statistics that perform calculations on all pixels within
+    or touching the geometry may be more appropriate in such cases.
+
+    Parameters:
+        raster_dataset: A single file raster dataset to lookup values in.
+        raster_processing: A function to pre-process the raset before lookin up, for example
+             to select a band/variable or to interpolate missing values etc.
+        resolution: Resolution to reproject the raster to.
+        batch_size: How many rows to process on a node in one go. Default is 500.
+
+    Returns:
+        An iterator of values from the raster which are closest to the geometry centroids.
+    """
+    spark.conf.set("spark.sql.execution.arrow.maxRecordsPerBatch", str(batch_size))
+
+    @F.pandas_udf("float")
+    def _get_centroid_value_from_raster(iterator: Iterator[pd.Series]) -> Iterator[pd.Series]:
+        ra = raster_processing(raster_dataset.ra())
+        if resolution is not None:
+            ra = ra.rio.reproject(dst_crs=ra.rio.crs, resolution=resolution)
+        for series in iterator:
+            geoms = gpd.GeoSeries.from_wkb(series, crs=27700).to_crs(epsg=ra.rio.crs.to_epsg())
+            yield geoms.map(lambda g: float(ra.sel(x=g.centroid.x, y=g.centroid.y, method="nearest")))
+
+    return _get_centroid_value_from_raster

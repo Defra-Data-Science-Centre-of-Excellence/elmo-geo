@@ -1,10 +1,12 @@
 import io
 
 import boto3
+import botocore
 import dotenv
 import pandas as pd
 
 from elmo_geo import LOG
+from elmo_geo.etl import Dataset, DerivedDataset
 
 
 class S3Handler:
@@ -44,9 +46,15 @@ class S3Handler:
         """Test the connection works."""
         try:
             self.s3_client.list_objects_v2(Bucket=self.bucket)
-        except self.s3_client.exceptions.ClientError:
+        except (botocore.exceptions.BotoCoreError, botocore.exceptions.ClientError) as error:
             LOG.error(
-                "ClientError: update .env AWS credentials.\nLogin and click 'Access keys' (next to 'ELMModelling').\nhttps://sso-int-sce-network.awsapps.com/start#/\n"
+                f"""S3HandlerError: update .env AWS credentials.
+                Login and click 'Access keys' (next to 'ELMModelling').
+                Copy option 2 into .env
+                https://sso-int-sce-network.awsapps.com/start#/
+
+                {error}
+            """
             )
 
     def list_files(self, prefix=""):
@@ -59,8 +67,8 @@ class S3Handler:
                 Prefix=prefix,
                 ContinuationToken=response.get("NextContinuationToken"),
             )
-            if "Contents" in response:
-                files.extend([f"s3://{self.bucket}/{obj['Key']}" for obj in response["Contents"] if not obj["Key"].endswith("/")])
+        if "Contents" in response:
+            files.extend([f"{obj['Key']}" for obj in response["Contents"] if not obj["Key"].endswith("/")])
         return files
 
     def read_file(self, path: str, fn_read: callable = pd.read_parquet) -> pd.DataFrame:
@@ -75,3 +83,40 @@ class S3Handler:
         fn_write(df, buf)
         buf.seek(0)
         self.s3_client.put_object(Bucket=self.bucket, Key=path, Body=buf.getvalue())
+
+    def copy_obj(self, key_from: str, key_to: str):
+        """Rather than writing twice, you can copy the object."""
+        self.s3_client.copy_object(
+            CopySource={"Bucket": self.bucket, "Key": key_from},
+            Bucket=self.bucket,
+            Key=key_to,
+        )
+
+
+def sync_datasets(catalogue: list[Dataset]):
+    """Writes datasets to S3 ranch-013 bucket.
+
+    Loops through all datasets in the catalogue and writes fresh non-geographic
+    DerivedDatasets to S3, if they are not already present in the bucket.
+
+    Parameters:
+        catalogue: List of elmo-geo datasets.
+    """
+    s3 = S3Handler()
+    root = "data/ELM-Project/"
+    s3_files = s3.list_files(root)
+
+    count = 0
+    for dataset in catalogue:
+        if not dataset.is_geo and isinstance(dataset, DerivedDataset) and dataset.is_fresh:
+            path = root + dataset.path.split("ELM-Project/")[1]
+            path = path.replace("/silver/", "/gold/")  # TODO: Issue #320
+            path_latest = "-".join(path.split("-")[:-2]) + "-latest.parquet"
+
+            if path not in s3_files:
+                LOG.info(f"Exporting {dataset.name} to {s3.bucket}. Path: {path}")
+                df = dataset.pdf()
+                s3.write_file(df, path)
+                s3.copy_obj(path, path_latest)
+                count += 1
+    LOG.info(f"Exported {count} datasets to {s3.bucket}.")

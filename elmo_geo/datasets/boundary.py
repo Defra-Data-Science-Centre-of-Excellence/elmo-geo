@@ -34,6 +34,7 @@ from functools import partial
 
 from pandera import DataFrameModel, Field
 from pandera.engines.geopandas_engine import Geometry
+from pyspark.sql import DataFrame as SparkDataFrame
 from pyspark.sql import functions as F
 
 from elmo_geo.etl import SRID, Dataset, DerivedDataset
@@ -55,7 +56,7 @@ def segmentise_boundary(dataset: Dataset) -> SparkDataFrame:
         dataset.sdf()
         .withColumn("geometry", F.expr("ST_Boundary(geometry)"))
         .withColumn("geometry", F.expr("EXPLODE(ST_Dump(geometry))"))
-        .transform(lambda sdf: st_udf(sdf, segmentise_with_tolerance, "geometry"))
+        .transform(st_udf, segmentise_with_tolerance)
         .withColumn("geometry", F.expr("EXPLODE(ST_Dump(geometry))"))
         .selectExpr(
             "monotonically_increasing_id() AS id_boundary",
@@ -86,7 +87,7 @@ boundary_segments = DerivedDataset(
     level0="silver",
     level1="elmo_geo",
     model=BoundarySegments,
-    restricted=True,
+    restricted=False,
     func=segmentise_boundary,
     dependencies=[reference_parcels],
 )
@@ -126,7 +127,7 @@ boundary_adjacencies = DerivedDataset(
     level0="silver",
     level1="elmo_geo",
     model=SjoinBoundaries,
-    restricted=True,
+    restricted=False,
     func=partial(sjoin_boundary_proportion, columns=["id_parcel_right"], fn_pre=fn_pre_adj, fn_post=fn_post_adj),
     dependencies=[boundary_segments, boundary_segments],
     is_geo=False,
