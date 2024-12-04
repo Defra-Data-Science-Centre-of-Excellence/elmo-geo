@@ -3,15 +3,7 @@ from pandera.dtypes import Float64
 
 from elmo_geo.etl import SourceDataset
 
-# Tree Detctions Dataset
-"""The 'tree_features' dataset is parcel level counts of the number of trees
-within a parcel and intersecting the perimeter of a parcel.
-It was created by DSMT FCP in the ots-sylvan-tree-features' branch of elmo-geo,
-in the notebooks/sylvan/Tree Features notebook, which makes use of functions in the
-notebooks/sylvan/tree_features.py file
-"""
-
-
+# Tree Detctions Dataset - potentially temporay data used for a specific BTO request
 class FCPTreeDetectionsRaw(DataFrameModel):
     """Model for raw tree detection data before parcel joins and counts.
     Attributes:
@@ -45,3 +37,9 @@ fcp_tree_detection_raw = SourceDataset(
     is_geo=False,
     source_path="/dbfs/mnt/lab/unrestricted/elm/elmo/tree_features/tree_detections/tree_detections_202311231323.parquet/",
 )
+"""The 'tree_features' dataset is parcel level counts of the number of trees
+within a parcel and intersecting the perimeter of a parcel.
+It was created by DSMT FCP in the ots-sylvan-tree-features' branch of elmo-geo,
+in the notebooks/sylvan/Tree Features notebook, which makes use of functions in the
+notebooks/sylvan/tree_features.py file
+"""
