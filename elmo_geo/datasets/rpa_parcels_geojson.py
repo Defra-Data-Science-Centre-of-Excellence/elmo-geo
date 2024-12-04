@@ -64,7 +64,9 @@ def _parcel_to_bng_geojson_lookup(parcels: Dataset, os_bng_raw: Dataset) -> gpd.
             "LEFT(sheet_id, 2) as tile_100km",
         )
         .join(
-            os_bng_raw.sdf().filter("layer='1km_grid'").selectExpr("tile_name as tile_1km", "ST_AsBinary(geometry) as geometry_1km"), on="tile_1km", how="left"
+            os_bng_raw.sdf().filter("layer='1km_grid'").selectExpr("tile_name as tile_1km", "ST_AsBinary(geometry) as geometry_1km"),
+            on="tile_1km",
+            how="left",
         )
         .join(
             os_bng_raw.sdf().filter("layer='10km_grid'").selectExpr("tile_name as tile_10km", "ST_AsBinary(geometry) as geometry_10km"),
@@ -92,7 +94,7 @@ def _parcel_to_bng_geojson_lookup(parcels: Dataset, os_bng_raw: Dataset) -> gpd.
 reference_parcels_bng_geojson = DerivedDataset(
     name="reference_parcels_bng_geojson",
     level0="gold",
-    level1="rural_payments_agency",
+    level1="fcp",
     model=ReferenceParcelsGeojson,
     restricted=False,
     is_geo=False,
