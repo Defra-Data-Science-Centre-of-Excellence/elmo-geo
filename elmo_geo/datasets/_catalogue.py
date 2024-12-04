@@ -99,7 +99,7 @@ from .fcp_parcels_geojson import (
     reference_parcels_bng_geojson,
 )
 from .fcp_sylvan import (
-    fcp_relict_hedge_raw3,
+    fcp_relict_hedge_raw,
 )
 from .fcp_tree_detection import (
     fcp_tree_detection_raw,
@@ -204,5 +204,3 @@ from .wfm import (
     wfm_info,
     wfm_parcels,
 )
-
-__all__ = globals().values()

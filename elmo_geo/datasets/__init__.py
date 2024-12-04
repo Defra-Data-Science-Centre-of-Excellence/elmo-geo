@@ -6,8 +6,13 @@ from pathlib import Path
 from elmo_geo import register
 from elmo_geo.utils.log import LOG
 
-from ._catalogue import *  # noqa: F403
-from ._catalogue import __all__ as catalogue
+from . import _catalogue
+
+catalogue = [getattr(_catalogue, name) for name in dir(_catalogue) if not name.startswith("_")]
+
+# import datasets to this namespace
+for obj in catalogue:
+    locals()[obj.name] = obj
 
 
 def write_catalogue_json():
