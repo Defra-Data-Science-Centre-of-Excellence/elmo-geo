@@ -59,8 +59,8 @@ test_derived_dataset = DerivedDataset(
 
 test_derived_from_source_dataset = DerivedDataset(
     name="test_derived_from_source_dataset",
-    level0="test",
-    level1="test",
+    medallion="test",
+    source="test",
     restricted=False,
     is_geo=False,
     func=lambda dataset: dataset.pdf().assign(val_derived=dataset.pdf()["val"] * 10),
@@ -71,8 +71,8 @@ test_derived_from_source_dataset = DerivedDataset(
 
 test_derived_from_derived_dataset = DerivedDataset(
     name="test_derived_from_derived_dataset",
-    level0="test",
-    level1="test",
+    medallion="test",
+    source="test",
     restricted=False,
     is_geo=False,
     func=lambda dataset: dataset.pdf().assign(val_derived=dataset.pdf()["val"] * 10),

@@ -443,8 +443,8 @@ class RasterDataset(Dataset):
         """A dictionary representation of the dataset."""
         return dict(
             name=self.name,
-            level0=self.level0,
-            level1=self.level1,
+            medallion=self.medallion,
+            source=self.source,
             restricted=self.restricted,
             path=self.path,
             type=str(type(self)),
@@ -501,8 +501,8 @@ class SourceSingleFileRasterDataset(RasterDataset):
         """A dictionary representation of the dataset."""
         return dict(
             name=self.name,
-            level0=self.level0,
-            level1=self.level1,
+            medallion=self.medallion,
+            source=self.source,
             restricted=self.restricted,
             path=self.path,
             type=str(type(self)),
@@ -548,8 +548,8 @@ class DerivedRasterDataset(RasterDataset):
         """A dictionary representation of the dataset."""
         return dict(
             name=self.name,
-            level0=self.level0,
-            level1=self.level1,
+            medallion=self.medallion,
+            source=self.source,
             restricted=self.restricted,
             path=self.path,
             type=str(type(self)),
