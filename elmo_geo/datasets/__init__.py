@@ -270,7 +270,7 @@ catalogue = [
     ewco_sensitivity_raw,
     ewco_sensitivity_parcels,
     fcp_habitat_creation_type_parcel,
-    fcp_tree_detection_raw,
+    fcp_tree_detection_raw,   # temporary,for BTO data request
     fcp_is_phi_parcel,
     fcp_relict_hedge_raw,  # temporary, until methodology is reproduced
     flood_risk_areas_parcels,
