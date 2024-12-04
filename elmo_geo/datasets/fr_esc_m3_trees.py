@@ -348,7 +348,7 @@ def _join_esc_outputs(
 ) -> SparkDataFrame:
     """Joins parcels to ESC outputs using 1km BNG tiles.
 
-    Exludes ESC data for scenarios and tiles with have missing carbon values, as per EVAST methodology.
+    Excludes ESC data for scenarios and tiles with have missing carbon values, as per EVAST methodology.
     """
     # Scenarios and tiles with non-zero carbon values for at least one time period.
     sdf_esc_valid_scenario_tiles = (
@@ -472,7 +472,7 @@ class ESCCarbonParcels(DataFrameModel):
         id_parcel: Parcel ID
         nopeat_area: Geographic area of parcel excluding intersecting peaty soils geometries.
         woodland_type: Type of woodland modelled.
-        rcp: Representating concetration pathway scenario (i.e cliamte change scenario)
+        rcp: Representing concetration pathway scenario (i.e cliamte change scenario)
         period_AA_T1: Time periods for annual average (AA) and T1 carbon values
         period_T2: period_T2: Time periods for T2 carbon values: 2021_2028, 2021_2036, 2021_2050, 2021_2100
         period_AA_T1_duration: Number of years in each time period (AA_T1)
@@ -709,7 +709,7 @@ class ESCSpeciesParcels(DataFrameModel):
         id_parcel: Parcel ID
         nopeat_area: Geographic area of parcel excluding intersecting peaty soils geometries.
         woodland_type: Type of woodland modelled.
-        rcp: Representating concetration pathway scenario (i.e cliamte change scenario)
+        rcp: Representing concetration pathway scenario (i.e cliamte change scenario)
         period_AA_T1: Time periods for annual average (AA) and T1 carbon values
         period_T2: period_T2: Time periods for T2 carbon values: 2021_2028, 2021_2036, 2021_2050, 2021_2100
         period_AA_T1_duration: Number of years in each time period (AA_T1)

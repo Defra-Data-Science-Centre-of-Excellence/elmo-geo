@@ -8,7 +8,7 @@ def run_with_retry(notebook: str, timeout_seconds: int = 8000, max_retries: int 
     Parameters
     ----------
     notebook: The notebook you would like to run
-    timeout_seonds: the number of seconds it will take before it times out
+    timeout_seconds: the number of seconds it will take before it times out
     max_retries: number of retries the notebook will try
 
     Returns: The finished notebook

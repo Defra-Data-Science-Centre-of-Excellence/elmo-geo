@@ -351,7 +351,7 @@ def sort_datasets_by_usefulness(datasets: List[str]) -> List[str]:
     Parameters:
         datasets: A list of full paths to dataset folders
     Returns:
-        The list fo datasets sorted by descending usefulness.
+        The list of datasets sorted by descending usefulness.
 
     Usefulness is the proportion that is estimated to have bare soil or vegetation
     """

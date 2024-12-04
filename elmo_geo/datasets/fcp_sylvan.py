@@ -48,5 +48,5 @@ Further details on the methodology as below.
 The classification rules:
 1. Split parcel boundary into straght line segments
 2. Exclude segments <2m from relict classification
-3. Classify remaining sements if >30% of segment is intersected by tree canopy
+3. Classify remaining segments if >30% of segment is intersected by tree canopy
 """
