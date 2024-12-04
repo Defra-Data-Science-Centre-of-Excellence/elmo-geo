@@ -103,7 +103,11 @@ from .fcp_habitat_classification import (
     fcp_habitat_creation_type_parcel,
     fcp_is_phi_parcel,
 )
+from .fcp_parcels_geojson import reference_parcels_bng_geojson
 from .fcp_sylvan import fcp_relict_hedge_raw
+from .fcp_tree_detection import (
+    fcp_tree_detection_raw,
+)
 from .fr_esc_m3_trees import (
     esc_carbon_parcels,
     esc_carbon_parcels_w_50yr_total,
@@ -267,6 +271,7 @@ catalogue = [
     ewco_sensitivity_raw,
     ewco_sensitivity_parcels,
     fcp_habitat_creation_type_parcel,
+    fcp_tree_detection_raw,  # temporary,for BTO data request
     fcp_is_phi_parcel,
     fcp_relict_hedge_raw,  # temporary, until methodology is reproduced
     flood_risk_areas_parcels,
@@ -313,6 +318,7 @@ catalogue = [
     reference_parcels_raw_no_sbi,
     reference_parcels_raw,
     reference_parcels,
+    reference_parcels_bng_geojson,
     region_parcels,
     region_raw,
     rpa_land_cover_codes_raw,
