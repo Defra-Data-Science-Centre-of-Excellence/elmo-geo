@@ -108,13 +108,15 @@ def sync_datasets(catalogue: list[Dataset]):
 
     count = 0
     for dataset in catalogue:
-        path = root + dataset.path.split("ELM-Project/")[1]
-        path = path.replace("/silver/", "/gold/")  # TODO: Issue #320
-        path_latest = "-".join(path.split("-")[:-2]) + "-latest.parquet"
-        if not dataset.is_geo and isinstance(dataset, DerivedDataset) and dataset.is_fresh and path not in s3_files:
-            LOG.info(f"Exporting {dataset.name} to {s3.bucket}. Path: {path}")
-            df = dataset.pdf()
-            s3.write_file(df, path)
-            s3.copy_obj(path, path_latest)
-            count += 1
+        if not dataset.is_geo and isinstance(dataset, DerivedDataset) and dataset.is_fresh:
+            path = root + dataset.path.split("ELM-Project/")[1]
+            path = path.replace("/silver/", "/gold/")  # TODO: Issue #320
+            path_latest = "-".join(path.split("-")[:-2]) + "-latest.parquet"
+
+            if path not in s3_files:
+                LOG.info(f"Exporting {dataset.name} to {s3.bucket}. Path: {path}")
+                df = dataset.pdf()
+                s3.write_file(df, path)
+                s3.copy_obj(path, path_latest)
+                count += 1
     LOG.info(f"Exported {count} datasets to {s3.bucket}.")

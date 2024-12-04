@@ -48,6 +48,10 @@ from .defra_priority_habitats import (
     defra_priority_habitat_england_raw,
     defra_priority_habitat_parcels,
 )
+from .ea_alert import (
+    ea_olf_parcels,
+    ea_olf_raw,
+)
 from .ea_flood_risk_mapping import (
     ea_fz3_parcels,
     ea_fz3_raw,
@@ -99,7 +103,11 @@ from .fcp_habitat_classification import (
     fcp_habitat_creation_type_parcel,
     fcp_is_phi_parcel,
 )
+from .fcp_parcels_geojson import reference_parcels_bng_geojson
 from .fcp_sylvan import fcp_relict_hedge_raw
+from .fcp_tree_detection import (
+    fcp_tree_detection_raw,
+)
 from .fr_esc_m3_trees import (
     esc_carbon_parcels,
     esc_carbon_parcels_w_50yr_total,
@@ -186,6 +194,15 @@ from .rpa_reference_parcels import (
     reference_parcels_raw,
     reference_parcels_raw_no_sbi,
 )
+from .ukceh_fertilisers import (
+    ukceh_fertilisers_parcels,
+    ukceh_nitrogen_parcels,
+    ukceh_nitrogen_raw,
+    ukceh_phosphorus_parcels,
+    ukceh_phosphorus_raw,
+    ukceh_potassium_parcels,
+    ukceh_potassium_raw,
+)
 from .wfm import (
     wfm_farms,
     wfm_info,
@@ -218,10 +235,12 @@ catalogue = [
     defra_habitat_area_parcels,
     defra_priority_habitat_england_raw,
     defra_priority_habitat_parcels,
-    ea_rofrs_raw,
-    ea_rofrs_parcels,
     ea_fz3_raw,
     ea_fz3_parcels,
+    ea_olf_raw,
+    ea_olf_parcels,
+    ea_rofrs_raw,
+    ea_rofrs_parcels,
     esc_m3_geo,
     esc_m3_raw,
     esc_carbon_parcels,
@@ -252,6 +271,7 @@ catalogue = [
     ewco_sensitivity_raw,
     ewco_sensitivity_parcels,
     fcp_habitat_creation_type_parcel,
+    fcp_tree_detection_raw,  # temporary,for BTO data request
     fcp_is_phi_parcel,
     fcp_relict_hedge_raw,  # temporary, until methodology is reproduced
     flood_risk_areas_parcels,
@@ -298,6 +318,7 @@ catalogue = [
     reference_parcels_raw_no_sbi,
     reference_parcels_raw,
     reference_parcels,
+    reference_parcels_bng_geojson,
     region_parcels,
     region_raw,
     rpa_land_cover_codes_raw,
@@ -307,6 +328,13 @@ catalogue = [
     sfi_agroforestry_parcels,
     sfi_agroforestry_raw,
     sfi_agroforestry,
+    ukceh_fertilisers_parcels,
+    ukceh_nitrogen_raw,
+    ukceh_nitrogen_parcels,
+    ukceh_phosphorus_raw,
+    ukceh_phosphorus_parcels,
+    ukceh_potassium_raw,
+    ukceh_potassium_parcels,
     ward_parcels,
     ward_raw,
     wetland_vision_parcels,

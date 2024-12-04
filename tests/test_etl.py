@@ -11,7 +11,7 @@ import pytest
 from elmo_geo import datasets, register
 from elmo_geo.datasets import catalogue
 from elmo_geo.etl import Dataset, DerivedDataset, SourceDataset
-from elmo_geo.etl.etl import DATE_FMT, PAT_DATE
+from elmo_geo.etl.etl import DATE_FMT, PAT_DATE, TabularDataset
 from elmo_geo.etl.transformations import pivot_long_sdf, pivot_wide_sdf
 from elmo_geo.st.udf import clean_geometries
 from elmo_geo.utils.dbr import spark
@@ -55,6 +55,30 @@ test_derived_dataset = DerivedDataset(
     dependencies=[],
 )
 """Test DerivedDataset
+"""
+
+test_derived_from_source_dataset = DerivedDataset(
+    name="test_derived_from_source_dataset",
+    level0="test",
+    level1="test",
+    restricted=False,
+    is_geo=False,
+    func=lambda dataset: dataset.pdf().assign(val_derived=dataset.pdf()["val"] * 10),
+    dependencies=[test_source_dataset],
+)
+"""Test DerivedDataset that is derived from a source dataset.
+"""
+
+test_derived_from_derived_dataset = DerivedDataset(
+    name="test_derived_from_derived_dataset",
+    level0="test",
+    level1="test",
+    restricted=False,
+    is_geo=False,
+    func=lambda dataset: dataset.pdf().assign(val_derived=dataset.pdf()["val"] * 10),
+    dependencies=[test_derived_from_source_dataset],
+)
+"""Test DerivedDataset that is derived from a derived dataset.
 """
 
 
@@ -116,7 +140,8 @@ def _dataset_date_is_most_recent(dataset):
     return all(date >= d for d in other_dates)
 
 
-def test_all_datasets_path_most_recent():
+@pytest.mark.dbr
+def test_tabular_datasets_path_most_recent():
     """For all datasets flagging as fresh in the catalogue, check that the path used is the most recent.
 
     Checks by using the date in the path rather than the modified time of the path because the dataset
@@ -124,7 +149,7 @@ def test_all_datasets_path_most_recent():
     """
     fails = []
     for dataset in catalogue:
-        if dataset.is_fresh:
+        if dataset.is_fresh & isinstance(dataset, TabularDataset):
             if not _dataset_date_is_most_recent(dataset):
                 fails.append(dataset)
     assert not fails, f"Not all datasets loading most recent files. Failing datasets: {[d.name for d in fails]}"
@@ -143,3 +168,37 @@ def test_source_dataset_geometry_cleaning():
 
     assert gs_raw_cleaned.is_valid.all()
     assert gs_raw_cleaned.geom_equals(gs_fresh.geometry, align=True).all()
+
+
+@pytest.mark.dbr
+def test_edit_source_dataset():
+    """Tests that a derived dataset is flagged as not fresh if the modification date of a source dataset changes."""
+
+    if not test_source_dataset.is_fresh:
+        test_source_dataset.refresh()
+    if not test_derived_from_source_dataset.is_fresh:
+        test_derived_from_source_dataset.refresh()
+    if not test_derived_from_derived_dataset.is_fresh:
+        test_derived_from_derived_dataset.refresh()
+
+    # record hash of original path for later checks
+    PAT = r"^(.*)-([\d_]{10})-(.{8}).parquet$"
+    hsh1 = re.search(PAT, test_derived_from_source_dataset.filename).groups()[2]
+    hsh2 = re.search(PAT, test_derived_from_derived_dataset.filename).groups()[2]
+
+    # Resave the source data to change the modificaton time
+    df = pd.read_parquet(test_source_dataset.source_path)
+    df.to_parquet(test_source_dataset.source_path)
+
+    assert not test_source_dataset.is_fresh
+    assert not test_derived_from_source_dataset.is_fresh
+    assert not test_derived_from_derived_dataset.is_fresh
+
+    # finish by refreshing
+    test_source_dataset.refresh()
+    test_derived_from_source_dataset.refresh()
+    test_derived_from_derived_dataset.refresh()
+
+    # hashes should have changed
+    assert hsh1 != re.search(PAT, test_derived_from_source_dataset.filename).groups()[2]
+    assert hsh2 != re.search(PAT, test_derived_from_derived_dataset.filename).groups()[2]
