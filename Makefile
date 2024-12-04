@@ -11,7 +11,7 @@ clean:
 
 install:
 	python -m pip install --upgrade pip setuptools wheel
-	pipx install "ruff<0.2" pip-tools
+	pipx install "ruff<0.2" pip-tools typos
 	pip install -r requirements.txt
 
 fmt:
@@ -33,18 +33,3 @@ verify:
 
 latest_clusters_log:
 	find /dbfs/cluster-logs/ -type f -name "*.stderr.log" | awk -F/ '{print $NF, $0}' | sort | awk '{print $2}' | tail -n1 | xargs cat
-
-install_spell:
-	echo 'Using: https://deb.nodesource.com/ to install nodejs, npm, and cspell.'
-	v=20
-	curl -sL https://deb.nodesource.com/setup_$v.x | sudo -E bash -
-	sudo apt-get install -y nodejs npm
-	sudo npm install -g cspell@latest
-	echo 'Installing: codespell.'
-	pipx install codespell
-
-cspell:
-	cspell . --words-only -u --quiet | tr '[:upper:]' '[:lower:]' | sort | uniq > data/dictionary-output.txt
-
-codespell:
-	codespell . -wsfL arange,hefer,hist,humber,jupyter,ons -i2
