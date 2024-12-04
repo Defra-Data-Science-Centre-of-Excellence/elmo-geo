@@ -33,3 +33,18 @@ verify:
 
 latest_clusters_log:
 	find /dbfs/cluster-logs/ -type f -name "*.stderr.log" | awk -F/ '{print $NF, $0}' | sort | awk '{print $2}' | tail -n1 | xargs cat
+
+install_spell:
+	echo 'Using: https://deb.nodesource.com/ to install nodejs, npm, and cspell.'
+	v=20
+	curl -sL https://deb.nodesource.com/setup_$v.x | sudo -E bash -
+	sudo apt-get install -y nodejs npm
+	sudo npm install -g cspell@latest
+	echo 'Installing: codespell.'
+	pipx install codespell
+
+cspell:
+	cspell . --words-only -u --quiet | tr '[:upper:]' '[:lower:]' | sort | uniq > data/dictionary-output.txt
+
+codespell:
+	codespell . -w -S "notebooks" -f -L arange,hist,jupyter,humber,ons,hefer -i3
