@@ -103,6 +103,7 @@ from .fcp_habitat_classification import (
     fcp_habitat_creation_type_parcel,
     fcp_is_phi_parcel,
 )
+from .fcp_parcels_geojson import reference_parcels_bng_geojson
 from .fcp_sylvan import fcp_relict_hedge_raw
 from .fr_esc_m3_trees import (
     esc_carbon_parcels,
@@ -185,7 +186,6 @@ from .rpa_land_cover import (
     rpa_land_cover_parcels,
     rpa_land_cover_parcels_raw,
 )
-from .fcp_parcels_geojson import reference_parcels_bng_geojson
 from .rpa_reference_parcels import (
     reference_parcels,
     reference_parcels_raw,

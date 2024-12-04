@@ -4,11 +4,8 @@ Used for aggregating and mapping.
 """
 
 import geopandas as gpd
-import pandas as pd
 from pandera import DataFrameModel, Field
 from pandera.dtypes import Int32
-from pyspark.sql.functions import pandas_udf
-from shapely import to_geojson
 
 from elmo_geo.etl import Dataset, DerivedDataset
 from elmo_geo.st.udf import st_to_geojson
@@ -39,6 +36,7 @@ class ReferenceParcelsGeojson(DataFrameModel):
     tile_10km: str = Field()
     geojson_100km: str = Field()
     tile_100km: str = Field()
+
 
 def _parcel_to_bng_geojson_lookup(parcels: Dataset, os_bng_raw: Dataset) -> gpd.GeoDataFrame:
     """Joins parcels to BNG gris based on parcel sheet ID and returns geosjon of grid tiles.
