@@ -6,6 +6,7 @@ from pathlib import Path
 from elmo_geo import register
 from elmo_geo.utils.log import LOG
 
+from ._catalogue import *  # noqa: F403
 from ._catalogue import __all__ as catalogue
 
 
