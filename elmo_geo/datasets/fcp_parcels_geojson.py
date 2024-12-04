@@ -4,11 +4,13 @@ Used for aggregating and mapping.
 """
 
 import geopandas as gpd
+import pandas as pd
 from pandera import DataFrameModel, Field
 from pandera.dtypes import Int32
+from pyspark.sql.functions import pandas_udf
+from shapely import to_geojson
 
 from elmo_geo.etl import Dataset, DerivedDataset
-from elmo_geo.st.udf import st_to_geojson
 
 from .os import os_bng_raw
 from .rpa_reference_parcels import reference_parcels
@@ -36,6 +38,14 @@ class ReferenceParcelsGeojson(DataFrameModel):
     tile_10km: str = Field()
     geojson_100km: str = Field()
     tile_100km: str = Field()
+
+
+def _st_to_geojson(col):
+    @pandas_udf("string")
+    def _udf(s: pd.Series) -> pd.Series:
+        return gpd.GeoSeries.from_wkb(s, crs=27700).to_crs(4326).map(to_geojson)
+
+    return _udf(col)
 
 
 def _parcel_to_bng_geojson_lookup(parcels: Dataset, os_bng_raw: Dataset) -> gpd.GeoDataFrame:
@@ -79,7 +89,7 @@ def _parcel_to_bng_geojson_lookup(parcels: Dataset, os_bng_raw: Dataset) -> gpd.
             "tile_1km",
             "tile_10km",
             "tile_100km",
-            *[st_to_geojson(f"geometry_{i}km").alias(f"geojson_{i}km") for i in [1, 10, 100]],
+            *[_st_to_geojson(f"geometry_{i}km").alias(f"geojson_{i}km") for i in [1, 10, 100]],
         )
     )
 

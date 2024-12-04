@@ -1,11 +1,9 @@
 from functools import partial
 
 import geopandas as gpd
-import pandas as pd
 from pyspark.sql import DataFrame as SparkDataFrame
 from pyspark.sql import functions as F
 from pyspark.sql import types as T
-from shapely import to_geojson
 
 from_wkb = partial(gpd.GeoSeries.from_wkb, crs=27700)
 
@@ -91,8 +89,3 @@ def st_union(sdf: SparkDataFrame, keys: list[str] | str = ["id_parcel"], col: st
 
     _sdf = sdf.select(*keys, col).withColumn(col, F.expr(f"ST_AsBinary({col})"))
     return _sdf.groupby(keys).applyInPandas(_fn, _sdf.schema).withColumn(col, F.expr(f"ST_GeomFromWKB({col})"))
-
-
-@F.pandas_udf("string")
-def st_to_geojson(s: pd.Series) -> pd.Series:
-    return gpd.GeoSeries.from_wkb(s, crs=27700).to_crs(4326).map(to_geojson)
