@@ -18,8 +18,8 @@ from elmo_geo.utils.dbr import spark
 
 test_source_dataset = SourceDataset(
     name="test_source_dataset",
-    level0="test",
-    level1="test",
+    medallion="test",
+    source="test",
     restricted=False,
     is_geo=False,
     source_path="/dbfs/mnt/lab/unrestricted/elm_data/test/test_dataset.parquet",
@@ -29,8 +29,8 @@ test_source_dataset = SourceDataset(
 
 test_source_geodataset = SourceDataset(
     name="test_source_geodataset",
-    level0="test",
-    level1="test",
+    medallion="test",
+    source="test",
     restricted=False,
     is_geo=True,
     source_path="/dbfs/mnt/lab/unrestricted/elm_data/test/test_geodataset.gpkg",
@@ -47,8 +47,8 @@ def _make_test_dataset():
 
 test_derived_dataset = DerivedDataset(
     name="test_derived_dataset",
-    level0="test",
-    level1="test",
+    medallion="test",
+    source="test",
     restricted=False,
     is_geo=False,
     func=_make_test_dataset,
@@ -59,8 +59,8 @@ test_derived_dataset = DerivedDataset(
 
 test_derived_from_source_dataset = DerivedDataset(
     name="test_derived_from_source_dataset",
-    level0="test",
-    level1="test",
+    medallion="test",
+    source="test",
     restricted=False,
     is_geo=False,
     func=lambda dataset: dataset.pdf().assign(val_derived=dataset.pdf()["val"] * 10),
@@ -71,8 +71,8 @@ test_derived_from_source_dataset = DerivedDataset(
 
 test_derived_from_derived_dataset = DerivedDataset(
     name="test_derived_from_derived_dataset",
-    level0="test",
-    level1="test",
+    medallion="test",
+    source="test",
     restricted=False,
     is_geo=False,
     func=lambda dataset: dataset.pdf().assign(val_derived=dataset.pdf()["val"] * 10),

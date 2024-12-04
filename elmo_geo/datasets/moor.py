@@ -41,8 +41,8 @@ class MoorlineRaw(DataFrameModel):
 
 moorline_raw = SourceDataset(
     name="moorline_raw",
-    level0="bronze",
-    level1="rpa",
+    medallion="bronze",
+    source="rpa",
     model=MoorlineRaw,
     restricted=False,
     source_path="/dbfs/mnt/base/unrestricted/source_rpa_spatial_data_mart/dataset_lfa_and_moorland_line/format_GEOPARQUET_lfa_and_moorland_line/LATEST_lfa_and_moorland_line/",
@@ -66,8 +66,8 @@ class MoorlineParcel(DataFrameModel):
 moorline_parcels = DerivedDataset(
     is_geo=False,
     name="moorline_parcels",
-    level0="silver",
-    level1="rpa",
+    medallion="silver",
+    source="rpa",
     restricted=False,
     func=partial(sjoin_parcel_proportion, columns=["name"]),
     dependencies=[reference_parcels, moorline_raw],
@@ -103,8 +103,8 @@ def _is_upland(reference_parcels: DerivedDataset, moorline_parcels: DerivedDatas
 is_upland_parcels = DerivedDataset(
     is_geo=False,
     name="is_upland_parcels",
-    level0="silver",
-    level1="rpa",
+    medallion="silver",
+    source="rpa",
     restricted=False,
     func=_is_upland,
     dependencies=[reference_parcels, moorline_parcels],

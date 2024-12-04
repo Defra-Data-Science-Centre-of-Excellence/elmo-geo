@@ -39,8 +39,8 @@ class OSNGDRaw(DataFrameModel):
 
 os_ngd_raw = SourceGlobDataset(
     name="os_ngd_raw",
-    level0="bronze",
-    level1="os",
+    medallion="bronze",
+    source="os",
     model=OSNGDRaw,
     restricted=True,
     glob_path="/dbfs/mnt/base/restricted/source_ordnance_survey_data_hub/dataset_ngd*/format_GPKG*/LATEST_*/*.gpkg",
@@ -66,8 +66,8 @@ class OSBNGModel(DataFrameModel):
 
 os_bng_raw = SourceDataset(
     name="os_bng_raw",
-    level0="bronze",
-    level1="os",
+    medallion="bronze",
+    source="os",
     restricted=False,
     source_path="/dbfs/mnt/lab/unrestricted/ELM-Project/raw/os_bng_grids.gpkg",
     model=OSBNGModel,
@@ -97,8 +97,8 @@ class OSBNGParcelsModel(DataFrameModel):
 
 os_bng_parcels = DerivedDataset(
     name="os_bng_parcels",
-    level0="silver",
-    level1="os",
+    medallion="silver",
+    source="os",
     restricted=False,
     is_geo=False,
     model=OSBNGParcelsModel,

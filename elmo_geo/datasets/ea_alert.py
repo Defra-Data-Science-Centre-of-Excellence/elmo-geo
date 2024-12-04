@@ -56,8 +56,8 @@ class OlfRaw(DataFrameModel):
 
 ea_olf_raw = SourceDataset(
     name="ne_olf_raw",
-    level0="silver",
-    level1="ea",
+    medallion="silver",
+    source="ea",
     model=OlfRaw,
     restricted=True,
     source_path="/dbfs/mnt/lab/restricted/ELM-Project/bronze/ea-overland_flow-2024_06_19_direct.parquet",
@@ -135,8 +135,8 @@ def _transform(parcels: Dataset, olf: Dataset):
 
 ea_olf_parcels = DerivedDataset(
     name="ea_olf_parcels",
-    level0="gold",
-    level1="ea",
+    medallion="gold",
+    source="ea",
     model=OlfParcel,
     restricted=True,
     func=_transform,

@@ -31,8 +31,8 @@ class FCPTreeDetectionsRaw(DataFrameModel):
 
 fcp_tree_detection_raw = SourceDataset(
     name="fcp_tree_detection_raw",
-    level0="bronze",
-    level1="fcp",
+    medallion="bronze",
+    source="fcp",
     model=FCPTreeDetectionsRaw,
     restricted=False,
     is_geo=False,

@@ -172,8 +172,8 @@ class ESCM3WoodlandScenariosRaw(DataFrameModel):
 
 
 esc_m3_raw = SourceGlobDataset(
-    level0="bronze",
-    level1="forest_research",
+    medallion="bronze",
+    source="forest_research",
     restricted=False,
     is_geo=False,
     model=ESCM3WoodlandScenariosRaw,
@@ -244,8 +244,8 @@ class ESCGeoModel(DataFrameModel):
 
 esc_m3_geo = DerivedDataset(
     name="esc_m3_geo",
-    level0="silver",
-    level1="forest_research",
+    medallion="silver",
+    source="forest_research",
     restricted=False,
     dependencies=[os_bng_raw, esc_m3_raw],
     func=_transform,
@@ -324,8 +324,8 @@ class NoPeatParcelBNGModel(DataFrameModel):
 
 os_bng_no_peat_parcels = DerivedDataset(
     name="os_bng_no_peat_parcels",
-    level0="silver",
-    level1="os",
+    medallion="silver",
+    source="os",
     restricted=False,
     is_geo=False,
     dependencies=[
@@ -566,8 +566,8 @@ class ESCCarbonParcels(DataFrameModel):
 
 esc_carbon_parcels = DerivedDataset(
     name="esc_carbon_parcels",
-    level0="silver",
-    level1="forest_research",
+    medallion="silver",
+    source="forest_research",
     restricted=False,
     is_geo=False,
     dependencies=[
@@ -689,8 +689,8 @@ def _add_50_year_carbon_totals_and_filter(esc_carbon_parcels: DerivedDataset) ->
 
 esc_carbon_parcels_w_50yr_total = DerivedDataset(
     name="esc_carbon_parcels_w_50yr_total",
-    level0="gold",
-    level1="forest_research",
+    medallion="gold",
+    source="forest_research",
     restricted=False,
     is_geo=False,
     dependencies=[esc_carbon_parcels],
@@ -759,8 +759,8 @@ class ESCSpeciesParcels(DataFrameModel):
 
 esc_species_parcels = DerivedDataset(
     name="esc_species_parcels",
-    level0="silver",
-    level1="forest_research",
+    medallion="silver",
+    source="forest_research",
     restricted=False,
     is_geo=False,
     dependencies=[

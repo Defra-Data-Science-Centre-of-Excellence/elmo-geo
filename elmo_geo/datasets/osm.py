@@ -37,8 +37,8 @@ class OSMRaw(DataFrameModel):
 
 osm_raw = SourceGlobDataset(
     name="osm_raw",
-    level0="bronze",
-    level1="osm",
+    medallion="bronze",
+    source="osm",
     model=OSMRaw,
     restricted=False,
     glob_path="/dbfs/mnt/base/unrestricted/source_openstreetmap/dataset_united_kingdom/format_PBF_united_kingdom/LATEST_united_kingdom/united-kingdom-latest.osm.pbf",
@@ -88,8 +88,8 @@ class OSMTidy(DataFrameModel):
 
 osm_tidy = DerivedDataset(
     name="osm_tidy",
-    level0="silver",
-    level1="osm",
+    medallion="silver",
+    source="osm",
     model=OSMTidy,
     restricted=False,
     func=_osm_transform,
