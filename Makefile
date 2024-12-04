@@ -47,4 +47,4 @@ cspell:
 	cspell . --words-only -u --quiet | tr '[:upper:]' '[:lower:]' | sort | uniq > data/dictionary-output.txt
 
 codespell:
-	codespell . -wsfL arange,hefer,hist,humber,jupyter,ons
+	codespell . -wsfL arange,hefer,hist,humber,jupyter,ons -i3
