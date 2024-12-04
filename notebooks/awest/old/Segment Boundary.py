@@ -161,7 +161,7 @@ sdf_boundary = (
         """ST_CollectionExtract(ST_Collect(
             ST_Boundary(geometry_parcel),
             ST_Intersection(ST_Boundary(geometry), geometry_parcel)
-        ), 2) AS geometry""",  # bounaries around and inside, drop points
+        ), 2) AS geometry""",  # boundaries around and inside, drop points
     )
     .transform(
         to_gpq,

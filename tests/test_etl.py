@@ -186,7 +186,7 @@ def test_edit_source_dataset():
     hsh1 = re.search(PAT, test_derived_from_source_dataset.filename).groups()[2]
     hsh2 = re.search(PAT, test_derived_from_derived_dataset.filename).groups()[2]
 
-    # Resave the source data to change the modificaton time
+    # Resave the source data to change the modification time
     df = pd.read_parquet(test_source_dataset.source_path)
     df.to_parquet(test_source_dataset.source_path)
 

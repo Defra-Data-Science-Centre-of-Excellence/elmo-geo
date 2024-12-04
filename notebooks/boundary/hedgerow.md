@@ -1,6 +1,6 @@
 # Hedgerows in England
 Disclaimer: This is the understanding of Andrew.West@defra.gov.uk, please correct me.  Last Updated: 2024-04-24.  
-In this documented, I am exploring the possible data alternatives to RPA's Hedge dataset, which seems ill-suited for montioring purposes.  
+In this documented, I am exploring the possible data alternatives to RPA's Hedge dataset, which seems ill-suited for monitoring purposes.  
 
 
 ### Questions
@@ -20,7 +20,7 @@ In this documented, I am exploring the possible data alternatives to RPA's Hedge
     - Relict hedge
     - Tree line / linear woodland
     - HWS (Hedge, Wood, Scrub) - teagasc terminology
-    - Wall / other heritage bufferables: Devon bank/Cornish hedge, dry stone wall, relict sites, archeological sites.
+    - Wall / other heritage bufferables: Devon bank/Cornish hedge, dry stone wall, relict sites, archaeological sites.
 
 - **Top 5 Hedgerow Projects in 2024**
     - **FR - NCEA: Trees Outside Woodland**
@@ -51,10 +51,10 @@ In this documented, I am exploring the possible data alternatives to RPA's Hedge
 | Restricted | Bluesky | Aerial Photography |  | Imagery | Aerial + Satellite |  | Raster
 | Restricted | Bluesky | Tree Map | ? | ? | Similar to VOM - Tree Detection | https://bluesky-world.com/ntm/ | Point
 | Open | EA | Vegetation Object Model | 2021 | poor | Raster, LiDAR post-processed to provide a canopy height model.  Excludes vegetation under 2.5m. | https://environment.data.gov.uk/dataset/ecae3bef-1e1d-4051-887b-9dc613c928ec |  Raster
-| PSGA | OS | Master Map | Superceeded by NGD | little hedge data |  |  | Vector
+| PSGA | OS | Master Map | Superseded by NGD | little hedge data |  |  | Vector
 | PSGA | OS | NGD |  | no hedge data |  |  | Vector
 | Open | OSM | boundary:hedge |  | sparce data | crowd sourced |  | Vector
-| Restricted | RPA | Hedge Managed | Superceeded by Control | fine | OS Field Boundaries + AES Agreements |  | Linear
+| Restricted | RPA | Hedge Managed | Superseded by Control | fine | OS Field Boundaries + AES Agreements |  | Linear
 | Restricted | RPA | Hedge Control |  | fine | Tidied RPA - Hedge Managed, eligible hedges only |  | Linear
 | Restricted | RPA | Classified Hedges | WIP | best | AI image recognition model using Sentinel + NE - LiDAR + AES Agreements, verified against RPA - Hedge Control |  | Polygon
 | Restricted | FR | NCEA: Trees Outside Woodland | V2  | fine | Bluesky National Tree Map plus classification of aerial photography.  Hedgerows over 20m long, under 4m wide, and under 3m tall included. 336,000 km of hedgerow in England. | Ben.Ditchburn@ncea.gov.uk, Freddie.Hunter@forestresearch.gov.uk | Polygon

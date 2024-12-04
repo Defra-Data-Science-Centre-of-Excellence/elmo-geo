@@ -150,7 +150,7 @@ boundary_hedgerows = DerivedDataset(
 
 # Water
 def fn_pre_water(sdf: SparkDataFrame) -> SparkDataFrame:
-    return sdf.filter("theme = 'Water' AND description NOT LIKE '%Catchment'").transform(st_clean, tollerance=2)
+    return sdf.filter("theme = 'Water' AND description NOT LIKE '%Catchment'").transform(st_clean, tolerance=2)
 
 
 boundary_water_2m = DerivedDataset(
@@ -163,7 +163,7 @@ boundary_water_2m = DerivedDataset(
     dependencies=[reference_parcels, boundary_segments, os_ngd_raw],
     is_geo=False,
 )
-"""Proportion of parcel boundary segmetns intersected by simplified waterbody geometries.
+"""Proportion of parcel boundary segments intersected by simplified waterbody geometries.
 
 Simplified to 2m.
 """

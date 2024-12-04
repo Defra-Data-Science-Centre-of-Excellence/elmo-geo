@@ -210,7 +210,7 @@ gdf_seg = gpd.GeoDataFrame(gdf_seg, geometry="geometry")
 f, ax = plt.subplots(figsize=(10, 10))
 for pid in gdf_seg["id_parcel"].unique():
     sub = gdf_seg.loc[gdf_seg["id_parcel"] == pid]
-    norm = mpl.colors.Normalize(vmin=min(sub["rn"]), vmax=max(sub["rn"]))
+    norm = mpl.colors.Normalise(vmin=min(sub["rn"]), vmax=max(sub["rn"]))
     sub.plot(ax=ax, column="rn", norm=norm)
 
 # COMMAND ----------
@@ -385,7 +385,7 @@ ax.set_title("Mapped and relict hedgerow length by OS grid, England", fontsize=2
 
 f.supxlabel(
     """
-    Source: Environment Agency Vegitation Object Model $1m^2$, National Forest Inventory, Rural Payments Agency EFA Hedges
+    Source: Environment Agency Vegetation Object Model $1m^2$, National Forest Inventory, Rural Payments Agency EFA Hedges
     Definitions: Relict classification based on 30% of boundary segment being intersected by tree crowns
     """,
     x=0.09,
@@ -442,7 +442,7 @@ ax.set_title("Mapped and relict hedgerow length, England", fontsize=22, loc="lef
 f.supxlabel(
     """
     Units: million metres
-    Source: Environment Agency Vegitation Object Model $1m^2$
+    Source: Environment Agency Vegetation Object Model $1m^2$
     National Forest Inventory, Rural Payments Agency EFA Hedges
     """,
     x=0.090,
@@ -462,13 +462,13 @@ def stacked_bar_parcel_counts(data: pd.Series, title: str, names: list):
     sns.set_style("whitegrid")
     sns.set_context("talk")
 
-    # Initialize the matplotlib figure
+    # Initialise the matplotlib figure
     f, ax = plt.subplots(figsize=(20, 6))
 
     data = data[list(names.keys())]
 
     # Plot the total crashes
-    norm = mpl.colors.Normalize(-1, len(data) + 1)
+    norm = mpl.colors.Normalise(-1, len(data) + 1)
     for i, (label, value) in enumerate(data.sort_values(ascending=False).items()):
         c_val = norm(i)
         p_val = value / data.sort_values(ascending=False).iloc[0]
@@ -500,7 +500,7 @@ def stacked_bar_parcel_counts(data: pd.Series, title: str, names: list):
     f.supxlabel(
         """
         Units: million metres
-        Source: Environment Agency Vegitation Object Model $1m^2$, National Forest Inventory, Rural Payments Agency EFA Hedges
+        Source: Environment Agency Vegetation Object Model $1m^2$, National Forest Inventory, Rural Payments Agency EFA Hedges
         Definitions: Wooded classification based on length of parcel boundaries intersected by NFI Woodland.
         Relict classification based on 30% of boundary segment being intersected by tree crowns.""",
         x=0.09,

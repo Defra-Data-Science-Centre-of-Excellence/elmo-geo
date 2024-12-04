@@ -1,5 +1,5 @@
 # Databricks notebook source
-"""Demo notebook for new ETL catalog."""
+"""Demo notebook for new ETL catalogue."""
 from elmo_geo import register
 from elmo_geo.datasets import write_catalogue_json
 
@@ -12,5 +12,5 @@ register()
 
 # COMMAND ----------
 
-# write the catalog to json
+# write the catalogue to json
 write_catalogue_json()

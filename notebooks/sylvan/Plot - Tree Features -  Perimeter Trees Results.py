@@ -413,7 +413,7 @@ df_results[["perim_trees_length", "perim_trees_length"]].describe()
 # MAGIC
 # MAGIC ## Method to get features
 # MAGIC
-# MAGIC Compare their results to the step-by-step appraoch used above
+# MAGIC Compare their results to the step-by-step approach used above
 
 # COMMAND ----------
 

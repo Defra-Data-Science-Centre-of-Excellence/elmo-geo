@@ -33,16 +33,16 @@ def st_udf(sdf: SparkDataFrame, fn: callable, geometry_column: str = "geometry",
     )
 
 
-def clean_geometries(gs: gpd.GeoSeries, tollerance=1) -> gpd.GeoSeries:
-    return gs.force_2d().simplify(tollerance).make_valid().set_precision(1).remove_repeated_points(1).make_valid()
+def clean_geometries(gs: gpd.GeoSeries, tolerance=1) -> gpd.GeoSeries:
+    return gs.force_2d().simplify(tolerance).make_valid().set_precision(1).remove_repeated_points(1).make_valid()
 
 
-def st_clean(sdf: SparkDataFrame, column: str = "geometry", tollerance=1) -> SparkDataFrame:
+def st_clean(sdf: SparkDataFrame, column: str = "geometry", tolerance=1) -> SparkDataFrame:
     """Clean a spark geometry field to chosen precision using GeoPandas functions.
 
     Default precision is 1m.
     """
-    return sdf.transform(st_udf, partial(clean_geometries, tollerance=tollerance), geometry_not_geoseries=False)
+    return sdf.transform(st_udf, partial(clean_geometries, tolerance=tolerance), geometry_not_geoseries=False)
 
 
 @F.udf(T.ArrayType(T.BinaryType()))

@@ -63,9 +63,9 @@ ignore = ["D203", "D212", "COM812", "ISC001"]  # Conflict
 
 [tool.typos.files]
 extend-exclude = [
-    #"elmo_geo",
-    #"notebooks",
-    #"tests",
+    "elmo_geo",
+    "notebooks",
+    "tests",
 ]
 
 [tool.typos.default]

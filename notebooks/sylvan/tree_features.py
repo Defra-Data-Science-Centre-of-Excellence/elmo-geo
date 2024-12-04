@@ -420,7 +420,7 @@ def get_perimeter_trees_features(
 
     Returns
     -------
-    SparkDataFrame: Counts of perimeter trees and length of parcel permieter intersected by tree crowns per parcel.
+    SparkDataFrame: Counts of perimeter trees and length of parcel perimeter intersected by tree crowns per parcel.
     """
     # Set geometries to use in spatial join
     global buf
@@ -471,7 +471,7 @@ def get_interior_trees_features(
 ) -> Tuple[SparkDataFrame]:
     """
     Produces the parcel interior trees features. This is the number of trees in the interior of the parcel,
-    defined as the differece between the parcel geometry and the buffered parcel perimeter.
+    defined as the difference between the parcel geometry and the buffered parcel perimeter.
 
     Parameters
     ----------
@@ -646,7 +646,7 @@ def get_parcel_tree_features(
     treesDF = treesDF.withColumn("top_point", F.expr("ST_GeomFromWKT(top_point)"))
     hrDF = hrDF.withColumnRenamed("geometry", "geometry_hedge")
 
-    # Recod names of tree feature metrics
+    # Record names of tree feature metrics
     allFeatureNames = []
 
     parcelPerimTreesDF = get_perimeter_trees_features(spark, treesDF, parcelsDF, parcelBufferDistances, double_count=double_count)

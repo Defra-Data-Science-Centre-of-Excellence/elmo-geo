@@ -304,7 +304,7 @@ def get_winter_datasets(yearend: int, tile: str) -> List[str]:
 
 
 def get_image_usefulness(path: str) -> float:
-    """Return an estimate for the % usefull pixels for bare soils analysis in a dataset
+    """Return an estimate for the % useful pixels for bare soils analysis in a dataset
     Usefulness is defined as the sum of vegetation and bare soil as a % of total pixels.
     It is read from the dataset's metadata in the `MTD_MSIL2A.xml` file
     Parameters:
@@ -347,11 +347,11 @@ def get_image_radiometric_offset(path: str, band: str) -> float:
 
 
 def sort_datasets_by_usefulness(datasets: List[str]) -> List[str]:
-    """Sort the dataset paths by decending usefulness
+    """Sort the dataset paths by descending usefulness
     Parameters:
         datasets: A list of full paths to dataset folders
     Returns:
-        The list fo datasets sorted by decending usefulness.
+        The list fo datasets sorted by descending usefulness.
 
     Usefulness is the proportion that is estimated to have bare soil or vegetation
     """
@@ -466,7 +466,7 @@ def sort_datasets_by_time(datasets: List[str]) -> List[str]:
     Using regex, we have isolated is date in yyyymmdd form from the file name
     """
     regex = r"(?!_)([0-9]{8})(T[0-9]{6}_N?)"
-    # sorts dataset by decending date
+    # sorts dataset by descending date
     ds_names_sorted = sorted(
         datasets,
         key=lambda x: re.search(regex, x).group(1),

@@ -4,7 +4,7 @@ from pandera.dtypes import Float64
 from elmo_geo.etl import SourceDataset
 
 
-# Tree Detctions Dataset - potentially temporay data used for a specific BTO request
+# Tree Detections Dataset - potentially temporary data used for a specific BTO request
 class FCPTreeDetectionsRaw(DataFrameModel):
     """Model for raw tree detection data before parcel joins and counts.
     Attributes:

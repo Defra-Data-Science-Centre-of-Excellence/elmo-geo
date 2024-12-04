@@ -45,11 +45,11 @@ The raw ESC model outputs for carbon and tree species are aggregated to parcels 
 
 There are three main steps to the methodology:
 1. Remove peat areas from parcel geometries.
-2. Intersect parcel geoemtries with the 1km BNG grid
+2. Intersect parcel geometries with the 1km BNG grid
 3. Assign parcels the weighted average of ESC outputs, based on the proportion of each 1km grid overlapping the parcel.
 
 Steps 1. and 2. are implemented by producing the `os_bng_no_peat_parcels` dataset. Step 3. is performed separately for
-the carbon and species varables, producing the `esc_species_parcels` and `esc_carbon_parcels` datasets.
+the carbon and species variables, producing the `esc_species_parcels` and `esc_carbon_parcels` datasets.
 
 [^1] [Forest Research - Ecological Site Classification](https://www.forestresearch.gov.uk/tools-and-resources/fthr/ecological-site-classification)
 """
@@ -359,7 +359,7 @@ def _join_esc_outputs(
         .dropDuplicates()
     )
 
-    # Also exclude any remainging scenarios where species values are all null (don't expect any at this stage)
+    # Also exclude any remaining scenarios where species values are all null (don't expect any at this stage)
     return (
         sdf_parcel_tiles.join(sdf_esc.drop("geometry", "layer"), on="tile_name", how="inner")
         .join(sdf_esc_valid_scenario_tiles, on=["tile_name", "rcp", "woodland_type"], how="inner")
@@ -368,7 +368,7 @@ def _join_esc_outputs(
 
 
 def _aggregate_carbon_values(sdf_parcel_esc: SparkDataFrame) -> SparkDataFrame:
-    """Aggregate ESC carbon values to parcels by calcualting the weighted sum across 1km tiles."""
+    """Aggregate ESC carbon values to parcels by calculating the weighted sum across 1km tiles."""
     groupby_cols = [
         "id_parcel",
         "nopeat_area",
@@ -718,7 +718,7 @@ class ESCSpeciesParcels(DataFrameModel):
         species: Tree species. OPENSPACE refers to open space where trees are not growing.
         area: Proportion of no peat parcel area covered by this tree species.
         yield_class: Tree species yield score.
-        suitability: Tree speices suitability score.
+        suitability: Tree species suitability score.
     """
 
     id_parcel: str = Field()

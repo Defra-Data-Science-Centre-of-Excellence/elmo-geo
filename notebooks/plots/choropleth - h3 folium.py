@@ -175,7 +175,7 @@ def h3_foilium_map(df_agged, join_col, geo_col, variable, label, variable_name, 
     # creating a state indexed version of the dataframe so we can lookup values
     df_data_indexed = df_data.set_index('id')
     
-    # looping thru the geojson object and adding a new property(unemployment)
+    # looping through the geojson object and adding a new property(unemployment)
     # and assigning a value from our dataframe
     for s in cp.geojson.data['features']:
         s['properties']['profit_count'] = df_data_indexed.loc[s['id'], 'profit_count']

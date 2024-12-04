@@ -174,11 +174,11 @@ def plot_choropleth_with_head_and_tail_bars(
     """Creates a plot with three components: a choropleth and two horizontal bar charts.
 
     The choropleth maps the geometries in the input GeoDataFrame, coloured by the variable given by the 'variable_column' parameter. The two horizontal bar
-    charts show the top 20 and bottom 20 rows of the GeoDataFrame. The bars are labeled by the index of the GeoDataFrame.
+    charts show the top 20 and bottom 20 rows of the GeoDataFrame. The bars are labelled by the index of the GeoDataFrame.
 
     Parameters:
-        gdf: GeoDataFrame containing geometries and vaues to be plotted.
-        variable_column: The name of GeoDataFrame coloumn to plot the values of.
+        gdf: GeoDataFrame containing geometries and values to be plotted.
+        variable_column: The name of GeoDataFrame column to plot the values of.
         variable_name: The name of the variable to use in plot titles and legends.
         variable_source: The data source of the variable being plotted.
         plot_title: The title plot.
