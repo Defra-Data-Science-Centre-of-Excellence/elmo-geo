@@ -1,8 +1,8 @@
 # Databricks notebook source
 # MAGIC %md
 # MAGIC # Dataset Interactive Plot
-# MAGIC Edit the filter "query" to select a small enough amount of data to plot.  
-# MAGIC I use https://britishnationalgrid.uk/ to find the tile I want.  
+# MAGIC Edit the filter "query" to select a small enough amount of data to plot.
+# MAGIC I use https://britishnationalgrid.uk/ to find the tile I want.
 # MAGIC
 # MAGIC TODO: add more layers
 
@@ -10,7 +10,7 @@
 
 from elmo_geo import register
 from elmo_geo.datasets import reference_parcels, wfm_parcels
-from elmo_geo.io import to_gdf, download_link
+from elmo_geo.io import download_link, to_gdf
 
 register()
 
@@ -33,7 +33,7 @@ m = gdf.explore(
             max-height: 300px;
             overflow-y: scroll;
         """,
-    }
+    },
 )
 
 m
