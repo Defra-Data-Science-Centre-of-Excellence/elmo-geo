@@ -151,7 +151,7 @@ def stacked_bar_parcel_counts(
     f, ax = plt.subplots(figsize=(20, 6))
 
     # Plot the total crashes
-    norm = mpl.colors.Normalise(-1, len(data) + 1)
+    norm = mpl.colors.Normalize(-1, len(data) + 1)
     for i, (label, value) in enumerate(data.sort_values(ascending=False).items()):
         c_val = norm(i)
         p_val = value / data.sort_values(ascending=False).iloc[0]
