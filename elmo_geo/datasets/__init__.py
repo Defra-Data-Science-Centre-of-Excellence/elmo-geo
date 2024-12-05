@@ -1,4 +1,14 @@
-"""`elmo_geo` datasets."""
+"""elmo_geo datasets.
+Import only datasets, as they are collected into `catalogue: list[Dataset]` at the bottom.
+
+Example use, printing all unfresh datasets.
+```py
+from elmo_geo.datasets import catalogue
+for dataset in catalogue:
+    if not dataset.is_fresh:
+        print(dataset.name)
+```
+"""
 from .boundary import (
     boundary_adjacencies,
     boundary_hedgerows,
