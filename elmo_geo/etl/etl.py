@@ -12,20 +12,18 @@ from datetime import datetime
 from functools import reduce
 from glob import glob, iglob
 from hashlib import sha256
-from pathlib import Path
 
-import geopandas as gpd
-import pandas as pd
-from pyspark.sql import functions as F, types as T, DataFrame as SparkDataFrame
 from pandera import DataFrameModel
+from pyspark.sql import DataFrame as SparkDataFrame
+from pyspark.sql import functions as F
 from rioxarray.raster_array import RasterArray
 
 from elmo_geo.io import load_sdf, ogr_to_geoparquet, read_file, write_parquet
 from elmo_geo.utils.log import LOG
 from elmo_geo.utils.misc import dbmtime
 from elmo_geo.utils.types import DataFrame
-from .io import convert_ogr
 
+from .io import convert_ogr
 
 DATE_FMT: str = r"%Y_%m_%d"
 SRC_HASH_FMT: str = r"%Y%m%d%H%M%S"
@@ -128,7 +126,7 @@ class SourceDataset(BaseDataset):
     def transform(self):
         for path in self.source_paths:
             convert_ogr(path, path_out)
-        raise NotImplemented
+        raise NotImplementedError
         
 
 
