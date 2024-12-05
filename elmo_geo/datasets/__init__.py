@@ -34,7 +34,7 @@ from .cec_soilscapes import (
 )
 from .commons import (
     commons_parcels,
-    commons_raw,  # geopackage
+    commons_raw,
 )
 from .defra_alc import (
     alc_parcels,
@@ -112,10 +112,10 @@ from .fcp_parcels_geojson import (
     reference_parcels_bng_geojson,
 )
 from .fcp_sylvan import (
-    fcp_relict_hedge_raw,  # temporary
+    fcp_relict_hedge_raw,  # TODO: temporary
 )
 from .fcp_tree_detection import (
-    fcp_tree_detection_raw,  # temporary
+    fcp_tree_detection_raw,  # TODO: temporary
 )
 from .fr_esc_m3_trees import (
     esc_carbon_parcels,
@@ -130,7 +130,7 @@ from .fr_esc_m3_woodland_suitability import (
     esc_woodland_suitability_rcp45_2021_2028,
 )
 from .hedges import (
-    rpa_hedges_raw,  # snapshot
+    rpa_hedges_raw,  # TODO: snapshot
 )
 from .living_england import (
     living_england_habitat_map_phase_4_parcels,
