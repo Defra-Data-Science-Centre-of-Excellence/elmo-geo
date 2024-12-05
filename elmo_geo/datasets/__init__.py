@@ -1,5 +1,5 @@
 """elmo_geo datasets.
-Import only datasets, as they are collected into `catalogue: list[Dataset]` at the bottom.
+Datasets are collected into `catalogue: list[Dataset]` at the bottom.
 
 Example use, printing all unfresh datasets.
 ```py
@@ -9,6 +9,8 @@ for dataset in catalogue:
         print(dataset.name)
 ```
 """
+from elmo_geo.etl import Dataset
+
 from .boundary import (
     boundary_adjacencies,
     boundary_hedgerows,
@@ -216,4 +218,4 @@ from .wfm import (
     wfm_parcels,
 )
 
-catalogue = list(locals().values())
+catalogue = list(v for v in locals().values() if isinstance(v, Dataset))
