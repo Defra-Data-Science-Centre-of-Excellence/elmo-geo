@@ -34,5 +34,8 @@ verify:
 latest_clusters_log:
 	find /dbfs/cluster-logs/ -type f -name "*.stderr.log" | awk -F/ '{print $NF, $0}' | sort | awk '{print $2}' | tail -n1 | xargs cat
 
-spell:
+spell-check:
 	typos . --format=brief --sort
+
+spell-correct:
+	typos . --format=brief --sort -w
