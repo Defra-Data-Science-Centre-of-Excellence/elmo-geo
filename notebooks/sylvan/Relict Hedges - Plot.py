@@ -210,7 +210,7 @@ gdf_seg = gpd.GeoDataFrame(gdf_seg, geometry="geometry")
 f, ax = plt.subplots(figsize=(10, 10))
 for pid in gdf_seg["id_parcel"].unique():
     sub = gdf_seg.loc[gdf_seg["id_parcel"] == pid]
-    norm = mpl.colors.Normalise(vmin=min(sub["rn"]), vmax=max(sub["rn"]))
+    norm = mpl.colors.Normalize(vmin=min(sub["rn"]), vmax=max(sub["rn"]))
     sub.plot(ax=ax, column="rn", norm=norm)
 
 # COMMAND ----------
@@ -468,7 +468,7 @@ def stacked_bar_parcel_counts(data: pd.Series, title: str, names: list):
     data = data[list(names.keys())]
 
     # Plot the total crashes
-    norm = mpl.colors.Normalise(-1, len(data) + 1)
+    norm = mpl.colors.Normalize(-1, len(data) + 1)
     for i, (label, value) in enumerate(data.sort_values(ascending=False).items()):
         c_val = norm(i)
         p_val = value / data.sort_values(ascending=False).iloc[0]
