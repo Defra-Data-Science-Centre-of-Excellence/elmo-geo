@@ -18,6 +18,6 @@ jobs:
       - run: ruff check .
       - run: ruff format . --check
       - uses: crate-ci/typos@master
-      - uses: pavelzw/pytest-action
+      - uses: pavelzw/pytest-action@v2
         with:
           pytest-args: "--markers 'no dbr'"
