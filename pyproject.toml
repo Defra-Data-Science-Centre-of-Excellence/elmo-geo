@@ -65,7 +65,7 @@ ignore = ["D203", "D212", "COM812", "ISC001"]  # Conflict
 [tool.typos.default]
 locale = "en-gb"
 extend-ignore-identifiers-re = [
-    "analyze",
+    #"analyze",
     "ax",
     "CaBA",
     "capitalize",

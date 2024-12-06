@@ -17,6 +17,7 @@ install:
 fmt:
 	ruff check . --fix
 	ruff format .
+	typos . --format=brief --sort
 
 freeze:
 	pip-compile -q --all-extras --no-strip-extras
