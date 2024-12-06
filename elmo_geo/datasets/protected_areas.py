@@ -80,7 +80,7 @@ ne_sssi_units_raw = SourceDataset(
     source="ne",
     model=NeSssiUnitsRaw,
     restricted=False,
-    source_path="/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_sites_of_special_scientific_interest_units/format_GEOPARQUET_sites_of_special_scientific_interest_units/LATEST_sites_of_special_scientific_interest_units/",
+    source_path="/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_sites_of_special_scientific_interest_units/format_GEOPARQUET_sites_of_special_scientific_interest_units/SNAPSHOT_2024_08_10_sites_of_special_scientific_interest_units/",
 )
 
 ne_sssi_units_parcels = DerivedDataset(

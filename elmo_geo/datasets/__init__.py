@@ -175,7 +175,7 @@ from .protected_areas import (
     ne_sac_parcels,
     ne_sac_raw,
     ne_sssi_units_parcels,
-    ne_sssi_units_raw,
+    ne_sssi_units_raw,  # snapshot
     protected_areas_parcels,
 )
 from .protected_landscapes import (
