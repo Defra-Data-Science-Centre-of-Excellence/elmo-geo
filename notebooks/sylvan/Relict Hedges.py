@@ -61,14 +61,14 @@
 # MAGIC   4. Unclassified
 # MAGIC
 # MAGIC If a portion of a boundary segment intersects hedgerow that portion is removed so that is cannot be classified as any
-# MAGIC other woody type. Only portions of boudnary segments that are not intersected y hedgerows or woodland can be classified as other woody.
+# MAGIC other woody type. Only portions of boundary segments that are not intersected y hedgerows or woodland can be classified as other woody.
 # MAGIC
 # MAGIC ### Relict hedge classification
 # MAGIC
 # MAGIC Relict hedges are classified as boundary segments with a minimum density of other woody cannopy cover.
 # MAGIC
 # MAGIC The basic process is:
-# MAGIC   1. Calculate the length of boudnary segments intersected by other woody features
+# MAGIC   1. Calculate the length of boundary segments intersected by other woody features
 # MAGIC   2. Divide this by the total segment length to give the proportion of other woody features
 # MAGIC   3. Classify the segment as a relict hedge based on a threshold proportion.
 # MAGIC

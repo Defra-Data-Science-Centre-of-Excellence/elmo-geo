@@ -86,7 +86,7 @@ wfm.head()
 
 def mean_df(df, information_type):
     """
-    Creates the dataframes for the means of the bare soil percantage per year
+    Creates the dataframes for the means of the bare soil percentage per year
     Parameters:
     - df: the dataframe you will be getting the means from
     - information_type: ['arable','grassland','total']
@@ -120,7 +120,7 @@ def format_winter(date: pd.Timestamp) -> str:
     elif date.month > 10:
         year_st = date.year
     else:
-        raise ValueError(f"Recieved date ({date}) is not in the winter months (November-Feb)")
+        raise ValueError(f"Received date ({date}) is not in the winter months (November-Feb)")
     return f"{year_st}-{int(str(year_st)[-2:])+1}"
 
 

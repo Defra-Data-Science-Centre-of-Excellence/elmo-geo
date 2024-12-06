@@ -397,7 +397,7 @@ ewco_water_quality_parcels = DerivedDataset(
 )
 
 """Spatial data supporting appropriately located and designed woodland creation to help reduce pollutants through land use
-change that reduces fertilizer application or by creating woodland that intercepts pollution and sediment before it reaches watercourses.
+change that reduces fertiliser application or by creating woodland that intercepts pollution and sediment before it reaches watercourses.
 """
 
 

@@ -202,10 +202,10 @@ def replace_ndvi_low_ndsi(
     ds_new: xr.Dataset,
     ndsi_threshold: float = 0.32,
 ) -> xr.Dataset:
-    """Replacing cpotential cloud pixel or null values with next image in the ordered list of dataets.
+    """Replacing cpotential cloud pixel or null values with next image in the ordered list of datasets.
     We are using a threshold here (0.32) to identify if pixels are cloud. We have researched and
     found that the best way to isolate cloud pixel with the NDSI logic is aboutr 30%, we found the
-    NDSI value in the proces_ndvi_And_ndsi function and now we are using the threshold to isolate
+    NDSI value in the process_ndvi_And_ndsi function and now we are using the threshold to isolate
     cloud pixels.
     """
     ds = xr.where(

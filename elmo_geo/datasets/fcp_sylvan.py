@@ -42,11 +42,11 @@ may in places classify section of boundaries with large trees in as a relict hed
 Further details on the methodology as below.
 
 1. Intersect parcel boundaries with NFI woodland and EFA hedges data. Remove these sections of th boundary.
-2. Intersect the remaining boundary with Defra Tree Map (trees detected from EA Vegitation Object Model dataset)
+2. Intersect the remaining boundary with Defra Tree Map (trees detected from EA Vegetation Object Model dataset)
 3. Classify sections of remaining parcel boundary as relict hedge based on the density of tree canopy it intersects with.
 
 The classification rules:
 1. Split parcel boundary into straght line segments
 2. Exclude segments <2m from relict classification
-3. Classify remaining sements if >30% of segment is intersected by tree canopy
+3. Classify remaining segments if >30% of segment is intersected by tree canopy
 """

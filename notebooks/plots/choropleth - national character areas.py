@@ -1,14 +1,14 @@
 # Databricks notebook source
 # MAGIC %md
 # MAGIC
-# MAGIC # Choropleth Plot - National Charater Areas
+# MAGIC # Choropleth Plot - National Character Areas
 # MAGIC
 # MAGIC **Author:** Obi Thompson Sargoni
 # MAGIC
 # MAGIC **Date:** 03/04/2024
 # MAGIC
 # MAGIC This notebook produces a choropleth plot from a processed dataset - a dataset which has values linked to parcel IDs. The chosen numeric variable of the
-# MAGIC processed dataset is aggregated to National Charater Area polygons, which are used to plot the variable at national scale.
+# MAGIC processed dataset is aggregated to National Character Area polygons, which are used to plot the variable at national scale.
 # MAGIC
 # MAGIC Parcel IDs are used to link the chosen datasets with the NCA polygons. Therefore, the input dataset must contain an 'id_parcel' field.
 # MAGIC

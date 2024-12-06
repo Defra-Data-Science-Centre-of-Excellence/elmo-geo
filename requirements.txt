@@ -268,6 +268,8 @@ typing-extensions==4.12.2
     #   typing-inspect
 typing-inspect==0.9.0
     # via pandera
+typos==1.28.2
+    # via elmo_geo (pyproject.toml)
 tzdata==2024.1
     # via
     #   pandas

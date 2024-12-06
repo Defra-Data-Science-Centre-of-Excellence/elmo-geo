@@ -31,7 +31,7 @@ path_ndvi = f"/dbfs/mnt/lab/unrestricted/elm/elmo/baresoil/ndvi/T{tile}-{month_f
 ndvi_thresh = 0.25
 # raster resolution - reproject to higher resolutions than 10m to speed up (but loose accuracy)
 resolution = None
-simplify = None  # geometry simplification tolerence - set this to speed up (but loose accuracy)
+simplify = None  # geometry simplification tolerance - set this to speed up (but loose accuracy)
 batch_size = 10000  # number of parcels to process in each batch
 path_output = "dbfs:/mnt/lab/unrestricted/elm/elmo/baresoil/" f"bare_parcels/{tile}-{month_fm}-{month_to}.parquet"  # -{ndvi_thresh} , ndvi_thresh=ndvi_thresh
 path_save_figure = f"/dbfs/mnt/lab/unrestricted/elm/elmo/baresoil/figures/hist_bare_{tile}_{year}.png"

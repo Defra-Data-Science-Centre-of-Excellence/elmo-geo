@@ -32,7 +32,7 @@ dbutils.widgets.multiselect("years", all_string, years_to_choose)
 
 
 def _read_file(year, path):
-    """Reading parquet files for comare_years notebook"""
+    """Reading parquet files for compare_years notebook"""
     return spark.read.parquet(path.format(year=year)).withColumnRenamed("bare_soil_percent", str(year))
 
 

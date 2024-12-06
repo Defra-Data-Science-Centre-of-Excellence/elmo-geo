@@ -50,7 +50,7 @@ def make_geometry_valid(df: gpd.GeoDataFrame, geometry_col: str = "geometry") ->
         LOG.info(f"Found {invalid.sum():,.0f} invalid geometries of {invalid.size:,.0f} ({invalid.mean():.2%})")
         df[geometry_col] = df[geometry_col].map(make_valid)
         assert df[geometry_col].is_valid.all()
-        LOG.info("Fixed invlid geometries")
+        LOG.info("Fixed invalid geometries")
         return df
     return df
 
