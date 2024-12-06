@@ -11,7 +11,7 @@ from glob import iglob
 
 import geopandas as gpd
 
-from elmo_geo import LOG
+from elmo_geo.utils.log import LOG
 from elmo_geo.utils.misc import snake_case
 
 
