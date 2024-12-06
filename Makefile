@@ -25,6 +25,7 @@ verify_gh:
 	ruff check .
 	ruff format . --check
 	pytest . -m "not dbr"
+	typos . --format=brief --sort
 
 verify:
 	ruff check .

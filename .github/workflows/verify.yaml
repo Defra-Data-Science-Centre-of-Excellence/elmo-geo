@@ -15,4 +15,3 @@ jobs:
           architecture: x64
       - run: make install
       - run: make verify_gh
-      - uses: crate-ci/typos@master
