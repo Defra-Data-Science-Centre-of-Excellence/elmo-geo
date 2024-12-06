@@ -107,7 +107,7 @@ df_agged.head()
 
 
 def base_empty_map(centre=(52.133236898161755, -1.2970901724513781)):
-    """Prepares a folium map centered in a central GPS point of Toulouse"""
+    """Prepares a folium map centred in a central GPS point of Toulouse"""
     m = Map(
         location=centre,
         zoom_start=7,

@@ -59,7 +59,7 @@ register()
 
 
 def base_empty_map(centre=None, zoom_start=None):
-    """Prepares a folium map centered in a central GPS point of Toulouse"""
+    """Prepares a folium map centred in a central GPS point of Toulouse"""
     if centre is None:
         centre = (52.133236898161755, -1.2970901724513781)
     if zoom_start is None:
