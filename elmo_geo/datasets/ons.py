@@ -7,8 +7,8 @@ regional bias.
 | ------------ | ---------- | ------ | ----- |
 | Countries[^country] | | UK, BFE | These are; England, Northern Ireland, Scotland, Wales. |
 | International Territorial Level 1[^region] | ITL1 / Regions | UK, BFE | ITL1s are also known as "Regions"[^ons_geographies] | |
-| International Territorial Level 2[^itl2] | ITL2 | UK, BGC | ITL2s are "counties and groups of counties"[^ons_geographies] | |
-| International Territorial Level 3[^itl3] | ITL3 | UK | ITL3s are "counties and groups of unitary authorities"<br>**Currently not available on DASH.** |
+| International Territorial Level 2[^itl2] | ITL2 | UK, BGC | ITL2s are "counties and groups of counties" | |
+| International Territorial Level 3[^itl3] | ITL3 | UK | ITL3s are "counties and groups of unitary authorities" |
 | Counties and Unitary Authorities[^cua] | CUA | England, BFE |
 | Local Authority Districts[^lad] | LAD | England, BFE |
 | Wards[^ward] | | England, BFE |
@@ -229,7 +229,7 @@ itl3_raw = SourceDataset(
     source="ons",
     model=ITL3Raw,
     restricted=False,
-    source_path="/dbfs/FileStore/elmo_geo-uploads/ons_itl3_2021_11_11.parquet",
+    source_path="/dbfs/mnt/base/unrestricted/source_ons_open_geography_portal/dataset_int_territorial_lvl3_2021_uk_bgc_v3/format_GEOPARQUET_int_territorial_lvl3_2021_uk_bgc_v3/LATEST_int_territorial_lvl3_2021_uk_bgc_v3/",
 )
 
 
