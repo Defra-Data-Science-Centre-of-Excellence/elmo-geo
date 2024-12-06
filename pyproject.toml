@@ -20,6 +20,7 @@ dependencies = [
     "rich",
     "rioxarray",
     "seaborn",
+    "mkdocs",
 ]
 requires-python = "==3.11"
 
@@ -32,8 +33,11 @@ dev = [
     "pytest",
     "ruff<0.2",
     "typos",
+    "mkdocstrings-python",
+    "mkdocs-material",
+    "mkdocs-gen-files",
+    "mkdocs-jupyter",
 ]
-
 [project.urls]
 homepage = "https://github.com/Defra-Data-Science-Centre-of-Excellence/elmo-geo"
 

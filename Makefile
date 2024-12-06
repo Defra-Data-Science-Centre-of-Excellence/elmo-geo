@@ -39,3 +39,7 @@ spell-check:
 
 spell-correct:
 	typos . --format=brief --sort -w
+
+# Documentation
+build:
+	mkdocs build
