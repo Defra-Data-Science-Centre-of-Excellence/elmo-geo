@@ -9,6 +9,12 @@ clean:
 	git branch --merged | grep -v \* | xargs git branch -D
 	clear
 
+compile:
+	pip-compile -q --all-extras --no-strip-extras
+
+compile-upgrade:
+	pip-compile -q --all-extras --no-strip-extras
+
 install:
 	python -m pip install --upgrade pip setuptools wheel
 	pipx install "ruff<0.2" pip-tools typos
@@ -17,26 +23,15 @@ install:
 fmt:
 	ruff check . --fix
 	ruff format .
-	typos . --format=brief --sort
 
-freeze:
-	pip-compile -q --all-extras --no-strip-extras
-
-verify_gh:
-	ruff check .
-	ruff format . --check
-	pytest . -m "not dbr"
+spell-correct:
+	typos . --format=brief --sort -w
 
 verify:
 	ruff check .
 	ruff format . --check
 	PYTHONDONTWRITEBYTECODE=1 pytest .
+	typos . --format=brief --sort
 
 latest_clusters_log:
 	find /dbfs/cluster-logs/ -type f -name "*.stderr.log" | awk -F/ '{print $NF, $0}' | sort | awk '{print $2}' | tail -n1 | xargs cat
-
-spell-check:
-	typos . --format=brief --sort
-
-spell-correct:
-	typos . --format=brief --sort -w
