@@ -71,7 +71,7 @@ extend-ignore-identifiers-re = [
     "capitalize",
     "center",
     "Color",
-    "color",
+    #"color",
     "colors",
     "hefer",
     "HEFER",
