@@ -8,8 +8,6 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      # - uses: https://raw.githubusercontent.com/databrickslabs/mosaic/main/.github/actions/scala_build/action.yml
-      # - uses: https://raw.githubusercontent.com/databrickslabs/mosaic/main/.github/actions/python_build/action.yml
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v4
         with:
@@ -17,3 +15,4 @@ jobs:
           architecture: x64
       - run: make install
       - run: make verify_gh
+      - uses: crate-ci/typos@master
