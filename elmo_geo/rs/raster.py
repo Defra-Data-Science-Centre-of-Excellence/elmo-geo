@@ -12,7 +12,7 @@ from rioxarray.raster_array import RasterArray
 from scipy.interpolate import NearestNDInterpolator
 from xarray.core.dataarray import DataArray
 
-from elmo_geo import LOG
+from elmo_geo.utils.log import LOG
 
 
 def write_array_to_raster(arr, filename, **meta):

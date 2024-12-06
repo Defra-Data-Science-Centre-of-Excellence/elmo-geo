@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from elmo_geo import datasets, register
+from elmo_geo import register
 from elmo_geo.datasets import catalogue
 from elmo_geo.etl import Dataset, DerivedDataset, SourceDataset
 from elmo_geo.etl.etl import DATE_FMT, PAT_DATE, TabularDataset
@@ -105,25 +105,18 @@ def test_pivots():
 
 
 def test_dataset_imports():
-    """Tests that datasets imported to the datasets module are also added.
-    Test 1 to elmo_geo.datasets.catalogue.
-    Test 2 to elmo_geo.datasets.__init__.
-    """
+    """Tests that created datasets are imported."""
     catalogue_datasets = {y.name for y in catalogue}
-    init_datasets = {y.name for y in datasets.__dict__.values() if isinstance(y, Dataset)}
     submodule_datasets = {
         y.name
         for f in iglob("elmo_geo/datasets/*.py", recursive=True)
-        if not f.endswith("__init__.py")
+        if not f.split("/")[-1].startswith("_")
         for y in import_module(f[:-3].replace("/", ".")).__dict__.values()
         if isinstance(y, Dataset)
     }
 
-    catalogue_diff = init_datasets - catalogue_datasets
-    assert catalogue_diff == set(), f"The following datasets are imported but not added to the catalogue: {catalogue_diff}"
-
-    init_diff = submodule_datasets - init_datasets
-    assert init_diff == set(), f"The following datasets are created but not added to the __init__: {init_diff}"
+    diff = submodule_datasets - catalogue_datasets
+    assert diff == set(), f"The following datasets are created but not added to _catalogue: {diff}"
 
 
 @pytest.mark.dbr
