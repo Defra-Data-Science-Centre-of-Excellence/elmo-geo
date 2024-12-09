@@ -25,6 +25,7 @@ verify_gh:
 	ruff check .
 	ruff format . --check
 	pytest . -m "not dbr"
+	mkdocs build
 
 verify:
 	ruff check .
@@ -39,3 +40,7 @@ spell-check:
 
 spell-correct:
 	typos . --format=brief --sort -w
+
+# Documentation
+build:
+	mkdocs build

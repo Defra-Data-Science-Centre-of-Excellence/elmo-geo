@@ -3,10 +3,12 @@
 !/.gitignore
 !.gitkeep
 /data/
+/site/
 
 # Manual
 !.env-template
 !/.github/workflows/verify.yaml
+!/.github/workflows/deploy_docs.yaml
 !/.devcontainer/devcontainer.json
 !/.vscode/settings.json
 !/data/catalogue.json

@@ -1,0 +1,65 @@
+site_name: ELM Modelling Geospatial
+use_directory_urls: false
+
+theme:
+    name: material
+    custom_dir: docs/overrides
+    palette:
+        primary: black
+        accent: green
+    logo: assets/logo.jpg
+    favicon: assets/logo.jpg
+    repo_url: https://github.com/Defra-Data-Science-Centre-of-Excellence/elmo-geo
+plugins:
+    - search
+
+    - mkdocs-jupyter:
+          ignore: ["docs/*.py"]
+          ignore_h1_titles: True
+          # TODO: It is desirable to have execution on but v. slow and won't work in github actions which don't have access to the data - use dummy data!
+          # execute: True # turn this on to run the notebooks and generate the execution results
+          # allow_errors: false
+          include_source: True
+
+    - gen-files:
+          scripts:
+              - docs/gen_api_pages.py
+
+    - literate-nav:
+          nav_file: SUMMARY.md
+
+    - mkdocstrings:
+          handlers:
+              python:
+                  options:
+                      show_root_full_path: false
+                      separate_signature: true
+                      docstring_style: google
+                      docstring_options:
+                          ignore_init_summary: true
+                      merge_init_into_class: true
+
+                  import:
+                      - https://docs.python.org/3/objects.inv
+markdown_extensions:
+    - pymdownx.snippets
+
+extra:
+    social:
+        - icon: fontawesome/brands/github
+          link: https://github.com/Defra-Data-Science-Centre-of-Excellence/elmo-geo
+
+extra_css:
+    - assets/extra_admonitions.css
+    - assets/mkdocstrings.css
+
+extra_javascript:
+    - https://unpkg.com/tablesort@5.3.0/dist/tablesort.min.js
+    - javascripts/tablesort.js
+
+validation:
+    nav:
+        omitted_files: ignore
+    anchors: ignore # footnotes in code show as warnings for some reason
+
+strict: False
