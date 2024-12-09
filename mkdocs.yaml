@@ -41,6 +41,8 @@ plugins:
 
                   import:
                       - https://docs.python.org/3/objects.inv
+markdown_extensions:
+    - pymdownx.snippets
 
 extra:
     social:
