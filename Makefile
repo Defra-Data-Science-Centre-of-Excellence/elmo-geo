@@ -25,6 +25,7 @@ verify_gh:
 	ruff check .
 	ruff format . --check
 	pytest . -m "not dbr"
+	mkdocs build
 
 verify:
 	ruff check .
