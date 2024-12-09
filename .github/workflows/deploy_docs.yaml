@@ -1,16 +1,15 @@
 name: Deploy Documentation to GitHub Pages
 on:
     push:
-        branches: [main, master]
+        branches: main
 
 jobs:
     deploy:
-        runs-on: ubuntu-latest
+        runs-on: ubuntu-22.04
         steps:
             - uses: actions/checkout@v4
             - uses: actions/setup-python@v5
               with:
                   python-version: "3.11"
-            - run: pip install -r requirements.txt
-            - run: pip install .[docs]
+            - run: make install
             - run: mkdocs gh-deploy --force
