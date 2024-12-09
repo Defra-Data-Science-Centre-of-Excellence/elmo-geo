@@ -37,6 +37,7 @@ dev = [
     "mkdocs-material",
     "mkdocs-gen-files",
     "mkdocs-jupyter",
+    "mkdocs-literate-nav",
 ]
 [project.urls]
 homepage = "https://github.com/Defra-Data-Science-Centre-of-Excellence/elmo-geo"
