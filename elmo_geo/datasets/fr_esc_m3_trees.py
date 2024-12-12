@@ -363,7 +363,7 @@ def _join_esc_outputs(
     return (
         sdf_parcel_tiles.join(sdf_esc.drop("geometry", "layer"), on="tile_name", how="inner")
         .join(sdf_esc_valid_scenario_tiles, on=["tile_name", "rcp", "woodland_type"], how="inner")
-        .filter("(species_1 IS NULL) AND (species_2 IS NULL) AND (species_3 IS NULL)")
+        .filter("NOT ((species_1 IS NULL) AND (species_2 IS NULL) AND (species_3 IS NULL))")
     )
 
 
