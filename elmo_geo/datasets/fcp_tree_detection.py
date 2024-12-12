@@ -126,17 +126,21 @@ def sjoin_interior_count(
     Parcel interios defined by the difference between buffered boundary segment geometries
     and the parcel geometry.
     """
-    expr = "ST_Difference(ST_Union_Aggr(geometry), geoemtry_left)"
-    expr = f"ST_Intersection({expr}, geometry_right)"
-    expr = f"COUNT({expr}) as count"
-    return (
-        sjoin_boundaries(parcels, boundary_segments, features, distance=max(buffers), **kwargs)
-        .withColumn("geometry_right", F.expr("EXPLODE(ST_Dump(geometry_right))"))
-        .groupby("id_parcel", "buffer")
-        .agg(F.expr(expr))
-        .transform(pivot_wide_sdf, name_col="buffer", value_col="count")
-        .withColumnsRenamed({str(b): f"count_{b}m" for b in buffers})
-    )
+    # test the interiod method
+    expr = "ST_Difference(ST_Union_Aggr(geometry), geometry_left)"
+    expr = f"ST_Intersection({expr}, geometry_right) as interior_intersection"
+    sdf_int= (sdf_boundary
+            .withColumn("buffer", F.expr(f"EXPLODE(ARRAY{tuple(buffers)})"))
+            .withColumn("geometry", F.expr("ST_Buffer(geometry, buffer)")) # buffer segment geoms
+            .transform(auto_repartition)
+            .groupby("id_parcel", "buffer", "geometry_left", "geometry_right")
+            .agg(F.expr(expr)) # intersection between features and parcel interior
+            .withColumn("interior_intersection", F.expr("EXPLODE(ST_Dump(interior_intersection))"))
+            .filter("NOT ST_IsEmpty(interior_intersection)")
+            .groupby("id_parcel", "buffer")
+            .agg(F.expr("COUNT(interior_intersection) as count"))
+            .transform(pivot_wide_sdf, name_col="buffer", value_col="count")
+            .withColumnsRenamed({str(b): f"count_{b}m" for b in buffers}))
 
 
 interior_tree_count = DerivedDataset(
