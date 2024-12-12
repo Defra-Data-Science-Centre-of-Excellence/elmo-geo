@@ -25,15 +25,34 @@ def register_dir(path: str):
         LOG.info(f"Changed Directory: {cwd} => {nwd}")
 
 
-def register_no_coalesce(no_coalesce: bool):
-    if no_coalesce:
+def register_adaptive_partitions(adaptive_partitions: bool, shuffle_partitions: int, default_parallelism: int):
+    if adaptive_partitions:
+        spark.conf.set("spark.sql.adaptive.coalescePartitions.enabled", "true")
+        spark.conf.set("spark.sql.adaptive.coalescePartitions.parallelismFirst", "false")
+        spark.conf.set("spark.sql.adaptive.advisoryPartitionSizeInBytes", "32mb")  # default 64mb
+        spark.conf.set("spark.sql.adaptive.coalescePartitions.initialPartitionNum", default_parallelism)
+        # spark.conf.set("spark.sql.adaptive.coalescePartitions.parallelismFirst", "true")
+        # spark.conf.set("spark.sql.adaptive.coalescePartitions.minPartitionSize", "10mb")
+        LOG.info("spark.sql.adaptive.coalescePartitions.enabled = true")
+    else:
+        # Without adaptive partitioning the default partitions values are increased.
+        # Advised # partitions is 3x number of cores, but with complex geometries
+        # it can be better to use higher than typical number of partitions.
         spark.conf.set("spark.sql.adaptive.coalescePartitions.enabled", "false")
+        spark.conf.set("spark.sql.suffle.partitions", shuffle_partitions)
+        spark.conf.set("spark.default.parallelism", default_parallelism)
         LOG.info("spark.sql.adaptive.coalescePartitions.enabled = false")
 
 
-def register(spark: SparkSession = spark, dir: str = "/elmo-geo", no_coalesce: bool = True):
+def register(
+    spark: SparkSession = spark,
+    dir: str = "/elmo-geo",
+    adaptive_partitions: bool = False,
+    shuffle_partitions: int = 600,
+    default_parallelism: int = 600,
+):
     register_dir(dir)
-    register_no_coalesce(no_coalesce)
+    register_adaptive_partitions(adaptive_partitions, shuffle_partitions, default_parallelism)
     register_sedona(spark)
     LOG.info("Registered: Sedona")
     return True
