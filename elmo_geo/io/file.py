@@ -39,6 +39,7 @@ def auto_repartition(
     thread_ratio: float = 1.5,
     jobs_cap: int = 100_000,
     acceptance_ratio: float = 0.8,
+    multiplier: float = 1,
 ) -> SparkDataFrame:
     """Auto repartitioning tool for SparkDataFrames.
     This uses row count, memory size, and number of JVMs to run tasks to chose the optimal partitioning.
@@ -58,7 +59,7 @@ def auto_repartition(
         "memory": round(memsize_sdf(sdf) * mem_ratio),
         "cores": round(spark.sparkContext.defaultParallelism * thread_ratio),
     }
-    suggested_partitions = int(min(max(partitioners.values()), jobs_cap))
+    suggested_partitions = int(min(max(partitioners.values())*multiplier, jobs_cap))
     current_partitions = sdf.rdd.getNumPartitions()
     ratio = abs(suggested_partitions - current_partitions) / current_partitions
     if acceptance_ratio < ratio:
