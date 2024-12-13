@@ -106,6 +106,8 @@ from .fcp_habitat_classification import (
 from .fcp_parcels_geojson import reference_parcels_bng_geojson
 from .fcp_sylvan import fcp_relict_hedge_raw
 from .fcp_tree_detection import (
+    fcp_boundary_tree_count,
+    fcp_interior_tree_count,
     fcp_tree_detection_raw,
 )
 from .fr_esc_m3_trees import (

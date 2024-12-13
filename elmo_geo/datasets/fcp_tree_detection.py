@@ -17,6 +17,7 @@ from pandera.dtypes import Float64
 
 from elmo_geo.etl import Dataset, DerivedDataset, SourceDataset
 from elmo_geo.etl.transformations import pivot_wide_sdf, sjoin_boundaries, sjoin_boundary_count
+from elmo_geo.io.file import auto_repartition
 from elmo_geo.utils.types import SparkDataFrame
 
 from .boundary import boundary_segments
@@ -84,10 +85,10 @@ def prep_tree_point(sdf):
     return sdf.selectExpr("ST_GeomFromWKT(top_point) AS geometry")
 
 
-boundary_tree_count = DerivedDataset(
-    level0="silver",
-    level1="fcp",
-    name="boundary_tree_count",
+fcp_boundary_tree_count = DerivedDataset(
+    medallion="silver",
+    source="fcp",
+    name="fcp_boundary_tree_count",
     model=FCPTBoundaryTreeCounts,
     restricted=False,
     func=partial(sjoin_boundary_count, fn_pre=prep_tree_point),
@@ -126,27 +127,28 @@ def sjoin_interior_count(
     Parcel interios defined by the difference between buffered boundary segment geometries
     and the parcel geometry.
     """
-    # test the interiod method
     expr = "ST_Difference(ST_Union_Aggr(geometry), geometry_left)"
     expr = f"ST_Intersection({expr}, geometry_right) as interior_intersection"
-    sdf_int= (sdf_boundary
-            .withColumn("buffer", F.expr(f"EXPLODE(ARRAY{tuple(buffers)})"))
-            .withColumn("geometry", F.expr("ST_Buffer(geometry, buffer)")) # buffer segment geoms
-            .transform(auto_repartition)
-            .groupby("id_parcel", "buffer", "geometry_left", "geometry_right")
-            .agg(F.expr(expr)) # intersection between features and parcel interior
-            .withColumn("interior_intersection", F.expr("EXPLODE(ST_Dump(interior_intersection))"))
-            .filter("NOT ST_IsEmpty(interior_intersection)")
-            .groupby("id_parcel", "buffer")
-            .agg(F.expr("COUNT(interior_intersection) as count"))
-            .transform(pivot_wide_sdf, name_col="buffer", value_col="count")
-            .withColumnsRenamed({str(b): f"count_{b}m" for b in buffers}))
+    return (
+        sjoin_boundaries(parcels, boundary_segments, features, distance=max(buffers), **kwargs)
+        .withColumn("buffer", F.expr(f"EXPLODE(ARRAY{tuple(buffers)})"))
+        .withColumn("geometry", F.expr("ST_Buffer(geometry, buffer)"))  # buffer segment geoms
+        .transform(auto_repartition)
+        .groupby("id_parcel", "buffer", "geometry_left", "geometry_right")
+        .agg(F.expr(expr))  # intersection between features and parcel interior
+        .withColumn("interior_intersection", F.expr("EXPLODE(ST_Dump(interior_intersection))"))
+        .filter("NOT ST_IsEmpty(interior_intersection)")
+        .groupby("id_parcel", "buffer")
+        .agg(F.expr("COUNT(interior_intersection) as count"))
+        .transform(pivot_wide_sdf, name_col="buffer", value_col="count")
+        .withColumnsRenamed({str(b): f"count_{b}m" for b in buffers})
+    )
 
 
-interior_tree_count = DerivedDataset(
-    level0="silver",
-    level1="fcp",
-    name="interior_tree_count",
+fcp_interior_tree_count = DerivedDataset(
+    medallion="silver",
+    source="fcp",
+    name="fcp_interior_tree_count",
     model=FCPTInteriorTreeCounts,
     restricted=False,
     func=partial(sjoin_interior_count, fn_pre=prep_tree_point),
