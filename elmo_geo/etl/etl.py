@@ -33,7 +33,7 @@ from elmo_geo.utils.types import DataFrame, GeoDataFrame, PandasDataFrame, Spark
 DATE_FMT: str = r"%Y_%m_%d"
 SRC_HASH_FMT: str = r"%Y%m%d%H%M%S"
 HASH_LENGTH = 8
-PATH_FMT: str = "/dbfs/mnt/lab/{restricted}/ELM-Project/{level0}/{level1}/"
+PATH_FMT: str = "/dbfs/mnt/lab/{restricted}/ELM-Project/{medallion}/{source}/"
 FILE_FMT: str = "{name}-{date}-{hsh}.parquet"
 PAT_FMT: str = r"(^{name}-[\d_]+-{hsh}.parquet$)"
 PAT_DATE: str = r"(?<=^{name}-)([\d_]+)(?=-{hsh}.parquet$)"
@@ -52,8 +52,8 @@ class Dataset(ABC):
     """
 
     name: str
-    level0: str
-    level1: str
+    medallion: str
+    source: str
     restricted: bool
 
     @property
@@ -74,7 +74,7 @@ class Dataset(ABC):
     def path_dir(self) -> str:
         """Path to the directory where the data will be saved."""
         restricted = "restricted" if self.restricted else "unrestricted"
-        return PATH_FMT.format(restricted=restricted, level0=self.level0, level1=self.level1)
+        return PATH_FMT.format(restricted=restricted, medallion=self.medallion, source=self.source)
 
     @property
     @abstractmethod
@@ -290,8 +290,8 @@ class SourceDataset(TabularDataset):
         """A dictionary representation of the dataset."""
         return dict(
             name=self.name,
-            level0=self.level0,
-            level1=self.level1,
+            medallion=self.medallion,
+            source=self.source,
             restricted=self.restricted,
             path=self.path,
             type=str(type(self)),
@@ -416,8 +416,8 @@ class DerivedDataset(TabularDataset):
         """A dictionary representation of the dataset."""
         return dict(
             name=self.name,
-            level0=self.level0,
-            level1=self.level1,
+            medallion=self.medallion,
+            source=self.source,
             restricted=self.restricted,
             path=self.path,
             type=str(type(self)),
@@ -443,8 +443,8 @@ class RasterDataset(Dataset):
         """A dictionary representation of the dataset."""
         return dict(
             name=self.name,
-            level0=self.level0,
-            level1=self.level1,
+            medallion=self.medallion,
+            source=self.source,
             restricted=self.restricted,
             path=self.path,
             type=str(type(self)),
@@ -501,8 +501,8 @@ class SourceSingleFileRasterDataset(RasterDataset):
         """A dictionary representation of the dataset."""
         return dict(
             name=self.name,
-            level0=self.level0,
-            level1=self.level1,
+            medallion=self.medallion,
+            source=self.source,
             restricted=self.restricted,
             path=self.path,
             type=str(type(self)),
@@ -548,8 +548,8 @@ class DerivedRasterDataset(RasterDataset):
         """A dictionary representation of the dataset."""
         return dict(
             name=self.name,
-            level0=self.level0,
-            level1=self.level1,
+            medallion=self.medallion,
+            source=self.source,
             restricted=self.restricted,
             path=self.path,
             type=str(type(self)),

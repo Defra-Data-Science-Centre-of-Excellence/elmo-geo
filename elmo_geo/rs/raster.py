@@ -12,7 +12,7 @@ from rioxarray.raster_array import RasterArray
 from scipy.interpolate import NearestNDInterpolator
 from xarray.core.dataarray import DataArray
 
-from elmo_geo import LOG
+from elmo_geo.utils.log import LOG
 
 
 def write_array_to_raster(arr, filename, **meta):
@@ -46,7 +46,7 @@ def to_raster(ra: RasterArray, path: str):
     """
     path = Path(path)
     if path.suffix != ".tif":
-        msg = f"Expected a .tif file, recieved {path.suffix}."
+        msg = f"Expected a .tif file, received {path.suffix}."
         raise ValueError(msg)
     temp_loc = f"/tmp/{path.name}"
     ra.rio.to_raster(temp_loc, driver="COG")

@@ -3,7 +3,7 @@
 # MAGIC
 # MAGIC # Tree Features
 # MAGIC
-# MAGIC Objective: Produce parcel level metrics releated to the presence of trees.
+# MAGIC Objective: Produce parcel level metrics related to the presence of trees.
 # MAGIC
 # MAGIC This notebook takes data on tree locations, parcel boundaries, and hedgerow locations to produce parcel tree metrics.
 # MAGIC

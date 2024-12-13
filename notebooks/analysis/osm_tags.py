@@ -6,7 +6,7 @@
 # MAGIC This is to find the most important tag keys.
 # MAGIC
 # MAGIC ### Methodology
-# MAGIC 1. First merge OSM specified tags ("waterway", "highway", ect.) and "other_tags".
+# MAGIC 1. First merge OSM specified tags ("waterway", "highway", etc.) and "other_tags".
 # MAGIC 2. Convert the tags formatting from "key1"=>"value1",key2=>value2 to dictionary.
 # MAGIC
 # MAGIC

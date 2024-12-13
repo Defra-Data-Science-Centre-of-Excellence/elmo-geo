@@ -16,21 +16,21 @@ from elmo_geo.datasets import catalogue
 
 # COMMAND ----------
 
-medallions = sorted({d.level0 for d in catalogue})
+medallions = sorted({d.medallion for d in catalogue})
 default_medallion = medallions[0]
 dbutils.widgets.dropdown("A - Medallion", default_medallion, medallions)
 
 # COMMAND ----------
 
 medallion = dbutils.widgets.get("A - Medallion")
-sources = sorted({d.level1 for d in catalogue if d.level0 == medallion})
+sources = sorted({d.source for d in catalogue if d.medallion == medallion})
 default_source = sources[0]
 dbutils.widgets.dropdown("B - Source", default_source, sources)
 
 # COMMAND ----------
 
 source = dbutils.widgets.get("B - Source")
-datasets = sorted({d.name for d in catalogue if (d.level0 == medallion) and (d.level1 == source)})
+datasets = sorted({d.name for d in catalogue if (d.medallion == medallion) and (d.source == source)})
 default_dataset = datasets[0]
 dbutils.widgets.dropdown("C - Dataset", default_dataset, datasets)
 

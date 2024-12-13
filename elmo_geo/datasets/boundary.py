@@ -84,8 +84,8 @@ class BoundarySegments(DataFrameModel):
 
 boundary_segments = DerivedDataset(
     name="boundary_segments",
-    level0="silver",
-    level1="elmo_geo",
+    medallion="silver",
+    source="elmo_geo",
     model=BoundarySegments,
     restricted=False,
     func=segmentise_boundary,
@@ -124,8 +124,8 @@ def fn_post_adj(sdf: SparkDataFrame) -> SparkDataFrame:
 
 boundary_adjacencies = DerivedDataset(
     name="boundary_adjacencies",
-    level0="silver",
-    level1="elmo_geo",
+    medallion="silver",
+    source="elmo_geo",
     model=SjoinBoundaries,
     restricted=False,
     func=partial(sjoin_boundary_proportion, columns=["id_parcel_right"], fn_pre=fn_pre_adj, fn_post=fn_post_adj),
@@ -137,8 +137,8 @@ boundary_adjacencies = DerivedDataset(
 
 # Hedge
 boundary_hedgerows = DerivedDataset(
-    level0="silver",
-    level1="elmo_geo",
+    medallion="silver",
+    source="elmo_geo",
     name="boundary_hedgerows",
     model=SjoinBoundaries,
     restricted=False,
@@ -150,12 +150,12 @@ boundary_hedgerows = DerivedDataset(
 
 # Water
 def fn_pre_water(sdf: SparkDataFrame) -> SparkDataFrame:
-    return sdf.filter("theme = 'Water' AND description NOT LIKE '%Catchment'").transform(st_clean, tollerance=2)
+    return sdf.filter("theme = 'Water' AND description NOT LIKE '%Catchment'").transform(st_clean, tolerance=2)
 
 
 boundary_water_2m = DerivedDataset(
-    level0="silver",
-    level1="elmo_geo",
+    medallion="silver",
+    source="elmo_geo",
     name="boundary_water_2m",
     model=SjoinBoundaries,
     restricted=True,
@@ -163,7 +163,7 @@ boundary_water_2m = DerivedDataset(
     dependencies=[reference_parcels, boundary_segments, os_ngd_raw],
     is_geo=False,
 )
-"""Proportion of parcel boundary segmetns intersected by simplified waterbody geometries.
+"""Proportion of parcel boundary segments intersected by simplified waterbody geometries.
 
 Simplified to 2m.
 """
@@ -175,8 +175,8 @@ def fn_pre_wall(sdf: SparkDataFrame) -> SparkDataFrame:
 
 
 boundary_walls = DerivedDataset(
-    level0="silver",
-    level1="elmo_geo",
+    medallion="silver",
+    source="elmo_geo",
     name="boundary_walls",
     model=SjoinBoundaries,
     restricted=False,
@@ -192,8 +192,8 @@ def fn_pre_relict(sdf: SparkDataFrame) -> SparkDataFrame:
 
 
 boundary_relict = DerivedDataset(
-    level0="silver",
-    level1="fcp",
+    medallion="silver",
+    source="fcp",
     name="boundary_relict",
     model=SjoinBoundaries,
     restricted=False,
@@ -282,8 +282,8 @@ class BoundaryMerger(DataFrameModel):
 
 
 boundary_merger = DerivedDataset(
-    level0="gold",
-    level1="fcp",
+    medallion="gold",
+    source="fcp",
     name="boundary_merger",
     model=BoundaryMerger,
     restricted=False,
@@ -294,8 +294,8 @@ boundary_merger = DerivedDataset(
 
 
 boundary_merger_50p24m = DerivedDataset(
-    level0="gold",
-    level1="fcp",
+    medallion="gold",
+    source="fcp",
     name="boundary_merger_50p24m",
     model=BoundaryMerger,
     restricted=False,
@@ -306,8 +306,8 @@ boundary_merger_50p24m = DerivedDataset(
 
 
 boundary_merger_90p12m = DerivedDataset(
-    level0="gold",
-    level1="fcp",
+    medallion="gold",
+    source="fcp",
     name="boundary_merger_90p12m",
     model=BoundaryMerger,
     restricted=False,

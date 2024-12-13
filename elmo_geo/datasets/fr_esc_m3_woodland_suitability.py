@@ -42,7 +42,7 @@ class ESCTreeSuitabilityModel(DataFrameModel):
         id_parcel: Parcel ID
         nopeat_area_ha: Geographic area of parcel excluding intersecting peaty soils geometries, in hectares.
         woodland_type: Type of woodland modelled. Either
-        rcp: Representating concetration pathway scenario (i.e cliamte change scenario)
+        rcp: Representing concetration pathway scenario (i.e cliamte change scenario)
         period_AA_T1: Time periods for annual average (AA) and T1 carbon values
         period_T2: period_T2: Time periods for T2 carbon values: 2021_2028, 2021_2036, 2021_2050, 2021_2100
         period_AA_T1_duration: Number of years in each time period (AA_T1)
@@ -115,8 +115,8 @@ def _transform(esc_species_parcels: Dataset) -> pd.DataFrame:
 
 esc_woodland_suitability = DerivedDataset(
     name="esc_woodland_suitability",
-    level0="silver",
-    level1="forest_research",
+    medallion="silver",
+    source="forest_research",
     restricted=False,
     is_geo=False,
     func=_transform,
@@ -134,8 +134,8 @@ def _filter_woodland_suitability_for_elmo(esc_woodland_suitability: DerivedDatas
 
 esc_woodland_suitability_rcp45_2021_2028 = DerivedDataset(
     name="esc_woodland_suitability_rcp45_2021_2028",
-    level0="gold",
-    level1="forest_research",
+    medallion="gold",
+    source="forest_research",
     restricted=False,
     is_geo=False,
     func=_filter_woodland_suitability_for_elmo,

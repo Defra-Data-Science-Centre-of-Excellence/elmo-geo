@@ -122,8 +122,8 @@ def _combine_and_clean_parcels(parcels_sbi: Dataset, parcels_nosbi: Dataset) -> 
 
 reference_parcels_raw = SourceDataset(
     name="reference_parcels_raw",
-    level0="bronze",
-    level1="rural_payments_agency",
+    medallion="bronze",
+    source="rural_payments_agency",
     model=ReferenceParcelsRaw,
     restricted=False,
     source_path="/dbfs/mnt/lab/unrestricted/elm_data/rpa/reference_parcels/LIDM_Parcels.gdb",
@@ -136,8 +136,8 @@ Current version is as of 1st June 2023 and is what is being used by us, LEEP WFM
 
 reference_parcels_raw_no_sbi = SourceDataset(
     name="reference_parcels_raw_no_sbi",
-    level0="bronze",
-    level1="rural_payments_agency",
+    medallion="bronze",
+    source="rural_payments_agency",
     model=ReferenceParcelsRawNoSBI,
     restricted=False,
     source_path="/dbfs/mnt/lab/unrestricted/elm_data/rpa/reference_parcels/No_SBI_Parcels.gdb",
@@ -150,8 +150,8 @@ Current version is as of 1st June 2023 and is what is being used by us, LEEP WFM
 
 reference_parcels = DerivedDataset(
     name="reference_parcels",
-    level0="silver",
-    level1="rural_payments_agency",
+    medallion="silver",
+    source="rural_payments_agency",
     model=ReferenceParcels,
     restricted=False,
     func=_combine_and_clean_parcels,

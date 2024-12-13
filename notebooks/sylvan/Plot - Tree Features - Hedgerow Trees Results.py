@@ -147,7 +147,7 @@ def stacked_bar_parcel_counts(
     sns.set_style("whitegrid")
     sns.set_context("talk")
 
-    # Initialize the matplotlib figure
+    # Initialise the matplotlib figure
     f, ax = plt.subplots(figsize=(20, 6))
 
     # Plot the total crashes
@@ -181,7 +181,7 @@ def stacked_bar_parcel_counts(
         fontsize="large",
     )
     f.supxlabel(
-        "Source: Environment Agency Vegitation Object Model" + r" $1m^2$" + " and Rural Payments Agency EFA Hedges",
+        "Source: Environment Agency Vegetation Object Model" + r" $1m^2$" + " and Rural Payments Agency EFA Hedges",
         x=0.09,
         y=-0.07,
         ha="left",
@@ -295,7 +295,7 @@ def plot_hrtree_dist(
         fontsize="large",
     )
     fig.supxlabel(
-        "Source: Environment Agency Vegitation Object Model" + r" $1m^2$" + " and Rural Payments Agency EFA Hedges",
+        "Source: Environment Agency Vegetation Object Model" + r" $1m^2$" + " and Rural Payments Agency EFA Hedges",
         x=0.09,
         y=-0.09,
         ha="left",

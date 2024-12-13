@@ -47,8 +47,8 @@ class EARoFRSRaw(DataFrameModel):
 
 ea_rofrs_raw = SourceDataset(
     name="ea_rofrs_raw",
-    level0="bronze",
-    level1="ea",
+    medallion="bronze",
+    source="ea",
     model=EARoFRSRaw,
     restricted=False,
     source_path="/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_risk_of_flooding_from_rivers_and_sea/format_GEOPARQUET_risk_of_flooding_from_rivers_and_sea/LATEST_risk_of_flooding_from_rivers_and_sea/Risk_of_Flooding_from_Rivers_and_Sea.parquet/",
@@ -71,8 +71,8 @@ class EARoFRSParcels(DataFrameModel):
 ea_rofrs_parcels = DerivedDataset(
     is_geo=False,
     name="ea_rofrs_parcels",
-    level0="silver",
-    level1="ea",
+    medallion="silver",
+    source="ea",
     restricted=False,
     func=partial(sjoin_parcel_proportion, columns=["prob_4band"]),
     dependencies=[reference_parcels, ea_rofrs_raw],
@@ -98,8 +98,8 @@ class EAFZ3Raw(DataFrameModel):
 
 ea_fz3_raw = SourceDataset(
     name="ea_fz3_raw",
-    level0="bronze",
-    level1="ea",
+    medallion="bronze",
+    source="ea",
     model=EAFZ3Raw,
     restricted=False,
     source_path="/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_ea_flood_map_flood_zone_3/format_GEOPARQUET_ea_flood_map_flood_zone_3/LATEST_ea_flood_map_flood_zone_3/ea_flood_map_for_planning_rivers_and_sea_flood_zone_3_n.parquet/",
@@ -121,8 +121,8 @@ class EAFZ3Parcels(DataFrameModel):
 ea_fz3_parcels = DerivedDataset(
     is_geo=False,
     name="ea_fz3_parcels",
-    level0="silver",
-    level1="ea",
+    medallion="silver",
+    source="ea",
     restricted=False,
     func=sjoin_parcel_proportion,
     dependencies=[reference_parcels, ea_fz3_raw],

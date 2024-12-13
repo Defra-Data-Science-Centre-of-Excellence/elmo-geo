@@ -177,7 +177,7 @@ def dbmtime(path: str):
     file.
 
     Using dbutils for FileInfo objects within the parent directory and filter to the desired
-    FileInfo object. Return the modified time for this object in seconds rather than miliseconds.
+    FileInfo object. Return the modified time for this object in seconds rather than milliseconds.
 
     Parameters:
         path: The path to the file or directory.

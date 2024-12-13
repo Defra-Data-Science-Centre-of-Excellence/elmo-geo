@@ -36,8 +36,8 @@ class CECSoilScapesRaw(DataFrameModel):
 
 cec_soilscapes_raw = SourceDataset(
     name="cec_soilscapes_raw",
-    level0="bronze",
-    level1="cec",
+    medallion="bronze",
+    source="cec",
     model=CECSoilScapesRaw,
     restricted=True,
     is_geo=True,
@@ -87,8 +87,8 @@ class CECSoilScapesParcels(DataFrameModel):
 
 cec_soilscapes_parcels = DerivedDataset(
     name="cec_soilscapes_parcels",
-    level0="silver",
-    level1="cec",
+    medallion="silver",
+    source="cec",
     restricted=True,
     is_geo=False,
     model=CECSoilScapesParcels,
@@ -100,8 +100,8 @@ cec_soilscapes_parcels = DerivedDataset(
 
 ne_soilscapes_habitats_raw = SourceDataset(
     name="ne_soilscapes_habitats_raw",
-    level0="bronze",
-    level1="ne",
+    medallion="bronze",
+    source="ne",
     restricted=False,
     is_geo=False,
     source_path="/dbfs/mnt/lab/unrestricted/elm_data/evast/habitat_stocking/EVAST_HabitatStocking_2024_08_29_SoilscapesIDlookup.csv",
@@ -179,8 +179,8 @@ class CECSoilScapesHabitatsParcels(DataFrameModel):
 
 cec_soilscapes_habitats_parcels = DerivedDataset(
     name="cec_soilscapes_habitats_parcels",
-    level0="silver",
-    level1="cec",
+    medallion="silver",
+    source="cec",
     restricted=True,
     is_geo=False,
     model=CECSoilScapesHabitatsParcels,

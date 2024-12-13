@@ -121,7 +121,7 @@ def calc_bare_soil_percent(
         ndvi_thresh: The Normalised Difference Vegetation Index (NDVI) threshold below
         which the pixel is classed as bare soil.
         resolution: The raster resolution to reproject to. Defaults to 10m which is the
-        maximum resolution available fromt the Sentinel 2A data. Increasing this will speed up
+        maximum resolution available from the Sentinel 2A data. Increasing this will speed up
         the computation but is likely to affect the result.
         simplify: The tolerance to simplify the geometry to in meters. By default no
         simplification is performed but this can speed things up for needlessly complex geometries

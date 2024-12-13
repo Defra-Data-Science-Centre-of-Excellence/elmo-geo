@@ -106,7 +106,7 @@ print(res.summary())
 
 # COMMAND ----------
 
-# model residule plot - to check if model is good
+# model residue plot - to check if model is good
 sns.residplot(x="ndvi", y="bareground_percent_survey", data=pdf)
 
 # COMMAND ----------
@@ -138,7 +138,7 @@ if res.pvalues[1] <= 0.05:
     comment_outcome = "This means we can reject the hypothesis which states the coefficients in the model do not describe the data."
 elif res.pvalues[1] > 0.05:
     comment_outcome = (
-        "This means we can don't have sufficient evidence to reject the hypothesis ehich states the coefficients in the model do not describe the data."
+        "This means we can don't have sufficient evidence to reject the hypothesis which states the coefficients in the model do not describe the data."
     )
 
 print(
@@ -162,7 +162,7 @@ else:
     comment_s = "This means that the two variables have a positive correlation."
 
 print(
-    f"We now will check the correlation coefficent for these variables. We find"
+    f"We now will check the correlation coefficient for these variables. We find"
     f"that the kendals coor is {kendall_corr.iloc[0,1]:.3f} {comment_k} We also "
     f"conducted a spearmans correlation coeffienct which is "
     f"{spearmans_corr.iloc[0,1]:.3f}. {comment_s}",

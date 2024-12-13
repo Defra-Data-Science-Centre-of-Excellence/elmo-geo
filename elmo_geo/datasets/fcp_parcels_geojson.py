@@ -96,8 +96,8 @@ def _parcel_to_bng_geojson_lookup(parcels: Dataset, os_bng_raw: Dataset) -> gpd.
 
 reference_parcels_bng_geojson = DerivedDataset(
     name="reference_parcels_bng_geojson",
-    level0="gold",
-    level1="fcp",
+    medallion="gold",
+    source="fcp",
     model=ReferenceParcelsGeojson,
     restricted=False,
     is_geo=False,

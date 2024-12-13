@@ -152,7 +152,7 @@ else:
 
 # checking the NaN values
 if any(df["ndvi"].isna()):
-    # visualising a na parcel one at a time (change num ffor next parcel in df_na)
+    # visualising a na parcel one at a time (change num for next parcel in df_na)
     df["null_flag"] = df["ndvi"].isna()
     print(f"We found that {df_na['id_parcel'].nunique()} parcels have na results.")
 

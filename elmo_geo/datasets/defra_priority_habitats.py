@@ -69,10 +69,10 @@ class PriorityHabitatParcels(DataFrameModel):
 
 defra_priority_habitat_england_raw = SourceDataset(
     name="defra_priority_habitat_england_raw",
-    level0="bronze",
-    level1="defra",
+    medallion="bronze",
+    source="defra",
     restricted=False,
-    clean_geometry=True,  # Splits geometries resulting in duplciate fids.
+    clean_geometry=True,  # Splits geometries resulting in duplicate fids.
     partition_cols=["habcodes"],
     source_path="/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_priority_habitats_inventory_eng/format_GEOPARQUET_priority_habitats_inventory_eng/LATEST_priority_habitats_inventory_eng/ne_priority_habitat_inventory_england.parquet",
     model=PHIEnglandRawModel,
@@ -81,8 +81,8 @@ defra_priority_habitat_england_raw = SourceDataset(
 
 defra_priority_habitat_parcels = DerivedDataset(
     name="defra_priority_habitat_parcels",
-    level0="silver",
-    level1="defra",
+    medallion="silver",
+    source="defra",
     restricted=False,
     is_geo=False,
     func=partial(sjoin_parcel_proportion, columns=["fid", "habitat_name"], fn_pre=split_mainhabs),
@@ -146,8 +146,8 @@ class PriorityHabitatArea(DataFrameModel):
 
 defra_habitat_area_parcels = DerivedDataset(
     name="defra_habitat_area_parcels",
-    level0="silver",
-    level1="defra",
+    medallion="silver",
+    source="defra",
     restricted=False,
     is_geo=False,
     func=_habitat_area_within_distances,

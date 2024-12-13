@@ -7,8 +7,8 @@ regional bias.
 | ------------ | ---------- | ------ | ----- |
 | Countries[^country] | | UK, BFE | These are; England, Northern Ireland, Scotland, Wales. |
 | International Territorial Level 1[^region] | ITL1 / Regions | UK, BFE | ITL1s are also known as "Regions"[^ons_geographies] | |
-| International Territorial Level 2[^itl2] | ITL2 | UK, BGC | ITL2s are "counties and groups of counties"[^ons_geographies] | |
-| International Territorial Level 3[^itl3] | ITL3 | UK | ITL3s are "counties and groups of unitary authorities"<br>**Currently not available on DASH.** |
+| International Territorial Level 2[^itl2] | ITL2 | UK, BGC | ITL2s are "counties and groups of counties" | |
+| International Territorial Level 3[^itl3] | ITL3 | UK | ITL3s are "counties and groups of unitary authorities" |
 | Counties and Unitary Authorities[^cua] | CUA | England, BFE |
 | Local Authority Districts[^lad] | LAD | England, BFE |
 | Wards[^ward] | | England, BFE |
@@ -66,8 +66,8 @@ class CountryRaw(DataFrameModel):
 
 country_raw = SourceDataset(
     name="country_raw",
-    level0="bronze",
-    level1="ons",
+    medallion="bronze",
+    source="ons",
     model=CountryRaw,
     restricted=False,
     source_path="/dbfs/mnt/base/unrestricted/source_ons_open_geography_portal/dataset_countries_bdy_uk_bfe/format_GEOPARQUET_countries_bdy_uk_bfe/LATEST_countries_bdy_uk_bfe/",
@@ -93,8 +93,8 @@ class CountryParcels(DataFrameModel):
 country_parcels = DerivedDataset(
     is_geo=False,
     name="country_parcels",
-    level0="silver",
-    level1="ons",
+    medallion="silver",
+    source="ons",
     restricted=False,
     func=partial(sjoin_parcel_proportion, columns=["fid", "name"]),
     dependencies=[reference_parcels, country_raw],
@@ -119,8 +119,8 @@ class RegionRaw(DataFrameModel):
 
 region_raw = SourceDataset(
     name="region_raw",
-    level0="bronze",
-    level1="ons",
+    medallion="bronze",
+    source="ons",
     model=RegionRaw,
     restricted=False,
     source_path="/dbfs/mnt/base/unrestricted/source_ons_open_geography_portal/dataset_regions_bdy_en_bfe/format_GEOPARQUET_regions_bdy_en_bfe/LATEST_regions_bdy_en_bfe/",
@@ -146,8 +146,8 @@ class RegionParcels(DataFrameModel):
 region_parcels = DerivedDataset(
     is_geo=False,
     name="region_parcels",
-    level0="silver",
-    level1="ons",
+    medallion="silver",
+    source="ons",
     restricted=False,
     func=partial(sjoin_parcel_proportion, columns=["fid", "name"]),
     dependencies=[reference_parcels, region_raw],
@@ -172,8 +172,8 @@ class ITL2Raw(DataFrameModel):
 
 itl2_raw = SourceDataset(
     name="itl2_raw",
-    level0="bronze",
-    level1="ons",
+    medallion="bronze",
+    source="ons",
     model=ITL2Raw,
     restricted=False,
     source_path="/dbfs/mnt/base/unrestricted/source_ons_open_geography_portal/dataset_int_territorial_lvl2_2021_uk_bgc_v2/format_GPKG_int_territorial_lvl2_2021_uk_bgc_v2/LATEST_int_territorial_lvl2_2021_uk_bgc_v2/International_Territorial_Level_2_January_2021_UK_BGC_V2_2022_1205324512979248673.gpkg",
@@ -199,8 +199,8 @@ class ITL2Parcels(DataFrameModel):
 itl2_parcels = DerivedDataset(
     is_geo=False,
     name="itl2_parcels",
-    level0="silver",
-    level1="ons",
+    medallion="silver",
+    source="ons",
     restricted=False,
     func=partial(sjoin_parcel_proportion, columns=["fid", "name"]),
     dependencies=[reference_parcels, itl2_raw],
@@ -225,11 +225,11 @@ class ITL3Raw(DataFrameModel):
 
 itl3_raw = SourceDataset(
     name="itl3_raw",
-    level0="bronze",
-    level1="ons",
+    medallion="bronze",
+    source="ons",
     model=ITL3Raw,
     restricted=False,
-    source_path="/dbfs/FileStore/elmo_geo-uploads/ons_itl3_2021_11_11.parquet",
+    source_path="/dbfs/mnt/base/unrestricted/source_ons_open_geography_portal/dataset_int_territorial_lvl3_2021_uk_bgc_v3/format_GEOPARQUET_int_territorial_lvl3_2021_uk_bgc_v3/LATEST_int_territorial_lvl3_2021_uk_bgc_v3/",
 )
 
 
@@ -252,8 +252,8 @@ class ITL3Parcels(DataFrameModel):
 itl3_parcels = DerivedDataset(
     is_geo=False,
     name="itl3_parcels",
-    level0="silver",
-    level1="ons",
+    medallion="silver",
+    source="ons",
     restricted=False,
     func=partial(sjoin_parcel_proportion, columns=["fid", "name"]),
     dependencies=[reference_parcels, itl3_raw],
@@ -278,8 +278,8 @@ class CUARaw(DataFrameModel):
 
 cua_raw = SourceDataset(
     name="cua_raw",
-    level0="bronze",
-    level1="ons",
+    medallion="bronze",
+    source="ons",
     model=CUARaw,
     restricted=False,
     source_path="/dbfs/mnt/base/unrestricted/source_ons_open_geography_portal/dataset_counties_uni_authorities_bdy_uk_bfe/format_GEOPARQUET_counties_uni_authorities_bdy_uk_bfe/LATEST_counties_uni_authorities_bdy_uk_bfe/",
@@ -305,8 +305,8 @@ class CUAParcels(DataFrameModel):
 cua_parcels = DerivedDataset(
     is_geo=False,
     name="cua_parcels",
-    level0="silver",
-    level1="ons",
+    medallion="silver",
+    source="ons",
     restricted=False,
     func=partial(sjoin_parcel_proportion, columns=["fid", "name"]),
     dependencies=[reference_parcels, cua_raw],
@@ -331,8 +331,8 @@ class LADRaw(DataFrameModel):
 
 lad_raw = SourceDataset(
     name="lad_raw",
-    level0="bronze",
-    level1="ons",
+    medallion="bronze",
+    source="ons",
     model=LADRaw,
     restricted=False,
     source_path="/dbfs/mnt/base/unrestricted/source_ons_open_geography_portal/dataset_local_authority_districts_bdy_uk_bfe/format_GEOPARQUET_local_authority_districts_bdy_uk_bfe/LATEST_local_authority_districts_bdy_uk_bfe/",
@@ -358,8 +358,8 @@ class LADParcels(DataFrameModel):
 lad_parcels = DerivedDataset(
     is_geo=False,
     name="lad_parcels",
-    level0="silver",
-    level1="ons",
+    medallion="silver",
+    source="ons",
     restricted=False,
     func=partial(sjoin_parcel_proportion, columns=["fid", "name"]),
     dependencies=[reference_parcels, lad_raw],
@@ -384,8 +384,8 @@ class WardRaw(DataFrameModel):
 
 ward_raw = SourceDataset(
     name="ward_raw",
-    level0="bronze",
-    level1="ons",
+    medallion="bronze",
+    source="ons",
     model=WardRaw,
     restricted=False,
     source_path="/dbfs/mnt/base/unrestricted/source_ons_open_geography_portal/dataset_wards_bdy_uk_bfe/format_GEOPARQUET_wards_bdy_uk_bfe/LATEST_wards_bdy_uk_bfe/",
@@ -411,8 +411,8 @@ class WardParcels(DataFrameModel):
 ward_parcels = DerivedDataset(
     is_geo=False,
     name="ward_parcels",
-    level0="silver",
-    level1="ons",
+    medallion="silver",
+    source="ons",
     restricted=False,
     func=partial(sjoin_parcel_proportion, columns=["fid", "name"]),
     dependencies=[reference_parcels, ward_raw],
@@ -437,8 +437,8 @@ class BUARaw(DataFrameModel):
 
 bua_raw = SourceDataset(
     name="bua_raw",
-    level0="bronze",
-    level1="ons",
+    medallion="bronze",
+    source="ons",
     model=BUARaw,
     restricted=False,
     source_path="/dbfs/mnt/base/unrestricted/source_ons_open_geography_portal/dataset_built_up_areas_2022_gb_bgg/format_GEOPARQUET_built_up_areas_2022_gb_bgg/LATEST_built_up_areas_2022_gb_bgg",
@@ -464,8 +464,8 @@ class BUAParcels(DataFrameModel):
 bua_parcels = DerivedDataset(
     is_geo=False,
     name="bua_parcels",
-    level0="silver",
-    level1="ons",
+    medallion="silver",
+    source="ons",
     restricted=False,
     func=partial(sjoin_parcel_proportion, columns=["fid", "name"]),
     dependencies=[reference_parcels, bua_raw],

@@ -6,7 +6,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       # - uses: https://raw.githubusercontent.com/databrickslabs/mosaic/main/.github/actions/scala_build/action.yml
       # - uses: https://raw.githubusercontent.com/databrickslabs/mosaic/main/.github/actions/python_build/action.yml

@@ -234,7 +234,7 @@ def get_centroid_value_from_raster(
 
     Parameters:
         raster_dataset: A single file raster dataset to lookup values in.
-        raster_processing: A function to pre-process the raset before lookin up, for example
+        raster_processing: A function to pre-process the raset before looking up, for example
              to select a band/variable or to interpolate missing values etc.
         resolution: Resolution to reproject the raster to.
         batch_size: How many rows to process on a node in one go. Default is 500.

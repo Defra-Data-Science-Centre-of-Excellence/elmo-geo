@@ -47,7 +47,7 @@ from .rpa_reference_parcels import reference_parcels
 
 
 # Sites of Scientific Interest (SSSI)
-class NESSSIUnitsRaw(DataFrameModel):
+class NeSssiUnitsRaw(DataFrameModel):
     """Model for Natural England Sites of Special Scientific Interest (SSSI) units dataset.
     Attributes:
        sssi_name: Name of the SSSI
@@ -62,7 +62,7 @@ class NESSSIUnitsRaw(DataFrameModel):
     geometry: Geometry(crs=SRID) = Field()
 
 
-class NESSSIUnitsParcels(DataFrameModel):
+class NeSssiUnitsParcels(DataFrameModel):
     """Model for Natural England Sites of Special Scientific Interest (SSSI) dataset joined with Rural Payment Agency parcel dataset.
 
     Attributes:
@@ -76,9 +76,9 @@ class NESSSIUnitsParcels(DataFrameModel):
 
 ne_sssi_units_raw = SourceDataset(
     name="ne_sssi_units_raw",
-    level0="bronze",
-    level1="ne",
-    model=NESSSIUnitsRaw,
+    medallion="bronze",
+    source="ne",
+    model=NeSssiUnitsRaw,
     restricted=False,
     source_path="/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_sites_of_special_scientific_interest_units/format_GEOPARQUET_sites_of_special_scientific_interest_units/SNAPSHOT_2024_08_10_sites_of_special_scientific_interest_units/",
 )
@@ -86,17 +86,17 @@ ne_sssi_units_raw = SourceDataset(
 ne_sssi_units_parcels = DerivedDataset(
     is_geo=False,
     name="ne_sssi_units_parcels",
-    level0="silver",
-    level1="ne",
+    medallion="silver",
+    source="ne",
     restricted=False,
     func=sjoin_parcel_proportion,
     dependencies=[reference_parcels, ne_sssi_units_raw],
-    model=NESSSIUnitsParcels,
+    model=NeSssiUnitsParcels,
 )
 
 
 # National Nature Reserves (NNR)
-class NENNRRaw(DataFrameModel):
+class NeNnrRaw(DataFrameModel):
     """Model for Natural England National Nature Reserves (NNR) dataset.
     Attributes:
        nnr_name: Name of the NNR
@@ -109,7 +109,7 @@ class NENNRRaw(DataFrameModel):
     geometry: Geometry(crs=SRID) = Field()
 
 
-class NESSSINNRParcels(DataFrameModel):
+class NeNnrParcels(DataFrameModel):
     """Model for Natural England National Nature Reserves (NNR) dataset joined with Rural Payment Agency parcel dataset.
 
     Attributes:
@@ -123,9 +123,9 @@ class NESSSINNRParcels(DataFrameModel):
 
 ne_nnr_raw = SourceDataset(
     name="ne_nnr_raw",
-    level0="bronze",
-    level1="ne",
-    model=NENNRRaw,
+    medallion="bronze",
+    source="ne",
+    model=NeNnrRaw,
     restricted=False,
     source_path="/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_national_nature_reserves/format_GEOPARQUET_national_nature_reserves/LATEST_national_nature_reserves/",
 )
@@ -134,17 +134,17 @@ ne_nnr_raw = SourceDataset(
 ne_nnr_parcels = DerivedDataset(
     is_geo=False,
     name="ne_nnr_parcels",
-    level0="silver",
-    level1="ne",
+    medallion="silver",
+    source="ne",
     restricted=False,
     func=sjoin_parcel_proportion,
     dependencies=[reference_parcels, ne_nnr_raw],
-    model=NESSSINNRParcels,
+    model=NeNnrParcels,
 )
 
 
 # Special Areas of Conservation (SAC)
-class NESACRaw(DataFrameModel):
+class NeSacRaw(DataFrameModel):
     """Model for Natural England Special Areas of Conservation (SAC) dataset.
     Attributes:
         sac_name: Name of each SAC
@@ -157,7 +157,7 @@ class NESACRaw(DataFrameModel):
     geometry: Geometry(crs=SRID) = Field()
 
 
-class NESACParcels(DataFrameModel):
+class NeSacParcels(DataFrameModel):
     """Model for Natural England Special Areas of Conservation (SAC) dataset joined with Rural Payment Agency parcel dataset.
 
     Parameters:
@@ -171,9 +171,9 @@ class NESACParcels(DataFrameModel):
 
 ne_sac_raw = SourceDataset(
     name="ne_sac_raw",
-    level0="bronze",
-    level1="ne",
-    model=NESACRaw,
+    medallion="bronze",
+    source="ne",
+    model=NeSacRaw,
     restricted=False,
     source_path="/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_special_areas_for_conservation/format_GEOPARQUET_special_areas_for_conservation/LATEST_special_areas_for_conservation/",
 )
@@ -182,17 +182,17 @@ ne_sac_raw = SourceDataset(
 ne_sac_parcels = DerivedDataset(
     is_geo=False,
     name="ne_sac_parcels",
-    level0="silver",
-    level1="ne",
+    medallion="silver",
+    source="ne",
     restricted=False,
     func=sjoin_parcel_proportion,
     dependencies=[reference_parcels, ne_sac_raw],
-    model=NESACParcels,
+    model=NeSacParcels,
 )
 
 
 # Special Protection Areas (SPAs)
-class JNCCSPARaw(DataFrameModel):
+class JnccSpaRaw(DataFrameModel):
     """Model for Joint Nature Conservation Committee Special Protection Areas (SPAs) dataset.
     Attributes:
         spa_name: Name of each SPA
@@ -205,7 +205,7 @@ class JNCCSPARaw(DataFrameModel):
     geometry: Geometry(crs=SRID) = Field()
 
 
-class JNCCSPARParcels(DataFrameModel):
+class JnccSpaParcels(DataFrameModel):
     """Model for Joint Nature Conservation Committee Special Protection Areas (SPAs) dataset joined with Rural Payment Agency parcel dataset.
     Attributes:
         id_parcel: 11 character RPA reference parcel ID (including the sheet ID) e.g. `SE12263419`.
@@ -218,9 +218,9 @@ class JNCCSPARParcels(DataFrameModel):
 
 jncc_spa_raw = SourceDataset(
     name="jncc_spa_raw",
-    level0="bronze",
-    level1="jncc",
-    model=JNCCSPARaw,
+    medallion="bronze",
+    source="jncc",
+    model=JnccSpaRaw,
     restricted=False,
     source_path="/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_special_protection_areas/format_GEOPARQUET_special_protection_areas/LATEST_special_protection_areas/",
 )
@@ -229,17 +229,17 @@ jncc_spa_raw = SourceDataset(
 jncc_spa_parcels = DerivedDataset(
     is_geo=False,
     name="jncc_spa_parcels",
-    level0="silver",
-    level1="jncc",
+    medallion="silver",
+    source="jncc",
     restricted=False,
     func=sjoin_parcel_proportion,
     dependencies=[reference_parcels, jncc_spa_raw],
-    model=JNCCSPARParcels,
+    model=JnccSpaParcels,
 )
 
 
 # ramsar
-class NERamsarRaw(DataFrameModel):
+class NeRamsarRaw(DataFrameModel):
     """Model for Natural England Ramsar dataset.
     Attributes:
         name: Name of each ramsar site
@@ -252,7 +252,7 @@ class NERamsarRaw(DataFrameModel):
     geometry: Geometry(crs=SRID) = Field()
 
 
-class NERamsarParcels(DataFrameModel):
+class NeRamsarParcels(DataFrameModel):
     """Model for Natural England Ramsar dataset joined with Rural Payment Agency parcel dataset.
     Attributes:
         id_parcel: 11 character RPA reference parcel ID (including the sheet ID) e.g. `SE12263419`.
@@ -265,9 +265,9 @@ class NERamsarParcels(DataFrameModel):
 
 ne_ramsar_raw = SourceDataset(
     name="ne_ramsar_raw",
-    level0="bronze",
-    level1="ne",
-    model=NERamsarRaw,
+    medallion="bronze",
+    source="ne",
+    model=NeRamsarRaw,
     restricted=False,
     source_path="/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_ramsar/format_GEOPARQUET_ramsar/LATEST_ramsar/",
 )
@@ -276,17 +276,17 @@ ne_ramsar_raw = SourceDataset(
 ne_ramsar_parcels = DerivedDataset(
     is_geo=False,
     name="ne_ramsar_parcels",
-    level0="silver",
-    level1="ne",
+    medallion="silver",
+    source="ne",
     restricted=False,
     func=sjoin_parcel_proportion,
     dependencies=[reference_parcels, ne_ramsar_raw],
-    model=NERamsarParcels,
+    model=NeRamsarParcels,
 )
 
 
 # Marine Conservation Zones
-class NEMarineConservationZonesRaw(DataFrameModel):
+class NeMarineConservationZonesRaw(DataFrameModel):
     """Model for Natural England Marine Conservation Zones (MCZ) dataset.
     Attributes:
         MCZ_NAME: Name of each MCZ site
@@ -299,7 +299,7 @@ class NEMarineConservationZonesRaw(DataFrameModel):
     geometry: Geometry(crs=SRID) = Field()
 
 
-class NEMarineConservationZonesParcels(DataFrameModel):
+class NeMarineConservationZonesParcels(DataFrameModel):
     """Model for Natural England Marine Conservation Zones (MCZ) dataset joined with Rural Payment Agency parcel dataset.
     Attributes:
         id_parcel: 11 character RPA reference parcel ID (including the sheet ID) e.g. `SE12263419`.
@@ -312,9 +312,9 @@ class NEMarineConservationZonesParcels(DataFrameModel):
 
 ne_marine_conservation_zones_raw = SourceDataset(
     name="ne_marine_conservation_zones_raw",
-    level0="bronze",
-    level1="ne",
-    model=NEMarineConservationZonesRaw,
+    medallion="bronze",
+    source="ne",
+    model=NeMarineConservationZonesRaw,
     restricted=False,
     source_path="/dbfs/mnt/base/unrestricted/source_natural_england_open_data_geoportal/dataset_marine_conservation_zones/format_GEOPARQUET_marine_conservation_zones/LATEST_marine_conservation_zones/",
 )
@@ -323,12 +323,12 @@ ne_marine_conservation_zones_raw = SourceDataset(
 ne_marine_conservation_zones_parcels = DerivedDataset(
     is_geo=False,
     name="ne_marine_conservation_zones_parcels",
-    level0="silver",
-    level1="ne",
+    medallion="silver",
+    source="ne",
     restricted=False,
     func=sjoin_parcel_proportion,
     dependencies=[reference_parcels, ne_marine_conservation_zones_raw],
-    model=NEMarineConservationZonesParcels,
+    model=NeMarineConservationZonesParcels,
 )
 
 
@@ -355,8 +355,8 @@ class ProtectedAreasParcels(DataFrameModel):
 protected_areas_parcels = DerivedDataset(
     is_geo=False,
     name="protected_areas_parcels",
-    level0="silver",
-    level1="protected_areas_combined",
+    medallion="silver",
+    source="protected_areas_combined",
     restricted=False,
     func=partial(combine_wide, sources=["sssi", "nnr", "sac", "spa", "ramsar", "mcz"]),
     dependencies=[ne_sssi_units_parcels, ne_nnr_parcels, ne_sac_parcels, jncc_spa_parcels, ne_ramsar_parcels, ne_marine_conservation_zones_parcels],
