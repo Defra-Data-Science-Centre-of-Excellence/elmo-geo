@@ -84,7 +84,7 @@ def prep_tree_point(sdf):
 
 boundary_tree_count = DerivedDataset(
     medallion="silver",
-    level1="fcp",
+    source="fcp",
     source="boundary_tree_count",
     model=FCPTBoundaryTreeCounts,
     restricted=False,
