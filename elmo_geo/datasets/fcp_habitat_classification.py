@@ -50,7 +50,7 @@ class EVASTHabitatsMappingModel(DataFrameModel):
 
     This lookup serves two functions. First, to lookup from habitat types in the PHI, LCM, and SoilScapes
     datasets to the high level habitats used when modelling habitat creation actions. Second, to lookup from
-    PHI and LCM habitat types to euivalent SoilScape habitats used as part of the methodology to assign habitat
+    PHI and LCM habitat types to equivalent SoilScape habitats used as part of the methodology to assign habitat
     creation suitability to parcels.
 
     Parameters:
@@ -109,8 +109,8 @@ class EVASTHabitatsMappingModel(DataFrameModel):
 
 evast_habitat_mapping_raw = SourceDataset(
     name="evast_habitat_mapping_raw",
-    level0="bronze",
-    level1="evast",
+    medallion="bronze",
+    source="evast",
     restricted=False,
     is_geo=False,
     model=EVASTHabitatsMappingModel,
@@ -151,7 +151,7 @@ def _get_parcel_candidate_habitats(
         .selectExpr("action_group", "action_habitat", "is_upland as is_upland_lu", "habitat_code", "soilscape_habitat_code")
     )
 
-    # idenfity candidate habitats that can be created on parcels based on the parcel soil type
+    # identify candidate habitats that can be created on parcels based on the parcel soil type
     # and whether the parcel is upland or lowland.
     return (
         is_upland_parcels.sdf()
@@ -178,7 +178,7 @@ def _get_phi_area_with_soilscapes_habitats(
     evast_habitat_mapping_raw: Dataset,
     distance_thresholds: list[int] = [1_000, 3_000],
 ) -> SparkDataFrame:
-    """Produce lookup from PHI habitat names to soilscape habitat codes for the PHI area within threshol distances dataset.
+    """Produce lookup from PHI habitat names to soilscape habitat codes for the PHI area within threshold distances dataset.
 
     Parameters:
         defra_habitat_area_parcels: PHI area within threshold distances of parcels dataset.
@@ -245,7 +245,7 @@ def _assign_parcel_habitat_types_from_candidates(
 
     Parameters:
         sdf_candidates: Lookup from parcel ID to candidate habitats to assign to that parcel.
-        defra_habitat_area_parcels: Dataset of area of priority habitats withing different threshold
+        defra_habitat_area_parcels: Dataset of area of priority habitats within different threshold
             distances from each parcel.
         evast_habitat_mapping_raw: Lookup between habitat names used in the priority habitats inventory (PHI)
             and EVAST.
@@ -266,7 +266,7 @@ def _assign_parcel_habitat_types_from_candidates(
         .filter("matches_soilscape_habitat OR (action_group='SRG')")
     )
 
-    # Create a dataset of deafult SRG habitat types for parcels that are on SRG compatible soils
+    # Create a dataset of default SRG habitat types for parcels that are on SRG compatible soils
     # Used in cases where parcels do not have instances of PHI within threshold distances but are on SRG compatible soil
     # Assign these habitats to acid grassland, everything else meadow
     default_acid_gr_habitats = (
@@ -416,8 +416,8 @@ class HabitatCreationTypeParcelModel(DataFrameModel):
 
 fcp_habitat_creation_type_parcel = DerivedDataset(
     name="fcp_habitat_creation_type_parcel",
-    level0="silver",
-    level1="fcp",
+    medallion="silver",
+    source="fcp",
     restricted=False,
     is_geo=False,
     func=_habitat_creation_classification,
@@ -471,8 +471,8 @@ class EVASTHabitatsManagementMappingModel(DataFrameModel):
 
 evast_habitat_management_mapping_raw = SourceDataset(
     name="evast_habitat_management_mapping_raw",
-    level0="bronze",
-    level1="evast",
+    medallion="bronze",
+    source="evast",
     restricted=False,
     is_geo=False,
     model=EVASTHabitatsManagementMappingModel,
@@ -607,8 +607,8 @@ class IsPHIParcelModel(DataFrameModel):
 
 fcp_is_phi_parcel = DerivedDataset(
     name="fcp_is_phi_parcel",
-    level0="gold",
-    level1="fcp",
+    medallion="gold",
+    source="fcp",
     restricted=False,
     is_geo=False,
     func=_is_phi,
@@ -624,7 +624,7 @@ fcp_is_phi_parcel = DerivedDataset(
 based on whether they intersect priority habitat inventory (PHI) geometries.
 
 Also provides total proportions of raw PHI habtiat types in each parcel. Proportions should not
-be summed or subracted across habitat types since the geometries these are based on may overlap.
+be summed or subtracted across habitat types since the geometries these are based on may overlap.
 
 This is used to model where priority habitats already exist and therefore where parcels are currently
 eligible for habitat management actions.

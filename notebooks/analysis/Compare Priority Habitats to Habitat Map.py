@@ -118,7 +118,7 @@ df_comp.head(10)
 # map from one habitat type to another
 df_comp["A_pred_from_Main_Habit"] = df_comp["Main_Habit"].map(habitat_type_lookup.get)
 df_comp["Main_Habit_from_A_pred"] = df_comp["A_pred"].map({v: k for k, v in habitat_type_lookup.items()}.get)
-# this mappping systematically excludes some Main Habit classes but that doesn't affect the analysis
+# this mapping systematically excludes some Main Habit classes but that doesn't affect the analysis
 
 # COMMAND ----------
 
@@ -276,7 +276,7 @@ for i, v1 in enumerate(b1.datavalues):
 # COMMAND ----------
 
 
-# plots showing which habitats most commonly overlap with parcels acording to each dataset
+# plots showing which habitats most commonly overlap with parcels according to each dataset
 sns.set(
     context="talk",
     style="white",

@@ -6,7 +6,7 @@
         "vscode": {
             "settings": {},
             "extensions": [
-                "streetsidesoftware.code-spell-checker-british-english",
+                "tekumara.typos-vscode",
                 "charliermarsh.ruff"
             ]
         }

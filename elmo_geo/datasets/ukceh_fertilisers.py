@@ -26,8 +26,8 @@ KM2_TO_HA = 100.0  # 100 ha = 1 km2
 
 ukceh_nitrogen_raw = SourceSingleFileRasterDataset(
     name="ukceh_nitrogen_raw",
-    level0="bronze",
-    level1="ukceh",
+    medallion="bronze",
+    source="ukceh",
     restricted=True,
     source_path="/dbfs/mnt/lab/restricted/ukceh/land_cover_plus_fertilisers_2010_2015/data/fertiliser_n_prediction_uncertainty.tif",
 )
@@ -37,8 +37,8 @@ This dataset has 2 bands, the first is the nitrogen prediction in kg/km2, the se
 
 ukceh_phosphorus_raw = SourceSingleFileRasterDataset(
     name="ukceh_phosphorus_raw",
-    level0="bronze",
-    level1="ukceh",
+    medallion="bronze",
+    source="ukceh",
     restricted=True,
     source_path="/dbfs/mnt/lab/restricted/ukceh/land_cover_plus_fertilisers_2010_2015/data/fertiliser_p_prediction_uncertainty.tif",
 )
@@ -48,8 +48,8 @@ This dataset has 2 bands, the first is the phosphorus prediction in kg/km2, the 
 
 ukceh_potassium_raw = SourceSingleFileRasterDataset(
     name="ukceh_potassium_raw",
-    level0="bronze",
-    level1="ukceh",
+    medallion="bronze",
+    source="ukceh",
     restricted=True,
     source_path="/dbfs/mnt/lab/restricted/ukceh/land_cover_plus_fertilisers_2010_2015/data/fertiliser_k_prediction_uncertainty.tif",
 )
@@ -88,8 +88,8 @@ def _calculate_fertiliser(ukceh_fertiliser_raw: SourceSingleFileRasterDataset, r
 
 ukceh_nitrogen_parcels = DerivedDataset(
     name="ukceh_nitrogen_parcels",
-    level0="silver",
-    level1="ukceh",
+    medallion="silver",
+    source="ukceh",
     restricted=True,
     is_geo=False,
     func=_calculate_fertiliser,
@@ -103,8 +103,8 @@ Where UKCEH has NA values the value is interpolated from the nearest available v
 
 ukceh_phosphorus_parcels = DerivedDataset(
     name="ukceh_phosphorus_parcels",
-    level0="silver",
-    level1="ukceh",
+    medallion="silver",
+    source="ukceh",
     restricted=True,
     is_geo=False,
     func=_calculate_fertiliser,
@@ -118,8 +118,8 @@ Where UKCEH has NA values the value is interpolated from the nearest available v
 
 ukceh_potassium_parcels = DerivedDataset(
     name="ukceh_potassium_parcels",
-    level0="silver",
-    level1="ukceh",
+    medallion="silver",
+    source="ukceh",
     restricted=True,
     is_geo=False,
     func=_calculate_fertiliser,
@@ -145,8 +145,8 @@ def _combine_fertilisers(
 
 ukceh_fertilisers_parcels = DerivedDataset(
     name="ukceh_fertilisers_parcels",
-    level0="silver",
-    level1="ukceh",
+    medallion="silver",
+    source="ukceh",
     restricted=True,
     is_geo=False,
     func=_combine_fertilisers,

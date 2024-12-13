@@ -14,7 +14,7 @@ def sjoin_rdd(
     partition_right: bool = False,
     index_type: str = "RTREE",
     use_index: bool = True,
-    consider_boundary_itersection: bool = True,
+    consider_boundary_intersection: bool = True,
 ) -> SparkDataFrame:
     """Spatial Join using RDD"""
     # RDD
@@ -36,7 +36,7 @@ def sjoin_rdd(
         rdd_right,
         rdd_left,
         useIndex=use_index,
-        considerBoundaryIntersection=consider_boundary_itersection,
+        considerBoundaryIntersection=consider_boundary_intersection,
     )
     return Adapter.toDf(spatialPairRDD=rdd, sparkSession=spark)
 
@@ -192,7 +192,7 @@ def knn(
         id_left: Field in left dataframe to group entries by when finding nearest neighbour.
         id_left: Field in right dataframe to group entries by when finding nearest neighbour.
         k: Number of neighbours to return.
-        distance_threshol: Maximum distance in meters of neighbours.
+        distance_threshold: Maximum distance in meters of neighbours.
 
     Returns:
         SparkDataFrame

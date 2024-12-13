@@ -1,9 +1,9 @@
-# elmo-geo
+# ELM Modelling Geospatial
 This repository is an companion to [ELMO][elmo]. It has been separated to work on [DASH][dash] for large scale geospatial analysis.  Primarily, the outputs from elmo-geo inform the missing [eligibility criteria][elig] for ELMO.
 
 | Status | Project | Description |
 | ------ | ------- | ----------- |
-| :gear: | Ingestion | [readme](notebooks/ingestion/readme.md)
+| :gear: | Ingestion |
 | :gear: | Sylvan |
 | :gear: | Boundary |
 | :gear: | Bare Soils |
@@ -14,6 +14,7 @@ Table of Projects: :negative_squared_cross_mark: Planned, :gear: Ongoing, :ballo
 
 ## Getting Started
 Use DASH's [onboarding guide][dash_onboarding] to get access, it requires you to submit a MyIT ticket.  For elmo-geo you will need extra permissions.
+
 |   |   |
 |---|---|
 Workspace | PRDDAPINFDB02<b>406</b>
@@ -49,6 +50,7 @@ To contribute your work will be validated using Ruff and pytest.
 
 ### Medallion Architecture
 [Medallion Architecture][databricks_medallion] uses Bronze/Silver/Gold to organise datasets that are; Bronze have come from a data provider ("as is"), Silver have been modified for easier analysis ("ready to use"), Gold are analysis outputs suitable for stakeholders ("ready to output").
+
 |   |   |   |
 |---|---|---|
 bronze | As it comes | `dbfs:/mnt/base`<br>`dbfs:/mnt/lab/restricted/ELM-Project/bronze`<br>~`/Volumes/prd_dash_lab/fcp_restricted/bronze`~

@@ -7,12 +7,12 @@
 # MAGIC
 # MAGIC This notebook loads the outputs of `01_combine_historic_datasets` and intersects these with parcels.
 # MAGIC
-# MAGIC It is based on the `proces_datasets` notebook but is different in the following ways:
+# MAGIC It is based on the `process_datasets` notebook but is different in the following ways:
 # MAGIC - combines the intersection prportions of three different historic dfeatures datasets into a single output dataset
-# MAGIC - buffers the historic geometries by 0m and 6m and calcualtes the proportion for each
+# MAGIC - buffers the historic geometries by 0m and 6m and calculates the proportion for each
 # MAGIC
 # MAGIC To do:
-# MAGIC - intersect features with parcel boundaries and calculate proportion of boudnary
+# MAGIC - intersect features with parcel boundaries and calculate proportion of boundary
 
 # COMMAND ----------
 
@@ -50,7 +50,7 @@ f_combined_sites = next(v for v in he_combined_dataset.versions if v.name == ver
 print(f"\n\nHistoric features paths:\n{f_combined_sites}")
 
 target_epsg = 27700
-simplify_tolerence: float = 0.5  # metres
+simplify_tolerance: float = 0.5  # metres
 max_vertices: int = 256  # per polygon (row)
 
 date = "2024_05_16"
@@ -59,13 +59,13 @@ f_output_historic_features = f"dbfs:/mnt/lab/restricted/ELM-Project/out/{file_na
 
 # COMMAND ----------
 
-# process the parcels dataset to ensure validity, simplify the vertices to a tolerence,
+# process the parcels dataset to ensure validity, simplify the vertices to a tolerance,
 # and subdivide large geometries
 df_parcels = (
     spark.read.format("geoparquet")
     .load(path_parcels)
     .withColumn("geometry", F.expr("ST_MakeValid(geometry)"))
-    .withColumn("geometry", F.expr(f"ST_SimplifyPreserveTopology(geometry, {simplify_tolerence})"))
+    .withColumn("geometry", F.expr(f"ST_SimplifyPreserveTopology(geometry, {simplify_tolerance})"))
     .withColumn("geometry", F.expr("ST_Force_2D(geometry)"))
     .withColumn("geometry", F.expr("ST_MakeValid(geometry)"))
     .select("id_parcel", "geometry")

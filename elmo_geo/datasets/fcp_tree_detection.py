@@ -21,7 +21,7 @@ from .boundary import boundary_segments
 from .rpa_reference_parcels import reference_parcels
 
 
-# Tree Detctions Dataset - potentially temporay data used for a specific BTO request
+# Tree Detections Dataset - potentially temporary data used for a specific BTO request
 class FCPTreeDetectionsRaw(DataFrameModel):
     """Model for raw tree detection data before parcel joins and counts.
     Attributes:
@@ -48,8 +48,8 @@ class FCPTreeDetectionsRaw(DataFrameModel):
 
 fcp_tree_detection_raw = SourceDataset(
     name="fcp_tree_detection_raw",
-    level0="bronze",
-    level1="fcp",
+    medallion="bronze",
+    source="fcp",
     model=FCPTreeDetectionsRaw,
     restricted=False,
     is_geo=False,

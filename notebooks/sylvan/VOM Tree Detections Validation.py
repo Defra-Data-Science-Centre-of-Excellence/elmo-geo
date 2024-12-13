@@ -3,7 +3,7 @@
 # MAGIC
 # MAGIC # Validate VOM tree detections
 # MAGIC
-# MAGIC The VOM tree detection process uses two parameters when classifying cells in teh VOM raster data as tree tops
+# MAGIC The VOM tree detection process uses two parameters when classifying cells in the VOM raster data as tree tops
 # MAGIC (more parameters are involved i the process of delineating tree crowns into polygons).
 # MAGIC
 # MAGIC These parameters should ideally be tuned so that the tree detection process best matches ground truth data.
@@ -12,7 +12,7 @@
 # MAGIC the Trees Outside Woodland (TOW) dataset.
 # MAGIC
 # MAGIC The TOW dataset is itself a model of tree locatiosn and therefore not a true source of ground truch. However, this data
-# MAGIC has undergone a more thorough validation process which includes comparisions to field samples. It therefore represents a
+# MAGIC has undergone a more thorough validation process which includes comparisons to field samples. It therefore represents a
 # MAGIC more authoritative source of tree locations and extend than the VOM tree detections.
 # MAGIC
 # MAGIC ## Method
@@ -226,19 +226,19 @@ sdf_sampled_tiles = spark.createDataFrame(df_sampled_tiles).repartition(10, "maj
 # COMMAND ----------
 
 # DBTITLE 1,Filter datase to these tiles
-simplify_tollerance = 1
+simplify_tolerance = 1
 
 sdf_vom = (
     spark.read.parquet(output_trees_path)
     .withColumn("geometry_orig", io.load_geometry("crown_poly_raster", encoding_fn="ST_GeomFromText"))
-    .withColumn("geometry", F.expr(f"ST_SimplifyPreserveTopology(geometry_orig, {simplify_tollerance})"))
+    .withColumn("geometry", F.expr(f"ST_SimplifyPreserveTopology(geometry_orig, {simplify_tolerance})"))
     .withColumn("top_point", io.load_geometry("top_point", encoding_fn="ST_GeomFromText"))
     .repartition(10_000)
 )
 sdf_nfi = (
     spark.read.parquet(nfi_path)
     .withColumn("geometry_orig", io.load_geometry("wkt", encoding_fn="ST_GeomFromText"))
-    .withColumn("geometry", F.expr(f"ST_SimplifyPreserveTopology(geometry_orig, {simplify_tollerance})"))
+    .withColumn("geometry", F.expr(f"ST_SimplifyPreserveTopology(geometry_orig, {simplify_tolerance})"))
     .repartition(1_000)
 )
 
@@ -247,7 +247,7 @@ sdf_tow_sp = spark.read.parquet(tow_sp_parquet_output)
 sdf_tow = (
     sdf_tow_li.union(sdf_tow_sp.select(*list(sdf_tow_li.columns)))
     .withColumn("geometry_orig", io.load_geometry("geometry"))
-    .withColumn("geometry", F.expr(f"ST_SimplifyPreserveTopology(geometry_orig, {simplify_tollerance})"))
+    .withColumn("geometry", F.expr(f"ST_SimplifyPreserveTopology(geometry_orig, {simplify_tolerance})"))
     .repartition(10_000)
 )
 

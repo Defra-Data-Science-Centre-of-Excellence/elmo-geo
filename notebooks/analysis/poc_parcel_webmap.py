@@ -15,7 +15,7 @@
 # MAGIC Currently this is achieved by defaulting to not displaying all parcels geometries and toggling with 50km area of the country to show geometries for.
 # MAGIC
 # MAGIC ## Summarising things I have checks/explored
-# MAGIC - Parcel simplification: tollerance=100 is too high, parcels becomes messy and overlapping. tollerance=50 is roughly the upper limit.
+# MAGIC - Parcel simplification: tolerance=100 is too high, parcels becomes messy and overlapping. tolerance=50 is roughly the upper limit.
 # MAGIC - Trying to display all parcels in a folium map resulted in this error in Databricks 'Command result size
 # MAGIC   exceeds limit: Exceeded 20971520 bytes (current = 20977394)'. Almost certain SCE machines also wouldn't be able to handle this.
 # MAGIC - Trying to display parcels centroids also not feasible. Leads to large html files and very long load times (even with Marker Clsutering)
@@ -59,7 +59,7 @@ register()
 
 
 def base_empty_map(centre=None, zoom_start=None):
-    """Prepares a folium map centered in a central GPS point of Toulouse"""
+    """Prepares a folium map centred in a central GPS point of Toulouse"""
     if centre is None:
         centre = (52.133236898161755, -1.2970901724513781)
     if zoom_start is None:
@@ -106,7 +106,7 @@ def foilium_map(geo_data, df_data, variable, variable_name, title="", nan_value=
     # creating a state indexed version of the dataframe so we can lookup values
     df_data_indexed = df_data.set_index('id')
     
-    # looping thru the geojson object and adding a new property(unemployment)
+    # looping through the geojson object and adding a new property(unemployment)
     # and assigning a value from our dataframe
     for s in cp.geojson.data['features']:
         s['properties']['profit_count'] = df_data_indexed.loc[s['id'], 'profit_count']
@@ -133,10 +133,10 @@ def st_to_json(sdf: SparkDataFrame, key: str = "tile_name", col: str = "geometry
 
 
 # create geo-data, with single geojson object for each tile.
-def _transform_to_simplified_json(reference_parcels, tollerance=50, os_grid="10km_grid"):
+def _transform_to_simplified_json(reference_parcels, tolerance=50, os_grid="10km_grid"):
     return (
         reference_parcels.sdf()
-        .transform(st_clean, tollerance=tollerance)
+        .transform(st_clean, tolerance=tolerance)
         .join(os_bng_parcels.sdf().filter(f"layer='{os_grid}'"), on="id_parcel", how="left")
         .orderBy("proportion", ascending=False)
         .groupby("id_parcel")
@@ -220,7 +220,7 @@ folium.LayerControl(collapsed=False).add_to(m)
 # Save the map
 f_out = "/dbfs/FileStore/elmo-geo-downloads/poc_parcel_map.html"
 m.save(f_out)
-download_link(f_out)  # 34Mb htlm file
+download_link(f_out)  # 34Mb html file
 
 # COMMAND ----------
 
@@ -247,7 +247,7 @@ df_eligibility = reference_parcels.sdf().selectExpr("id_parcel", "RAND() as elig
 # Fails to maps all parcels in a single layer
 
 # sdf = (reference_parcels.sdf()
-#        .transform(st_clean, tollerance=50))
+#        .transform(st_clean, tolerance=50))
 
 # gdf = to_gdf(sdf)
 
@@ -366,7 +366,7 @@ folium.LayerControl(collapsed=False).add_to(m)
 # Save the map
 f_out = "/dbfs/FileStore/elmo-geo-downloads/poc_parcel_map_centroids.html"
 m.save(f_out)
-download_link(f_out)  # 67kb htlm file
+download_link(f_out)  # 67kb html file
 
 # COMMAND ----------
 

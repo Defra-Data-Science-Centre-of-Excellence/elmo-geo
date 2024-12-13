@@ -1,5 +1,5 @@
 # Ingest
-- `02_convert`, Convert datasets to be easily access by spark, partitioning large datasets approriately.
+- `02_convert`, Convert datasets to be easily access by spark, partitioning large datasets appropriately.
 - (work in progress) `03_lookup`, Spatially join with parcels, using distance, KNN, and metrics if declared in dataset, saving just lookup tables.
 
 ## Data Sources

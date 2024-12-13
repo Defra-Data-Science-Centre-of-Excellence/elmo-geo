@@ -75,8 +75,8 @@ def _clean_dataset(ds: Dataset) -> gpd.GeoDataFrame:
 
 ewco_nature_recovery_priority_habitat_raw = SourceDataset(
     name="ewco_nature_recovery_priority_habitat_raw",
-    level0="bronze",
-    level1="forestry_commission",
+    medallion="bronze",
+    source="forestry_commission",
     restricted=False,
     source_path="/dbfs/mnt/lab/unrestricted/elm_data/forestry_commission/ewco_nature_recovery_priority_habitat/EWCO___Nature_Recovery___Priority_Habitat_Network.shp",
 )
@@ -90,8 +90,8 @@ Source:
 
 ewco_nature_recovery_priority_habitat = DerivedDataset(
     name="ewco_nature_recovery_priority_habitat",
-    level0="silver",
-    level1="forestry_commission",
+    medallion="silver",
+    source="forestry_commission",
     restricted=False,
     model=EwcoClean,
     func=_clean_dataset,
@@ -101,8 +101,8 @@ ewco_nature_recovery_priority_habitat = DerivedDataset(
 
 ewco_nature_recovery_priority_habitat_parcels = DerivedDataset(
     name="ewco_nature_recovery_priority_habitat_parcels",
-    level0="silver",
-    level1="forestry_commission",
+    medallion="silver",
+    source="forestry_commission",
     restricted=False,
     func=_join_parcels,
     dependencies=[reference_parcels, ewco_nature_recovery_priority_habitat],
@@ -129,8 +129,8 @@ class EwcoAmmoniaEmissionsRaw(DataFrameModel):
 
 ewco_ammonia_emissions_raw = SourceDataset(
     name="ewco_ammonia_emissions_raw",
-    level0="bronze",
-    level1="forestry_commission",
+    medallion="bronze",
+    source="forestry_commission",
     restricted=False,
     model=EwcoAmmoniaEmissionsRaw,
     source_path="/dbfs/mnt/lab/unrestricted/elm_data/ewco/nfc_ammonia_emmissions/2022_03_14/EWCO___NfC_Ammonia_Emissions_Capture_for_SSSI_Protection.shp",
@@ -140,8 +140,8 @@ ewco_ammonia_emissions_raw = SourceDataset(
 ewco_ammonia_emissions_parcels = DerivedDataset(
     is_geo=False,
     name="ewco_ammonia_emissions_parcels",
-    level0="silver",
-    level1="forestry_commission",
+    medallion="silver",
+    source="forestry_commission",
     restricted=False,
     func=sjoin_parcel_proportion,
     dependencies=[reference_parcels, ewco_ammonia_emissions_raw],
@@ -172,8 +172,8 @@ class EwcoFloodRiskRaw(DataFrameModel):
 
 ewco_flood_risk_raw = SourceDataset(
     name="ewco_flood_risk_raw",
-    level0="bronze",
-    level1="forestry_commission",
+    medallion="bronze",
+    source="forestry_commission",
     restricted=False,
     model=EwcoFloodRiskRaw,
     source_path="/dbfs/mnt/lab/unrestricted/elm_data/ewco/flood_risk_management/2023_02_24/EWCO___Flood_Risk_Management.shp",
@@ -183,8 +183,8 @@ ewco_flood_risk_raw = SourceDataset(
 ewco_flood_risk_parcels = DerivedDataset(
     is_geo=False,
     name="ewco_flood_risk_parcels",
-    level0="silver",
-    level1="forestry_commission",
+    medallion="silver",
+    source="forestry_commission",
     restricted=False,
     func=sjoin_parcel_proportion,
     dependencies=[reference_parcels, ewco_flood_risk_raw],
@@ -216,8 +216,8 @@ class EwcoRedSquirrelRaw(DataFrameModel):
 
 ewco_red_squirrel_raw = SourceDataset(
     name="ewco_red_squirrel_raw",
-    level0="bronze",
-    level1="forestry_commission",
+    medallion="bronze",
+    source="forestry_commission",
     restricted=False,
     model=EwcoRedSquirrelRaw,
     source_path="/dbfs/mnt/lab/unrestricted/elm_data/ewco/red_squirrel/2022_10_18/EWCO_Biodiversity___Priority_Species___Red_Squirrel___Woodland_Creation.shp",
@@ -227,8 +227,8 @@ ewco_red_squirrel_raw = SourceDataset(
 ewco_red_squirrel_parcels = DerivedDataset(
     is_geo=False,
     name="ewco_red_squirrel_parcels",
-    level0="silver",
-    level1="forestry_commission",
+    medallion="silver",
+    source="forestry_commission",
     restricted=False,
     func=sjoin_parcel_proportion,
     dependencies=[reference_parcels, ewco_red_squirrel_raw],
@@ -253,8 +253,8 @@ class EwcoNfcSocialRaw(DataFrameModel):
 
 ewco_nfc_social_raw = SourceDataset(
     name="ewco_nfc_social_raw",
-    level0="bronze",
-    level1="forestry_commission",
+    medallion="bronze",
+    source="forestry_commission",
     restricted=False,
     model=EwcoNfcSocialRaw,
     source_path="/dbfs/mnt/lab/unrestricted/elm_data/ewco/nfc_social/2022_03_14/EWCO___NfC_Social.shp",
@@ -264,8 +264,8 @@ ewco_nfc_social_raw = SourceDataset(
 ewco_nfc_social_parcels = DerivedDataset(
     is_geo=False,
     name="ewco_nfc_social_parcels",
-    level0="silver",
-    level1="forestry_commission",
+    medallion="silver",
+    source="forestry_commission",
     restricted=False,
     func=sjoin_parcel_proportion,
     dependencies=[reference_parcels, ewco_nfc_social_raw],
@@ -292,8 +292,8 @@ class EwcoKeepingRiversCoolRaw(DataFrameModel):
 
 ewco_keeping_rivers_cool_raw = SourceDataset(
     name="ewco_keeping_rivers_cool_raw",
-    level0="bronze",
-    level1="forestry_commission",
+    medallion="bronze",
+    source="forestry_commission",
     restricted=False,
     model=EwcoKeepingRiversCoolRaw,
     source_path="/dbfs/mnt/lab/unrestricted/elm_data/ewco/keeping_rivers_cool_riparian_buffers/2023_03_03/EWCO___Keeping_Rivers_Cool_Riparian_Buffers.shp",
@@ -303,8 +303,8 @@ ewco_keeping_rivers_cool_raw = SourceDataset(
 ewco_keeping_rivers_cool_parcels = DerivedDataset(
     is_geo=False,
     name="ewco_keeping_rivers_cool_parcels",
-    level0="silver",
-    level1="forestry_commission",
+    medallion="silver",
+    source="forestry_commission",
     restricted=False,
     func=sjoin_parcel_proportion,
     dependencies=[reference_parcels, ewco_keeping_rivers_cool_raw],
@@ -337,8 +337,8 @@ class EwcoPriorityHabitatNetworkRaw(DataFrameModel):
 
 ewco_priority_habitat_network_raw = SourceDataset(
     name="ewco_priority_habitat_network_raw",
-    level0="bronze",
-    level1="forestry_commission",
+    medallion="bronze",
+    source="forestry_commission",
     restricted=False,
     model=EwcoPriorityHabitatNetworkRaw,
     source_path="/dbfs/mnt/lab/unrestricted/elm_data/ewco/priority_habitat_network/2022_10_06/EWCO_Biodiversity___Priority_Habitat_Network.shp",
@@ -348,8 +348,8 @@ ewco_priority_habitat_network_raw = SourceDataset(
 ewco_priority_habitat_network_parcels = DerivedDataset(
     is_geo=False,
     name="ewco_priority_habitat_network_parcels",
-    level0="silver",
-    level1="forestry_commission",
+    medallion="silver",
+    source="forestry_commission",
     restricted=False,
     func=sjoin_parcel_proportion,
     dependencies=[reference_parcels, ewco_priority_habitat_network_raw],
@@ -378,8 +378,8 @@ class EwcoWaterQualityRaw(DataFrameModel):
 
 ewco_water_quality_raw = SourceDataset(
     name="ewco_water_quality_raw",
-    level0="bronze",
-    level1="forestry_commission",
+    medallion="bronze",
+    source="forestry_commission",
     restricted=False,
     model=EwcoWaterQualityRaw,
     source_path="/dbfs/mnt/lab/unrestricted/elm_data/ewco/water_quality/2023_02_27/EWCO__E2_80_93_Water_Quality.shp",
@@ -388,8 +388,8 @@ ewco_water_quality_raw = SourceDataset(
 
 ewco_water_quality_parcels = DerivedDataset(
     name="ewco_water_quality_parcels",
-    level0="silver",
-    level1="forestry_commission",
+    medallion="silver",
+    source="forestry_commission",
     restricted=False,
     func=sjoin_parcel_proportion,
     dependencies=[reference_parcels, ewco_water_quality_raw],
@@ -397,7 +397,7 @@ ewco_water_quality_parcels = DerivedDataset(
 )
 
 """Spatial data supporting appropriately located and designed woodland creation to help reduce pollutants through land use
-change that reduces fertilizer application or by creating woodland that intercepts pollution and sediment before it reaches watercourses.
+change that reduces fertiliser application or by creating woodland that intercepts pollution and sediment before it reaches watercourses.
 """
 
 
@@ -418,8 +418,8 @@ class EwcoSensitivityRaw(DataFrameModel):
 
 ewco_sensitivity_raw = SourceDataset(
     name="ewco_sensitivity_raw",
-    level0="bronze",
-    level1="forestry_commission",
+    medallion="bronze",
+    source="forestry_commission",
     restricted=False,
     model=EwcoSensitivityRaw,
     source_path="/dbfs/mnt/lab/unrestricted/elm_data/forestry_commission/woodland_creation_full_sensitivity/England_Woodland_Creation_Full_Sensitivity_Map_v4.0.shp",
@@ -428,8 +428,8 @@ ewco_sensitivity_raw = SourceDataset(
 
 ewco_sensitivity_parcels = DerivedDataset(
     name="ewco_sensitivity_parcels",
-    level0="silver",
-    level1="forestry_commission",
+    medallion="silver",
+    source="forestry_commission",
     restricted=False,
     func=sjoin_parcel_proportion,
     dependencies=[reference_parcels, ewco_sensitivity_raw],
@@ -472,8 +472,8 @@ class EwcoMergedParcels(DataFrameModel):
 ewco_parcels = DerivedDataset(
     is_geo=False,
     name="ewco_parcels",
-    level0="silver",
-    level1="forestry_commission",
+    medallion="silver",
+    source="forestry_commission",
     restricted=False,
     func=partial(combine_wide, sources=["rs", "amm", "soc", "wq", "krc", "fr", "phn", "sense"]),
     dependencies=[

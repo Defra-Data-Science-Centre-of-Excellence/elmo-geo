@@ -1,14 +1,14 @@
 # Databricks notebook source
 # MAGIC %md
 # MAGIC
-# MAGIC # Choropleth Plot - National Charater Areas
+# MAGIC # Choropleth Plot - National Character Areas
 # MAGIC
 # MAGIC **Author:** Obi Thompson Sargoni
 # MAGIC
 # MAGIC **Date:** 03/04/2024
 # MAGIC
 # MAGIC This notebook produces a choropleth plot from a processed dataset - a dataset which has values linked to parcel IDs. The chosen numeric variable of the
-# MAGIC processed dataset is aggregated to National Charater Area polygons, which are used to plot the variable at national scale.
+# MAGIC processed dataset is aggregated to National Character Area polygons, which are used to plot the variable at national scale.
 # MAGIC
 # MAGIC Parcel IDs are used to link the chosen datasets with the NCA polygons. Therefore, the input dataset must contain an 'id_parcel' field.
 # MAGIC
@@ -45,21 +45,21 @@ register()
 
 # COMMAND ----------
 
-medallions = sorted({d.level0 for d in catalogue})
+medallions = sorted({d.medallion for d in catalogue})
 default_medallion = medallions[0]
 dbutils.widgets.dropdown("A - Medallion", default_medallion, medallions)
 
 # COMMAND ----------
 
 medallion = dbutils.widgets.get("A - Medallion")
-sources = sorted({d.level1 for d in catalogue if d.level0 == medallion})
+sources = sorted({d.source for d in catalogue if d.medallion == medallion})
 default_source = sources[0]
 dbutils.widgets.dropdown("B - Source", default_source, sources)
 
 # COMMAND ----------
 
 source = dbutils.widgets.get("B - Source")
-datasets = sorted({d.name for d in catalogue if (d.level0 == medallion) and (d.level1 == source)})
+datasets = sorted({d.name for d in catalogue if (d.medallion == medallion) and (d.source == source)})
 default_dataset = datasets[0]
 dbutils.widgets.dropdown("C - Dataset", default_dataset, datasets)
 

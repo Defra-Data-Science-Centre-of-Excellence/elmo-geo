@@ -31,8 +31,8 @@ class FloodRiskAreasRaw(DataFrameModel):
 
 flood_risk_areas_raw = SourceDataset(
     name="flood_risk_areas_raw",
-    level0="bronze",
-    level1="defra",
+    medallion="bronze",
+    source="defra",
     model=FloodRiskAreasRaw,
     restricted=False,
     source_path="/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_flood_risk_areas/format_GEOPARQUET_flood_risk_areas/LATEST_flood_risk_areas/Flood_Risk_Areas.parquet",
@@ -54,8 +54,8 @@ class FloodRiskAreasParcels(DataFrameModel):
 flood_risk_areas_parcels = DerivedDataset(
     is_geo=False,
     name="flood_risk_areas_parcels",
-    level0="silver",
-    level1="defra",
+    medallion="silver",
+    source="defra",
     restricted=False,
     func=sjoin_parcel_proportion,
     dependencies=[reference_parcels, flood_risk_areas_raw],

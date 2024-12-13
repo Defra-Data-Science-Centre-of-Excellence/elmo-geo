@@ -11,7 +11,7 @@ clean:
 
 install:
 	python -m pip install --upgrade pip setuptools wheel
-	pipx install "ruff<0.2" pip-tools
+	pipx install "ruff<0.2" pip-tools typos
 	pip install -r requirements.txt
 
 fmt:
@@ -25,6 +25,7 @@ verify_gh:
 	ruff check .
 	ruff format . --check
 	pytest . -m "not dbr"
+	mkdocs build
 
 verify:
 	ruff check .
@@ -33,3 +34,13 @@ verify:
 
 latest_clusters_log:
 	find /dbfs/cluster-logs/ -type f -name "*.stderr.log" | awk -F/ '{print $NF, $0}' | sort | awk '{print $2}' | tail -n1 | xargs cat
+
+spell-check:
+	typos . --format=brief --sort
+
+spell-correct:
+	typos . --format=brief --sort -w
+
+# Documentation
+build:
+	mkdocs build

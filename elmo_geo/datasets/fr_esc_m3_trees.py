@@ -45,11 +45,11 @@ The raw ESC model outputs for carbon and tree species are aggregated to parcels 
 
 There are three main steps to the methodology:
 1. Remove peat areas from parcel geometries.
-2. Intersect parcel geoemtries with the 1km BNG grid
+2. Intersect parcel geometries with the 1km BNG grid
 3. Assign parcels the weighted average of ESC outputs, based on the proportion of each 1km grid overlapping the parcel.
 
 Steps 1. and 2. are implemented by producing the `os_bng_no_peat_parcels` dataset. Step 3. is performed separately for
-the carbon and species varables, producing the `esc_species_parcels` and `esc_carbon_parcels` datasets.
+the carbon and species variables, producing the `esc_species_parcels` and `esc_carbon_parcels` datasets.
 
 [^1] [Forest Research - Ecological Site Classification](https://www.forestresearch.gov.uk/tools-and-resources/fthr/ecological-site-classification)
 """
@@ -172,8 +172,8 @@ class ESCM3WoodlandScenariosRaw(DataFrameModel):
 
 
 esc_m3_raw = SourceGlobDataset(
-    level0="bronze",
-    level1="forest_research",
+    medallion="bronze",
+    source="forest_research",
     restricted=False,
     is_geo=False,
     model=ESCM3WoodlandScenariosRaw,
@@ -244,8 +244,8 @@ class ESCGeoModel(DataFrameModel):
 
 esc_m3_geo = DerivedDataset(
     name="esc_m3_geo",
-    level0="silver",
-    level1="forest_research",
+    medallion="silver",
+    source="forest_research",
     restricted=False,
     dependencies=[os_bng_raw, esc_m3_raw],
     func=_transform,
@@ -324,8 +324,8 @@ class NoPeatParcelBNGModel(DataFrameModel):
 
 os_bng_no_peat_parcels = DerivedDataset(
     name="os_bng_no_peat_parcels",
-    level0="silver",
-    level1="os",
+    medallion="silver",
+    source="os",
     restricted=False,
     is_geo=False,
     dependencies=[
@@ -348,7 +348,7 @@ def _join_esc_outputs(
 ) -> SparkDataFrame:
     """Joins parcels to ESC outputs using 1km BNG tiles.
 
-    Exludes ESC data for scenarios and tiles with have missing carbon values, as per EVAST methodology.
+    Excludes ESC data for scenarios and tiles with have missing carbon values, as per EVAST methodology.
     """
     # Scenarios and tiles with non-zero carbon values for at least one time period.
     sdf_esc_valid_scenario_tiles = (
@@ -359,16 +359,16 @@ def _join_esc_outputs(
         .dropDuplicates()
     )
 
-    # Also exclude any remainging scenarios where species values are all null (don't expect any at this stage)
+    # Also exclude any remaining scenarios where species values are all null (don't expect any at this stage)
     return (
         sdf_parcel_tiles.join(sdf_esc.drop("geometry", "layer"), on="tile_name", how="inner")
         .join(sdf_esc_valid_scenario_tiles, on=["tile_name", "rcp", "woodland_type"], how="inner")
-        .filter("(species_1 IS NULL) AND (species_2 IS NULL) AND (species_3 IS NULL)")
+        .filter("NOT ((species_1 IS NULL) AND (species_2 IS NULL) AND (species_3 IS NULL))")
     )
 
 
 def _aggregate_carbon_values(sdf_parcel_esc: SparkDataFrame) -> SparkDataFrame:
-    """Aggregate ESC carbon values to parcels by calcualting the weighted sum across 1km tiles."""
+    """Aggregate ESC carbon values to parcels by calculating the weighted sum across 1km tiles."""
     groupby_cols = [
         "id_parcel",
         "nopeat_area",
@@ -472,7 +472,7 @@ class ESCCarbonParcels(DataFrameModel):
         id_parcel: Parcel ID
         nopeat_area: Geographic area of parcel excluding intersecting peaty soils geometries.
         woodland_type: Type of woodland modelled.
-        rcp: Representating concetration pathway scenario (i.e cliamte change scenario)
+        rcp: Representing concetration pathway scenario (i.e cliamte change scenario)
         period_AA_T1: Time periods for annual average (AA) and T1 carbon values
         period_T2: period_T2: Time periods for T2 carbon values: 2021_2028, 2021_2036, 2021_2050, 2021_2100
         period_AA_T1_duration: Number of years in each time period (AA_T1)
@@ -566,8 +566,8 @@ class ESCCarbonParcels(DataFrameModel):
 
 esc_carbon_parcels = DerivedDataset(
     name="esc_carbon_parcels",
-    level0="silver",
-    level1="forest_research",
+    medallion="silver",
+    source="forest_research",
     restricted=False,
     is_geo=False,
     dependencies=[
@@ -689,8 +689,8 @@ def _add_50_year_carbon_totals_and_filter(esc_carbon_parcels: DerivedDataset) ->
 
 esc_carbon_parcels_w_50yr_total = DerivedDataset(
     name="esc_carbon_parcels_w_50yr_total",
-    level0="gold",
-    level1="forest_research",
+    medallion="gold",
+    source="forest_research",
     restricted=False,
     is_geo=False,
     dependencies=[esc_carbon_parcels],
@@ -709,7 +709,7 @@ class ESCSpeciesParcels(DataFrameModel):
         id_parcel: Parcel ID
         nopeat_area: Geographic area of parcel excluding intersecting peaty soils geometries.
         woodland_type: Type of woodland modelled.
-        rcp: Representating concetration pathway scenario (i.e cliamte change scenario)
+        rcp: Representing concetration pathway scenario (i.e cliamte change scenario)
         period_AA_T1: Time periods for annual average (AA) and T1 carbon values
         period_T2: period_T2: Time periods for T2 carbon values: 2021_2028, 2021_2036, 2021_2050, 2021_2100
         period_AA_T1_duration: Number of years in each time period (AA_T1)
@@ -718,7 +718,7 @@ class ESCSpeciesParcels(DataFrameModel):
         species: Tree species. OPENSPACE refers to open space where trees are not growing.
         area: Proportion of no peat parcel area covered by this tree species.
         yield_class: Tree species yield score.
-        suitability: Tree speices suitability score.
+        suitability: Tree species suitability score.
     """
 
     id_parcel: str = Field()
@@ -759,8 +759,8 @@ class ESCSpeciesParcels(DataFrameModel):
 
 esc_species_parcels = DerivedDataset(
     name="esc_species_parcels",
-    level0="silver",
-    level1="forest_research",
+    medallion="silver",
+    source="forest_research",
     restricted=False,
     is_geo=False,
     dependencies=[

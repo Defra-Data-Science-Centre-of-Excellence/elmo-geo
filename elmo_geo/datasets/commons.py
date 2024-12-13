@@ -38,11 +38,11 @@ class CommonsRaw(DataFrameModel):
 
 commons_raw = SourceDataset(
     name="commons_raw",
-    level0="bronze",
-    level1="defra",
+    medallion="bronze",
+    source="defra",
     model=CommonsRaw,
     restricted=False,
-    source_path="/dbfs/mnt/base/unrestricted/source_rpa_spatial_data_mart/dataset_common_land_amalgamation/format_GPKG_common_land_amalgamation/LATEST_common_land_amalgamation/refdata_owner.common_land_amalgamation.zip/refdata_owner.common_land_amalgamation/refdata_owner.common_land_amalgamation.gpkg",
+    source_path="/dbfs/mnt/base/unrestricted/source_rpa_spatial_data_mart/dataset_common_land_amalgamation/format_GEOPARQUET_common_land_amalgamation/LATEST_common_land_amalgamation/refdata_owner/",
 )
 
 
@@ -67,8 +67,8 @@ class CommonsParcels(DataFrameModel):
 commons_parcels = DerivedDataset(
     is_geo=False,
     name="commons_parcels",
-    level0="silver",
-    level1="defra",
+    medallion="silver",
+    source="defra",
     restricted=False,
     func=partial(sjoin_parcel_proportion, columns=["conclusive"], fn_pre=fn_pre_conclusive),
     dependencies=[reference_parcels, commons_raw],

@@ -37,8 +37,8 @@ class PeatySoilsRaw(DataFrameModel):
 
 peaty_soils_raw = SourceDataset(
     name="peaty_soils_raw",
-    level0="bronze",
-    level1="defra",
+    medallion="bronze",
+    source="defra",
     model=PeatySoilsRaw,
     restricted=False,
     source_path="/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_peaty_soils/format_GEOPARQUET_peaty_soils/LATEST_peaty_soils/refdata_owner/",
@@ -62,8 +62,8 @@ class PeatySoilsParcels(DataFrameModel):
 peaty_soils_parcels = DerivedDataset(
     is_geo=False,
     name="peaty_soils_parcels",
-    level0="silver",
-    level1="defra",
+    medallion="silver",
+    source="defra",
     restricted=False,
     func=partial(sjoin_parcel_proportion, columns=["group"]),
     dependencies=[reference_parcels, peaty_soils_raw],

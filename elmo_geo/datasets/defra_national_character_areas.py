@@ -43,8 +43,8 @@ class NCARaw(DataFrameModel):
 
 nca_raw = SourceDataset(
     name="nca_raw",
-    level0="bronze",
-    level1="defra",
+    medallion="bronze",
+    source="defra",
     model=NCARaw,
     restricted=False,
     source_path="/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_national_character_areas/format_GEOPARQUET_national_character_areas/LATEST_national_character_areas/",
@@ -68,8 +68,8 @@ class NCAParcels(DataFrameModel):
 nca_parcels = DerivedDataset(
     is_geo=False,
     name="nca_parcels",
-    level0="silver",
-    level1="defra",
+    medallion="silver",
+    source="defra",
     restricted=False,
     func=partial(sjoin_parcel_proportion, columns=["blt"]),
     dependencies=[reference_parcels, nca_raw],
