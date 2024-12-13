@@ -82,10 +82,10 @@ def prep_tree_point(sdf):
     return sdf.selectExpr("ST_GeomFromWKT(top_point) AS geometry")
 
 
-boundary_tree_count = DerivedDataset(
+fcp_boundary_tree_count = DerivedDataset(
+    name="fcp_boundary_tree_count",
     medallion="silver",
     source="fcp",
-    source="boundary_tree_count",
     model=FCPTBoundaryTreeCounts,
     restricted=False,
     func=partial(sjoin_boundary_count, fn_pre=prep_tree_point),
