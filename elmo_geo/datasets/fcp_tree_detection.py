@@ -11,13 +11,11 @@ contains the code used to produce the tree detections.
 """
 from functools import partial
 
-import pyspark.sql.functions as F
 from pandera import DataFrameModel, Field
 from pandera.dtypes import Float64
 
-from elmo_geo.etl import Dataset, DerivedDataset, SourceDataset
-from elmo_geo.etl.transformations import pivot_wide_sdf, sjoin_boundaries, sjoin_boundary_count
-from elmo_geo.utils.types import SparkDataFrame
+from elmo_geo.etl import DerivedDataset, SourceDataset
+from elmo_geo.etl.transformations import sjoin_boundary_count
 
 from .boundary import boundary_segments
 from .rpa_reference_parcels import reference_parcels
@@ -95,62 +93,3 @@ boundary_tree_count = DerivedDataset(
     is_geo=False,
 )
 """Counts fof trees intersecting parcel boundary segments."""
-
-
-class FCPTInteriorTreeCounts(DataFrameModel):
-    """Model for counts of trees intersecting parcel boudaries.
-    Attributes:
-        id_parcel: parcel id in which that boundary came from.
-        m: length of the boundary geometry.
-        count_*m: Number of trees intersectin the boundary segment buffered at "*"
-    """
-
-    id_parcel: str = Field()
-    m: float = Field()
-    count_0m: float = Field(ge=0, le=1)
-    count_2m: float = Field(ge=0, le=1)
-    count_8m: float = Field(ge=0, le=1)
-    count_12m: float = Field(ge=0, le=1)
-    count_24m: float = Field(ge=0, le=1)
-
-
-def sjoin_interior_count(
-    parcels: Dataset | SparkDataFrame,
-    boundary_segments: Dataset | SparkDataFrame,
-    features: Dataset | SparkDataFrame,
-    buffers: list[float] = [0, 2, 4, 8, 12, 24],
-    **kwargs,
-):
-    """Counts the number of trees in a parcel's interior.
-
-    Parcel interios defined by the difference between buffered boundary segment geometries
-    and the parcel geometry.
-    """
-    # test the interiod method
-    expr = "ST_Difference(ST_Union_Aggr(geometry), geometry_left)"
-    expr = f"ST_Intersection({expr}, geometry_right) as interior_intersection"
-    sdf_int= (sdf_boundary
-            .withColumn("buffer", F.expr(f"EXPLODE(ARRAY{tuple(buffers)})"))
-            .withColumn("geometry", F.expr("ST_Buffer(geometry, buffer)")) # buffer segment geoms
-            .transform(auto_repartition)
-            .groupby("id_parcel", "buffer", "geometry_left", "geometry_right")
-            .agg(F.expr(expr)) # intersection between features and parcel interior
-            .withColumn("interior_intersection", F.expr("EXPLODE(ST_Dump(interior_intersection))"))
-            .filter("NOT ST_IsEmpty(interior_intersection)")
-            .groupby("id_parcel", "buffer")
-            .agg(F.expr("COUNT(interior_intersection) as count"))
-            .transform(pivot_wide_sdf, name_col="buffer", value_col="count")
-            .withColumnsRenamed({str(b): f"count_{b}m" for b in buffers}))
-
-
-interior_tree_count = DerivedDataset(
-    level0="silver",
-    level1="fcp",
-    name="interior_tree_count",
-    model=FCPTInteriorTreeCounts,
-    restricted=False,
-    func=partial(sjoin_interior_count, fn_pre=prep_tree_point),
-    dependencies=[reference_parcels, boundary_segments, fcp_tree_detection_raw],
-    is_geo=False,
-)
-"""Counts of trees itersecting parcel interiors."""
