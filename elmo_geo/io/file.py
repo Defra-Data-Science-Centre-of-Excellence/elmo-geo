@@ -59,7 +59,7 @@ def auto_repartition(
         "memory": round(memsize_sdf(sdf) * mem_ratio),
         "cores": round(spark.sparkContext.defaultParallelism * thread_ratio),
     }
-    suggested_partitions = int(min(max(partitioners.values())*multiplier, jobs_cap))
+    suggested_partitions = int(min(max(partitioners.values()) * multiplier, jobs_cap))
     current_partitions = sdf.rdd.getNumPartitions()
     ratio = abs(suggested_partitions - current_partitions) / current_partitions
     if acceptance_ratio < ratio:
