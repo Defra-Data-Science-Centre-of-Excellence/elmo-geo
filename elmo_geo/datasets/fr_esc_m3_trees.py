@@ -401,9 +401,10 @@ def _aggregate_carbon_values(sdf_parcel_esc: SparkDataFrame) -> SparkDataFrame:
     ]
     return (
         sdf_parcel_esc.repartition(*groupby_cols)
+        .filter("proportion > 0")
         .groupby(*groupby_cols)
         .agg(
-            *[F.expr(f"ROUND(SUM(proportion * {c}), 5) as {c}") for c in value_cols],
+            *[F.expr(f"ROUND(SUM(proportion * {c}) / SUM(proportion), 5) as {c}") for c in value_cols],
             F.array_join(F.collect_list("tile_name"), "-").alias("tiles"),
         )
     )
@@ -428,6 +429,7 @@ def _aggregate_species_values(sdf_parcel_esc: SparkDataFrame) -> SparkDataFrame:
     ]
     return (
         sdf_parcel_esc.repartition(*groupby_cols)
+        .filter("proportion > 0")
         .selectExpr(
             *groupby_cols,
             "tile_name",
@@ -443,7 +445,7 @@ def _aggregate_species_values(sdf_parcel_esc: SparkDataFrame) -> SparkDataFrame:
         .filter("species IS NOT NULL")
         .groupby(*groupby_cols, "species")
         .agg(
-            *[F.expr(f"ROUND(SUM(proportion * {c}),5) as {c}") for c in species_cols],
+            *[F.expr(f"ROUND(SUM(proportion * {c}) / SUM(proportion),5) as {c}") for c in species_cols],
             F.array_join(F.collect_list("tile_name"), "-").alias("tiles"),
         )
     )
