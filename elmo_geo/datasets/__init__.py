@@ -115,7 +115,8 @@ from .fcp_sylvan import (
     fcp_relict_hedge_raw,  # TODO: temporary
 )
 from .fcp_tree_detection import (
-    fcp_tree_detection_raw,  # TODO: temporary
+    fcp_boundary_tree_count,
+    fcp_tree_detection_raw,
 )
 from .fr_esc_m3_trees import (
     esc_carbon_parcels,
