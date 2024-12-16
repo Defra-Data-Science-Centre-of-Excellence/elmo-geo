@@ -1,5 +1,3 @@
-from functools import partial
-
 import geopandas as gpd
 import numpy as np
 import pytest
@@ -11,8 +9,6 @@ from elmo_geo.io.convert import to_sdf
 from elmo_geo.st.segmentise import segmentise_with_tolerance
 from elmo_geo.st.udf import st_udf, st_union
 from elmo_geo.utils.register import register
-
-test_register = partial(register, adaptive_partitions=False, shuffle_partitions=5, default_parallelism=5)
 
 
 @pytest.mark.dbr
@@ -192,7 +188,7 @@ def test_sjoin_boundary_count():
     segment, the other is closer to a different boundary segment. This test checks that
     points are not double counted even when they overlap with multiple buffered boundary segments.
     """
-    test_register()
+    register(adaptive_partitions=False, shuffle_partitions=5, default_parallelism=5)
 
     parcel_geoms = ["Polygon((0 0, 0 21, 21 21, 21 0, 0 0))"]
     feature_geoms = ["Point(22 10)", "Point(26 10)", "Point(26 0)", "Point(100 100)"]
