@@ -159,7 +159,7 @@ def sjoin_boundaries(
     """"""
     sdf_segments = boundary_segments if isinstance(boundary_segments, SparkDataFrame) else boundary_segments.sdf()
 
-    return sjoin_parcels(parcel, features, **kwargs).join(sdf_segments, on="id_parcel")  # .transform(auto_repartition)
+    return sjoin_parcels(parcel, features, **kwargs).join(sdf_segments.transform(auto_repartition), on="id_parcel")
 
 
 def sjoin_boundary_proportion(
@@ -178,6 +178,7 @@ def sjoin_boundary_proportion(
     return (
         sjoin_boundaries(parcel, boundary_segments, features, distance=max(buffers), **kwargs)
         .withColumn("buffer", F.expr(f"EXPLODE(ARRAY{tuple(buffers)})"))
+        .transform(auto_repartition)
         .withColumn("geometry_right", F.expr("ST_Buffer(geometry_right, buffer)"))
         .withColumn("proportion", F.expr(expr))
         .drop("geometry", "geometry_left", "geometry_right")
@@ -201,13 +202,16 @@ def sjoin_boundary_count(
     return (
         sjoin_boundaries(parcels, boundary_segments, features, distance=max(buffers), **kwargs)
         .withColumn("buffer", F.expr(f"EXPLODE(ARRAY{tuple(buffers)})"))
+        .transform(auto_repartition, thread_ratio=6)
         .withColumn("geometry_buffer", F.expr("ST_Buffer(geometry, buffer)"))
         .withColumn("intersection", F.expr("EXPLODE(ST_Dump(ST_Intersection(geometry_buffer, geometry_right)))"))
         .filter("NOT ST_IsEmpty(intersection)")
+        .transform(auto_repartition, thread_ratio=6, cols=["id_parcel", "buffer"])
         .withColumn("distance", F.expr("ST_Distance(intersection, geometry)"))
         .withColumn("rank", F.row_number().over(window))
         .groupby("id_parcel", "id_boundary", "buffer")
-        .agg(F.expr("SUM(CASE WHEN rank=1 THEN 1 ELSE 0 END) as count"))
+        .agg(F.expr("FIRST(m) as m"),
+             F.expr("SUM(CASE WHEN rank=1 THEN 1 ELSE 0 END) as count"))
         .transform(pivot_wide_sdf, name_col="buffer", value_col="count")
         .withColumnsRenamed({str(b): f"count_{b}m" for b in buffers})
     )
