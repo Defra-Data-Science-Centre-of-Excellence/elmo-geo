@@ -11,6 +11,7 @@ contains the code used to produce the tree detections.
 """
 from functools import partial
 
+import pyspark.sql.functions as F
 from pandera import DataFrameModel, Field
 from pandera.dtypes import Float64
 
@@ -18,7 +19,6 @@ from elmo_geo.etl import Dataset, DerivedDataset, SourceDataset
 from elmo_geo.etl.transformations import pivot_wide_sdf, sjoin_boundaries, sjoin_boundary_count
 from elmo_geo.io.file import auto_repartition
 from elmo_geo.utils.types import SparkDataFrame
-from elmo_geo.etl.transformations import sjoin_boundary_count
 
 from .boundary import boundary_segments
 from .rpa_reference_parcels import reference_parcels
@@ -132,11 +132,12 @@ def sjoin_interior_count(
     return (
         sjoin_boundaries(parcels, boundary_segments, features, distance=max(buffers), **kwargs)
         .withColumn("buffer", F.expr(f"EXPLODE(ARRAY{tuple(buffers)})"))
+        .transform(auto_repartition, thread_ratio=6)
         .withColumn("geometry", F.expr("ST_Buffer(geometry, buffer)"))  # buffer segment geoms
-        .transform(auto_repartition, multiplier=1.5)
         .groupby("id_parcel", "buffer", "geometry_left", "geometry_right")
         .agg(F.expr(expr))  # intersection between features and parcel interior
         .withColumn("interior_intersection", F.expr("EXPLODE(ST_Dump(interior_intersection))"))
+        .transform(auto_repartition, thread_ratio=6)
         .filter("NOT ST_IsEmpty(interior_intersection)")
         .groupby("id_parcel", "buffer")
         .agg(F.expr("COUNT(interior_intersection) as count"))
