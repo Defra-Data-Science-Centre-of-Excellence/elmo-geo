@@ -25,14 +25,13 @@ def register_dir(path: str):
         LOG.info(f"Changed Directory: {cwd} => {nwd}")
 
 
-def register_adaptive_partitions(adaptive_partitions: bool, shuffle_partitions: int, default_parallelism: int):
+def register_adaptive_partitions(adaptive_partitions: bool, shuffle_partitions: int, default_parallelism: int, advisory_size: str):
     if adaptive_partitions:
         spark.conf.set("spark.sql.adaptive.coalescePartitions.enabled", "true")
-        spark.conf.set("spark.sql.adaptive.coalescePartitions.parallelismFirst", "false")
-        spark.conf.set("spark.sql.adaptive.advisoryPartitionSizeInBytes", "32mb")  # default 64mb
         spark.conf.set("spark.sql.adaptive.coalescePartitions.initialPartitionNum", default_parallelism)
-        # spark.conf.set("spark.sql.adaptive.coalescePartitions.parallelismFirst", "true")
-        # spark.conf.set("spark.sql.adaptive.coalescePartitions.minPartitionSize", "10mb")
+        spark.conf.set("spark.sql.adaptive.coalescePartitions.parallelismFirst", "true")
+        spark.conf.set("spark.sql.adaptive.advisoryPartitionSizeInBytes", advisory_size)
+        spark.conf.set("spark.sql.adaptive.coalescePartitions.minPartitionSize", "500kb")
         LOG.info("spark.sql.adaptive.coalescePartitions.enabled = true")
     else:
         # Without adaptive partitioning the default partitions values are increased.
@@ -50,6 +49,7 @@ def register(
     adaptive_partitions: bool = False,
     shuffle_partitions: int = 600,
     default_parallelism: int = 600,
+    advisory_size: str = "32mb",
 ):
     register_dir(dir)
     register_adaptive_partitions(adaptive_partitions, shuffle_partitions, default_parallelism)
