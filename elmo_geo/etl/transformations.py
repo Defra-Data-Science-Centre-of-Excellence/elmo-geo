@@ -210,9 +210,10 @@ def sjoin_boundary_count(
         .withColumn("distance", F.expr("ST_Distance(intersection, geometry)"))
         .withColumn("rank", F.row_number().over(window))
         .groupby("id_parcel", "id_boundary", "buffer")
-        .agg(F.expr("FIRST(m) as m"), 
-             F.expr("SUM(CASE WHEN rank=1 THEN 1 ELSE 0 END) as count"),
-             )
+        .agg(
+            F.expr("FIRST(m) as m"),
+            F.expr("SUM(CASE WHEN rank=1 THEN 1 ELSE 0 END) as count"),
+        )
         .transform(pivot_wide_sdf, name_col="buffer", value_col="count")
         .withColumnsRenamed({str(b): f"count_{b}m" for b in buffers})
     )

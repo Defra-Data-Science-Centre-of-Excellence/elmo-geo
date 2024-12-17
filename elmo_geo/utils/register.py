@@ -52,7 +52,12 @@ def register(
     advisory_size: str = "32mb",
 ):
     register_dir(dir)
-    register_adaptive_partitions(adaptive_partitions, shuffle_partitions, default_parallelism)
+    register_adaptive_partitions(
+        adaptive_partitions,
+        shuffle_partitions,
+        default_parallelism,
+        advisory_size,
+    )
     register_sedona(spark)
     LOG.info("Registered: Sedona")
     return True
