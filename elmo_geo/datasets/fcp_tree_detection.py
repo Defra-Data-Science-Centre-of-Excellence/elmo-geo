@@ -11,7 +11,6 @@ contains the code used to produce the tree detections.
 """
 from functools import partial
 
-import pyspark.sql.functions as F
 from pandera import DataFrameModel, Field
 from pandera.dtypes import Float64
 
@@ -19,6 +18,7 @@ from elmo_geo.etl import Dataset, DerivedDataset, SourceDataset
 from elmo_geo.etl.transformations import pivot_wide_sdf, sjoin_boundaries, sjoin_boundary_count
 from elmo_geo.io.file import auto_repartition
 from elmo_geo.utils.types import SparkDataFrame
+from elmo_geo.etl.transformations import sjoin_boundary_count
 
 from .boundary import boundary_segments
 from .rpa_reference_parcels import reference_parcels
@@ -86,9 +86,9 @@ def prep_tree_point(sdf):
 
 
 fcp_boundary_tree_count = DerivedDataset(
+    name="fcp_boundary_tree_count",
     medallion="silver",
     source="fcp",
-    name="fcp_boundary_tree_count",
     model=FCPTBoundaryTreeCounts,
     restricted=False,
     func=partial(sjoin_boundary_count, fn_pre=prep_tree_point),

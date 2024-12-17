@@ -1,5 +1,3 @@
-from functools import partial
-
 import geopandas as gpd
 import numpy as np
 import pytest
@@ -11,8 +9,6 @@ from elmo_geo.io.convert import to_sdf
 from elmo_geo.st.segmentise import segmentise_with_tolerance
 from elmo_geo.st.udf import st_udf, st_union
 from elmo_geo.utils.register import register
-
-test_register = partial(register, adaptive_partitions=False, shuffle_partitions=5, default_parallelism=5)
 
 
 @pytest.mark.dbr
@@ -170,6 +166,7 @@ def test_sjoin_boundary_segments():
         sdf_parcels.withColumn("geometry", F.expr("ST_Boundary(geometry)"))
         .transform(st_udf, segmentise_with_tolerance)
         .withColumn("geometry", F.expr("EXPLODE(ST_DUMP(geometry))"))
+        .withColumn("id_boundary", F.monotonically_increasing_id())
     )
 
     df = sjoin_boundary_proportion(
@@ -179,8 +176,13 @@ def test_sjoin_boundary_segments():
         columns=["class"],
     ).toPandas()
 
-    observed = df.iloc[:, 2:].values  # drop class, id_parcel
-    expected = [[0.0, 0.0, 0.047619, 0.238095, 0.428571, 1.0]]
+    observed = df.set_index("id_boundary").loc[[0, 1, 2, 3]].iloc[:, 2:].values  # drop class, id_parcel
+    expected = [
+        [0.0, 0.0, 0.0, 0.0, 0.0, 1.0],
+        [0.0, 0.0, 0.047619, 0.238095, 0.428571, 1.0],
+        [0.0, 0.0, 1.0, 1.0, 1.0, 1.0],
+        [0.0, 0.0, 0.047619, 0.238095, 0.428571, 1.0],
+    ]
     assert np.isclose(observed, expected, atol=1e-3).all()
 
 
@@ -192,16 +194,17 @@ def test_sjoin_boundary_count():
     segment, the other is closer to a different boundary segment. This test checks that
     points are not double counted even when they overlap with multiple buffered boundary segments.
     """
-    test_register()
+    register(adaptive_partitions=False, shuffle_partitions=5, default_parallelism=5)
 
-    parcel_geoms = ["Polygon((0 0, 0 21, 21 21, 21 0, 0 0))"]
-    feature_geoms = ["Point(22 10)", "Point(26 10)", "Point(26 0)", "Point(100 100)"]
+    parcel_geoms = ["Polygon((0 0, 0 20, 20 20, 20 0, 0 0))"]
+    feature_geoms = ["Point(21 10)", "Point(25 10)", "Point(16 3)", "Point(100 100)"]
 
     sdf_parcels, sdf_features = prep_data(parcel_geoms, feature_geoms)
     sdf_boundaries = (
         sdf_parcels.withColumn("geometry", F.expr("ST_Boundary(geometry)"))
         .transform(st_udf, segmentise_with_tolerance)
         .withColumn("geometry", F.expr("EXPLODE(ST_DUMP(geometry))"))
+        .withColumn("m", F.expr("ST_Length(geometry)"))
         .withColumn("id_boundary", F.monotonically_increasing_id())
     )
 
