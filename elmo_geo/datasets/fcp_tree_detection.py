@@ -1,4 +1,4 @@
-"""Engalnd Tree map produced from tree dectation classification of LiDAR Vegetation Object Model data.
+"""England Tree map produced from tree dectation classification of LiDAR Vegetation Object Model data.
 
 The outputs fromt he tree detection process are available as a source dataset. Derived datasets join these
 tree detections to parcels and parcel boundaries.

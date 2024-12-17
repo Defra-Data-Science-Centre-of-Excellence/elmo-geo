@@ -42,7 +42,7 @@ from elmo_geo.etl.transformations import sjoin_boundary_proportion
 from elmo_geo.st.segmentise import segmentise_with_tolerance
 from elmo_geo.st.udf import st_clean, st_udf
 
-from .fcp_sylvan import fcp_relict_hedge_raw
+from .fcp_relict_hedge import fcp_relict_hedge_raw
 from .hedges import rpa_hedges_raw
 from .os import os_ngd_raw
 from .osm import osm_tidy

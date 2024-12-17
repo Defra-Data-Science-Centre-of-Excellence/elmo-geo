@@ -111,7 +111,7 @@ from .fcp_habitat_classification import (
 from .fcp_parcels_geojson import (
     reference_parcels_bng_geojson,
 )
-from .fcp_sylvan import (
+from .fcp_relict_hedge import (
     fcp_relict_hedge_raw,  # TODO: temporary
 )
 from .fcp_tree_detection import (
