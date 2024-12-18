@@ -401,7 +401,7 @@ def _aggregate_carbon_values(sdf_parcel_esc: SparkDataFrame) -> SparkDataFrame:
     ]
     return (
         sdf_parcel_esc.repartition(*groupby_cols)
-        .filter("proportion > 0") # Avoid divide by zero. Unexpectedly some parcels have 0 proportion values.
+        .filter("proportion > 0")  # Avoid divide by zero. Unexpectedly some parcels have 0 proportion values.
         .groupby(*groupby_cols)
         .agg(
             *[F.expr(f"ROUND(SUM(proportion * {c}) / SUM(proportion), 5) as {c}") for c in value_cols],
@@ -429,7 +429,7 @@ def _aggregate_species_values(sdf_parcel_esc: SparkDataFrame) -> SparkDataFrame:
     ]
     return (
         sdf_parcel_esc.repartition(*groupby_cols)
-        .filter("proportion > 0") # Avoid divide by zero. Unexpectedly some parcels have 0 proportion values.
+        .filter("proportion > 0")  # Avoid divide by zero. Unexpectedly some parcels have 0 proportion values.
         .selectExpr(
             *groupby_cols,
             "tile_name",
