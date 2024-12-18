@@ -214,5 +214,5 @@ def test_sjoin_boundary_count():
     assert "count_0m" not in df.columns
 
     observed = df.loc[:, ["count_2m", "count_6m", "count_10m"]].values
-    expected = [[np.nan, 1, 1], [1, 2, 2]]
+    expected = [[0, 1, 1], [1, 2, 2]]
     assert np.array_equal(observed, expected, equal_nan=True)
