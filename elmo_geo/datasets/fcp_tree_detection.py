@@ -80,6 +80,7 @@ class FCPTBoundaryTreeCounts(DataFrameModel):
     id_parcel: str = Field()
     m: float = Field()
     count_2m: Int32 = Field()
+    count_4m: Int32 = Field()
     count_8m: Int32 = Field()
     count_12m: Int32 = Field()
     count_24m: Int32 = Field()
