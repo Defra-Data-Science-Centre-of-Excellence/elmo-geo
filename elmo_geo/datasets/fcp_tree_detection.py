@@ -19,7 +19,7 @@ from pyspark.sql import functions as F
 from elmo_geo.etl import Dataset, DerivedDataset, SourceDataset
 from elmo_geo.etl.transformations import (
     pivot_wide_sdf,
-    sjoin_boundaries,
+    sjoin_parcels,
 )
 from elmo_geo.io.file import auto_repartition
 from elmo_geo.utils.types import SparkDataFrame
@@ -99,21 +99,21 @@ def sjoin_boundary_count(
 ):
     """Count the number of feature geometries intersecting parcel boundary segments."""
 
+    sdf_segments = boundary_segments if isinstance(boundary_segments, SparkDataFrame) else boundary_segments.sdf()
+
     # window used to avoid double counting geomerites within a parcel
     # eg where a feature intersects multiple buffered parcel boundary segments.
-    window = Window.partitionBy("id_parcel", "buffer", "geometry_intersection").orderBy("distance")
+    window = Window.partitionBy("id_parcel", "buffer", "geometry_right").orderBy("distance")
     return (
-        sjoin_boundaries(parcels, boundary_segments, features, distance=max(buffers), **kwargs)
+        sjoin_parcels(parcels, features, distance=max(buffers), **kwargs)
+        .join(sdf_segments, on="id_parcel")
         .withColumn("buffer", F.expr(f"EXPLODE(ARRAY{tuple(buffers)})"))
         .transform(auto_repartition, count_ratio=1e-4)
         .withColumn("geometry_buffer", F.expr("ST_Buffer(geometry, buffer)"))
-        .withColumn(
-            "geometry_intersection",
-            F.expr("EXPLODE(ST_Dump(ST_Intersection(geometry_buffer, geometry_right)))"),
-        )
-        .filter("NOT ST_IsEmpty(geometry_intersection)")
+        .withColumn("geometry_right", F.expr("EXPLODE(ST_Dump(geometry_right))"))
+        .filter("ST_Intersects(geometry_buffer, geometry_right)")
         .transform(auto_repartition, count_ratio=1e-4, cols=["id_parcel", "buffer"])
-        .withColumn("distance", F.expr("ST_Distance(geometry_intersection, geometry)"))
+        .withColumn("distance", F.expr("ST_Distance(geometry_right, geometry)"))
         .withColumn("rank", F.row_number().over(window))
         .groupby("id_parcel", "id_boundary", "buffer")
         .agg(
