@@ -211,8 +211,8 @@ def test_sjoin_boundary_count():
 
     df = sjoin_boundary_count(sdf_parcels, sdf_boundaries, sdf_features, buffers=[0, 2, 6, 10]).toPandas()
 
-    assert "count_0m" not in df.columns
+    assert "count_0m" not in df.columns, "Unexpected column 'count_0m' in test boundary count data."
 
     observed = df.loc[:, ["count_2m", "count_6m", "count_10m"]].values
     expected = [[0, 1, 1], [1, 2, 2]]
-    assert np.array_equal(observed, expected, equal_nan=True)
+    assert np.array_equal(observed, expected, equal_nan=True), "Incorrect boundary counts produced."
