@@ -13,10 +13,15 @@ from functools import partial
 
 import pyspark.sql.functions as F
 from pandera import DataFrameModel, Field
-from pandera.dtypes import Float64
+from pandera.dtypes import Float64, Int32
+from pyspark.sql import Window
+from pyspark.sql import functions as F
 
 from elmo_geo.etl import Dataset, DerivedDataset, SourceDataset
-from elmo_geo.etl.transformations import pivot_wide_sdf, sjoin_boundaries, sjoin_boundary_count
+from elmo_geo.etl.transformations import (
+    pivot_wide_sdf,
+    sjoin_boundaries,
+)
 from elmo_geo.io.file import auto_repartition
 from elmo_geo.utils.types import SparkDataFrame
 
@@ -75,14 +80,51 @@ class FCPTBoundaryTreeCounts(DataFrameModel):
     id_boundary: int = Field()
     id_parcel: str = Field()
     m: float = Field()
-    count_2m: float = Field(ge=0, le=1)
-    count_8m: float = Field(ge=0, le=1)
-    count_12m: float = Field(ge=0, le=1)
-    count_24m: float = Field(ge=0, le=1)
+    count_2m: Int32 = Field()
+    count_4m: Int32 = Field()
+    count_8m: Int32 = Field()
+    count_12m: Int32 = Field()
+    count_24m: Int32 = Field()
 
 
 def prep_tree_point(sdf):
     return sdf.selectExpr("ST_GeomFromWKT(top_point) AS geometry")
+
+
+def sjoin_boundary_count(
+    parcels: Dataset | SparkDataFrame,
+    boundary_segments: Dataset | SparkDataFrame,
+    features: Dataset | SparkDataFrame,
+    buffers: list[int] = [0, 2, 4, 8, 12, 24],
+    **kwargs,
+):
+    """Count the number of feature geometries intersecting parcel boundary segments."""
+
+    # window used to avoid double counting geomerites within a parcel
+    # eg where a feature intersects multiple buffered parcel boundary segments.
+    window = Window.partitionBy("id_parcel", "buffer", "geometry_intersection").orderBy("distance")
+    return (
+        sjoin_boundaries(parcels, boundary_segments, features, distance=max(buffers), **kwargs)
+        .withColumn("buffer", F.expr(f"EXPLODE(ARRAY{tuple(buffers)})"))
+        .transform(auto_repartition, count_ratio=1e-4)
+        .withColumn("geometry_buffer", F.expr("ST_Buffer(geometry, buffer)"))
+        .withColumn(
+            "geometry_intersection",
+            F.expr("EXPLODE(ST_Dump(ST_Intersection(geometry_buffer, geometry_right)))"),
+        )
+        .filter("NOT ST_IsEmpty(geometry_intersection)")
+        .transform(auto_repartition, count_ratio=1e-4, cols=["id_parcel", "buffer"])
+        .withColumn("distance", F.expr("ST_Distance(geometry_intersection, geometry)"))
+        .withColumn("rank", F.row_number().over(window))
+        .groupby("id_parcel", "id_boundary", "buffer")
+        .agg(
+            F.expr("FIRST(m) as m"),
+            F.expr("CAST(SUM(CASE WHEN rank=1 THEN 1 ELSE 0 END) as Int) as count"),
+        )
+        .transform(pivot_wide_sdf, name_col="buffer", value_col="count")
+        .withColumnsRenamed({str(b): f"count_{b}m" for b in buffers})
+        .fillna(0)
+    )
 
 
 fcp_boundary_tree_count = DerivedDataset(

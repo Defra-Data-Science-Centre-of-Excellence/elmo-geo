@@ -25,36 +25,42 @@ def register_dir(path: str):
         LOG.info(f"Changed Directory: {cwd} => {nwd}")
 
 
-def register_adaptive_partitions(adaptive_partitions: bool, shuffle_partitions: int, default_parallelism: int, advisory_size: str):
+def register_adaptive_partitions(adaptive_partitions: bool, default_parallelism: int, advisory_size: str):
+    """Set configuration settings for partitioning and coalescing.
+
+    Parameters:
+        adaptive_partitions: Whether to adaptively partition and coalesce.
+        default_parallelism: Default number of partitions to use in joins, aggregations and other operations.
+        advisory_size: The advisory maximum size of partitions in bytes.
+    """
+    # Regardless of adaptive behaviour will likely want to set the default partition number above the default of 200
+    spark.conf.set("spark.default.parallelism", default_parallelism)
+    spark.conf.set("spark.sql.shuffle.partitions", default_parallelism)
+    spark.conf.set("spark.sql.files.maxPartitionBytes", advisory_size)
+
     if adaptive_partitions:
+        spark.conf.set("spark.sql.adaptive.enabled", "true")
         spark.conf.set("spark.sql.adaptive.coalescePartitions.enabled", "true")
-        spark.conf.set("spark.sql.adaptive.coalescePartitions.initialPartitionNum", default_parallelism)
         spark.conf.set("spark.sql.adaptive.coalescePartitions.parallelismFirst", "true")
+        spark.conf.set("spark.sql.adaptive.coalescePartitions.initialPartitionNum", default_parallelism)
         spark.conf.set("spark.sql.adaptive.advisoryPartitionSizeInBytes", advisory_size)
         spark.conf.set("spark.sql.adaptive.coalescePartitions.minPartitionSize", "500kb")
-        LOG.info("spark.sql.adaptive.coalescePartitions.enabled = true")
     else:
-        # Without adaptive partitioning the default partitions values are increased.
-        # Advised # partitions is 3x number of cores, but with complex geometries
-        # it can be better to use higher than typical number of partitions.
+        spark.conf.set("spark.sql.adaptive.enabled", "false")
         spark.conf.set("spark.sql.adaptive.coalescePartitions.enabled", "false")
-        spark.conf.set("spark.sql.suffle.partitions", shuffle_partitions)
-        spark.conf.set("spark.default.parallelism", default_parallelism)
-        LOG.info("spark.sql.adaptive.coalescePartitions.enabled = false")
+    LOG.info(f"Adaptive partitioning: {adaptive_partitions}. default partitions: {default_parallelism}, advisory partition size: {advisory_size}")
 
 
 def register(
     spark: SparkSession = spark,
     dir: str = "/elmo-geo",
-    adaptive_partitions: bool = False,
-    shuffle_partitions: int = 600,
+    adaptive_partitions: bool = True,
     default_parallelism: int = 600,
     advisory_size: str = "32mb",
 ):
     register_dir(dir)
     register_adaptive_partitions(
         adaptive_partitions,
-        shuffle_partitions,
         default_parallelism,
         advisory_size,
     )

@@ -4,7 +4,8 @@ import pytest
 from pyspark.sql import DataFrame as SparkDataFrame
 from pyspark.sql import functions as F
 
-from elmo_geo.etl.transformations import sjoin_boundary_count, sjoin_boundary_proportion, sjoin_parcel_proportion
+from elmo_geo.datasets.fcp_tree_detection import sjoin_boundary_count
+from elmo_geo.etl.transformations import sjoin_boundary_proportion, sjoin_parcel_proportion
 from elmo_geo.io.convert import to_sdf
 from elmo_geo.st.segmentise import segmentise_with_tolerance
 from elmo_geo.st.udf import st_udf, st_union
@@ -210,8 +211,8 @@ def test_sjoin_boundary_count():
 
     df = sjoin_boundary_count(sdf_parcels, sdf_boundaries, sdf_features, buffers=[0, 2, 6, 10]).toPandas()
 
-    assert "count_0m" not in df.columns
+    assert "count_0m" not in df.columns, "Unexpected column 'count_0m' in test boundary count data."
 
     observed = df.loc[:, ["count_2m", "count_6m", "count_10m"]].values
-    expected = [[np.nan, 1, 1], [1, 2, 2]]
-    assert np.array_equal(observed, expected, equal_nan=True)
+    expected = [[0, 1, 1], [1, 2, 2]]
+    assert np.array_equal(observed, expected, equal_nan=True), "Incorrect boundary counts produced."
