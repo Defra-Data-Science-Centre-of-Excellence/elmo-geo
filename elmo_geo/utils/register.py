@@ -47,8 +47,8 @@ def register(
     spark: SparkSession = spark,
     dir: str = "/elmo-geo",
     adaptive_partitions: bool = False,
-    shuffle_partitions: int = 600,
-    default_parallelism: int = 600,
+    shuffle_partitions: int = 200,
+    default_parallelism: int = 200,
     advisory_size: str = "32mb",
 ):
     register_dir(dir)
