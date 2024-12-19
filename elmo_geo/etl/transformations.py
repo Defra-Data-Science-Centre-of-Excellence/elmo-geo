@@ -166,10 +166,10 @@ def sjoin_boundary_proportion(
     expr = f"LEAST(GREATEST({expr}, 0), 1)"
     return (
         sjoin_parcels(parcel, features, distance=max(buffers), **kwargs)
-        .withColumn("buffer", F.expr(f"EXPLODE(ARRAY{tuple(buffers)})"))
-        .withColumn("geometry_right", F.expr("ST_Buffer(geometry_right, buffer)"))
         .join(sdf_segments, on="id_parcel")
+        .withColumn("buffer", F.expr(f"EXPLODE(ARRAY{tuple(buffers)})"))
         .transform(auto_repartition)
+        .withColumn("geometry_right", F.expr("ST_Buffer(geometry_right, buffer)"))
         .withColumn("proportion", F.expr(expr))
         .drop("geometry", "geometry_left", "geometry_right")
         .transform(pivot_wide_sdf, name_col="buffer", value_col="proportion")

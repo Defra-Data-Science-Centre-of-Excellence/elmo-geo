@@ -4,6 +4,7 @@ import pytest
 from pyspark.sql import DataFrame as SparkDataFrame
 from pyspark.sql import functions as F
 
+from elmo_geo.datasets.fcp_tree_detection import sjoin_boundary_count
 from elmo_geo.etl.transformations import sjoin_boundary_proportion, sjoin_parcel_proportion
 from elmo_geo.io.convert import to_sdf
 from elmo_geo.st.segmentise import segmentise_with_tolerance
@@ -166,6 +167,7 @@ def test_sjoin_boundary_segments():
         sdf_parcels.withColumn("geometry", F.expr("ST_Boundary(geometry)"))
         .transform(st_udf, segmentise_with_tolerance)
         .withColumn("geometry", F.expr("EXPLODE(ST_DUMP(geometry))"))
+        .withColumn("id_boundary", F.monotonically_increasing_id())
     )
 
     df = sjoin_boundary_proportion(
@@ -175,6 +177,42 @@ def test_sjoin_boundary_segments():
         columns=["class"],
     ).toPandas()
 
-    observed = df.iloc[:, 2:].values  # drop class, id_parcel
-    expected = [[0.0, 0.0, 0.047619, 0.238095, 0.428571, 1.0]]
+    observed = df.set_index("id_boundary").loc[[0, 1, 2, 3]].iloc[:, 2:].values  # drop class, id_parcel
+    expected = [
+        [0.0, 0.0, 0.0, 0.0, 0.0, 1.0],
+        [0.0, 0.0, 0.047619, 0.238095, 0.428571, 1.0],
+        [0.0, 0.0, 1.0, 1.0, 1.0, 1.0],
+        [0.0, 0.0, 0.047619, 0.238095, 0.428571, 1.0],
+    ]
     assert np.isclose(observed, expected, atol=1e-3).all()
+
+
+@pytest.mark.dbr
+def test_sjoin_boundary_count():
+    """Test count of features intersecting parcel boundary segments.
+
+    Max of three points intersecting the boundaries. Two of these are closer to one boudnary
+    segment, the other is closer to a different boundary segment. This test checks that
+    points are not double counted even when they overlap with multiple buffered boundary segments.
+    """
+    register()
+
+    parcel_geoms = ["Polygon((0 0, 0 20, 20 20, 20 0, 0 0))"]
+    feature_geoms = ["Point(21 10)", "Point(25 10)", "Point(16 3)", "Point(100 100)"]
+
+    sdf_parcels, sdf_features = prep_data(parcel_geoms, feature_geoms)
+    sdf_boundaries = (
+        sdf_parcels.withColumn("geometry", F.expr("ST_Boundary(geometry)"))
+        .transform(st_udf, segmentise_with_tolerance)
+        .withColumn("geometry", F.expr("EXPLODE(ST_DUMP(geometry))"))
+        .withColumn("m", F.expr("ST_Length(geometry)"))
+        .withColumn("id_boundary", F.monotonically_increasing_id())
+    )
+
+    df = sjoin_boundary_count(sdf_parcels, sdf_boundaries, sdf_features, buffers=[0, 2, 6, 10]).toPandas()
+
+    assert "count_0m" not in df.columns, "Unexpected column 'count_0m' in test boundary count data."
+
+    observed = df.loc[:, ["count_2m", "count_6m", "count_10m"]].values
+    expected = [[0, 1, 1], [1, 2, 2]]
+    assert np.array_equal(observed, expected, equal_nan=True), "Incorrect boundary counts produced."
