@@ -15,12 +15,10 @@ import pyspark.sql.functions as F
 from pandera import DataFrameModel, Field
 from pandera.dtypes import Float64, Int32
 from pyspark.sql import Window
-from pyspark.sql import functions as F
 
 from elmo_geo.etl import Dataset, DerivedDataset, SourceDataset
 from elmo_geo.etl.transformations import (
     pivot_wide_sdf,
-    sjoin_boundaries,
     sjoin_parcels,
 )
 from elmo_geo.io.file import auto_repartition
@@ -168,20 +166,20 @@ def sjoin_interior_count(
     Parcel interios defined by the difference between buffered boundary segment geometries
     and the parcel geometry.
     """
-    expr = "ST_Difference(ST_Union_Aggr(geometry), geometry_left)"
-    expr = f"ST_Intersection({expr}, geometry_right) as interior_intersection"
+    sdf_segments = boundary_segments if isinstance(boundary_segments, SparkDataFrame) else boundary_segments.sdf()
+
     return (
-        sjoin_boundaries(parcels, boundary_segments, features, distance=max(buffers), **kwargs)
+        sjoin_parcels(parcels, features, distance=max(buffers), **kwargs)
+        .join(sdf_segments, on="id_parcel")
         .withColumn("buffer", F.expr(f"EXPLODE(ARRAY{tuple(buffers)})"))
-        .transform(auto_repartition, thread_ratio=6)
+        .transform(auto_repartition, count_ratio=1e-5, cols=["id_parcel", "buffer"])
         .withColumn("geometry", F.expr("ST_Buffer(geometry, buffer)"))  # buffer segment geoms
         .groupby("id_parcel", "buffer", "geometry_left", "geometry_right")
-        .agg(F.expr(expr))  # intersection between features and parcel interior
-        .withColumn("interior_intersection", F.expr("EXPLODE(ST_Dump(interior_intersection))"))
-        .transform(auto_repartition, thread_ratio=6)
-        .filter("NOT ST_IsEmpty(interior_intersection)")
+        .agg(F.expr("ST_Difference(geometry_left, ST_Union_Aggr(geometry)) as geometry_left_interior"))  # arcel interior geometry
+        .withColumn("geometry_right", F.expr("EXPLODE(ST_Dump(geometry_right))"))
+        .filter("ST_Intersects(geometry_left_interior, geometry_right)")
         .groupby("id_parcel", "buffer")
-        .agg(F.expr("COUNT(interior_intersection) as count"))
+        .agg(F.expr("COUNT(geometry_right) as count"))
         .transform(pivot_wide_sdf, name_col="buffer", value_col="count")
         .withColumnsRenamed({str(b): f"count_{b}m" for b in buffers})
     )
