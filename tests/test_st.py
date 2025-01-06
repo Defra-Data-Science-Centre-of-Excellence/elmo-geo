@@ -195,7 +195,7 @@ def test_sjoin_boundary_count():
     segment, the other is closer to a different boundary segment. This test checks that
     points are not double counted even when they overlap with multiple buffered boundary segments.
     """
-    register(adaptive_partitions=False, shuffle_partitions=5, default_parallelism=5)
+    register()
 
     parcel_geoms = ["Polygon((0 0, 0 20, 20 20, 20 0, 0 0))"]
     feature_geoms = ["Point(21 10)", "Point(25 10)", "Point(16 3)", "Point(100 100)"]
