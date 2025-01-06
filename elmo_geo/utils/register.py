@@ -24,6 +24,7 @@ def register_dir(path: str):
         os.chdir(nwd)
         LOG.info(f"Changed Directory: {cwd} => {nwd}")
 
+
 def set_spark_config(advisory_size: str | None = "32mb"):
     """Set configuration settings for partitioning and coalescing.
 
@@ -34,6 +35,7 @@ def set_spark_config(advisory_size: str | None = "32mb"):
         spark.conf.set("spark.sql.files.maxPartitionBytes", advisory_size)
         spark.conf.set("spark.sql.adaptive.advisoryPartitionSizeInBytes", advisory_size)
         LOG.info(f"Spark config advisory partition size:= set to {advisory_size}")
+
 
 def register(
     spark: SparkSession = spark,

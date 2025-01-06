@@ -149,18 +149,6 @@ def sjoin_parcel_proportion(
     return sjoin_parcels(parcel, features, **kwargs).withColumn("proportion", F.expr(expr)).drop("geometry_left", "geometry_right").toPandas()
 
 
-def sjoin_boundaries(
-    parcel: Dataset | SparkDataFrame,
-    boundary_segments: Dataset | SparkDataFrame,
-    features: Dataset | SparkDataFrame,
-    **kwargs,
-) -> SparkDataFrame:
-    """"""
-    sdf_segments = boundary_segments if isinstance(boundary_segments, SparkDataFrame) else boundary_segments.sdf()
-
-    return sjoin_parcels(parcel, features, **kwargs).join(sdf_segments.transform(auto_repartition, count_ratio=1e-5), on="id_parcel")
-
-
 def sjoin_boundary_proportion(
     parcel: Dataset | SparkDataFrame,
     boundary_segments: Dataset | SparkDataFrame,
@@ -171,6 +159,8 @@ def sjoin_boundary_proportion(
     """Spatially joins with parcels, groups, key joins with boundaries, calculating proportional overlap for multiple buffer distances.
     Returns a non-geospatial dataframe.
     """
+    sdf_segments = boundary_segments if isinstance(boundary_segments, SparkDataFrame) else boundary_segments.sdf()
+
     expr = "ST_Intersection(geometry, geometry_right)"
     expr = f"ST_Length({expr}) / ST_Length(geometry)"
     expr = f"LEAST(GREATEST({expr}, 0), 1)"
