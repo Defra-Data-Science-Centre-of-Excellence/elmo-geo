@@ -211,8 +211,12 @@ def test_sjoin_boundary_count():
 
     df = sjoin_boundary_count(sdf_parcels, sdf_boundaries, sdf_features, buffers=[0, 2, 6, 10]).toPandas()
 
+    df_boundaries = sdf_boundaries.selectExpr("id_boundary", "ST_AsText(geometry) as geometry").toPandas()
+
+    df = df.merge(df_boundaries, on="id_boundary").set_index("geometry")
+
     assert "count_0m" not in df.columns, "Unexpected column 'count_0m' in test boundary count data."
 
-    observed = df.loc[:, ["count_2m", "count_6m", "count_10m"]].values
+    observed = df.loc[["LINESTRING (20 0, 0 0)", "LINESTRING (20 20, 20 0)"], ["count_2m", "count_6m", "count_10m"]].values
     expected = [[0, 1, 1], [1, 2, 2]]
     assert np.array_equal(observed, expected, equal_nan=True), "Incorrect boundary counts produced."
