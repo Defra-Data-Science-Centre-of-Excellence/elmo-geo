@@ -141,17 +141,16 @@ class FCPTInteriorTreeCounts(DataFrameModel):
     """Model for counts of trees intersecting parcel boudaries.
     Attributes:
         id_parcel: parcel id in which that boundary came from.
-        m: length of the boundary geometry.
         count_*m: Number of trees intersectin the boundary segment buffered at "*"
     """
 
     id_parcel: str = Field()
-    m: float = Field()
-    count_0m: float = Field(ge=0, le=1)
-    count_2m: float = Field(ge=0, le=1)
-    count_8m: float = Field(ge=0, le=1)
-    count_12m: float = Field(ge=0, le=1)
-    count_24m: float = Field(ge=0, le=1)
+    count_0m: Int32 = Field()
+    count_2m: Int32 = Field()
+    count_4m: Int32 = Field()
+    count_8m: Int32 = Field()
+    count_12m: Int32 = Field()
+    count_24m: Int32 = Field()
 
 
 def sjoin_interior_count(
@@ -175,13 +174,14 @@ def sjoin_interior_count(
         .transform(auto_repartition, count_ratio=1e-5, cols=["id_parcel", "buffer"])
         .withColumn("geometry", F.expr("ST_Buffer(geometry, buffer)"))  # buffer segment geoms
         .groupby("id_parcel", "buffer", "geometry_left", "geometry_right")
-        .agg(F.expr("ST_Difference(geometry_left, ST_Union_Aggr(geometry)) as geometry_left_interior"))  # arcel interior geometry
+        .agg(F.expr("ST_Difference(geometry_left, ST_Union_Aggr(geometry)) as geometry_left_interior"))  # parcel interior geometry
         .withColumn("geometry_right", F.expr("EXPLODE(ST_Dump(geometry_right))"))
         .filter("ST_Intersects(geometry_left_interior, geometry_right)")
         .groupby("id_parcel", "buffer")
-        .agg(F.expr("COUNT(geometry_right) as count"))
+        .agg(F.expr("CAST(COUNT(geometry_right) as Int) as count"))
         .transform(pivot_wide_sdf, name_col="buffer", value_col="count")
         .withColumnsRenamed({str(b): f"count_{b}m" for b in buffers})
+        .fillna(0)
     )
 
 
