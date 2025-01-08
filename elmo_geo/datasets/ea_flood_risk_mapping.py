@@ -1,15 +1,19 @@
 """
 A collection of flood risk mapping products produced by the Environment Agency.
 
-There are two datasets described below:
+There are three datasets described below:
 
 1 - Flood Map for Planning, Flood Zone 3
   Flood Zone 3 is a best estimate of the areas of land at risk of flooding, when the presence of flood defences are ignored
   and covers land with a 1 in 100 (1%) or greater chance of flooding each year from Rivers; or with a 1 in 200 (0.5%)
   or greater chance of flooding each year from the Sea.
 
+2 -  Flood Map for Planning, Flood Zone 2
+ Flood zone 2 is a best estimate of the areas of land at risk of flooding, when the presence of flood defences are ignored
+ and covers land between Zone 3 and the extent of the flooding from rivers or the sea with a 1 in 1000 (0.1%)
+ chance of flooding each year. This dataset also includes those areas defined in Flood Zone 3.
 
-2 - Risk of Flooding from Rivers amnd Sea(RoFRS)
+3 - Risk of Flooding from Rivers amnd Sea(RoFRS)
   The dataset shows the chance of flooding from rivers and/or the sea, based on cells of 50m.
   Each cell is allocated one of four flood risk categories,
   taking into account flood defences and their condition.
@@ -129,4 +133,53 @@ ea_fz3_parcels = DerivedDataset(
     model=EAFZ3Parcels,
 )
 """Indicates the proportion of each parcel intersected by the flood zone 3 dataset.
+"""
+
+
+#Flood Zone 2
+class EAFZ2Raw(DataFrameModel):
+    """Model for Environment Agency Flood Zone 2 (FZ2) taken from the Floodmap for Planning dataset
+    Attributes:
+    layer: name of layer i.e flood zone 2
+    type: type of flooding i.e fluvial or tidal
+    geometry: Geospatial polygons in EPSG:27700
+    """
+
+    layer: str = Field()
+    type: str = Field()
+    geometry: Geometry(crs=SRID) = Field()
+
+ea_fz2_raw = SourceDataset(
+    name="ea_fz2_raw",
+    medallion="bronze",
+    source="ea",
+    model=EAFZ2Raw,
+    restricted=False,
+    source_path="/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_ea_flood_map_flood_zone_2/format_GEOPARQUET_ea_flood_map_flood_zone_2/LATEST_ea_flood_map_flood_zone_2",
+)
+
+
+class EAFZ2Parcels(DataFrameModel):
+    """Model for Environment Agency Flood Zone 2 (FZ2) taken from the Floodmap for Planning dataset joined with Rural Payment Agency parcel dataset.
+
+    Attributes:
+        id_parcel: 11 character RPA reference parcel ID (including the sheet ID) e.g. `SE12263419`.
+        proportion: The proportion of the parcel that intersects with the FZ2.
+        """
+
+        id_parcel: str = Field(unique=True)
+        proportion: float = Field(ge=0, le=1)
+
+
+ea_fz2_parcels = DerivedDataset(
+    is_geo=False,
+    name="ea_fz2_parcels",
+    medallion="silver",
+    source="ea",
+    restricted=False,
+    func=sjoin_parcel_proportion,
+    dependencies=[reference_parcels, ea_fz2_raw],
+    model=EAFZ2Parcels,
+)
+"""Indicates the proportion of each parcel intersected by the flood zone 2 dataset.
 """
