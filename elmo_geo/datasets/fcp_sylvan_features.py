@@ -6,7 +6,7 @@ parcels.
 """
 
 from pandera import DataFrameModel, Field
-from pandera.dtypes import Int32
+from pandera.dtypes import Int16
 from pyspark.sql import DataFrame as SparkDataFrame
 from pyspark.sql import functions as F
 
@@ -26,12 +26,17 @@ def _calculate_parcel_tree_counts(
     boundary_hedgerows: Dataset,
     boundary_water: Dataset,
     fcp_interior_tree_count: Dataset,
-    tree_count_buffers: list[int] = [4, 12],
+    tree_count_buffers: list[int] = [4, 8],
 ) -> SparkDataFrame:
-    """Join boundary datasets with boundary tree counts and aggregate to parcel level.
+    """Join boundary datasets with boundary and interior tree counts and aggregate to parcel level.
 
     Parameters:
-        count_buffers = [4, 12]  # options are 2,4,8,12,24
+        fcp_boundary_tree_count: Boundary tree count dataset.
+        boundary_adjacencies: Boundaries shared with other parcels dataset.
+        boundary_hedgerows: Boundary hedgerows dataset.
+        boundary_water: Boundary waterbody dataset.
+        fcp_interior_tree_count: Interior tree count dataset.
+        tree_count_buffers: Distances from boundary to base boundary and interior tree counts on. Options are 2,4,8,12,24.
     """
 
     boundary_types = ["hedgerow", "water"]
@@ -53,17 +58,23 @@ def _calculate_parcel_tree_counts(
         .withColumn("adj_fraction", F.expr("(2 - bool_adjacency) / 2"))  # Buffer Strips are double sided, adjacency makes this single sided.
         .groupby("id_parcel")
         .agg(
-            *[F.expr(f"CAST(SUM(count_{b}m) AS Int) AS n_boundary_trees_{b}m") for b in tree_count_buffers],
-            *[F.expr(f"CAST(SUM(count_{b}m * bool_{t}) AS Int) AS n_{t}_trees_{b}m") for b in tree_count_buffers for t in boundary_types],
+            *[F.expr(f"CAST(SUM(count_{b}m) AS Short) AS n_boundary_trees_{b}m") for b in tree_count_buffers],
+            *[F.expr(f"CAST(SUM(count_{b}m * bool_{t}) AS Short) AS n_{t}_trees_{b}m") for b in tree_count_buffers for t in boundary_types],
             *[F.expr(f"SUM(count_{b}m * adj_fraction) AS n_adj_boundary_trees_{b}m") for b in tree_count_buffers],
             *[F.expr(f"SUM(count_{b}m * bool_{t} * adj_fraction) AS n_adj_{t}_trees_{b}m") for b in tree_count_buffers for t in boundary_types],
         )
         .join(
-            fcp_interior_tree_count.sdf().selectExpr("id_parcel", *[f"count_{b}m AS n_interior_trees_{b}m" for b in tree_count_buffers]),
+            fcp_interior_tree_count.sdf().selectExpr("id_parcel", *[f"CAST(count_{b}m AS Short) AS n_interior_trees_{b}m" for b in tree_count_buffers]),
             on="id_parcel",
             how="outer",
         )
         .na.fill(0)
+        .withColumns(
+            {
+                "n_adj_trees_4m": F.expr("n_adj_boundary_trees_4m + n_interior_trees_4m"),
+                "n_adj_trees_8m": F.expr("n_adj_boundary_trees_8m + n_interior_trees_8m"),
+            },
+        )
     )
 
 
@@ -72,29 +83,35 @@ class SylvanFeaturesModel(DataFrameModel):
 
     Attributes:
         id_parcel: Parcel id in which that boundary came from.
-        n_boundary_trees_*m: Number of trees intersecting parcel boudnary at *m buffer distance.
+        n_boundary_trees_*m: Number of trees intersecting parcel boundary at *m buffer distance.
         n_adj_boundary_trees_*m: Number of trees intersecting parcel boudnary at *m buffer distance,
             adjusted for parcel adjacency to avoid double counting.
-        n_*_trees_*m: Number of trees intersecting boudnary type ^ at * buffer distance.
-        n_adj_*_trees_*m: Number of trees intersecting boudnary type ^ at * buffer distance,
+        n_^_trees_*m: Number of trees intersecting boudnary type ^ at * buffer distance.
+        n_adj_^_trees_*m: Number of trees intersecting boudnary type ^ at * buffer distance,
             adjusted for adjacency to avoid double counting.
+        n_interior_trees_*m: Number of trees intersecting parcel interior based on *m buffer applied to
+            parcel boundary.
+        n_trees_*m: Total number of trees in the parcel, adjusted for trees overlapping adjacent parcels.
+            This field is given by the sum of n_adj_boundary_trees_*m and n_interior_trees_*m.
     """
 
     id_parcel: str = Field()
-    n_boundary_trees_4m: Int32 = Field()
-    n_boundary_trees_12m: Int32 = Field()
+    n_boundary_trees_4m: Int16 = Field()
+    n_boundary_trees_8m: Int16 = Field()
     n_adj_boundary_trees_4m: float = Field()
-    n_adj_boundary_trees_12m: float = Field()
-    n_hedgerow_trees_4m: Int32 = Field()
-    n_hedgerow_trees_12m: Int32 = Field()
+    n_adj_boundary_trees_8m: float = Field()
+    n_hedgerow_trees_4m: Int16 = Field()
+    n_hedgerow_trees_8m: Int16 = Field()
     n_adj_hedgerow_trees_4m: float = Field()
-    n_adj_hedgerow_trees_12m: float = Field()
-    n_water_trees_4m: Int32 = Field()
-    n_water_trees_12m: Int32 = Field()
+    n_adj_hedgerow_trees_8m: float = Field()
+    n_water_trees_4m: Int16 = Field()
+    n_water_trees_8m: Int16 = Field()
     n_adj_water_trees_4m: float = Field()
-    n_adj_water_trees_12m: float = Field()
-    n_interior_trees_4m: Int32 = Field()
-    n_interior_trees_12m: Int32 = Field()
+    n_adj_water_trees_8m: float = Field()
+    n_interior_trees_4m: Int16 = Field()
+    n_interior_trees_8m: Int16 = Field()
+    n_adj_trees_4m: float = Field()
+    n_adj_trees_8m: float = Field()
 
 
 fcp_parcel_sylvan_features = DerivedDataset(
@@ -107,3 +124,9 @@ fcp_parcel_sylvan_features = DerivedDataset(
     func=_calculate_parcel_tree_counts,
     dependencies=[fcp_boundary_tree_count, boundary_adjacencies, boundary_hedgerows, boundary_water_2m, fcp_interior_tree_count],
 )
+"""Parcel tree counts.
+
+Report the total number of trees per parcel as well as number of boundary, hedgerow, waterbody, and interior trees.
+Derived from the FCP Tree Detection dataset which was produced using the Environment Agency Vegitation Object Model
+raster dataset.
+"""
