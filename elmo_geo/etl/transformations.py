@@ -6,7 +6,6 @@ from typing import Callable, Iterator
 
 import geopandas as gpd
 import pandas as pd
-from pyspark.sql import Window
 from pyspark.sql import functions as F
 from xarray.core.dataarray import DataArray
 
@@ -150,18 +149,6 @@ def sjoin_parcel_proportion(
     return sjoin_parcels(parcel, features, **kwargs).withColumn("proportion", F.expr(expr)).drop("geometry_left", "geometry_right").toPandas()
 
 
-def sjoin_boundaries(
-    parcel: Dataset | SparkDataFrame,
-    boundary_segments: Dataset | SparkDataFrame,
-    features: Dataset | SparkDataFrame,
-    **kwargs,
-) -> SparkDataFrame:
-    """"""
-    sdf_segments = boundary_segments if isinstance(boundary_segments, SparkDataFrame) else boundary_segments.sdf()
-
-    return sjoin_parcels(parcel, features, **kwargs).join(sdf_segments.transform(auto_repartition), on="id_parcel")
-
-
 def sjoin_boundary_proportion(
     parcel: Dataset | SparkDataFrame,
     boundary_segments: Dataset | SparkDataFrame,
@@ -172,11 +159,14 @@ def sjoin_boundary_proportion(
     """Spatially joins with parcels, groups, key joins with boundaries, calculating proportional overlap for multiple buffer distances.
     Returns a non-geospatial dataframe.
     """
+    sdf_segments = boundary_segments if isinstance(boundary_segments, SparkDataFrame) else boundary_segments.sdf()
+
     expr = "ST_Intersection(geometry, geometry_right)"
     expr = f"ST_Length({expr}) / ST_Length(geometry)"
     expr = f"LEAST(GREATEST({expr}, 0), 1)"
     return (
-        sjoin_boundaries(parcel, boundary_segments, features, distance=max(buffers), **kwargs)
+        sjoin_parcels(parcel, features, distance=max(buffers), **kwargs)
+        .join(sdf_segments, on="id_parcel")
         .withColumn("buffer", F.expr(f"EXPLODE(ARRAY{tuple(buffers)})"))
         .transform(auto_repartition)
         .withColumn("geometry_right", F.expr("ST_Buffer(geometry_right, buffer)"))
@@ -184,38 +174,6 @@ def sjoin_boundary_proportion(
         .drop("geometry", "geometry_left", "geometry_right")
         .transform(pivot_wide_sdf, name_col="buffer", value_col="proportion")
         .withColumnsRenamed({str(b): f"proportion_{b}m" for b in buffers})
-    )
-
-
-def sjoin_boundary_count(
-    parcels: Dataset | SparkDataFrame,
-    boundary_segments: Dataset | SparkDataFrame,
-    features: Dataset | SparkDataFrame,
-    buffers: list[float] = [0, 2, 4, 8, 12, 24],
-    **kwargs,
-):
-    """Count the number of feature geometries intersecting parcel boundary segments."""
-
-    # window used to avoid double counting geomerites within a parcel
-    # eg where a features intersects multiple buffered parcel boundary segments.
-    window = Window.partitionBy("id_parcel", "buffer", "intersection").orderBy("distance")
-    return (
-        sjoin_boundaries(parcels, boundary_segments, features, distance=max(buffers), **kwargs)
-        .withColumn("buffer", F.expr(f"EXPLODE(ARRAY{tuple(buffers)})"))
-        .transform(auto_repartition, thread_ratio=6)
-        .withColumn("geometry_buffer", F.expr("ST_Buffer(geometry, buffer)"))
-        .withColumn("intersection", F.expr("EXPLODE(ST_Dump(ST_Intersection(geometry_buffer, geometry_right)))"))
-        .filter("NOT ST_IsEmpty(intersection)")
-        .transform(auto_repartition, thread_ratio=6, cols=["id_parcel", "buffer"])
-        .withColumn("distance", F.expr("ST_Distance(intersection, geometry)"))
-        .withColumn("rank", F.row_number().over(window))
-        .groupby("id_parcel", "id_boundary", "buffer")
-        .agg(
-            F.expr("FIRST(m) as m"),
-            F.expr("SUM(CASE WHEN rank=1 THEN 1 ELSE 0 END) as count"),
-        )
-        .transform(pivot_wide_sdf, name_col="buffer", value_col="count")
-        .withColumnsRenamed({str(b): f"count_{b}m" for b in buffers})
     )
 
 

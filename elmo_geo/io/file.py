@@ -65,7 +65,7 @@ def auto_repartition(
     suggested_partitions = int(min(max(partitioners.values()), jobs_cap))
     current_partitions = sdf.rdd.getNumPartitions()
     ratio = abs(suggested_partitions - current_partitions) / current_partitions
-    if (acceptance_ratio < ratio) or (force):
+    if (acceptance_ratio < ratio) or force:
         LOG.info(f"Repartitioning: {current_partitions} to {suggested_partitions}, due to {partitioners}.")
         return sdf.repartition(suggested_partitions, *cols)
     else:

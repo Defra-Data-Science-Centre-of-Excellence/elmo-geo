@@ -25,39 +25,25 @@ def register_dir(path: str):
         LOG.info(f"Changed Directory: {cwd} => {nwd}")
 
 
-def register_adaptive_partitions(adaptive_partitions: bool, shuffle_partitions: int, default_parallelism: int, advisory_size: str):
-    if adaptive_partitions:
-        spark.conf.set("spark.sql.adaptive.coalescePartitions.enabled", "true")
-        spark.conf.set("spark.sql.adaptive.coalescePartitions.initialPartitionNum", default_parallelism)
-        spark.conf.set("spark.sql.adaptive.coalescePartitions.parallelismFirst", "true")
+def set_spark_config(advisory_size: str | None = "32mb"):
+    """Set configuration settings for partitioning and coalescing.
+
+    Parameters:
+        advisory_size: The advisory maximum size of partitions in bytes.
+    """
+    if advisory_size is not None:
+        spark.conf.set("spark.sql.files.maxPartitionBytes", advisory_size)
         spark.conf.set("spark.sql.adaptive.advisoryPartitionSizeInBytes", advisory_size)
-        spark.conf.set("spark.sql.adaptive.coalescePartitions.minPartitionSize", "500kb")
-        LOG.info("spark.sql.adaptive.coalescePartitions.enabled = true")
-    else:
-        # Without adaptive partitioning the default partitions values are increased.
-        # Advised # partitions is 3x number of cores, but with complex geometries
-        # it can be better to use higher than typical number of partitions.
-        spark.conf.set("spark.sql.adaptive.coalescePartitions.enabled", "false")
-        spark.conf.set("spark.sql.suffle.partitions", shuffle_partitions)
-        spark.conf.set("spark.default.parallelism", default_parallelism)
-        LOG.info("spark.sql.adaptive.coalescePartitions.enabled = false")
+        LOG.info(f"Spark config advisory partition size:= set to {advisory_size}")
 
 
 def register(
     spark: SparkSession = spark,
     dir: str = "/elmo-geo",
-    adaptive_partitions: bool = False,
-    shuffle_partitions: int = 600,
-    default_parallelism: int = 600,
     advisory_size: str = "32mb",
 ):
     register_dir(dir)
-    register_adaptive_partitions(
-        adaptive_partitions,
-        shuffle_partitions,
-        default_parallelism,
-        advisory_size,
-    )
+    set_spark_config(advisory_size)
     register_sedona(spark)
     LOG.info("Registered: Sedona")
     return True
