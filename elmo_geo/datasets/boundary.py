@@ -48,6 +48,8 @@ from .os import os_ngd_raw
 from .osm import osm_tidy
 from .rpa_reference_parcels import reference_parcels
 
+THRESHOLD_FN = "0.5 < proportion_12m"
+
 
 # Boundary
 def segmentise_boundary(dataset: Dataset) -> SparkDataFrame:
@@ -210,7 +212,7 @@ def _transform_boundary_merger(
     boundary_relict: Dataset,
     boundary_walls: Dataset,
     boundary_water: Dataset,
-    threshold_str_fn: str = "0.5 < proportion_12m",
+    threshold_str_fn: str = THRESHOLD_FN,
 ) -> SparkDataFrame:
     """Joined boundary datasets together into single wider dataset.
 

@@ -114,6 +114,9 @@ from .fcp_parcels_geojson import (
 from .fcp_relict_hedge import (
     fcp_relict_hedge_raw,  # TODO: temporary
 )
+from .fcp_sylvan_features import (
+    fcp_parcel_sylvan_features,
+)
 from .fcp_tree_detection import (
     fcp_boundary_tree_count,
     fcp_interior_tree_count,
