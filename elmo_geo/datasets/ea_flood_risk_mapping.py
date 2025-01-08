@@ -166,9 +166,9 @@ class EAFZ2Parcels(DataFrameModel):
         id_parcel: 11 character RPA reference parcel ID (including the sheet ID) e.g. `SE12263419`.
         proportion: The proportion of the parcel that intersects with the FZ2.
         """
-
-        id_parcel: str = Field(unique=True)
-        proportion: float = Field(ge=0, le=1)
+        
+    id_parcel: str = Field(unique=True)
+    proportion: float = Field(ge=0, le=1)
 
 
 ea_fz2_parcels = DerivedDataset(

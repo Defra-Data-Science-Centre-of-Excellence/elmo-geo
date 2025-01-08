@@ -60,6 +60,8 @@ from .ea_alert import (
 from .ea_flood_risk_mapping import (
     ea_fz3_parcels,
     ea_fz3_raw,
+    ea_fz2_parcels,
+    ea_fz2_raw,
     ea_rofrs_parcels,
     ea_rofrs_raw,
 )
