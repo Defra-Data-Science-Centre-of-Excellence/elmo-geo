@@ -155,7 +155,7 @@ ea_fz2_raw = SourceDataset(
     source="ea",
     model=EAFZ2Raw,
     restricted=False,
-    source_path="/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_ea_flood_map_flood_zone_2/format_GEOPARQUET_ea_flood_map_flood_zone_2/LATEST_ea_flood_map_flood_zone_2",
+    source_path="/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_ea_flood_map_flood_zone_2/format_GEOPARQUET_ea_flood_map_flood_zone_2/LATEST_ea_flood_map_flood_zone_2/Flood_Map_for_Planning_Rivers_and_Sea_Flood_Zone_2Polygon.parquet",
 )
 
 
