@@ -136,7 +136,7 @@ ea_fz3_parcels = DerivedDataset(
 """
 
 
-#Flood Zone 2
+# Flood Zone 2
 class EAFZ2Raw(DataFrameModel):
     """Model for Environment Agency Flood Zone 2 (FZ2) taken from the Floodmap for Planning dataset
     Attributes:
@@ -148,6 +148,7 @@ class EAFZ2Raw(DataFrameModel):
     layer: str = Field()
     type: str = Field()
     geometry: Geometry(crs=SRID) = Field()
+
 
 ea_fz2_raw = SourceDataset(
     name="ea_fz2_raw",
@@ -165,8 +166,8 @@ class EAFZ2Parcels(DataFrameModel):
     Attributes:
         id_parcel: 11 character RPA reference parcel ID (including the sheet ID) e.g. `SE12263419`.
         proportion: The proportion of the parcel that intersects with the FZ2.
-        """
-        
+    """
+
     id_parcel: str = Field(unique=True)
     proportion: float = Field(ge=0, le=1)
 
