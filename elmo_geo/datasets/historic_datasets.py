@@ -3,6 +3,7 @@
  intersected by each historic or archaeological feature. The source datasets include:
 
 - SHINE: the Selected Heritage Inventory for Natural England
+- Listed buildings
 - protected_wreck_sites
 - registered_battlefields 
 - registered_parks_and_gardens
@@ -39,6 +40,31 @@ elm_shine_raw = SourceDataset(
     model=ELMSHINERaw,
     restricted=False,
     source_path="/dbfs/mnt/lab/restricted/ELM-Project/bronze/he-shine-2022_12_30.parquet",
+)
+
+
+# Listed buildings (LB)
+class HELBRaw(DataFrameModel):
+    """Model for Historic England Listed buildings dataset.
+
+    Attributes:
+       list_entry: Reference id for each LB
+       name: Name of the LB
+       geometry: Geospatial polygons in EPSG:27700
+    """
+
+    list_entry: int = Field(alias="ListEntry")
+    name: str = Field(alias="Name")
+    geometry: Geometry(crs=SRID) = Field()
+
+
+he_lb_raw = SourceDataset(
+    name="he_lb_raw",
+    medallion="bronze",
+    source="he",
+    model=HELBRaw,
+    restricted=False,
+    source_path="/dbfs/mnt/base/unrestricted/source_historic_england_open_data_site/dataset_listed_buildings_polys/format_GEOPARQUET_listed_buildings_polys/LATEST_listed_buildings_polys",
 )
 
 

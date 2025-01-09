@@ -135,6 +135,7 @@ from .hedges import (
 )
 from .historic_datasets import (
     elm_shine_raw,
+    he_lb_raw,
     he_pws_raw,
     he_rb_raw,
     he_rpg_raw,
