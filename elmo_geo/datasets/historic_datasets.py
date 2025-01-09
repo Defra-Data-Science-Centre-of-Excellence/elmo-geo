@@ -39,7 +39,7 @@ elm_shine_raw = SourceDataset(
     source="he",
     model=ELMSHINERaw,
     restricted=False,
-    source_path="/dbfs/mnt/lab/restricted/ELM-Project/bronze/he-shine-2022_12_30.parquet",
+    source_path="/dbfs/mnt/lab/restricted/ELM-Project/raw/he/he-shine-2022_12_30.parquet",
 )
 
 
