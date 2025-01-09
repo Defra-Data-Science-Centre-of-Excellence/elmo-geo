@@ -143,7 +143,7 @@ he_sm_raw = SourceDataset(
 
 
 # World Heritage Sites (WHS)
-class HeWhsRaw(DataFrameModel):
+class HEWHSRaw(DataFrameModel):
     """Model for World Heritage Sites dataset.
 
     Attributes:
@@ -152,8 +152,8 @@ class HeWhsRaw(DataFrameModel):
        geometry: Geospatial polygons in EPSG:27700
     """
 
-    ListEntry: str = Field()
-    Name: str = Field()
+    list_entry: int = Field(alias="ListEntry")
+    name: str = Field(alias="Name)
     geometry: Geometry(crs=SRID) = Field()
 
 
@@ -161,7 +161,7 @@ he_whs_raw = SourceDataset(
     name="he_whs_raw",
     medallion="bronze",
     source="he",
-    model=HeWhsRaw,
+    model=HEWHSRaw,
     restricted=False,
     source_path="/dbfs/mnt/base/unrestricted/source_historic_england_open_data_site/dataset_world_heritage_sites/format_GEOPARQUET_world_heritage_sites/SNAPSHOT_2024_04_29_world_heritage_sites/",
 )
