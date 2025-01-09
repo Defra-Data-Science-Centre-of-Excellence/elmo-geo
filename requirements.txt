@@ -4,15 +4,17 @@
 #
 #    pip-compile --all-extras
 #
+adjusttext==1.3.0
+    # via elmo (pyproject.toml)
 affine==2.4.0
     # via rasterio
 annotated-types==0.7.0
     # via pydantic
 apache-sedona==1.6.1
-    # via elmo_geo (pyproject.toml)
+    # via elmo (pyproject.toml)
 asttokens==3.0.0
     # via stack-data
-attrs==24.2.0
+attrs==24.3.0
     # via
     #   apache-sedona
     #   jsonschema
@@ -22,31 +24,36 @@ babel==2.16.0
     # via mkdocs-material
 beautifulsoup4==4.12.3
     # via
-    #   elmo_geo (pyproject.toml)
+    #   elmo (pyproject.toml)
+    #   libpysal
     #   nbconvert
-bleach==6.2.0
+bleach[css]==6.2.0
     # via nbconvert
-boto3==1.35.36
-    # via elmo_geo (pyproject.toml)
-botocore==1.35.36
+boto3==1.35.95
+    # via smart-open
+botocore==1.35.95
     # via
     #   boto3
     #   s3transfer
-branca==0.7.2
+branca==0.8.1
     # via folium
-build==1.2.1
+build==1.2.2.post1
     # via pip-tools
 cachetools==5.5.0
     # via google-auth
-certifi==2024.8.30
+cairocffi==1.7.1
+    # via networkx
+certifi==2024.12.14
     # via
     #   pyogrio
     #   pyproj
     #   rasterio
     #   requests
-charset-normalizer==3.3.2
+cffi==1.17.1
+    # via cairocffi
+charset-normalizer==3.4.1
     # via requests
-click==8.1.7
+click==8.1.8
     # via
     #   click-plugins
     #   cligj
@@ -59,69 +66,108 @@ click-plugins==1.1.1
     # via rasterio
 cligj==0.7.2
     # via rasterio
+cloudpickle==3.1.0
+    # via shap
 colorama==0.4.6
     # via
     #   griffe
     #   mkdocs-material
 comm==0.2.2
-    # via ipykernel
+    # via
+    #   ipykernel
+    #   ipywidgets
 contextily==1.6.2
-    # via elmo_geo (pyproject.toml)
-contourpy==1.3.0
+    # via
+    #   elmo (pyproject.toml)
+    #   networkx
+contourpy==1.3.1
     # via matplotlib
+coverage[toml]==7.6.10
+    # via pytest-cov
 cycler==0.12.1
     # via matplotlib
 databricks-sdk==0.20.0
-    # via elmo_geo (pyproject.toml)
-debugpy==1.8.9
+    # via elmo (pyproject.toml)
+debugpy==1.8.11
     # via ipykernel
 decorator==5.1.1
     # via ipython
 defusedxml==0.7.1
-    # via nbconvert
+    # via
+    #   nbconvert
+    #   odfpy
+et-xmlfile==2.0.0
+    # via openpyxl
+execnet==2.1.1
+    # via pytest-xdist
 executing==2.1.0
     # via stack-data
 fastjsonschema==2.21.1
     # via nbformat
-folium==0.17.0
-    # via elmo_geo (pyproject.toml)
-fonttools==4.53.1
+folium==0.19.4
+    # via geopandas
+fonttools==4.55.3
     # via matplotlib
+geoalchemy2==0.16.0
+    # via geopandas
 geographiclib==2.0
     # via geopy
-geopandas==1.0.1
+geojson==3.2.0
+    # via elmo (pyproject.toml)
+geopandas[all]==1.0.1
     # via
-    #   elmo_geo (pyproject.toml)
+    #   elmo (pyproject.toml)
+    #   libpysal
+    #   momepy
+    #   osmnx
     #   pandera
 geopy==2.4.1
-    # via contextily
+    # via
+    #   contextily
+    #   geopandas
 ghp-import==2.1.0
     # via mkdocs
-google-auth==2.34.0
+google-auth==2.37.0
     # via databricks-sdk
-googleapis-common-protos==1.65.0
+googleapis-common-protos==1.66.0
     # via
     #   grpcio-status
     #   pyspark
-griffe==1.5.1
+greenlet==3.1.1
+    # via sqlalchemy
+griffe==1.5.4
     # via mkdocstrings-python
-grpcio==1.66.1
+grpcio==1.69.0
     # via
     #   grpcio-status
     #   pyspark
-grpcio-status==1.66.1
+grpcio-status==1.69.0
     # via pyspark
-idna==3.8
+idna==3.10
     # via requests
+igraph==0.11.8
+    # via networkx
+imbalanced-learn==0.13.0
+    # via imblearn
+imblearn==0.0
+    # via elmo (pyproject.toml)
 iniconfig==2.0.0
     # via pytest
 ipykernel==6.29.5
-    # via mkdocs-jupyter
-ipython==8.30.0
-    # via ipykernel
+    # via
+    #   elmo (pyproject.toml)
+    #   mkdocs-jupyter
+ipython==8.31.0
+    # via
+    #   ipykernel
+    #   ipywidgets
+ipywidgets==8.1.5
+    # via elmo (pyproject.toml)
 jedi==0.19.2
     # via ipython
-jinja2==3.1.4
+jenkspy==0.4.1
+    # via elmo (pyproject.toml)
+jinja2==3.1.5
     # via
     #   branca
     #   folium
@@ -136,6 +182,7 @@ jmespath==1.0.1
 joblib==1.4.2
     # via
     #   contextily
+    #   imbalanced-learn
     #   scikit-learn
 jsonschema==4.23.0
     # via nbformat
@@ -154,12 +201,18 @@ jupyter-core==5.7.2
     #   nbformat
 jupyterlab-pygments==0.3.0
     # via nbconvert
-jupytext==1.16.4
+jupyterlab-widgets==3.0.13
+    # via ipywidgets
+jupytext==1.16.6
     # via mkdocs-jupyter
-kiwisolver==1.4.7
+kiwisolver==1.4.8
     # via matplotlib
-mapclassify==2.8.0
-    # via elmo_geo (pyproject.toml)
+libpysal==4.12.1
+    # via momepy
+llvmlite==0.43.0
+    # via numba
+mapclassify==2.8.1
+    # via geopandas
 markdown==3.7
     # via
     #   mkdocs
@@ -172,17 +225,20 @@ markdown-it-py==3.0.0
     #   jupytext
     #   mdit-py-plugins
     #   rich
-markupsafe==2.1.5
+markupsafe==3.0.2
     # via
     #   jinja2
     #   mkdocs
     #   mkdocs-autorefs
     #   mkdocstrings
     #   nbconvert
-matplotlib==3.9.2
+matplotlib==3.10.0
     # via
+    #   adjusttext
     #   contextily
+    #   geopandas
     #   seaborn
+    #   upsetplot
 matplotlib-inline==0.1.7
     # via
     #   ipykernel
@@ -197,46 +253,51 @@ mergedeep==1.3.4
     # via
     #   mkdocs
     #   mkdocs-get-deps
-mistune==3.0.2
+mistune==3.1.0
     # via nbconvert
 mkdocs==1.6.1
     # via
-    #   elmo_geo (pyproject.toml)
+    #   elmo (pyproject.toml)
     #   mkdocs-autorefs
     #   mkdocs-gen-files
     #   mkdocs-jupyter
     #   mkdocs-literate-nav
     #   mkdocs-material
+    #   mkdocs-section-index
     #   mkdocstrings
 mkdocs-autorefs==1.2.0
     # via
     #   mkdocstrings
     #   mkdocstrings-python
 mkdocs-gen-files==0.5.0
-    # via elmo_geo (pyproject.toml)
+    # via elmo (pyproject.toml)
 mkdocs-get-deps==0.2.0
     # via mkdocs
+mkdocs-glightbox==0.4.0
+    # via elmo (pyproject.toml)
 mkdocs-jupyter==0.25.1
-    # via elmo_geo (pyproject.toml)
+    # via elmo (pyproject.toml)
 mkdocs-literate-nav==0.6.1
-    # via elmo_geo (pyproject.toml)
-mkdocs-material==9.5.48
+    # via elmo (pyproject.toml)
+mkdocs-material==9.5.49
     # via
-    #   elmo_geo (pyproject.toml)
+    #   elmo (pyproject.toml)
     #   mkdocs-jupyter
 mkdocs-material-extensions==1.3.1
     # via mkdocs-material
+mkdocs-section-index==0.3.9
+    # via elmo (pyproject.toml)
 mkdocstrings==0.27.0
     # via mkdocstrings-python
-mkdocstrings-python==1.12.2
-    # via elmo_geo (pyproject.toml)
-multimethod==1.10
-    # via pandera
+mkdocstrings-python==1.13.0
+    # via elmo (pyproject.toml)
+momepy==0.9.1
+    # via networkx
 mypy-extensions==1.0.0
     # via typing-inspect
-nbclient==0.10.1
+nbclient==0.10.2
     # via nbconvert
-nbconvert==7.16.4
+nbconvert==7.16.5
     # via mkdocs-jupyter
 nbformat==5.10.4
     # via
@@ -245,18 +306,32 @@ nbformat==5.10.4
     #   nbconvert
 nest-asyncio==1.6.0
     # via ipykernel
-networkx==3.3
-    # via mapclassify
-numpy==2.1.1
+networkx[example]==3.4.2
     # via
+    #   elmo (pyproject.toml)
+    #   mapclassify
+    #   momepy
+    #   osmnx
+numba==0.60.0
+    # via shap
+numpy==2.0.2
+    # via
+    #   adjusttext
     #   contourpy
+    #   elmo (pyproject.toml)
     #   folium
     #   geopandas
+    #   imbalanced-learn
+    #   jenkspy
+    #   libpysal
     #   mapclassify
     #   matplotlib
+    #   numba
+    #   numpy-financial
+    #   osmnx
     #   pandas
     #   pandera
-    #   pyarrow
+    #   patsy
     #   pyogrio
     #   pyspark
     #   rasterio
@@ -264,116 +339,163 @@ numpy==2.1.1
     #   scikit-learn
     #   scipy
     #   seaborn
+    #   shap
     #   shapely
-    #   snuggs
+    #   statsmodels
     #   xarray
-packaging==24.1
+    #   xgboost
+numpy-financial==1.0.0
+    # via elmo (pyproject.toml)
+nvidia-nccl-cu12==2.24.3
+    # via xgboost
+odfpy==1.4.1
+    # via pandas
+openpyxl==3.1.5
+    # via pandas
+osmnx==2.0.1
+    # via networkx
+packaging==24.2
     # via
     #   build
+    #   geoalchemy2
     #   geopandas
     #   ipykernel
     #   jupytext
+    #   libpysal
     #   matplotlib
     #   mkdocs
+    #   momepy
     #   nbconvert
     #   pandera
     #   pyogrio
     #   pytest
+    #   python-calamine
     #   rioxarray
+    #   shap
+    #   statsmodels
     #   xarray
 paginate==0.5.7
     # via mkdocs-material
-pandas==2.2.2
+pandas[excel]==2.2.3
     # via
-    #   elmo_geo (pyproject.toml)
+    #   elmo (pyproject.toml)
     #   geopandas
+    #   libpysal
     #   mapclassify
+    #   momepy
+    #   osmnx
     #   pandera
     #   pyspark
     #   seaborn
+    #   shap
+    #   statsmodels
+    #   upsetplot
     #   xarray
-pandera[geopandas,pyspark]==0.20.4
-    # via elmo_geo (pyproject.toml)
+pandera[geopandas,pyspark]==0.22.1
+    # via elmo (pyproject.toml)
 pandocfilters==1.5.1
     # via nbconvert
 parso==0.8.4
     # via jedi
 pathspec==0.12.1
     # via mkdocs
+patsy==1.0.1
+    # via statsmodels
 pexpect==4.9.0
     # via ipython
-pillow==10.4.0
+pillow==11.1.0
     # via
     #   contextily
     #   matplotlib
 pip-tools==7.4.1
-    # via elmo_geo (pyproject.toml)
+    # via elmo (pyproject.toml)
 platformdirs==4.3.6
     # via
     #   jupyter-core
+    #   libpysal
     #   mkdocs-get-deps
     #   mkdocstrings
 pluggy==1.5.0
     # via pytest
 prompt-toolkit==3.0.48
     # via ipython
-protobuf==5.28.0
+protobuf==5.29.3
     # via
     #   googleapis-common-protos
     #   grpcio-status
-psutil==6.1.0
+psutil==6.1.1
     # via ipykernel
+psycopg-binary==3.2.3
+    # via geopandas
 ptyprocess==0.7.0
     # via pexpect
 pure-eval==0.2.3
     # via stack-data
 py4j==0.10.9.7
     # via pyspark
-pyarrow==17.0.0
+pyaml==25.1.0
+    # via elmo (pyproject.toml)
+pyarrow==18.1.0
     # via
-    #   elmo_geo (pyproject.toml)
+    #   geopandas
     #   pyspark
-pyasn1==0.6.0
+pyasn1==0.6.1
     # via
     #   pyasn1-modules
     #   rsa
-pyasn1-modules==0.4.0
+pyasn1-modules==0.4.1
     # via google-auth
-pydantic==2.9.0
-    # via pandera
-pydantic-core==2.23.2
+pycparser==2.22
+    # via cffi
+pydantic==2.10.4
+    # via
+    #   elmo (pyproject.toml)
+    #   pandera
+    #   pydantic-settings
+pydantic-core==2.27.2
     # via pydantic
-pygments==2.18.0
+pydantic-settings==2.7.1
+    # via elmo (pyproject.toml)
+pygments==2.19.1
     # via
     #   ipython
     #   mkdocs-jupyter
     #   mkdocs-material
     #   nbconvert
     #   rich
-pymdown-extensions==10.12
+pymdown-extensions==10.14
     # via
     #   mkdocs-material
     #   mkdocstrings
-pyogrio==0.9.0
+pyogrio==0.10.0
     # via geopandas
-pyparsing==3.1.4
+pyparsing==3.2.1
     # via
     #   matplotlib
-    #   snuggs
-pyproj==3.6.1
+    #   rasterio
+pyproj==3.7.0
     # via
     #   geopandas
     #   rioxarray
-pyproject-hooks==1.1.0
+pyproject-hooks==1.2.0
     # via
     #   build
     #   pip-tools
 pyspark[connect]==3.5.0
     # via
-    #   elmo_geo (pyproject.toml)
+    #   elmo (pyproject.toml)
     #   pandera
-pytest==8.3.2
-    # via elmo_geo (pyproject.toml)
+pytest==8.3.4
+    # via
+    #   elmo (pyproject.toml)
+    #   pytest-cov
+    #   pytest-xdist
+pytest-cov==6.0.0
+    # via elmo (pyproject.toml)
+pytest-xdist==3.6.1
+    # via elmo (pyproject.toml)
+python-calamine==0.3.1
+    # via pandas
 python-dateutil==2.9.0.post0
     # via
     #   botocore
@@ -382,14 +504,17 @@ python-dateutil==2.9.0.post0
     #   matplotlib
     #   pandas
 python-dotenv==1.0.1
-    # via elmo_geo (pyproject.toml)
-pytz==2024.1
+    # via pydantic-settings
+pytz==2024.2
+    # via pandas
+pyxlsb==1.0.10
     # via pandas
 pyyaml==6.0.2
     # via
     #   jupytext
     #   mkdocs
     #   mkdocs-get-deps
+    #   pyaml
     #   pymdown-extensions
     #   pyyaml-env-tag
 pyyaml-env-tag==0.1
@@ -398,7 +523,7 @@ pyzmq==26.2.0
     # via
     #   ipykernel
     #   jupyter-client
-rasterio==1.3.11
+rasterio==1.4.3
     # via
     #   apache-sedona
     #   contextily
@@ -414,11 +539,13 @@ requests==2.32.3
     #   contextily
     #   databricks-sdk
     #   folium
+    #   libpysal
     #   mkdocs-material
-rich==13.8.0
-    # via elmo_geo (pyproject.toml)
-rioxarray==0.17.0
-    # via elmo_geo (pyproject.toml)
+    #   osmnx
+rich==13.9.4
+    # via elmo (pyproject.toml)
+rioxarray==0.18.1
+    # via elmo (pyproject.toml)
 rpds-py==0.22.3
     # via
     #   jsonschema
@@ -426,67 +553,106 @@ rpds-py==0.22.3
 rsa==4.9
     # via google-auth
 ruff==0.1.15
-    # via elmo_geo (pyproject.toml)
-s3transfer==0.10.3
+    # via elmo (pyproject.toml)
+s3transfer==0.10.4
     # via boto3
-scikit-learn==1.5.1
-    # via mapclassify
-scipy==1.14.1
+scikit-learn==1.6.0
     # via
+    #   elmo (pyproject.toml)
+    #   imbalanced-learn
+    #   libpysal
+    #   mapclassify
+    #   networkx
+    #   shap
+    #   sklearn-compat
+scipy==1.15.0
+    # via
+    #   adjusttext
+    #   elmo (pyproject.toml)
+    #   imbalanced-learn
+    #   libpysal
     #   mapclassify
     #   scikit-learn
+    #   shap
+    #   statsmodels
+    #   xgboost
 seaborn==0.13.2
-    # via elmo_geo (pyproject.toml)
+    # via
+    #   elmo (pyproject.toml)
+    #   networkx
+shap==0.46.0
+    # via elmo (pyproject.toml)
 shapely==2.0.6
     # via
     #   apache-sedona
     #   geopandas
+    #   libpysal
+    #   momepy
+    #   osmnx
     #   pandera
-six==1.16.0
+six==1.17.0
     # via python-dateutil
-snuggs==1.4.7
-    # via rasterio
+sklearn-compat==0.1.3
+    # via imbalanced-learn
+slicer==0.0.8
+    # via shap
+smart-open[s3]==7.1.0
+    # via elmo (pyproject.toml)
 soupsieve==2.6
     # via beautifulsoup4
+sqlalchemy==2.0.36
+    # via
+    #   geoalchemy2
+    #   geopandas
 stack-data==0.6.3
     # via ipython
+statsmodels==0.14.4
+    # via elmo (pyproject.toml)
+texttable==1.7.0
+    # via igraph
 threadpoolctl==3.5.0
-    # via scikit-learn
+    # via
+    #   imbalanced-learn
+    #   scikit-learn
 tinycss2==1.4.0
-    # via nbconvert
+    # via bleach
 tornado==6.4.2
     # via
     #   ipykernel
     #   jupyter-client
+tqdm==4.67.1
+    # via
+    #   momepy
+    #   shap
 traitlets==5.14.3
     # via
     #   comm
     #   ipykernel
     #   ipython
+    #   ipywidgets
     #   jupyter-client
     #   jupyter-core
     #   matplotlib-inline
     #   nbclient
     #   nbconvert
     #   nbformat
-typeguard==4.3.0
+typeguard==4.4.1
     # via pandera
 typing-extensions==4.12.2
     # via
     #   ipython
     #   pydantic
     #   pydantic-core
+    #   sqlalchemy
     #   typeguard
     #   typing-inspect
 typing-inspect==0.9.0
     # via pandera
-typos==1.28.2
-    # via elmo_geo (pyproject.toml)
-tzdata==2024.1
-    # via
-    #   pandas
-    #   pydantic
-urllib3==2.2.2
+tzdata==2024.2
+    # via pandas
+upsetplot==0.9.0
+    # via elmo (pyproject.toml)
+urllib3==2.3.0
     # via
     #   botocore
     #   requests
@@ -498,16 +664,25 @@ webencodings==0.5.1
     # via
     #   bleach
     #   tinycss2
-wheel==0.44.0
+wheel==0.45.1
     # via pip-tools
-wrapt==1.16.0
-    # via pandera
-xarray==2024.7.0
+widgetsnbextension==4.0.13
+    # via ipywidgets
+wrapt==1.17.0
+    # via smart-open
+xarray==2025.1.0
     # via rioxarray
+xgboost==2.1.3
+    # via elmo (pyproject.toml)
+xlrd==2.0.1
+    # via pandas
+xlsxwriter==3.2.0
+    # via pandas
 xyzservices==2024.9.0
     # via
     #   contextily
     #   folium
+    #   geopandas
 
 # The following packages are considered to be unsafe in a requirements file:
 # pip
