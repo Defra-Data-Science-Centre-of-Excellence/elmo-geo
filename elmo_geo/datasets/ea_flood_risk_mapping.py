@@ -57,6 +57,8 @@ ea_rofrs_raw = SourceDataset(
     restricted=False,
     source_path="/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_risk_of_flooding_from_rivers_and_sea/format_GEOPARQUET_risk_of_flooding_from_rivers_and_sea/LATEST_risk_of_flooding_from_rivers_and_sea/Risk_of_Flooding_from_Rivers_and_Sea.parquet/",
 )
+"""The raw geospaital dataset for the environment agency risk of flooding from rivers and sea
+"""
 
 
 class EARoFRSParcels(DataFrameModel):
@@ -108,6 +110,8 @@ ea_fz3_raw = SourceDataset(
     restricted=False,
     source_path="/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_ea_flood_map_flood_zone_3/format_GEOPARQUET_ea_flood_map_flood_zone_3/LATEST_ea_flood_map_flood_zone_3/ea_flood_map_for_planning_rivers_and_sea_flood_zone_3_n.parquet/",
 )
+"""The raw geospaital dataset for the environment agency flood zone 3 as part of the floodmap for planning
+"""
 
 
 class EAFZ3Parcels(DataFrameModel):
@@ -158,6 +162,8 @@ ea_fz2_raw = SourceDataset(
     restricted=False,
     source_path="/dbfs/mnt/base/unrestricted/source_defra_data_services_platform/dataset_ea_flood_map_flood_zone_2/format_GEOPARQUET_ea_flood_map_flood_zone_2/LATEST_ea_flood_map_flood_zone_2/Flood_Map_for_Planning_Rivers_and_Sea_Flood_Zone_2Polygon.parquet",
 )
+"""The raw geospaital dataset for the environment agency flood zone 2 as part of the floodmap for planning
+"""
 
 
 class EAFZ2Parcels(DataFrameModel):
