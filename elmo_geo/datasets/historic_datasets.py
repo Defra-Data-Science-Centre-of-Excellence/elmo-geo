@@ -28,9 +28,9 @@ class ELMSHINERaw(DataFrameModel):
        geom: Geospatial polygons in EPSG:27700
     """
 
-    shine_uid: str = Field()
-    shine_name: str = Field()
-    geom: Geometry(crs=SRID) = Field()
+    list_entry: str = Field(alias="shine_uid")
+    name: str = Field(alias="shine_name")
+    geometry: Geometry(crs=SRID) = Field(alias="geom")
 
 
 elm_shine_raw = SourceDataset(
