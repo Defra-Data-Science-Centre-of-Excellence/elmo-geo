@@ -134,11 +134,11 @@ from .hedges import (
     rpa_hedges_raw,  # TODO: snapshot
 )
 from .historic import (
-    he_shine_raw,
     he_lb_raw,
     he_pws_raw,
     he_rb_raw,
     he_rpg_raw,
+    he_shine_raw,
     he_sm_raw,
     he_whs_raw,
 )
