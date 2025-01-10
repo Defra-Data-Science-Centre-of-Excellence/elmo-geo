@@ -28,8 +28,10 @@ class EANVZRaw(DataFrameModel):
     Attributes:
       nvz_name: Name of zone
       nvz_id: zone id number
-      nvz_type: type of zone
-      nvz_status: status of zone
+      nvz_type: type of designation
+      nvz_2017: 2017 designation
+      nvz_2021: 2021 designation
+      nvz_status: status of designation, all are 'Existing'
       geometry: Geospatial polygons in EPSG:27700
     """
 
@@ -58,15 +60,15 @@ class EANVZParcels(DataFrameModel):
     Attributes:
       id_parcel: 11 character RPA reference parcel ID (including the sheet ID) e.g. `SE12263419
       nvz_type: nvz designation type 
-      nvz_17: 2017 designation
-      nvz_21: 2021 designation
-      proportion: The proportion of the parcel that intersects with the RoFRS
+      nvz_2017: 2017 designation
+      nvz_2021: 2021 designation
+      proportion: The proportion of the parcel that intersects with the NVZ
     """
 
     id_parcel: str = Field()
     nvz_type: str = Field()
-    nvz_17: str = Field()
-    nvz_21: str = Field()
+    nvz_2017: str = Field()
+    nvz_2021: str = Field()
     proportion: float = Field(ge=0, le=1)
 
 
@@ -76,7 +78,7 @@ ea_nvz_parcels = DerivedDataset(
     medallion="silver",
     source="ea",
     restricted=False,
-    func=partial(sjoin_parcel_proportion, columns=["nvz_type", "nvz_17", "nvz_21"]),
+    func=partial(sjoin_parcel_proportion, columns=["nvz_type", "nvz_2017", "nvz_2021"]),
     dependencies=[reference_parcels, ea_nvz_raw],
     model=EANVZParcels,
 )
