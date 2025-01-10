@@ -135,6 +135,15 @@ from .fr_esc_m3_woodland_suitability import (
 from .hedges import (
     rpa_hedges_raw,  # TODO: snapshot
 )
+from .historic import (
+    he_lb_raw,
+    he_pws_raw,
+    he_rb_raw,
+    he_rpg_raw,
+    he_shine_raw,
+    he_sm_raw,
+    he_whs_raw,
+)
 from .living_england import (
     living_england_habitat_map_phase_4_parcels,
     living_england_habitat_map_phase_4_raw,
