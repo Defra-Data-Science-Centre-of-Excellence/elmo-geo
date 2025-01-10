@@ -59,7 +59,7 @@ class EANVZParcels(DataFrameModel):
 
     Attributes:
       id_parcel: 11 character RPA reference parcel ID (including the sheet ID) e.g. `SE12263419
-      nvz_type: nvz designation type 
+      nvz_type: nvz designation type
       nvz_2017: 2017 designation
       nvz_2021: 2021 designation
       proportion: The proportion of the parcel that intersects with the NVZ
