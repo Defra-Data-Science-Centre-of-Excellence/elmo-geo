@@ -19,13 +19,13 @@ from elmo_geo.etl import SRID, SourceDataset
 
 
 # Selected Heritage Inventory for Natural England (SHINE)
-class ELMSHINERaw(DataFrameModel):
+class HESHINERaw(DataFrameModel):
     """Model for the Selected Heritage Inventory for Natural England. It contains non-designated historic and archaeological features from across England.
 
     Attributes:
        shine_uid: Reference id for the SHINE feature
        shine_name: Name of the SHINE
-       geom: Geospatial polygons in EPSG:27700
+       geometry: Geospatial polygons in EPSG:27700
     """
 
     list_entry: str = Field(alias="shine_uid")
@@ -33,12 +33,12 @@ class ELMSHINERaw(DataFrameModel):
     geometry: Geometry(crs=SRID) = Field(alias="geom")
 
 
-elm_shine_raw = SourceDataset(
-    name="elm_shine_raw",
+he_shine_raw = SourceDataset(
+    name="he_shine_raw",
     medallion="bronze",
     source="he",
-    model=ELMSHINERaw,
-    restricted=False,
+    model=HESHINERaw,
+    restricted=True,
     source_path="/dbfs/mnt/lab/restricted/ELM-Project/raw/he/he-shine-2022_12_30.parquet",
 )
 
