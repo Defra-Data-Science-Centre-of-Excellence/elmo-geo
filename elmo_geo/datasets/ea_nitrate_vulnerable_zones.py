@@ -58,7 +58,7 @@ class EANVZParcels(DataFrameModel):
     """Model for the Nitrate Vulnerable Zones (NVZ) dataset joined with Rural Payment Agency parcel dataset.
 
     Attributes:
-      id_parcel: 11 character RPA reference parcel ID (including the sheet ID) e.g. `SE12263419
+      id_parcel: 11 character RPA reference parcel ID (including the sheet ID) e.g. `SE12263419`
       nvz_type: nvz designation type
       nvz_2017: 2017 designation
       nvz_2021: 2021 designation
