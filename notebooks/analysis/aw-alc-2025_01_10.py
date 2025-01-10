@@ -17,20 +17,24 @@
 
 # COMMAND ----------
 
+from pyspark.sql import functions as F
+
 from elmo_geo import register
 from elmo_geo.datasets import alc_parcels, alc_raw, reference_parcels
-from pyspark.sql import functions as F
+
 register()
 
 
 (
     alc_raw.sdf()
+    # Method 1
     .groupby("alc_grade")
     .agg(F.expr("ROUND(SUM(st_area_sh)/10000)").alias("ha"))
 ).display()
 
 (
     alc_parcels.sdf()
+    # Method 2
     .join(reference_parcels.sdf().select("id_parcel", "area_ha"), on="id_parcel")
     .groupby("alc_grade")
     .agg(F.expr("ROUND(SUM(area_ha * proportion))").alias("ha"))
