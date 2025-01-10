@@ -30,7 +30,7 @@ class ELMSHINERaw(DataFrameModel):
 
     list_entry: str = Field(alias="shine_uid")
     name: str = Field(alias="shine_name")
-    geometry: Geometry(crs=SRID) = Field()
+    geometry: Geometry(crs=SRID) = Field(alias="geom")
 
 
 elm_shine_raw = SourceDataset(
