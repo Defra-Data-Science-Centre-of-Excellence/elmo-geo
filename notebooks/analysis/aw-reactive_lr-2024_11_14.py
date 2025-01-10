@@ -28,8 +28,8 @@ class LrModel(DataFrameModel):
 
     id_business: str = Field(nullable=True)
     id_parcel: str = Field()
-    geometry: Geometry(crs=SRID) = Field()
-    area_ha: float = Field()
+    geometry: Geometry(crs=SRID) = Field(nullable=True)
+    area_ha: float = Field(nullable=True)
     pass  # WFM data
 
 
@@ -53,7 +53,7 @@ def _transform_lr(reference_parcels: Dataset, wfm_parcels: Dataset, filepath: st
 
 # COMMAND ----------
 
-# Requested: 2024-11-07
+# Requested: 2024-12-18
 fcp_elr = DerivedDataset(
     name="fcp_elr",
     medallion="gold",
@@ -61,10 +61,10 @@ fcp_elr = DerivedDataset(
     model=LrModel,
     restricted=True,
     is_geo=True,
-    func=partial(_transform_lr, filepath="/dbfs/FileStore/elmo_geo-uploads/fcp_lr_elr_parcels_2024_11_12.csv"),
+    func=partial(_transform_lr, filepath="/dbfs/FileStore/elmo_geo-uploads/fcp_lr_elr_parcels_2024_12_18.csv"),
     dependencies=[reference_parcels, wfm_parcels],
 )
-
+# fcp_elr.refresh()  # if changing the filepath
 
 fcp_elr.sdf().display()
 fcp_elr.export("geojson")
@@ -83,7 +83,7 @@ fcp_ud = DerivedDataset(
     func=partial(_transform_lr, filepath="/dbfs/FileStore/elmo_geo-uploads/fcp_lr_ud_parcels_2024_11_14.csv"),
     dependencies=[reference_parcels, wfm_parcels],
 )
-
+# fcp_ud.refresh()  # if changing the filepath
 
 fcp_ud.sdf().display()
 fcp_ud.export("geojson")
