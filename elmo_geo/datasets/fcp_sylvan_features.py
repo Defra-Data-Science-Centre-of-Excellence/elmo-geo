@@ -6,7 +6,7 @@ parcels.
 """
 
 from pandera import DataFrameModel, Field
-from pandera.dtypes import Int16
+from pandera.dtypes import Int32
 from pyspark.sql import DataFrame as SparkDataFrame
 from pyspark.sql import functions as F
 
@@ -58,13 +58,13 @@ def _calculate_parcel_tree_counts(
         .withColumn("adj_fraction", F.expr("(2 - bool_adjacency) / 2"))  # Buffer Strips are double sided, adjacency makes this single sided.
         .groupby("id_parcel")
         .agg(
-            *[F.expr(f"CAST(SUM(count_{b}m) AS Short) AS n_boundary_trees_{b}m") for b in tree_count_buffers],
-            *[F.expr(f"CAST(SUM(count_{b}m * bool_{t}) AS Short) AS n_{t}_trees_{b}m") for b in tree_count_buffers for t in boundary_types],
+            *[F.expr(f"CAST(SUM(count_{b}m) AS Int) AS n_boundary_trees_{b}m") for b in tree_count_buffers],
+            *[F.expr(f"CAST(SUM(count_{b}m * bool_{t}) AS Int) AS n_{t}_trees_{b}m") for b in tree_count_buffers for t in boundary_types],
             *[F.expr(f"SUM(count_{b}m * adj_fraction) AS n_adj_boundary_trees_{b}m") for b in tree_count_buffers],
             *[F.expr(f"SUM(count_{b}m * bool_{t} * adj_fraction) AS n_adj_{t}_trees_{b}m") for b in tree_count_buffers for t in boundary_types],
         )
         .join(
-            fcp_interior_tree_count.sdf().selectExpr("id_parcel", *[f"CAST(count_{b}m AS Short) AS n_interior_trees_{b}m" for b in tree_count_buffers]),
+            fcp_interior_tree_count.sdf().selectExpr("id_parcel", *[f"CAST(count_{b}m AS Int) AS n_interior_trees_{b}m" for b in tree_count_buffers]),
             on="id_parcel",
             how="outer",
         )
@@ -96,20 +96,20 @@ class SylvanFeaturesModel(DataFrameModel):
     """
 
     id_parcel: str = Field()
-    n_boundary_trees_4m: Int16 = Field()
-    n_boundary_trees_8m: Int16 = Field()
+    n_boundary_trees_4m: Int32 = Field()
+    n_boundary_trees_8m: Int32 = Field()
     n_adj_boundary_trees_4m: float = Field()
     n_adj_boundary_trees_8m: float = Field()
-    n_hedgerow_trees_4m: Int16 = Field()
-    n_hedgerow_trees_8m: Int16 = Field()
+    n_hedgerow_trees_4m: Int32 = Field()
+    n_hedgerow_trees_8m: Int32 = Field()
     n_adj_hedgerow_trees_4m: float = Field()
     n_adj_hedgerow_trees_8m: float = Field()
-    n_water_trees_4m: Int16 = Field()
-    n_water_trees_8m: Int16 = Field()
+    n_water_trees_4m: Int32 = Field()
+    n_water_trees_8m: Int32 = Field()
     n_adj_water_trees_4m: float = Field()
     n_adj_water_trees_8m: float = Field()
-    n_interior_trees_4m: Int16 = Field()
-    n_interior_trees_8m: Int16 = Field()
+    n_interior_trees_4m: Int32 = Field()
+    n_interior_trees_8m: Int32 = Field()
     n_adj_trees_4m: float = Field()
     n_adj_trees_8m: float = Field()
 
