@@ -28,7 +28,7 @@ class EANVZRaw(DataFrameModel):
     Attributes:
       nvz_name: Name of zone
       nvz_id: zone id number
-      nvz_type: type of designation
+      nvz_type: current type of designation
       nvz_2017: 2017 designation
       nvz_2021: 2021 designation
       nvz_status: status of designation, all are 'Existing'
@@ -38,6 +38,8 @@ class EANVZRaw(DataFrameModel):
     nvz_name: str = Field()
     nvz_id: str = Field()
     nvz_type: str = Field()
+    nvz_2017: str = Field()
+    nvz_2021: str = Field()
     nvz_status: str = Field()
     geometry: Geometry(crs=SRID) = Field()
 
@@ -48,7 +50,7 @@ ea_nvz_raw = SourceDataset(
     source="ea",
     model=EANVZRaw,
     restricted=False,
-    source_path="/dbfs/FileStore/elmo-geo-downloads/Nitrate_Vulnerable_Zones_2021_Designations.shp",
+    source_path="/dbfs/mnt/lab/unrestricted/ELM-Project/raw/Nitrate_Vulnerable_Zones_2021_Designations.shp",
 )
 """The raw geospaital dataset for the environment agency nitrate vulnerable zones
 """
@@ -58,8 +60,8 @@ class EANVZParcels(DataFrameModel):
     """Model for the Nitrate Vulnerable Zones (NVZ) dataset joined with Rural Payment Agency parcel dataset.
 
     Attributes:
-      id_parcel: 11 character RPA reference parcel ID (including the sheet ID) e.g. `SE12263419`
-      nvz_type: nvz designation type
+      id_parcel: 11 character RPA reference parcel ID (including the sheet ID) e.g. 'SE12263419'
+      nvz_type: current nvz designation type
       nvz_2017: 2017 designation
       nvz_2021: 2021 designation
       proportion: The proportion of the parcel that intersects with the NVZ
