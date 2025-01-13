@@ -42,11 +42,13 @@ from elmo_geo.etl.transformations import sjoin_boundary_proportion
 from elmo_geo.st.segmentise import segmentise_with_tolerance
 from elmo_geo.st.udf import st_clean, st_udf
 
-from .fcp_sylvan import fcp_relict_hedge_raw
+from .fcp_relict_hedge import fcp_relict_hedge_raw
 from .hedges import rpa_hedges_raw
 from .os import os_ngd_raw
 from .osm import osm_tidy
 from .rpa_reference_parcels import reference_parcels
+
+THRESHOLD_FN = "0.5 < proportion_12m"
 
 
 # Boundary
@@ -210,7 +212,7 @@ def _transform_boundary_merger(
     boundary_relict: Dataset,
     boundary_walls: Dataset,
     boundary_water: Dataset,
-    threshold_str_fn: str = "0.5 < proportion_12m",
+    threshold_str_fn: str = THRESHOLD_FN,
 ) -> SparkDataFrame:
     """Joined boundary datasets together into single wider dataset.
 
