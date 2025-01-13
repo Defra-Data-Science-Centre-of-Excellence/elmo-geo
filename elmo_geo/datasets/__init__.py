@@ -58,6 +58,8 @@ from .ea_alert import (
     ea_olf_raw,
 )
 from .ea_flood_risk_mapping import (
+    ea_fz2_parcels,
+    ea_fz2_raw,
     ea_fz3_parcels,
     ea_fz3_raw,
     ea_rofrs_parcels,
@@ -136,6 +138,15 @@ from .fr_esc_m3_woodland_suitability import (
 )
 from .hedges import (
     rpa_hedges_raw,  # TODO: snapshot
+)
+from .historic import (
+    he_lb_raw,
+    he_pws_raw,
+    he_rb_raw,
+    he_rpg_raw,
+    he_shine_raw,
+    he_sm_raw,
+    he_whs_raw,
 )
 from .living_england import (
     living_england_habitat_map_phase_4_parcels,
