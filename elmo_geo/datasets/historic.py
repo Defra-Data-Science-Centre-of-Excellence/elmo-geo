@@ -11,11 +11,15 @@
 - world_heritage_sites
 """
 
+from functools import partial
 
 from pandera import DataFrameModel, Field
 from pandera.engines.geopandas_engine import Geometry
+from pyspark.sql import functions as F
 
-from elmo_geo.etl import SRID, SourceDataset
+from elmo_geo.etl import SRID, Dataset, DerivedDataset, SourceDataset
+from elmo_geo.st.udf import st_clean
+from elmo_geo.utils.types import SparkDataFrame
 
 
 # Selected Heritage Inventory for Natural England (SHINE)
@@ -191,3 +195,74 @@ he_whs_raw = SourceDataset(
     restricted=False,
     source_path="/dbfs/mnt/base/unrestricted/source_historic_england_open_data_site/dataset_world_heritage_sites/format_GEOPARQUET_world_heritage_sites/SNAPSHOT_2024_04_29_world_heritage_sites/",
 )
+
+
+class HECombinedSites(DataFrameModel):
+    """Model that combines the individual historic features.
+
+    Attributes:
+       dataset: Source dataset of this feature, e.g. protected_wreck_sites
+       list_entry: Reference id for each feature
+       name: Name of the feature
+       geometry: Geospatial polygons in EPSG:27700
+    """
+
+    source: str = Field()
+    list_entry: str = Field()
+    name: str = Field()
+    geometry: Geometry(crs=SRID) = Field()
+
+
+def _combine_historic_features(
+    *datasets: list[Dataset],
+    sources: list[str] | None = None,
+) -> SparkDataFrame:
+    """Combine all historic features into a single dataset.
+
+    Parameters:
+        *datasets: Datasets to join together.
+        sources: Dataset shorthand names.
+    """
+    sdf = None
+    sources = sources or [None] * len(datasets)
+    for dataset, source in zip(datasets, sources):
+        source = source or dataset.name
+        _sdf = dataset.sdf().withColumn("source", F.lit(source))
+        sdf = sdf.unionByName(_sdf, allowMissingColumns=True) if sdf else _sdf
+
+    sdf = sdf.transform(st_clean).withColumn("geometry", F.expr("EXPLODE(ST_Dump(geometry))"))
+
+    return sdf
+
+
+he_combined_sites = DerivedDataset(
+    is_geo=True,
+    name="he_combined_sites",
+    medallion="silver",
+    source="he",
+    restricted=False,
+    func=partial(
+        _combine_historic_features,
+        sources=[
+            "SHINE",
+            "listed_building",
+            "protected_wreck_sites",
+            "registered_battlefields",
+            "registered_parks_and_gardens",
+            "scheduled_monuments",
+            "world_heritage_sites",
+        ],
+    ),
+    dependencies=[
+        he_shine_raw,
+        he_lb_raw,
+        he_pws_raw,
+        he_rb_raw,
+        he_rpg_raw,
+        he_sm_raw,
+        he_whs_raw,
+    ],
+    model=HECombinedSites,
+)
+"""A combined dataset of historic features.
+"""
