@@ -20,6 +20,7 @@ from pyspark.sql import functions as F
 from elmo_geo.etl import SRID, Dataset, DerivedDataset, SourceDataset
 from elmo_geo.st.udf import st_clean
 from elmo_geo.utils.types import SparkDataFrame
+from elmo_geo.etl.transformations import combine_long
 
 
 # Selected Heritage Inventory for Natural England (SHINE)
@@ -223,12 +224,9 @@ def _combine_historic_features(
         *datasets: Datasets to join together.
         sources: Dataset shorthand names.
     """
-    sdf = None
-    sources = sources or [None] * len(datasets)
-    for dataset, source in zip(datasets, sources):
-        source = source or dataset.name
-        _sdf = dataset.sdf().withColumn("source", F.lit(source))
-        sdf = sdf.unionByName(_sdf, allowMissingColumns=True) if sdf else _sdf
+    # A partial function that calls combine_long() with provided sources
+    func = partial(combine_long, sources=sources)
+    sdf = func(datasets)
 
     sdf = sdf.transform(st_clean).withColumn("geometry", F.expr("EXPLODE(ST_Dump(geometry))"))
 
