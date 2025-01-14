@@ -4,9 +4,8 @@
 # MAGIC
 # MAGIC |                           | **ha**    | **ha_phi** | **ha_pa** | **ha_pa_phi** |
 # MAGIC | ------------------------- | --------: | ---------: | --------: | ------------: |
-# MAGIC | Assuming PA can overlap   | 9,780,226 |  1,758,930 |   728,992 |       674,134 |
-# MAGIC | Assuming PA can't overlap | 9,780,226 |  1,758,930 |   777,959 |       714,887 |
-# MAGIC
+# MAGIC | Assuming PA can overlap   | 9,780,226 |  1,758,497 |   728,992 |       673,833 |
+# MAGIC | Assuming PA can't overlap | 9,780,226 |  1,758,497 |   777,959 |       714,573 |
 
 # COMMAND ----------
 
@@ -22,6 +21,9 @@ sdf = (
     .join(
         (
             defra_priority_habitat_parcels.sdf()
+            # Priority Habitats geometries have multiple habitats, they are split for each habitat_name, and unioned here.
+            .groupby("id_parcel", "fid")
+            .agg(F.expr("FIRST(proportion) AS proportion"))
             .groupby("id_parcel")
             # Priority Habitats shouldn't overlap, so we sum them, but clip to 1 because there will be rounding errors.
             .agg(F.expr("LEAST(1, SUM(proportion)) AS p_phi"))
@@ -40,9 +42,9 @@ sdf = (
             )
             .groupby("id_parcel")
             # Protected Areas can overlap, so we calculate the probablistic area that is in any.
-            .agg(F.expr("1 - EXP(SUM(LOG(1 - proportion))) AS p_pa"))
+            #.agg(F.expr("1 - EXP(SUM(LOG(1 - proportion))) AS p_pa"))
             # Assuming they don't overlap
-            # .agg(F.expr("LEAST(1, SUM(proportion)) AS p_pa"))
+            .agg(F.expr("LEAST(1, SUM(proportion)) AS p_pa"))
         ),
         on="id_parcel",
         how="outer",
