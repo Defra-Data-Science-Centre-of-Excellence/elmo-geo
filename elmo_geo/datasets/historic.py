@@ -18,9 +18,9 @@ from pandera.engines.geopandas_engine import Geometry
 from pyspark.sql import functions as F
 
 from elmo_geo.etl import SRID, Dataset, DerivedDataset, SourceDataset
+from elmo_geo.etl.transformations import combine_long
 from elmo_geo.st.udf import st_clean
 from elmo_geo.utils.types import SparkDataFrame
-from elmo_geo.etl.transformations import combine_long
 
 
 # Selected Heritage Inventory for Natural England (SHINE)
