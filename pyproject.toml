@@ -5,13 +5,14 @@ description = "Environmental Land Management Geospatial Analysis"
 readme = "README.md"
 dependencies = [
     "apache-sedona==1.6.1",
-    "boto3",
     "beautifulsoup4",
+    "boto3",
     "contextily",
     "databricks-sdk<0.21",
     "folium",
     "geopandas",
     "mapclassify",
+    "Office365-REST-Python-Client",
     "pandas",
     "pandera[geopandas,pyspark]",
     "pyarrow",
