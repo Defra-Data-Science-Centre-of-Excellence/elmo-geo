@@ -2,58 +2,13 @@
 # MAGIC %md
 # MAGIC # Priority Habitats on Protected Area
 # MAGIC
-# MAGIC |                           | **ha**    | **ha_phi** | **ha_pa** | **ha_pa_phi** |
-# MAGIC | ------------------------- | --------: | ---------: | --------: | ------------: |
-# MAGIC | Assuming PA can overlap   | 9,780,226 |  1,758,497 |   728,992 |       673,833 |
-# MAGIC | Assuming PA can't overlap | 9,780,226 |  1,758,497 |   777,959 |       714,573 |
-# MAGIC
-# MAGIC Table 1: PHI vs PA.
-# MAGIC
-# MAGIC
-# MAGIC |is_woodland|ha|ha_phi|ha_pa|ha_pa_phi|
-# MAGIC |---|---|---|---|---|
-# MAGIC |null|4,773,744|0|8,748|0|
-# MAGIC |true|3,689,721|486,425|363,435|77,335|
-# MAGIC |false|2,397,955|1,272,098|696,388|596,503|
-# MAGIC
-# MAGIC Table 2: PHI separated by Woodland.  This table assumes PA can overlap
-# MAGIC
-# MAGIC
-# MAGIC | habitat_name                                    | is_woodland |
-# MAGIC |-------------------------------------------------|-------------|
-# MAGIC | Deciduous woodland                              | True        |
-# MAGIC | Fragmented heath                                | False       |
-# MAGIC | Coastal sand dunes                              | False       |
-# MAGIC | Saline lagoons                                  | False       |
-# MAGIC | Upland flushes fens and swamps                  | False       |
-# MAGIC | Purple moor grass and rush pastures             | False       |
-# MAGIC | Coastal vegetated shingle                       | False       |
-# MAGIC | Lowland dry acid grassland                      | False       |
-# MAGIC | Good quality semi improved grassland            | False       |
-# MAGIC | Lowland meadows                                 | False       |
-# MAGIC | Lowland fens                                    | False       |
-# MAGIC | Ponds                                           | False       |
-# MAGIC | Coastal saltmarsh                               | False       |
-# MAGIC | Grass moorland                                  | False       |
-# MAGIC | Limestone pavement                              | False       |
-# MAGIC | Lowland calcareous grassland                    | False       |
-# MAGIC | Mountain heaths and willow scrub                | False       |
-# MAGIC | Lowland raised bog                              | False       |
-# MAGIC | Upland heathland                                | False       |
-# MAGIC | Reedbeds                                        | False       |
-# MAGIC | No main habitat but additional habitats present | False       |
-# MAGIC | Maritime cliff and slope                        | False       |
-# MAGIC | Lowland heathland                               | False       |
-# MAGIC | Upland calcareous grassland                     | False       |
-# MAGIC | Calaminarian grassland                          | False       |
-# MAGIC | Blanket bog                                     | False       |
-# MAGIC | Lakes                                           | False       |
-# MAGIC | Traditional orchard                             | True        |
-# MAGIC | Upland hay meadow                               | False       |
-# MAGIC | Mudflats                                        | False       |
-# MAGIC | Coastal and floodplain grazing marsh            | False       |
-# MAGIC
-# MAGIC Table 3: Is woodland priority habitat.
+# MAGIC |                                            | Parcel Area (ha)  | Parcel Area that is PHI (ha)  | Parcel Area that is PA (ha)  | Parcel Area that is both (ha)  | Proportion of PHI on PA (%) | Proportion of PA on PHI (%) |
+# MAGIC | :----------------------------------------- | ----------------: | ----------------------------: | ---------------------------: | -----------------------------: | --------------------------: | --------------------------: |
+# MAGIC | Not PHI                                    |        4,773,744  |                             0 |                       8,748  |                              0 |                             |                             |
+# MAGIC | PHI                                        |        6,116,808  |                    1,758,523  |                   1,059,380  |                       673,838  |                       38.3% |                       63.6% |
+# MAGIC | > PHI contains Deciduous Woodland          |        3,591,679  |                      475,201  |                     362,556  |                        77,272  |                       16.3% |                       21.3% |
+# MAGIC | > PHI does not contains Deciduous Woodland |        2,525,129  |                    1,283,322  |                     696,824  |                       596,566  |                       46.5% |                       85.6% |
+# MAGIC | Total                                      |       10,890,552  |                    1,758,523  |                   1,068,128  |                       673,838  |                       38.3% |                       63.1% |
 
 # COMMAND ----------
 
@@ -65,11 +20,6 @@ from elmo_geo.datasets import defra_priority_habitat_parcels, protected_areas_pa
 register()
 
 
-woodland_phis = (
-    "Deciduous woodland",
-)
-
-
 sdf = (
     reference_parcels.sdf()
     .select("id_parcel", "area_ha")
@@ -79,7 +29,7 @@ sdf = (
             # Priority Habitats geometries have multiple habitats, they are split for each habitat_name, and unioned here.
             .groupby("id_parcel", "fid")
             .agg(
-                F.expr(f"ARRAYS_OVERLAP(COLLECT_LIST(habitat_name), ARRAY{woodland_phis}) AS is_woodland"),
+                F.expr(f"ARRAY_CONTAINS(COLLECT_LIST(habitat_name), 'Deciduous woodland') AS is_woodland"),
                 F.expr("FIRST(proportion) AS proportion"),
             )
             .groupby("id_parcel", "is_woodland")
