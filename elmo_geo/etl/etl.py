@@ -35,7 +35,9 @@ SRC_HASH_FMT: str = r"%Y%m%d%H%M%S"
 HASH_LENGTH = 8
 PATH_FMT: str = "/dbfs/mnt/lab/{restricted}/ELM-Project/{level0}/{level1}/"
 FILE_FMT: str = "{name}-{date}-{hsh}.parquet"
+FILE_FMT_MANUAL: str = "{name}.parquet"
 PAT_FMT: str = r"(^{name}-[\d_]+-{hsh}.parquet$)"
+PAT_FMT_MANUAL: str = r"(^{name}.parquet$)"
 PAT_DATE: str = r"(?<=^{name}-)([\d_]+)(?=-{hsh}.parquet$)"
 SRID: int = 27700
 
@@ -43,7 +45,7 @@ FILE_FMT_RASTER: str = "{name}.tif"
 PAT_FMT_RASTER: str = r"(^{name}.tif$)"
 
 
-@dataclass
+@dataclass(kw_only=True)
 class Dataset(ABC):
     """Class for managing loading and validation of data.
 
@@ -120,11 +122,9 @@ class Dataset(ABC):
         LOG.warning(msg)
 
 
-@dataclass
+@dataclass(kw_only=True)
 class TabularDataset(Dataset, ABC):
     """Class for managing loading and validation of tabular data."""
-
-    # model:  DataFrameModel | None
 
     @property
     @abstractmethod
@@ -256,7 +256,7 @@ class TabularDataset(Dataset, ABC):
         return cls.__name__
 
 
-@dataclass
+@dataclass(kw_only=True)
 class SourceDataset(TabularDataset):
     """Dataset from outside of the managed environment.
 
@@ -268,7 +268,7 @@ class SourceDataset(TabularDataset):
         source_path: The path to the data
     """
 
-    source_path: str
+    source_path: str | None
     model: DataFrameModel | None = None
     partition_cols: list[str] | None = None
     is_geo: bool = True
@@ -316,7 +316,7 @@ class SourceDataset(TabularDataset):
         LOG.info(f"Saved to '{self.path}'.")
 
 
-@dataclass
+@dataclass(kw_only=True)
 class SourceGlobDataset(SourceDataset):
     """SourceGlobDataset is to ingest multiple files using a glob path.
 
@@ -335,8 +335,9 @@ class SourceGlobDataset(SourceDataset):
     """
 
     glob_path: str = None
-    source_path: str = None
     model: DataFrameModel | None = None
+    auto_refresh: bool = True
+    source_path: str | None = None
 
     @property
     def _new_date(self) -> str:
@@ -381,7 +382,7 @@ class SourceGlobDataset(SourceDataset):
         LOG.info(f"Saved to '{self.path}'.")
 
 
-@dataclass
+@dataclass(kw_only=True)
 class DerivedDataset(TabularDataset):
     """Dataset derived (transformed) from others in the ETL pipeline.
 
@@ -434,7 +435,141 @@ class DerivedDataset(TabularDataset):
         LOG.info(f"Saved to '{self.path}'.")
 
 
+@dataclass(kw_only=True)
+class DerivedDatasetDeleteMatching(TabularDataset):
+    """Dataset derived (transformed) from others in the ETL pipeline.
+
+    A DerivedDataset is for tabular data that is derived other datasets.
+    It is thus dependent on those datasets, and includes a function that transforms those
+    dependencies when the dataset needs to be refreshed. A derived dataset needs refreshing
+    if it is missing entirely, or if any of its dependencies need refreshing.
+    """
+
+    dependencies: list[Dataset]
+    func: Callable[[list[SparkDataFrame]], SparkDataFrame]
+    model: DataFrameModel | None = None
+    partition_cols: list[str] | None = None
+    is_geo: bool = True
+
+    @property
+    def is_built(self) -> bool:
+        return Path(self._new_filename).exists()
+
+    @property
+    def _new_date(self) -> str:
+        """Return the last-modified date of the source file in ISO string format."""
+        return datetime.today().strftime(DATE_FMT)
+    
+    @property
+    def _new_filename(self) -> str:
+        """New filename for parquet file being created."""
+        return FILE_FMT_MANUAL.format(name=self.name)
+    
+    @property
+    def file_matches(self) -> list[str]:
+        """List of files that match the file path but may have different dates.
+
+        Return in order of newest to oldest by the modified date of the path. Does
+        not take into account modified dates of the dataset dependencies.
+        """
+        if not os.path.exists(self.path_dir):
+            return []
+
+        pat = re.compile(PAT_FMT_MANUAL.format(name=self.name))
+        return sorted(
+            [y.group(0) for y in [pat.fullmatch(x) for x in os.listdir(self.path_dir)] if y is not None],
+            key=lambda x: dbmtime(self.path_dir + x),
+            reverse=True,
+        )
+
+
+    @property
+    def _hash(self) -> str:
+        """Blank hash for compatibility."""
+        return "000"
+
+    @property
+    def dict(self) -> dict:
+        """A dictionary representation of the dataset."""
+        return dict(
+            name=self.name,
+            level0=self.level0,
+            level1=self.level1,
+            restricted=self.restricted,
+            path=self.path,
+            type=str(type(self)),
+            dependencies=[dep.name for dep in self.dependencies],
+            # date=self.date,
+        )
+
+    def refresh(self) -> None:
+        """Populate the cache with a fresh version of this dataset."""
+        if self.is_built:
+            LOG.info(f"Appending to '{self.name}' dataset.")
+        else:
+            LOG.info(f"Creating '{self.name}' dataset.")
+        df = self.func(*self.dependencies)
+        df = self._validate(df)
+        write_parquet(df, path=self._new_path, partition_cols=self.partition_cols, existing_data_behavior="delete_matching")
+        LOG.info(f"Saved to '{self.path}'.")
+
 @dataclass
+class SourceTemporalAPIDataset(TabularDataset):
+    """Dataset from an API where new data is constantly being added.
+
+    A SourceDataset is a Dataset for datasets that are not derived from other datasets
+    defined in this repo.
+
+    Attributes:
+        model: The pandera dataframe model to use for validation.
+        partition_cols: The column to partition on.
+    """
+
+    model: DataFrameModel | None = None
+    partition_cols: list[str] | None = None
+
+    @property
+    def is_fresh(self) -> bool:
+        """Set to always fresh if file is built to avoid refreshing unless specifically refreshed."""
+        return len(self.file_matches) > 0
+
+    @property
+    def _new_date(self) -> str:
+        """Return today's date in ISO string format."""
+        return time.strftime(DATE_FMT)
+
+    @property
+    def _hash(self) -> str:
+        """Blank hash for compatibility."""
+        return "000"
+
+    @abstractmethod
+    def _func(self) -> gpd.GeoDataFrame:
+        """Function for building the dataset from the API."""
+
+    @property
+    def dict(self) -> dict:
+        """A dictionary representation of the dataset."""
+        return dict(
+            name=self.name,
+            level0=self.level0,
+            level1=self.level1,
+            restricted=self.restricted,
+            path=self.path,
+            type=str(type(self)),
+            source_path=self.source_path,
+            date=self.date,
+        )
+
+    def refresh(self):
+        LOG.info(f"Creating '{self.name}' dataset.")
+        df = self._func()
+        df = self._validate(df)
+        write_parquet(df, path=self._new_path, partition_cols=self.partition_cols)
+        LOG.info(f"Saved to '{self.path}'.")
+
+
+@dataclass(kw_only=True)
 class RasterDataset(Dataset):
     """Class for managing loading and validation of raster data."""
 
@@ -490,11 +625,11 @@ class RasterDataset(Dataset):
         return ra
 
 
-@dataclass
+@dataclass(kw_only=True)
 class SourceSingleFileRasterDataset(RasterDataset):
     """Class for managing loading and validation of source raster data in a single file."""
 
-    source_path: str = None
+    source_path: str | None = None
 
     @property
     def dict(self) -> dict:
@@ -521,7 +656,7 @@ class SourceSingleFileRasterDataset(RasterDataset):
         LOG.info(f"Saved to '{self.path}'.")
 
 
-@dataclass
+@dataclass(kw_only=True)
 class DerivedRasterDataset(RasterDataset):
     """Raster Dataset derived (transformed) from others in the ETL pipeline.
 

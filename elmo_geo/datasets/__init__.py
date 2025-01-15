@@ -190,6 +190,7 @@ from .rpa_reference_parcels import (
     reference_parcels_raw,
     reference_parcels_raw_no_sbi,
 )
+from .soil_moisture import soil_moisture_geoms_parcels_mapping, soil_moisture_smap_s1_granules
 from .ukceh_fertilisers import (
     ukceh_fertilisers_parcels,
     ukceh_nitrogen_parcels,
@@ -322,6 +323,8 @@ catalogue = [
     sfi_agroforestry_parcels,
     sfi_agroforestry_raw,
     sfi_agroforestry,
+    soil_moisture_geoms_parcels_mapping,
+    soil_moisture_smap_s1_granules,
     ukceh_fertilisers_parcels,
     ukceh_nitrogen_raw,
     ukceh_nitrogen_parcels,

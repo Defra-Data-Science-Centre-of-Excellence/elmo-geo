@@ -102,7 +102,7 @@ def sjoin_parcels(
     fn_pre: callable = fn_pass,
     fn_post: callable = fn_pass,
     **kwargs,
-):
+) -> SparkDataFrame:
     """Spatially join features dataset to parcels and groups.
     Returns a geospatial dataframe; id_parcel, *columns, geometry_left, geometry_right.
 
@@ -113,6 +113,9 @@ def sjoin_parcels(
         fn_pre: transforms sdf_feature after it is loaded, and before joined with parcels, used for filtering and renaming.
         fn_post: transforms sdf output after grouping by, used for filtering and renaming columns.
         **kwargs: passed to elmo_geo.st.sjoin, used for distance joins.
+
+    Returns:
+        A spark dataframe with the results of the join.
     """
     cols = ["id_parcel", *columns]
     sdf_feature = feature if isinstance(feature, SparkDataFrame) else feature.sdf()

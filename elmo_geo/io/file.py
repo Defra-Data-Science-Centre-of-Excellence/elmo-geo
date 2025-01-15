@@ -1,4 +1,5 @@
-import shutil
+import os
+from collections.abc import Iterator
 from functools import partial, reduce
 from glob import iglob
 from pathlib import Path
@@ -136,7 +137,7 @@ def _get_arrow_schema(sdf: SparkDataFrame) -> pa.Schema:
     return main_schema.remove(ind).insert(ind, geo_schema.field("geometry")).with_metadata(geo_schema.metadata)
 
 
-def write_parquet(df: DataFrame, path: str, partition_cols: list[str] | None = None):
+def write_parquet(df: DataFrame, path: os.PathLike, partition_cols: list[str] | None = None, existing_data_behavior: str = "overwrite_or_ignore", mode:str="overwrite"):
     """Write a DataFrame to parquet and partition.
     Takes in Spark, Pandas, or GeoPandas dataframe, remove any already written data, and writes a new dataframe.
 
@@ -144,32 +145,37 @@ def write_parquet(df: DataFrame, path: str, partition_cols: list[str] | None = N
         df: Dataframe to be written as (geo)parquet.
         path: Output path to write the data into.
         partition_cols: Column to write the output as separate files.
+        existing_data_behavior: For geospatial data, if the destination already exists, either throw an error (`error`), overwrite it (`overwrite_or_ignore`),
+            or only replace matching partitions (`delete_matching`). Default is `overwrite_or_ignore`.
+        mode: For non-geospatial data, the spark parquet write mode. One of `append`, `overwrite`, or `error`. Default is `overwrite`.
+
+ignore
     """
+
+    path = Path(path)
+
+    if existing_data_behavior not in (strategies := ["overwrite_or_ignore", "error", "delete_matching"]):
+        msg = f"`strategy` must be one of {strategies}, recieved {existing_data_behavior}."
+        raise ValueError(msg)
+
     if partition_cols is None:
         partition_cols = []
 
-    def to_gpqs(df, schema=None):
-        "GeoPandas writer as partial function, for applyInPandas."
+    def to_gpqs(df, schema: pa.Schema | None = None) -> pd.DataFrame:
+        """GeoPandas writer as partial function, for applyInPandas.
+
+        Returns an empty pandas dataframe for compatibility.
+        """
         table = _geopandas_to_arrow(to_gdf(df))
         if schema:
             table = table.cast(schema)
-        write_to_dataset(table, path, partition_cols=partition_cols)
+        write_to_dataset(table, path, partition_cols=partition_cols, use_deprecated_int96_timestamps=True, existing_data_behavior=existing_data_behavior)
         return pd.DataFrame([])
 
-    def map_to_gpqs(iterator, schema):
-        "Iterator of to_gpqs, for mapInPandas."
+    def map_to_gpqs(iterator: Iterator[pd.DataFrame], schema: pa.Schema) -> Iterator[pd.DataFrame]:
+        """Iterator of to_gpqs, for mapInPandas."""
         for pdf in iterator:
             yield to_gpqs(pdf, schema)
-
-    path = Path(path)
-    if path.exists():
-        LOG.warning(f"Replacing Dataset: {path}")
-        if path.is_dir():
-            shutil.rmtree(path)
-        else:
-            path.unlink()
-
-    path.parent.mkdir(parents=True, exist_ok=True)
 
     if isinstance(df, SparkDataFrame):
         if "geometry" in df.columns:
@@ -190,9 +196,9 @@ def write_parquet(df: DataFrame, path: str, partition_cols: list[str] | None = N
                 )
         else:
             if partition_cols:
-                df.write.parquet(dbfs(str(path), True), partitionBy=partition_cols)
+                df.write.mode(mode).parquet(dbfs(str(path), True), partitionBy=partition_cols)
             else:
-                df.transform(auto_repartition).write.parquet(dbfs(str(path), True))
+                df.transform(auto_repartition).write.mode(mode).parquet(dbfs(str(path), True))
     elif isinstance(df, GeoDataFrame):
         to_gpqs(df)
     elif isinstance(df, PandasDataFrame):
