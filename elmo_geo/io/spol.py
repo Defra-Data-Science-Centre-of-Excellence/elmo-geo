@@ -5,17 +5,15 @@ This handler attempts to read your details via .env, or getpass will wait for us
 
 [^py-spol]: https://github.com/vgrem/Office365-REST-Python-Client/
 """
-import dotenv
 import getpass
-import pandas as pd
-
 from io import BytesIO
+
+import dotenv
 from office365.sharepoint.client_context import ClientContext
 
 
 class SpolHandler:
-
-    def __init__(self, spol_url = "https://defra.sharepoint.com/teams/Team1645/"):
+    def __init__(self, spol_url="https://defra.sharepoint.com/teams/Team1645/"):
         """A wrapper around office365.sharepoint.client_context.ClientContext specifically for Defra portal.
         Intended use is within a elmo_geo.etl.Dataset for exporting.
 
@@ -27,10 +25,10 @@ class SpolHandler:
         >>> if f.serverRelativeUrl.endswith((".csv",)):
         >>>     print(f.serverRelativeUrl)
 
-        >>> spol.download_file("/teams/Team1645/Restricted_ELM_RPA_data_sharing/Transition agreement data/SFI23_parcel_20231013.csv", "SFI23_parcel_20231013.csv")
-        SFI23_parcel_20231013.csv
+        >>> spol.download_file("/teams/Team1645/Restricted_ELM_RPA_data_sharing/Transition agreement data/test.csv", "data/test.csv")
+        test.csv
 
-        >>> spol.upload_file("SFI23_parcel_20231013.csv", "/teams/Team1645/Restricted_ELM_RPA_data_sharing/Transition agreement data/SFI23_parcel_20231013-copy.csv")
+        >>> spol.upload_file("data/test.csv", "/teams/Team1645/Restricted_ELM_RPA_data_sharing/Transition agreement data")
         ```
         """
         spol_username = dotenv.get_key(".env", "SPOL_EMAIL") or getpass.getpass("Warning: Manually enter .env SPOL_EMAIL:")
@@ -39,11 +37,10 @@ class SpolHandler:
         self.test()
 
     def test(self):
-        """Test the connection is working by listing files in the root folder.
-        """
+        """Test the connection is working by listing files in the root folder."""
         return self.list_files(spol_path="", recursive=False)
 
-    def list_files(self, spol_path = "Evidence and Analysis WS/4.0_ELM_Economics/LR Parcels", recursive=True):
+    def list_files(self, spol_path, recursive=True):
         """List files in a SharePoint folder.
         https://github.com/vgrem/Office365-REST-Python-Client/blob/master/examples/sharepoint/folders/list_files.py
         """
