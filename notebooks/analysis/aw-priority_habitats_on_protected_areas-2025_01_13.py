@@ -58,19 +58,21 @@
 # COMMAND ----------
 
 from pyspark.sql import functions as F
+
 from elmo_geo import register
-from elmo_geo.datasets import reference_parcels, protected_areas_parcels, defra_priority_habitat_parcels
+from elmo_geo.datasets import defra_priority_habitat_parcels, protected_areas_parcels, reference_parcels
+
 register()
 
 
 woodland_phis = (
-    'Deciduous woodland',
-    'Traditional orchard',
+    "Deciduous woodland",
 )
 
 
 sdf = (
-    reference_parcels.sdf().select("id_parcel", "area_ha")
+    reference_parcels.sdf()
+    .select("id_parcel", "area_ha")
     .join(
         (
             defra_priority_habitat_parcels.sdf()
@@ -97,10 +99,10 @@ sdf = (
                 "proportion",
             )
             .groupby("id_parcel")
-            # Protected Areas can overlap, so we calculate the probablistic area that is in any.
+            # Protected Areas can overlap, so we calculate the probabilistic area that is in any.
             .agg(F.expr("1 - EXP(SUM(LOG(1 - proportion))) AS p_pa"))
             # Assuming they don't overlap
-            #.agg(F.expr("LEAST(1, SUM(proportion)) AS p_pa"))
+            # .agg(F.expr("LEAST(1, SUM(proportion)) AS p_pa"))
         ),
         on="id_parcel",
         how="outer",
