@@ -231,28 +231,42 @@ def _transform_boundary_merger(
     """
     return (
         boundary_adjacencies.sdf()
-        .withColumn("bool_adjacency", F.expr(f"CAST({threshold_str_fn} AS DOUBLE)"))
+        .withColumn("bool_adjacency", F.expr(f"{threshold_str_fn}"))
         .groupby("id_parcel", "id_boundary")
         .agg(
             F.first("m").alias("m"),
             F.max("bool_adjacency").alias("bool_adjacency"),
         )
-        .join(boundary_hedgerows.sdf().selectExpr("id_boundary", f"CAST({threshold_str_fn} AS DOUBLE) AS bool_hedgerow"), on="id_boundary", how="outer")
-        .join(boundary_relict.sdf().selectExpr("id_boundary", f"CAST({threshold_str_fn} AS DOUBLE) AS bool_relict"), on="id_boundary", how="outer")
-        .join(boundary_walls.sdf().selectExpr("id_boundary", f"CAST({threshold_str_fn} AS DOUBLE) AS bool_wall"), on="id_boundary", how="outer")
-        .join(boundary_water.sdf().selectExpr("id_boundary", f"CAST({threshold_str_fn} AS DOUBLE) AS bool_water"), on="id_boundary", how="outer")
-        .withColumn("m_adj", F.expr("m * (2 - bool_adjacency) / 2 AS m_adj"))  # Buffer Strips are double sided, adjacency makes this single sided.
+        .join(boundary_hedgerows.sdf().selectExpr("id_boundary", f"{threshold_str_fn} AS bool_hedgerow"), on="id_boundary", how="outer")
+        .join(boundary_relict.sdf().selectExpr("id_boundary", f"{threshold_str_fn} AS bool_relict"), on="id_boundary", how="outer")
+        .join(boundary_walls.sdf().selectExpr("id_boundary", f"{threshold_str_fn} AS bool_wall"), on="id_boundary", how="outer")
+        .join(boundary_water.sdf().selectExpr("id_boundary", f"{threshold_str_fn} AS bool_water"), on="id_boundary", how="outer")
+        .selectExpr(
+            "id_parcel",
+            "id_boundary",
+            "m",
+            "CAST( (bool_hedgerow OR bool_wall) AS DOUBLE) AS bool_hedgerow_wall",
+            "CAST( (bool_hedgerow OR bool_wall OR bool_water) AS DOUBLE) AS bool_hedgerow_wall_water",
+            *[f"CAST({i} AS DOUBLE) AS {i}" for i in ["bool_adjacency", "bool_hedgerow", "bool_relict", "bool_wall", "bool_water"]],
+            "m * (2 - CAST(bool_adjacency AS DOUBLE)) / 2 AS m_adj",  # Buffer Strips are double sided, adjacency makes this single sided.
+        )
         .groupby("id_parcel")
         .agg(
+            F.expr("SUM(m) AS m"),
             F.expr("SUM(m * bool_hedgerow) AS m_hedgerow"),
             F.expr("SUM(m * bool_relict) AS m_relict"),
             F.expr("SUM(m * bool_wall) AS m_wall"),
             F.expr("SUM(m * bool_water) AS m_water"),
+            F.expr("SUM(m * bool_hedgerow_wall) AS m_wall_or_hedgerow"),
+            F.expr("SUM(m * bool_hedgerow_wall_water) AS m_wall_or_hedgerow_or_water"),
             F.expr("SUM(m_adj * bool_hedgerow) AS m_adj_hedgerow"),
             F.expr("SUM(m_adj * bool_relict) AS m_adj_relict"),
             F.expr("SUM(m_adj * bool_wall) AS m_adj_wall"),
             F.expr("SUM(m_adj * bool_water) AS m_adj_water"),
+            F.expr("SUM(m_adj * bool_hedgerow_wall) AS m_adj_wall_or_hedgerow"),
+            F.expr("SUM(m_adj * bool_hedgerow_wall_water) AS m_adj_wall_or_hedgerow_or_water"),
         )
+        .filter("id_parcel IS NOT NULL")  # one row has a null parcel ID and 0 for tree counts, exclude this
         .na.fill(0)
     )
 
@@ -262,29 +276,41 @@ class BoundaryMerger(DataFrameModel):
 
     Attributes:
         id_parcel: Parcel id in which that boundary came from.
+        m: Length of parcel boundary.
         m_hedgerow: Length of boundary segments suitable for hedgerow actions, multiply this by the buffer width to approximate the area foregone.
         m_relict: Same as above for relict hedgerow features.
         m_wall: Same as above for OSM Wall features.
         m_water: Same as above for OS Water features.
+        m_wall_or_hedgerow: Length of boundary classified as either wall or hedgerow.
+            Boundary segments can be classified as both hedge and wall so the combined length is aggregated as a separate variable.
+        m_wall_or_hedgerow_or_water: Length of boundary classified as either wall or hedgerow or water.
+            Boundary segments can be classified as both hedge, wall and water so the combined length is aggregated as a separate variable.
         m_adj_hedgerow: This is the length of boundary segments suitable for hedgerow actions, but adjusted for adjacency for approximating the payment rate.
         m_adj_relict: Same as above for relict hedgerow features.
         m_adj_wall: Same as above for OSM Wall features.
         m_adj_water: Same as above for OS Water features.
+        m_adj_wall_or_hedgerow: Same as above for hedgerow or wall boundaries.
+        m_adj_wall_or_hedgerow_or_water: Same as above for hedgerow, wall, or water boundaries.
     """
 
     id_parcel: str = Field()
+    m: float = Field()
     m_hedgerow: float = Field()
     m_relict: float = Field()
     m_wall: float = Field()
     m_water: float = Field()
+    m_wall_or_hedgerow: float = Field()
+    m_wall_or_hedgerow_or_water: float = Field()
     m_adj_hedgerow: float = Field()
     m_adj_relict: float = Field()
     m_adj_wall: float = Field()
     m_adj_water: float = Field()
+    m_adj_wall_or_hedgerow: float = Field()
+    m_adj_wall_or_hedgerow_or_water: float = Field()
 
 
 boundary_merger = DerivedDataset(
-    medallion="gold",
+    medallion="silver",
     source="fcp",
     name="boundary_merger",
     model=BoundaryMerger,
