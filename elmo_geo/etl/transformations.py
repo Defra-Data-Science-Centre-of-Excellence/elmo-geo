@@ -63,7 +63,7 @@ def combine_wide(
     for dataset, source in zip(datasets, sources):
         source = source or dataset.name
         _sdf = dataset.sdf().withColumnsRenamed({col: f"{col}_{source}" for col in rename_cols})
-        sdf = sdf.join(_sdf, on=keys) if sdf else _sdf
+        sdf = sdf.join(_sdf, on=keys, how="outer") if sdf else _sdf
     return sdf.toPandas()
 
 

@@ -344,12 +344,12 @@ class ProtectedAreasParcels(DataFrameModel):
         proportion_mcz: The proportion of the parcel that intersects with mcz sites."""
 
     id_parcel: str = Field(unique=True)
-    proportion_sssi: float = Field(ge=0, le=1)
-    proportion_nnr: float = Field(ge=0, le=1)
-    proportion_sac: float = Field(ge=0, le=1)
-    proportion_spa: float = Field(ge=0, le=1)
-    proportion_ramsar: float = Field(ge=0, le=1)
-    proportion_mcz: float = Field(ge=0, le=1)
+    proportion_sssi: float = Field(ge=0, le=1, nullable=True)
+    proportion_nnr: float = Field(ge=0, le=1, nullable=True)
+    proportion_sac: float = Field(ge=0, le=1, nullable=True)
+    proportion_spa: float = Field(ge=0, le=1, nullable=True)
+    proportion_ramsar: float = Field(ge=0, le=1, nullable=True)
+    proportion_mcz: float = Field(ge=0, le=1, nullable=True)
 
 
 protected_areas_parcels = DerivedDataset(

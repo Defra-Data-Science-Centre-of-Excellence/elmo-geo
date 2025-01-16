@@ -65,6 +65,10 @@ from .ea_flood_risk_mapping import (
     ea_rofrs_parcels,
     ea_rofrs_raw,
 )
+from .ea_nitrate_vulnerable_zones import (
+    ea_nvz_parcels,
+    ea_nvz_raw,
+)
 from .fc_ewco import (
     ewco_ammonia_emissions_parcels,
     ewco_ammonia_emissions_raw,

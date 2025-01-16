@@ -459,14 +459,14 @@ class EwcoMergedParcels(DataFrameModel):
     """
 
     id_parcel: str = Field(unique=True)
-    proportion_rs: float = Field(ge=0, le=1)
-    proportion_amm: float = Field(ge=0, le=1)
-    proportion_soc: float = Field(ge=0, le=1)
-    proportion_wq: float = Field(ge=0, le=1)
-    proportion_krc: float = Field(ge=0, le=1)
-    proportion_fr: float = Field(ge=0, le=1)
-    proportion_phn: float = Field(ge=0, le=1)
-    proportion_sense: float = Field(ge=0, le=1)
+    proportion_rs: float = Field(ge=0, le=1, nullable=True)
+    proportion_amm: float = Field(ge=0, le=1, nullable=True)
+    proportion_soc: float = Field(ge=0, le=1, nullable=True)
+    proportion_wq: float = Field(ge=0, le=1, nullable=True)
+    proportion_krc: float = Field(ge=0, le=1, nullable=True)
+    proportion_fr: float = Field(ge=0, le=1, nullable=True)
+    proportion_phn: float = Field(ge=0, le=1, nullable=True)
+    proportion_sense: float = Field(ge=0, le=1, nullable=True)
 
 
 ewco_parcels = DerivedDataset(
