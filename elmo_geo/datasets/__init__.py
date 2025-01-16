@@ -144,6 +144,7 @@ from .hedges import (
     rpa_hedges_raw,  # TODO: snapshot
 )
 from .historic import (
+    he_combined_sites,
     he_lb_raw,
     he_pws_raw,
     he_rb_raw,
