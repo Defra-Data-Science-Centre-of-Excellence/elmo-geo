@@ -21,18 +21,18 @@ class SpolHandler:
         >>> from elmo_geo.io.spol import SpolHandler
         >>> spol = SpolHandler()
 
-        >>> for f in spol.list_files("Restricted_ELM_RPA_data_sharing"):
+        >>> for f in spol.list_files("Evidence and Analysis WS/0.Archive"):
         >>> if f.serverRelativeUrl.endswith((".csv",)):
         >>>     print(f.serverRelativeUrl)
 
-        >>> spol.download_file("/teams/Team1645/Restricted_ELM_RPA_data_sharing/Transition agreement data/test.csv", "data/test.csv")
+        >>> spol.download_file("/teams/Team1645/Evidence and Analysis WS/0.Archive/test.csv", "data/test.csv")
         test.csv
 
-        >>> spol.upload_file("data/test.csv", "/teams/Team1645/Restricted_ELM_RPA_data_sharing/Transition agreement data")
+        >>> spol.upload_file("data/test.csv", "/teams/Team1645/Evidence and Analysis WS/0.Archive")
         ```
         """
-        spol_username = dotenv.get_key(".env", "SPOL_EMAIL") or getpass.getpass("Warning: Manually enter .env SPOL_EMAIL:")
-        spol_password = dotenv.get_key(".env", "SPOL_PASS") or getpass.getpass("Warning: Manually enter .env SPOL_PASS:")
+        spol_username = dotenv.get_key(".env", "SPOL_EMAIL") or getpass.getpass("Warning: missing .env SPOL_EMAIL:")
+        spol_password = dotenv.get_key(".env", "SPOL_PASS") or getpass.getpass("Info: missing .env SPOL_PASS:")
         self.ctx = ClientContext(spol_url).with_user_credentials(spol_username, spol_password)
         self.test()
 
