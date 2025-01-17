@@ -18,7 +18,7 @@ import pandas as pd
 df_sssi = (
     pd.read_feather("/dbfs/mnt/lab/unrestricted/elm/elmo/sssi/sssi.feather")  # old
     .merge(
-        pd.read_parquet("/dbfs/mnt/lab/restricted/ELM-Project/silver/overlap-sssi_units-2024_03_07.parquet"),  # new
+        pd.read_parquet("/dbfs/mnt/lab-res-a1001004/restricted/elm_project/silver/overlap-sssi_units-2024_03_07.parquet"),  # new
         on="id_parcel",
         how="outer",
     )
@@ -33,7 +33,7 @@ df_sssi = (
 df_np = (
     pd.read_feather("/dbfs/mnt/lab/unrestricted/elm/elmo/national_park/national_park.feather")  # old
     .merge(
-        pd.read_parquet("/dbfs/mnt/lab/restricted/ELM-Project/silver/overlap-national_park-2024_01_30.parquet"),  # new
+        pd.read_parquet("/dbfs/mnt/lab-res-a1001004/restricted/elm_project/silver/overlap-national_park-2024_01_30.parquet"),  # new
         on="id_parcel",
         how="outer",
     )

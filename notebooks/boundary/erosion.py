@@ -29,11 +29,11 @@ from elmo_geo.plot.base_map import plot_gdf
 register()
 
 
-f_parcel = "/dbfs/mnt/lab/restricted/ELM-Project/silver/rpa-parcel-adas.parquet"
-f_segment = "/dbfs/mnt/lab/restricted/ELM-Project/silver/elmo_geo-boundary_segment-2024_06_21.parquet"
-f_olf = "/dbfs/mnt/lab/restricted/ELM-Project/bronze/ea-overland_flow-2024_06_19_direct.parquet"
+f_parcel = "/dbfs/mnt/lab-res-a1001004/restricted/elm_project/silver/rpa-parcel-adas.parquet"
+f_segment = "/dbfs/mnt/lab-res-a1001004/restricted/elm_project/silver/elmo_geo-boundary_segment-2024_06_21.parquet"
+f_olf = "/dbfs/mnt/lab-res-a1001004/restricted/elm_project/bronze/ea-overland_flow-2024_06_19_direct.parquet"
 
-f = "/dbfs/mnt/lab/restricted/ELM-Project/silver/environment_agency/elmo_geo-parcel_olf-2024_07_11_beta.parquet"
+f = "/dbfs/mnt/lab-res-a1001004/restricted/elm_project/silver/environment_agency/elmo_geo-parcel_olf-2024_07_11_beta.parquet"
 
 # COMMAND ----------
 

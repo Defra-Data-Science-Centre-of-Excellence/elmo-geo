@@ -33,7 +33,7 @@ def convert_datetime_to_string(x):
 # COMMAND ----------
 
 tile = "NU13"
-path = "/dbfs/mnt/lab/restricted/ELM-Project/silver"
+path = "/dbfs/mnt/lab-res-a1001004/restricted/elm_project/silver"
 
 m, filepaths = folium.Map(), os.listdir(path)
 for filepath, colour in zip(filepaths, get_n_colours(len(filepaths), "hsv")):
