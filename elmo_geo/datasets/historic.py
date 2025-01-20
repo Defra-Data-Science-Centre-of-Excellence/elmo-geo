@@ -204,17 +204,17 @@ def _calculate_historic_proportions(reference_parcels: DerivedDataset, he_combin
             sdf_combined_sites = sdf_combined_sites.withColumn("geometry", F.expr(f"ST_MakeValid(ST_Buffer(geometry, {buf}))"))
 
         _sdf = (
-            sjoin_parcel_proportion(reference_parcels, he_combined_sites_buffered)
+            sjoin_parcel_proportion(reference_parcels, sdf_combined_sites)
             .rename(columns={"proportion": f"proportion_hist_arch_{buf}m"})
             .merge(
-                sjoin_parcel_proportion(reference_parcels, he_combined_sites_buffered.filter("source == 'scheduled_monuments'")).rename(
+                sjoin_parcel_proportion(reference_parcels, sdf_combined_sites.filter("source == 'scheduled_monuments'")).rename(
                     columns={"proportion": f"proportion_sched_monuments_{buf}m"}
                 ),
                 on="id_parcel",
                 how="outer",
             )
             .merge(
-                sjoin_parcel_proportion(reference_parcels, he_combined_sites_buffered.filter("source != 'scheduled_monuments'")).rename(
+                sjoin_parcel_proportion(reference_parcels, sdf_combined_sites.filter("source != 'scheduled_monuments'")).rename(
                     columns={"proportion": f"proportion_hist_arch_ex_sched_monuments_{buf}m"}
                 ),
                 on="id_parcel",
