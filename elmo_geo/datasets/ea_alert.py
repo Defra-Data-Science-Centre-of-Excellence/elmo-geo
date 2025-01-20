@@ -60,7 +60,7 @@ ea_olf_raw = SourceDataset(
     source="ea",
     model=OlfRaw,
     restricted=True,
-    source_path="/dbfs/mnt/lab/restricted/ELM-Project/bronze/ea-overland_flow-2024_06_19_direct.parquet",
+    source_path="/dbfs/mnt/lab-res-a1001004/restricted/elm_project/bronze/ea-overland_flow-2024_06_19_direct.parquet",
 )
 
 

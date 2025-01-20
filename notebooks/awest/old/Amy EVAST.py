@@ -188,7 +188,7 @@ for name, sdf_other in {
 # COMMAND ----------
 
 # metrics
-f = "/dbfs/mnt/lab/restricted/ELM-Project/out/elmo-buffers-2024_01_08.feather"
+f = "/dbfs/mnt/lab-res-a1001004/restricted/elm_project/out/elmo-buffers-2024_01_08.feather"
 sdf_parcel = load_sdf("rpa-parcel-adas").drop("sindex")
 names = "hedge", "water"  # , 'ditch', 'wall'
 bufs = 0, 4, 8, 12
@@ -239,14 +239,14 @@ df
 # Download
 
 # Metrics
-f_in = "/dbfs/mnt/lab/restricted/ELM-Project/out/elmo-buffers-2024_01_08.feather"
+f_in = "/dbfs/mnt/lab-res-a1001004/restricted/elm_project/out/elmo-buffers-2024_01_08.feather"
 f_out = "/tmp/elmo-buffers-2024_01_08.csv"
 pd.read_feather(f_in).to_csv(f_out)
 download_link(f_out)
 
 # Geometries
 for name in "hedge", "water":
-    f_in = f"/dbfs/mnt/lab/restricted/ELM-Project/ods/elmo_geo-{name}-2024_01_08.parquet"
+    f_in = f"/dbfs/mnt/lab-res-a1001004/restricted/elm_project/ods/elmo_geo-{name}-2024_01_08.parquet"
     f_out = f"/tmp/elmo_geo-{name}-2024_01_08.gpkg"
     # gpd.read_parquet(f_in).set_crs(epsg=27700).drop(columns=['sindex']).to_file(f_out)
     download_link(f_out)

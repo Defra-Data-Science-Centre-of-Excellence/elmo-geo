@@ -35,7 +35,7 @@ from shapely.geometry import LineString, MultiPolygon, Polygon
 from shapely.ops import clip_by_rect, split
 
 # COMMAND ----------
-f = "/dbfs/mnt/base/restricted/source_ordnance_survey_data_hub/dataset_ngd_water_features/format_GPKG_ngd_water_features/SNAPSHOT_2023_12_16_ngd_water_features/wtr_fts_water.gpkg"  # noqa:E501
+f = "/dbfs/mnt/base-res-os-premium/restricted/source_ordnance_survey_data_hub/dataset_ngd_water_features/format_GPKG_ngd_water_features/SNAPSHOT_2023_12_16_ngd_water_features/wtr_fts_water.gpkg"  # noqa:E501
 p = "POLYGON((2.0117187499999822 44.38657313925715,-19.433593750000018 19.207272119703983,19.414062499999982 6.904449621538131,64.94140624999999 -3.096801256840523,81.46484374999999 37.21269961002643,45.78124999999998 24.106495997107682,53.69140624999998 51.22054369437158,3.7695312499999822 37.07257833232809,2.0117187499999822 44.38657313925715))"  # noqa:E501
 
 df = gpd.read_file(f, rows=100)
