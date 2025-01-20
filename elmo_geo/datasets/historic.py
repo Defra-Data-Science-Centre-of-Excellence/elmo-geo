@@ -185,9 +185,9 @@ class HeCombinedSitesParcels(DataFrameModel):
 
     id_parcel: str = Field()
 
-    proportion_hist_arch_0m: float = Field(ge=0, nullable=True, alias="proportion_hist_arch_1e-07m")
-    proportion_sched_monuments_0m: float = Field(ge=0, nullable=True, alias="proportion_sched_monuments_1e-07m")
-    proportion_hist_arch_ex_sched_monuments_0m: float = Field(ge=0, nullable=True, alias="proportion_hist_arch_ex_sched_monuments_1e-07m")
+    proportion_hist_arch_0m: float = Field(ge=0, nullable=True)
+    proportion_sched_monuments_0m: float = Field(ge=0, nullable=True)
+    proportion_hist_arch_ex_sched_monuments_0m: float = Field(ge=0, nullable=True)
 
     proportion_hist_arch_6m: float = Field(ge=0, nullable=True)
     proportion_sched_monuments_6m: float = Field(ge=0, nullable=True)
@@ -198,8 +198,10 @@ def _calculate_historic_proportions(reference_parcels: DerivedDataset, he_combin
     """Calculate the proportion of each parcel intersected by historic or archaeological features."""
     sdf = None
 
-    for buf in [0.0000001, 6]:
-        he_combined_sites_buffered = he_combined_sites.sdf().withColumn("geometry", F.expr(f"ST_MakeValid(ST_Buffer(geometry, {buf}))"))
+    for buf in [0, 6]:
+        sdf_combined_sites = he_combined_sites.sdf()
+        if buf > 0:
+            sdf_combined_sites = sdf_combined_sites.withColumn("geometry", F.expr(f"ST_MakeValid(ST_Buffer(geometry, {buf}))"))
 
         _sdf = (
             sjoin_parcel_proportion(reference_parcels, he_combined_sites_buffered)
