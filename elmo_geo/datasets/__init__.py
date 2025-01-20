@@ -207,6 +207,8 @@ from .protected_areas import (
     ne_sssi_units_parcels,
     ne_sssi_units_raw,  # snapshot
     protected_areas_parcels,
+    protected_areas_tidy,
+    protected_areas_tidy_parcels,
 )
 from .protected_landscapes import (
     national_landscapes_raw,

@@ -41,7 +41,7 @@ from pandera import DataFrameModel, Field
 from pandera.engines.geopandas_engine import Geometry
 
 from elmo_geo.etl import SRID, DerivedDataset, SourceDataset
-from elmo_geo.etl.transformations import combine_wide, sjoin_parcel_proportion
+from elmo_geo.etl.transformations import combine_long, combine_wide, sjoin_parcel_proportion
 
 from .rpa_reference_parcels import reference_parcels
 
@@ -50,14 +50,14 @@ from .rpa_reference_parcels import reference_parcels
 class NeSssiUnitsRaw(DataFrameModel):
     """Model for Natural England Sites of Special Scientific Interest (SSSI) units dataset.
     Attributes:
-       sssi_name: Name of the SSSI
-       id: Reference id for the SSSI unit
+       name: Name of the SSSI
+       code: Reference id for the SSSI unit
        condition: Condition of the SSSI unit, the objective is for all to be in favourable condition
        geometry: Geospatial polygons in EPSG:27700
     """
 
-    sssi_name: str = Field()
-    id: float = Field()
+    name: str = Field(alias="sssi_name")
+    code: float = Field(alias="id")
     condition: str = Field(nullable=True)
     geometry: Geometry(crs=SRID) = Field()
 
@@ -99,13 +99,13 @@ ne_sssi_units_parcels = DerivedDataset(
 class NeNnrRaw(DataFrameModel):
     """Model for Natural England National Nature Reserves (NNR) dataset.
     Attributes:
-       nnr_name: Name of the NNR
-       reference: Reference id for each NNR
+       name: Name of the NNR
+       code: Reference id for each NNR
        geometry: Geospatial polygons in EPSG:27700
     """
 
-    nnr_name: str = Field()
-    reference: str = Field()
+    name: str = Field(alias="nnr_name")
+    code: str = Field(alias="reference")
     geometry: Geometry(crs=SRID) = Field()
 
 
@@ -147,13 +147,13 @@ ne_nnr_parcels = DerivedDataset(
 class NeSacRaw(DataFrameModel):
     """Model for Natural England Special Areas of Conservation (SAC) dataset.
     Attributes:
-        sac_name: Name of each SAC
-        sac_code: Reference id for each SAC
+        name: Name of each SAC
+        code: Reference id for each SAC
         geometry: Geospatial polygons in EPSG:27700
     """
 
-    sac_name: str = Field()
-    sac_code: str = Field()
+    name: str = Field(alias="sac_name")
+    code: str = Field(alias="sac_code")
     geometry: Geometry(crs=SRID) = Field()
 
 
@@ -195,13 +195,13 @@ ne_sac_parcels = DerivedDataset(
 class JnccSpaRaw(DataFrameModel):
     """Model for Joint Nature Conservation Committee Special Protection Areas (SPAs) dataset.
     Attributes:
-        spa_name: Name of each SPA
-        spa_code: Reference id for each SPA
+        name: Name of each SPA
+        code: Reference id for each SPA
         geometry: Geospatial polygons in EPSG:27700
     """
 
-    spa_name: str = Field()
-    spa_code: str = Field()
+    name: str = Field(alias="spa_name")
+    code: str = Field(alias="spa_code")
     geometry: Geometry(crs=SRID) = Field()
 
 
@@ -289,13 +289,13 @@ ne_ramsar_parcels = DerivedDataset(
 class NeMarineConservationZonesRaw(DataFrameModel):
     """Model for Natural England Marine Conservation Zones (MCZ) dataset.
     Attributes:
-        MCZ_NAME: Name of each MCZ site
-        MCZ_CODE: Reference id for each MCZ
+        name: Name of each MCZ site
+        code: Reference id for each MCZ
         geometry: Geospatial polygons in EPSG:27700
     """
 
-    MCZ_NAME: str = Field()
-    MCZ_CODE: str = Field()
+    name: str = Field(alias="MCZ_NAME")
+    code: str = Field(alias="MCZ_CODE")
     geometry: Geometry(crs=SRID) = Field()
 
 
@@ -332,6 +332,7 @@ ne_marine_conservation_zones_parcels = DerivedDataset(
 )
 
 
+# Protected Areas
 class ProtectedAreasParcels(DataFrameModel):
     """Model for one wide table that pulls together the proportion fields for each protected area derived dataset linked to parcels.
     Attributes:
@@ -360,5 +361,71 @@ protected_areas_parcels = DerivedDataset(
     restricted=False,
     func=partial(combine_wide, sources=["sssi", "nnr", "sac", "spa", "ramsar", "mcz"]),
     dependencies=[ne_sssi_units_parcels, ne_nnr_parcels, ne_sac_parcels, jncc_spa_parcels, ne_ramsar_parcels, ne_marine_conservation_zones_parcels],
+    model=ProtectedAreasParcels,
+)
+
+
+
+# Protected Areas Tidy
+class ProtectedAreasTidy(DataFrameModel):
+    """Model for one wide table that pulls together the proportion fields for each protected area derived dataset linked to parcels.
+
+    Attributes:
+        source: Type of Protected Area, e.g. SPA/MCZ/NNR/Ramsar/SAC/SSSI.
+        name: Name of the specific Protected Area.
+        code: Code/reference/id for the specific Protected Area.
+        geometry: BNG polygon of the Protected Area.
+    """
+    source: str = Field()
+    name: str = Field()
+    code: str = Field()
+    geometry: Geometry(crs=SRID) = Field()
+
+
+protected_areas_tidy = DerivedDataset(
+    is_geo=True,
+    name="protected_areas_tidy",
+    medallion="silver",
+    source="protected_areas",
+    restricted=False,
+    func=partial(combine_long, sources=[
+        "Special Protected Area",
+        "Marine Conservation Zone",
+        "National Nature Reserve",
+        "Ramsar Site",
+        "Special Area of Conservation",
+        "Site of Special Scientific Interest",
+    ]),
+    dependencies=[
+        jncc_spa_raw,
+        ne_marine_conservation_zones_raw,
+        ne_nnr_raw,
+        ne_ramsar_raw,
+        ne_sac_raw,
+        ne_sssi_units_raw,
+    ],
+    model=ProtectedAreasTidy,
+)
+
+
+class ProtectedAreasTidyParcels(DataFrameModel):
+    """Merged protected areas joined to parcels.
+
+    Attributes:
+        id_parcel: 11 character RPA reference parcel ID (including the sheet ID) e.g. `SE12263419`.
+        proportion: The proportion of the parcel that intersects with any Protected Area.
+    """
+    id_parcel: str = Field()
+    proportion: float = Field(ge=0, le=1)
+
+
+protected_areas_tidy_parcels = DerivedDataset(
+    is_geo=False,
+    name="protected_areas_tidy_parcels",
+    medallion="gold",
+    source="protected_areas",
+    restricted=False,
+    func=sjoin_parcel_proportion,
+    dependencies=[reference_parcels, protected_areas_tidy],
     model=ProtectedAreasParcels,
 )
