@@ -40,13 +40,7 @@ sdf = (
         how="outer",
     )
     .join(
-        (
-            protected_areas_parcels.sdf()
-            .selectExpr(
-                "id_parcel",
-                "proportion_any AS p_pa",
-            )
-        ),
+        protected_areas_parcels.sdf().selectExpr("id_parcel", "proportion_any AS p_pa"),
         on="id_parcel",
         how="outer",
     )

@@ -204,6 +204,7 @@ class ProtectedAreasTidy(DataFrameModel):
         code: Code/reference/id for the specific Protected Area.
         geometry: BNG polygon of the Protected Area.
     """
+
     source: str = Field()
     name: str = Field()
     code: str = Field()
@@ -211,16 +212,13 @@ class ProtectedAreasTidy(DataFrameModel):
 
 
 def _transform(*datasets: Dataset) -> SparkDataFrame:
-    """Similar to `combine_long` and addition select only relevent columns.
-    """
+    """Similar to `combine_long` and addition select only relevant columns."""
     sources = ["spa", "mcz", "nnr", "ramsar", "sac", "sssi"]
     return reduce(
         SparkDataFrame.unionByName,
-        [
-            dataset.sdf().selectExpr(f"'{source}' AS source", "name", "code", "geometry")
-            for source, dataset in zip(sources, datasets)
-        ],
+        [dataset.sdf().selectExpr(f"'{source}' AS source", "name", "code", "geometry") for source, dataset in zip(sources, datasets)],
     )
+
 
 protected_areas_tidy = DerivedDataset(
     is_geo=True,
@@ -276,22 +274,25 @@ def _transform(reference_parcels: Dataset, protected_areas_tidy: Dataset) -> Spa
         SparkDataFrame.join(
             sjoin_parcel_proportion(sdf_parcels, sdf_pa, columns=["source"]),
             sjoin_parcel_proportion(sdf_parcels, sdf_pa).withColumn("source", F.lit("any")),
-            on = "id_parcel",
-            how = "outer",
+            on="id_parcel",
+            how="outer",
         )
         .groupby("id_parcel")
         .pivot("source")
         .sum("proportion")
-        .withColumnsRenamed({
-            "any": "proportion_any",
-            "spa": "proportion_spa",
-            "mcz": "proportion_mcz",
-            "nnr": "proportion_nnr",
-            "ramsar": "proportion_ramsar",
-            "sac": "proportion_sac",
-            "sssi": "proportion_sssi",
-        })
+        .withColumnsRenamed(
+            {
+                "any": "proportion_any",
+                "spa": "proportion_spa",
+                "mcz": "proportion_mcz",
+                "nnr": "proportion_nnr",
+                "ramsar": "proportion_ramsar",
+                "sac": "proportion_sac",
+                "sssi": "proportion_sssi",
+            }
+        )
     )
+
 
 protected_areas_parcels = DerivedDataset(
     is_geo=False,
