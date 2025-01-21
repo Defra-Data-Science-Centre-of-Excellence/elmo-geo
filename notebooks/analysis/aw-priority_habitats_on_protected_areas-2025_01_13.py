@@ -4,9 +4,10 @@
 # MAGIC
 # MAGIC |  | Parcels Area (ha) | Priority Habitat (ha) | Protected Area (ha) | Priority Habitat and Protected Area (ha) | Priority Habitat and Protected Area (%) | Priority Habitat and not Protected Area (ha) | Priority Habitat and not Protected Area (%) |
 # MAGIC |---|---|---|---|---|---|---|---|
-# MAGIC | Woodland Habitat |  | 475,201 |  | 77,272 | 16.3% | 397,929 | 83.7% |
-# MAGIC | Non Woodland Habitat |  | 1,283,322 |  | 596,566 | 46.5% | 686,756 | 53.5% |
-# MAGIC | All | 9,780,226 | 1,758,523 | 1,068,128 | 673,838 | 38.3% | 1,084,685 | 61.7% |
+# MAGIC | Woodland Habitat | | 475,201 | | 78,371 | 16.5% | 396,830 | 83.5% |
+# MAGIC | Non Woodland Habitat | | 1,283,322 | | 614,482 | 47.9% | 668,840 | 52.1% |
+# MAGIC | All | 9,780,226 | 1,758,523 | 1,087,113 | 692,853 | 39.4% | 1,065,670 | 60.6% |
+# MAGIC
 
 # COMMAND ----------
 
