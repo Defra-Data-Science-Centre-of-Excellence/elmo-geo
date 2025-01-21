@@ -2,20 +2,18 @@
 # MAGIC %md
 # MAGIC # Priority Habitats on Protected Area
 # MAGIC
-# MAGIC |  | Parcel Area (ha)  | Parcel Area that is PHI (ha)  | Parcel Area that is PA (ha)  | Parcel Area that is both (ha)  | PHI on PA (%) | PA on PHI (%) |
-# MAGIC |---|---|---|---|---|---|---|
-# MAGIC | Not PHI | 4,773,744  | 0 | 8,748  | 0 |  |  |
-# MAGIC | PHI | 6,116,808  | 1,758,523  | 1,059,380  | 673,838  | 38.3% | 63.6% |
-# MAGIC | > PHI contains Deciduous Woodland | 3,591,679  | 475,201  | 362,556  | 77,272  | 16.3% | 21.3% |
-# MAGIC | > PHI does not contains Deciduous Woodland | 2,525,129  | 1,283,322  | 696,824  | 596,566  | 46.5% | 85.6% |
-# MAGIC | Total | 10,890,552  | 1,758,523  | 1,068,128  | 673,838  | 38.3% | 63.1% |
+# MAGIC |  | Parcels Area (ha) | Priority Habitat (ha) | Protected Area (ha) | Priority Habitat and Protected Area (ha) | Priority Habitat and Protected Area (%) | Priority Habitat and not Protected Area (ha) | Priority Habitat and not Protected Area (%) |
+# MAGIC |---|---|---|---|---|---|---|---|
+# MAGIC | Woodland Habitat |  | 475,201 |  | 77,272 | 16.3% | 397,929 | 83.7% |
+# MAGIC | Non Woodland Habitat |  | 1,283,322 |  | 596,566 | 46.5% | 686,756 | 53.5% |
+# MAGIC | All | 9,780,226 | 1,758,523 | 1,068,128 | 673,838 | 38.3% | 1,084,685 | 61.7% |
 
 # COMMAND ----------
 
 from pyspark.sql import functions as F
 
 from elmo_geo import register
-from elmo_geo.datasets import defra_priority_habitat_parcels, protected_areas_parcels, reference_parcels
+from elmo_geo.datasets import defra_priority_habitat_parcels, protected_areas_parcels, reference_parcels, wfm_parcels
 
 register()
 
@@ -23,6 +21,11 @@ register()
 sdf = (
     reference_parcels.sdf()
     .select("id_parcel", "area_ha")
+    # .join(
+    #     wfm_parcels.select("id_parcel"),
+    #     on="id_parcel",
+    #     how="right",
+    # )
     .join(
         (
             defra_priority_habitat_parcels.sdf()
