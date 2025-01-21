@@ -15,7 +15,7 @@
 from pyspark.sql import functions as F
 
 from elmo_geo import register
-from elmo_geo.datasets import defra_priority_habitat_parcels, protected_areas_tidy_parcels, reference_parcels
+from elmo_geo.datasets import defra_priority_habitat_parcels, protected_areas_parcels, reference_parcels
 
 register()
 
@@ -41,8 +41,11 @@ sdf = (
     )
     .join(
         (
-            protected_areas_tidy_parcels.sdf()
-            .withColumnRenamed("proportion", "p_pa")
+            protected_areas_parcels.sdf()
+            .selectExpr(
+                "id_parcel",
+                "proportion_any AS p_pa",
+            )
         ),
         on="id_parcel",
         how="outer",
