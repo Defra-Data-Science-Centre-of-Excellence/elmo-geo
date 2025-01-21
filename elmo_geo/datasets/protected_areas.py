@@ -213,10 +213,15 @@ class ProtectedAreasTidy(DataFrameModel):
 
 def _transform(*datasets: Dataset) -> SparkDataFrame:
     """Similar to `combine_long` and addition select only relevant columns."""
-    sources = ["spa", "mcz", "nnr", "ramsar", "sac", "sssi"]
     return reduce(
         SparkDataFrame.unionByName,
-        [dataset.sdf().selectExpr(f"'{source}' AS source", "name", "code", "geometry") for source, dataset in zip(sources, datasets)],
+        [
+            dataset.sdf().selectExpr(f"'{source}' AS source", "name", "code", "geometry")
+            for source, dataset in zip(
+                ["spa", "mcz", "nnr", "ramsar", "sac", "sssi"],
+                datasets,
+            )
+        ],
     )
 
 
@@ -278,16 +283,15 @@ def _transform(reference_parcels: Dataset, protected_areas_tidy: Dataset) -> Spa
         .groupby("id_parcel")
         .pivot("source")
         .sum("proportion")
-        .withColumnsRenamed(
-            {
-                "any": "proportion_any",
-                "spa": "proportion_spa",
-                "mcz": "proportion_mcz",
-                "nnr": "proportion_nnr",
-                "ramsar": "proportion_ramsar",
-                "sac": "proportion_sac",
-                "sssi": "proportion_sssi",
-            }
+        .selectExpr(
+            "id_parcel",
+            "COALESCE(any, 0) AS proportion_any",
+            "COALESCE(spa, 0) AS proportion_spa",
+            "COALESCE(mcz, 0) AS proportion_mcz",
+            "COALESCE(nnr, 0) AS proportion_nnr",
+            "COALESCE(ramsar, 0) AS proportion_ramsar",
+            "COALESCE(sac, 0) AS proportion_sac",
+            "COALESCE(sssi, 0) AS proportion_sssi",
         )
     )
 
@@ -298,7 +302,7 @@ protected_areas_parcels = DerivedDataset(
     medallion="gold",
     source="elmo_geo",
     restricted=False,
-    func=sjoin_parcel_proportion,
+    func=_transform,
     dependencies=[reference_parcels, protected_areas_tidy],
     model=ProtectedAreasParcels,
 )
