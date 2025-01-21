@@ -19,7 +19,6 @@ from pyspark.sql import functions as F
 
 from elmo_geo.etl import SRID, DerivedDataset, SourceDataset
 from elmo_geo.etl.transformations import combine_long, sjoin_parcel_proportion
-from elmo_geo.st.udf import st_clean
 from elmo_geo.utils.types import SparkDataFrame
 
 from .rpa_reference_parcels import reference_parcels
