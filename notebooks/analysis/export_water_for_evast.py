@@ -50,7 +50,7 @@ plot_gdf(gdf)
 
 # COMMAND ----------
 
-# MAGIC %ls /dbfs/mnt/lab/restricted/ELM-Project/silver/overlap*
+# MAGIC %ls /dbfs/mnt/lab-res-a1001004/restricted/elm_project/silver/overlap*
 
 # COMMAND ----------
 

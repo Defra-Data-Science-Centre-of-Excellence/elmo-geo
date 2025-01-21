@@ -29,10 +29,10 @@ f_scheduled_monuments = "/dbfs/mnt/base/unrestricted/source_historic_england_ope
 f_world_heritage_sites = "/dbfs/mnt/base/unrestricted/source_historic_england_open_data_site/dataset_world_heritage_sites/format_GEOPARQUET_world_heritage_sites/SNAPSHOT_2024_04_29_world_heritage_sites/"  # noqa:E501
 f_listed_buildings = "/dbfs/mnt/base/unrestricted/source_historic_england_open_data_site/dataset_listed_buildings_polys/format_GEOPARQUET_listed_buildings_polys/SNAPSHOT_2024_05_03_listed_buildings_polys/"  # noqa:E501
 
-f_shine = "/dbfs/mnt/lab/restricted/ELM-Project/bronze/he-shine-2022_12_30.parquet"
+f_shine = "/dbfs/mnt/lab-res-a1001004/restricted/elm_project/bronze/he-shine-2022_12_30.parquet"
 
 date = "2024_05_03"
-f_output_historic_combined = f"/dbfs/mnt/lab/restricted/ELM-Project/stg/he-combined_sites-{date}.parquet"
+f_output_historic_combined = f"/dbfs/mnt/lab-res-a1001004/restricted/elm_project/stg/he-combined_sites-{date}.parquet"
 
 filepaths_he = {
     # "listed_building": f_listed_buildings,  # TODO: #126

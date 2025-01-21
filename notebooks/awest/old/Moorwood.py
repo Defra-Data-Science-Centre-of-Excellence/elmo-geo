@@ -55,7 +55,7 @@ for name, f_in in datasets.items():
 # MAGIC %sh
 # MAGIC IN='/dbfs/mnt/base/unrestricted/source_rpa_spatial_data_mart/dataset_rpa_reference_parcels/format_GPKG_rpa_reference_parcels/SNAPSHOT_2021_03_16_rpa_reference_parcels/reference_parcels.gpkg'  # noqa:E501
 # MAGIC TMP='/databricks/driver/tmp.gpkg'
-# MAGIC OUT='/dbfs/mnt/lab/restricted/ELM-Project/stg/rpa-parcels-2021_03_16-reference_parcels.parquet'
+# MAGIC OUT='/dbfs/mnt/lab-res-a1001004/restricted/elm_project/stg/rpa-parcels-2021_03_16-reference_parcels.parquet'
 # MAGIC LAYER='reference_parcels'
 # MAGIC
 # MAGIC export PATH=$PATH:/databricks/miniconda/bin
