@@ -271,11 +271,9 @@ def _transform(reference_parcels: Dataset, protected_areas_tidy: Dataset) -> Spa
     sdf_parcels = reference_parcels.sdf()
     sdf_pa = protected_areas_tidy.sdf()
     return (
-        SparkDataFrame.join(
-            sjoin_parcel_proportion(sdf_parcels, sdf_pa, columns=["source"]),
-            sjoin_parcel_proportion(sdf_parcels, sdf_pa).withColumn("source", F.lit("any")),
-            on="id_parcel",
-            how="outer",
+        SparkDataFrame.unionByName(
+            sjoin_parcel_proportion(sdf_parcels, sdf_pa, columns=["source"]),  # spa/mcz/nnr/ramsar/sac/sssi
+            sjoin_parcel_proportion(sdf_parcels, sdf_pa).withColumn("source", F.lit("any")),  # any
         )
         .groupby("id_parcel")
         .pivot("source")

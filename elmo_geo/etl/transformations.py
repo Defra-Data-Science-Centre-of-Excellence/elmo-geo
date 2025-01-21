@@ -148,7 +148,7 @@ def sjoin_parcel_proportion(
     expr = f"ST_Intersection(geometry_left, {expr})"
     expr = f"ST_Area({expr}) / ST_Area(geometry_left)"
     expr = f"LEAST(GREATEST({expr}, 0), 1)"
-    return sjoin_parcels(parcel, features, **kwargs).withColumn("proportion", F.expr(expr)).drop("geometry_left", "geometry_right").toPandas()
+    return sjoin_parcels(parcel, features, **kwargs).withColumn("proportion", F.expr(expr)).drop("geometry_left", "geometry_right")
 
 
 def sjoin_boundary_proportion(
