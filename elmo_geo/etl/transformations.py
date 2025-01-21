@@ -11,6 +11,7 @@ from xarray.core.dataarray import DataArray
 
 from elmo_geo.io.file import auto_repartition
 from elmo_geo.st.join import sjoin
+from elmo_geo.st.udf import st_clean
 from elmo_geo.utils.dbr import spark
 from elmo_geo.utils.types import PandasDataFrame, SparkDataFrame
 
@@ -146,7 +147,14 @@ def sjoin_parcel_proportion(
     expr = f"ST_Intersection(geometry_left, {expr})"
     expr = f"ST_Area({expr}) / ST_Area(geometry_left)"
     expr = f"LEAST(GREATEST({expr}, 0), 1)"
-    return sjoin_parcels(parcel, features, **kwargs).withColumn("proportion", F.expr(expr)).drop("geometry_left", "geometry_right").toPandas()
+    return (
+        sjoin_parcels(parcel, features, **kwargs)
+        .transform(st_clean, "geometry_left")  # BUG: check rebuild reference_parcels
+        .transform(st_clean, "geometry_right")  # BUG: check without or fn_pre
+        .withColumn("proportion", F.expr(expr))
+        .drop("geometry_left", "geometry_right")
+        .toPandas()
+    )
 
 
 def sjoin_boundary_proportion(
