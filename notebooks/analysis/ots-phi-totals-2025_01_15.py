@@ -4,6 +4,12 @@
 # MAGIC # Checking PHI Totals
 # MAGIC
 # MAGIC Checking the total area of PHI geometries and the total area on parcels.
+# MAGIC
+# MAGIC |Metric| Value (ha) |
+# MAGIC |--|--|
+# MAGIC |Raw unique PHI geometries area| 2,294,282 |
+# MAGIC |PHI area on parcels | 1,758,555 |
+# MAGIC | Overlap between raw PHI geometries | 932 |
 
 # COMMAND ----------
 
@@ -55,7 +61,7 @@ defra_priority_habitat_england_raw.sdf().display()
     .transform(auto_repartition, count_ratio=1e-5)
     .withColumn("geometry_left", F.expr("ST_CollectionExtract(geometry_left, 3)"))
     .withColumn("geometry_right", F.expr("ST_CollectionExtract(geometry_right, 3)"))
-    .withColumn("ha_intersection", F.expr("ST_Area(ST_Intersection(geometry_left, geometry_right)) / 10000"))
+    .withColumn("ha_intersection", F.expr("ST_Area(ST_Intersection(geometry_left, geometry_right)) / 1e4"))
     .agg(F.sum("ha_intersection"))
 ).display()
 
@@ -68,6 +74,6 @@ defra_priority_habitat_england_raw.sdf().display()
     .transform(auto_repartition, count_ratio=1e-5)
     .withColumn("geometry_left", F.expr("ST_CollectionExtract(geometry_left, 3)"))
     .withColumn("geometry_right", F.expr("ST_CollectionExtract(geometry_right, 3)"))
-    .withColumn("ha_intersection", F.expr("ST_Area(ST_Intersection(geometry_left, geometry_right)) / 10000"))
+    .withColumn("ha_intersection", F.expr("ST_Area(ST_Intersection(geometry_left, geometry_right)) / 1e4"))
     .agg(F.sum("ha_intersection"))
 ).display()
