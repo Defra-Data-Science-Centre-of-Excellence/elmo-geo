@@ -64,13 +64,13 @@ def load_sdf(name):
 # COMMAND ----------
 
 # Protected Landscapes (PL)
-gdf_np = gpd.read_parquet("/dbfs/mnt/lab/restricted/ELM-Project/stg/ne-national_parks-2023_11_17.parquet")
+gdf_np = gpd.read_parquet("/dbfs/mnt/lab-res-a1001004/restricted/elm_project/stg/ne-national_parks-2023_11_17.parquet")
 gdf_np["PL Type"] = "National Park"
 gdf_np["PL Name"] = gdf_np["NAME"]
 gdf_np = gdf_np[["PL Type", "PL Name", "geometry"]]
 gdf_np.geometry = gdf_np.make_valid()
 
-gdf_nl = gpd.read_parquet("/dbfs/mnt/lab/restricted/ELM-Project/stg/ne-aonb-2020_08_25.parquet").to_crs(epsg=27700)
+gdf_nl = gpd.read_parquet("/dbfs/mnt/lab-res-a1001004/restricted/elm_project/stg/ne-aonb-2020_08_25.parquet").to_crs(epsg=27700)
 gdf_nl["PL Type"] = "National Landscape"
 gdf_nl["PL Name"] = gdf_nl["NAME"]
 gdf_nl = gdf_nl[["PL Type", "PL Name", "geometry"]]
@@ -94,13 +94,13 @@ gdf_pl = pd.concat(
 ).reset_index()
 gdf_pl.geometry = gdf_pl.simplify(0.001)
 
-gdf_pl.to_parquet("/dbfs/mnt/lab/restricted/ELM-Project/ods/elmo_geo-protected_landscapes-2024_03_14.parquet")
+gdf_pl.to_parquet("/dbfs/mnt/lab-res-a1001004/restricted/elm_project/ods/elmo_geo-protected_landscapes-2024_03_14.parquet")
 gdf_pl
 
 # COMMAND ----------
 
 # Hedges on PL
-f = "/dbfs/mnt/lab/restricted/ELM-Project/out/awest-hedges_on_pl-2023_12_15.feather"
+f = "/dbfs/mnt/lab-res-a1001004/restricted/elm_project/out/awest-hedges_on_pl-2023_12_15.feather"
 sdf_pl = load_sdf("elmo_geo-protected_landscapes-2023_12_15")
 sdf_hedge = load_sdf("rpa-hedge-2023_12_13")
 
@@ -143,7 +143,7 @@ display(sdf)
 # COMMAND ----------
 
 # Parcels on PL
-f = "/dbfs/mnt/lab/restricted/ELM-Project/out/awest-parcels_on_pl-2023_12_15.feather"
+f = "/dbfs/mnt/lab-res-a1001004/restricted/elm_project/out/awest-parcels_on_pl-2023_12_15.feather"
 sdf_pl = load_sdf("elmo_geo-protected_landscapes-2023_12_15")
 sdf_parcel = load_sdf("rpa-parcel-2023_12_13")
 
@@ -193,8 +193,8 @@ display(sdf)
 
 # COMMAND ----------
 
-gdf_pl = gpd.read_parquet("/dbfs/mnt/lab/restricted/ELM-Project/ods/elmo_geo-protected_landscapes-2024_03_14.parquet")
-gdf_hedge = gpd.read_parquet("/dbfs/mnt/lab/restricted/ELM-Project/ods/rpa-hedge-2023_12_13.parquet/sindex=TG42").set_crs("EPSG:27700")
+gdf_pl = gpd.read_parquet("/dbfs/mnt/lab-res-a1001004/restricted/elm_project/ods/elmo_geo-protected_landscapes-2024_03_14.parquet")
+gdf_hedge = gpd.read_parquet("/dbfs/mnt/lab-res-a1001004/restricted/elm_project/ods/rpa-hedge-2023_12_13.parquet/sindex=TG42").set_crs("EPSG:27700")
 
 gdf_pl
 

@@ -42,7 +42,7 @@ elmo_geo.register()
 
 # df_ahl3 = pd.read_csv('/dbfs/FileStore/AHL3_analysis.csv')  # Old
 df_ahl3 = pd.read_csv("/dbfs/FileStore/ecoffey_RITM0799970_2023_11_24.csv")
-df_wfm = pd.read_feather("/dbfs/mnt/lab/restricted/ELM-Project/stg/wfm-field-2023_06_09.feather")
+df_wfm = pd.read_feather("/dbfs/mnt/lab-res-a1001004/restricted/elm_project/stg/wfm-field-2023_06_09.feather")
 sdf_parcels = load_sdf("rpa-parcels-adas")
 
 # COMMAND ----------

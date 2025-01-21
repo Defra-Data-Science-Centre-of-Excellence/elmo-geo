@@ -75,12 +75,12 @@ ha_upland = [
 
 
 sdf_wfm_farm = pd.read_feather(
-    "/dbfs/mnt/lab/restricted/ELM-Project/stg/wfm-farm-2024_01_26.feather",
+    "/dbfs/mnt/lab-res-a1001004/restricted/elm_project/stg/wfm-farm-2024_01_26.feather",
     columns=["id_business", "farm_type"],
 ).pipe(spark.createDataFrame)
 
 sdf_wfm_field = pd.read_feather(
-    "/dbfs/mnt/lab/restricted/ELM-Project/stg/wfm-field-2024_01_26.feather",
+    "/dbfs/mnt/lab-res-a1001004/restricted/elm_project/stg/wfm-field-2024_01_26.feather",
     columns=set(["id_business", "id_parcel", *ha_arable, *ha_grassland, *ha_lowland, *ha_upland]),
 ).pipe(spark.createDataFrame)
 

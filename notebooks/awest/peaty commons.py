@@ -4,14 +4,14 @@ import matplotlib.pyplot as plt
 
 # COMMAND ----------
 
-f_commons = "/dbfs/mnt/lab/restricted/ELM-Project/data/ne-commons-2020_12_21.geojson"
+f_commons = "/dbfs/mnt/lab-res-a1001004/restricted/elm_project/data/ne-commons-2020_12_21.geojson"
 df_commons = gpd.read_file(f_commons).to_crs(27700)
 
 df_commons
 
 # COMMAND ----------
 
-f_peat = "/dbfs/mnt/lab/restricted/ELM-Project/stg/defra-peaty_soils-2021_03_24.parquet"
+f_peat = "/dbfs/mnt/lab-res-a1001004/restricted/elm_project/stg/defra-peaty_soils-2021_03_24.parquet"
 df_peat = gpd.read_parquet(f_peat).to_crs(27700)
 
 df_peat

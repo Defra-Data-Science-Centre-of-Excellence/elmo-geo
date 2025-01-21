@@ -38,7 +38,7 @@ rpa_land_cover_codes_raw = SourceDataset(
     model=RPALandCoverCodesRaw,
     restricted=True,
     is_geo=False,
-    source_path="/dbfs/mnt/lab/restricted/ELM-Project/raw/rpa/LOOKUP_LANDCOVERS.csv",
+    source_path="/dbfs/mnt/lab-res-a1001004/restricted/elm_project/raw/rpa/LOOKUP_LANDCOVERS.csv",
 )
 
 

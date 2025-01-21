@@ -41,7 +41,7 @@ he_shine_raw = SourceDataset(
     source="he",
     model=HESHINERaw,
     restricted=True,
-    source_path="/dbfs/mnt/lab/restricted/ELM-Project/raw/he/he-shine-2022_12_30.parquet",
+    source_path="/dbfs/mnt/lab-res-a1001004/restricted/elm_project/raw/he/he-shine-2022_12_30.parquet",
 )
 
 
