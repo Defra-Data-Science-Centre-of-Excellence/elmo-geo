@@ -427,5 +427,5 @@ protected_areas_tidy_parcels = DerivedDataset(
     restricted=False,
     func=sjoin_parcel_proportion,
     dependencies=[reference_parcels, protected_areas_tidy],
-    model=ProtectedAreasParcels,
+    model=ProtectedAreasTidyParcels,
 )

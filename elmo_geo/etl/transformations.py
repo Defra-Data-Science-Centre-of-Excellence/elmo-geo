@@ -133,6 +133,7 @@ def sjoin_parcels(
             "ST_GeomFromWKB(geometry_left) AS geometry_left",
             "ST_GeomFromWKB(geometry_right) AS geometry_right",
         )
+        .transform(st_clean, "geometry_right")  # TODO: Add inside _st_union_right
         .transform(fn_post)
     )
 
@@ -149,8 +150,6 @@ def sjoin_parcel_proportion(
     expr = f"LEAST(GREATEST({expr}, 0), 1)"
     return (
         sjoin_parcels(parcel, features, **kwargs)
-        .transform(st_clean, "geometry_left")  # BUG: check rebuild reference_parcels
-        .transform(st_clean, "geometry_right")  # BUG: check without or fn_pre
         .withColumn("proportion", F.expr(expr))
         .drop("geometry_left", "geometry_right")
         .toPandas()
