@@ -19,6 +19,7 @@ from pyspark.sql import functions as F
 
 from elmo_geo.etl import SRID, DerivedDataset, SourceDataset
 from elmo_geo.etl.transformations import combine_long, sjoin_parcel_proportion
+from elmo_geo.st.udf import st_clean
 from elmo_geo.utils.types import SparkDataFrame
 
 from .rpa_reference_parcels import reference_parcels
@@ -200,7 +201,9 @@ def _calculate_historic_proportions(reference_parcels: DerivedDataset, he_combin
 
     for buf in [0, 6]:
         sdf_combined_sites = he_combined_sites.sdf()
-        if buf > 0:
+        if buf == 0:
+            sdf_combined_sites = sdf_combined_sites.withColumn("geometry", F.expr(f"ST_MakeValid(ST_Buffer(geometry, {buf+0.0000001}))"))
+        else:
             sdf_combined_sites = sdf_combined_sites.withColumn("geometry", F.expr(f"ST_MakeValid(ST_Buffer(geometry, {buf}))"))
 
         _sdf = (
