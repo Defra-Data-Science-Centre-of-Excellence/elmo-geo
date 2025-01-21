@@ -205,7 +205,7 @@ from .protected_areas import (
     ne_sac_parcels,
     ne_sac_raw,
     ne_sssi_units_parcels,
-    ne_sssi_units_raw,  # snapshot
+    ne_sssi_units_raw,
     protected_areas_parcels,
     protected_areas_tidy,
     protected_areas_tidy_parcels,
