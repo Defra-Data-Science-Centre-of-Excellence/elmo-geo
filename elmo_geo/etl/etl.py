@@ -302,8 +302,9 @@ class SourceDataset(TabularDataset):
     def rename(self, df: DataFrame) -> DataFrame:
         if self.model is None:
             return df
-        mapping = {field.alias: field.original_name for _, field in self.model.__fields__.values() if field.alias is not None}
+        # Replace "name" with "_name", so we can replace "useful_name" with "name" and not have duplicate columns.
         mapping_old = {field.original_name: "_" + field.original_name for _, field in self.model.__fields__.values() if field.alias is not None}
+        mapping = {field.alias: field.original_name for _, field in self.model.__fields__.values() if field.alias is not None}
         if isinstance(df, SparkDataFrame):
             return df.withColumnsRenamed(mapping_old).withColumnsRenamed(mapping)
         else:

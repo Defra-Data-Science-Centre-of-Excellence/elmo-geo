@@ -282,7 +282,7 @@ def _transform(reference_parcels: Dataset, protected_areas_tidy: Dataset) -> Spa
         )
         .groupby("id_parcel")
         .pivot("source")
-        .sum("proportion")
+        .first("proportion")
         .selectExpr(
             "id_parcel",
             "COALESCE(any, 0) AS proportion_any",
