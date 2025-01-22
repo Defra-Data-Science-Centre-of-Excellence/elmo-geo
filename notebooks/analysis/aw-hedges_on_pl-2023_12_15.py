@@ -1,5 +1,75 @@
 # Databricks notebook source
 # MAGIC %md
+# MAGIC # Hedgerows on Protected Landscapes
+
+# COMMAND ----------
+
+from pandera import DataFrameModel, Field
+
+from elmo_geo import register
+from elmo_geo.datasets import rpa_hedges_raw, protected_landscapes_tidy
+from elmo_geo.st import sjoin
+from elmo_geo.st.udf import st_clean
+from elmo_geo.etl.transformations import _st_union_right
+from elmo_geo.etl import Dataset, DerivedDataset
+from elmo_geo.utils.types import SparkDataFrame
+
+register()
+
+# COMMAND ----------
+
+class Model(DataFrameModel):
+    source: str = Field()
+    name: str = Field()
+    m: float = Field()
+
+
+def _transform(rpa_hedges_raw: Dataset, protected_landscapes_tidy: Dataset) -> SparkDataFrame:
+    return (
+        sjoin(
+            rpa_hedges_raw.sdf().select("geometry"),
+            protected_landscapes_tidy.sdf().select("source", "name", "geometry").limit(10),
+            lsuffix="_right",
+            rsuffix="_left",
+        )
+        .transform(lambda sdf: sdf.groupby("source", "name").applyInPandas(_st_union_right, sdf.schema))
+        .transform(st_clean, "geometry_right")
+        .selectExpr(
+            "source",
+            "name",
+            "ST_Length(ST_Intersection(geometry_left, geometry_right)) AS m",
+        )
+    )
+
+
+dataset = DerivedDataset(
+    is_geo=False,
+    name="hedges_on_pl",
+    medallion="gold",
+    source="elmo_geo",
+    restricted=False,
+    func=_transform,
+    dependencies=[rpa_hedges_raw, protected_landscapes_tidy],
+    model=Model,
+)
+
+
+dataset.sdf()
+#_transform(rpa_hedges_raw, protected_landscapes_tidy).display()
+
+# COMMAND ----------
+
+# MAGIC %sh du -sh '/dbfs/mnt/lab-res-a1001004/restricted/elm_project/bronze/cec/cec_soilscapes_raw-2023_09_28-0ad04b4b.parquet'
+# MAGIC
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC # Old
+
+# COMMAND ----------
+
+# MAGIC %md
 # MAGIC # Hedges and Parcels on Protected Landscapes
 # MAGIC **Protected Landscapes,** (PL) are both National Parks (NP) and National Landscapes (NL) (previously known as Areas of Outstanding National Beauty,
 # MAGIC AONB). An additional unified PL geometry is appended (in v2023_12_15).

@@ -31,6 +31,5 @@ rpa_hedges_raw = SourceDataset(
     source="rpa",
     model=RPAHedgesRaw,
     restricted=False,
-    # BUG: using lf_control_mv.parquet, because also saved is in the folder is lf_control_mv.csv - metadata, and lf_control_mv.gpkg - a duplicate.
-    source_path="/dbfs/mnt/base/unrestricted/source_rpa_spatial_data_mart/dataset_efa_control_layer/format_GEOPARQUET_efa_control_layer/LATEST_efa_control_layer/lf_control_mv.parquet",
+    source_path="/dbfs/mnt/base/unrestricted/source_rpa_spatial_data_mart/dataset_efa_control_layer/format_GEOPARQUET_efa_control_layer/LATEST_efa_control_layer/",
 )
