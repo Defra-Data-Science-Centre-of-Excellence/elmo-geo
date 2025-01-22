@@ -141,7 +141,7 @@ from .fr_esc_m3_woodland_suitability import (
     esc_woodland_suitability_rcp45_2021_2028,
 )
 from .hedges import (
-    rpa_hedges_raw,  # TODO: snapshot
+    rpa_hedges_raw,
 )
 from .historic import (
     he_combined_sites,

@@ -22,7 +22,7 @@ class RPAHedgesRaw(DataFrameModel):
     parcel_ref: str = Field(alias="REF_PARCEL_PARCEL_ID")
     adj_sheet_id: str = Field(nullable=True, alias="ADJACENT_PARCEL_SHEET_ID")
     adj_parcel_ref: str = Field(nullable=True, alias="ADJACENT_PARCEL_PARCEL_ID")
-    geometry: Geometry(crs=SRID) = Field(alias="GEOM")
+    geometry: Geometry(crs=SRID) = Field()
 
 
 rpa_hedges_raw = SourceDataset(
@@ -31,6 +31,6 @@ rpa_hedges_raw = SourceDataset(
     source="rpa",
     model=RPAHedgesRaw,
     restricted=False,
-    # BUG: using snapshot instead of latest, because DASH have saved parquet inside a *.zip!*.parquet.
-    source_path="/dbfs/mnt/base/unrestricted/source_rpa_spatial_data_mart/dataset_efa_control_layer/format_GEOPARQUET_efa_control_layer/SNAPSHOT_2024_08_07_efa_control_layer/",
+    # BUG: using lf_control_mv.parquet, because also saved is in the folder is lf_control_mv.csv - metadata, and lf_control_mv.gpkg - a duplicate.
+    source_path="/dbfs/mnt/base/unrestricted/source_rpa_spatial_data_mart/dataset_efa_control_layer/format_GEOPARQUET_efa_control_layer/LATEST_efa_control_layer/lf_control_mv.parquet",
 )
