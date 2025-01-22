@@ -272,6 +272,8 @@ class ProtectedAreasParcels(DataFrameModel):
 def _transform(reference_parcels: Dataset, protected_areas_tidy: Dataset) -> SparkDataFrame:
     """This is 2 `sjoin_parcel_proportion`s with a pivot,
     Modified to groupby source and groupby none, so "any" Protected Area is additionally available.
+
+    Due to rounding the geometries "proportion_any" can be smaller, hence the use of "GREATEST".
     """
     sdf_parcels = reference_parcels.sdf()
     sdf_pa = protected_areas_tidy.sdf()
@@ -285,7 +287,7 @@ def _transform(reference_parcels: Dataset, protected_areas_tidy: Dataset) -> Spa
         .first("proportion")
         .selectExpr(
             "id_parcel",
-            "COALESCE(any, 0) AS proportion_any",
+            "GREATEST(any, spa, mcz, nnr, ramsar, sac, sssi, 0) AS proportion_any",
             "COALESCE(spa, 0) AS proportion_spa",
             "COALESCE(mcz, 0) AS proportion_mcz",
             "COALESCE(nnr, 0) AS proportion_nnr",
