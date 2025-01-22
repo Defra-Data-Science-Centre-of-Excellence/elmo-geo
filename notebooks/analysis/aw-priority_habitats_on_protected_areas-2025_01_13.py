@@ -1,11 +1,11 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC # Priority Habitats on Protected Area
+# MAGIC # Priority Habitats (PHI) on Protected Area (PA)
 # MAGIC
-# MAGIC |  | Parcels Area (ha) | Priority Habitat (ha) | Protected Area (ha) | Priority Habitat and Protected Area (ha) | Priority Habitat and Protected Area (%) | Priority Habitat and not Protected Area (ha) | Priority Habitat and not Protected Area (%) |
+# MAGIC | | Parcels Area (ha) | PHI (ha) | PA (ha) | PHI and PA (ha) | PHI and PA (%) | PHI and not PA (ha) | PHI and not PA (%) |
 # MAGIC |---|---|---|---|---|---|---|---|
-# MAGIC | Woodland Habitat | | 475,201 | | 78,371 | 16.5% | 396,830 | 83.5% |
-# MAGIC | Non Woodland Habitat | | 1,283,322 | | 614,482 | 47.9% | 668,840 | 52.1% |
+# MAGIC | Woodland PHI | | 475,201 | | 78,371 | 16.5% | 396,830 | 83.5% |
+# MAGIC | Non Woodland PHI | | 1,283,322 | | 614,482 | 47.9% | 668,840 | 52.1% |
 # MAGIC | All | 9,780,226 | 1,758,523 | 1,087,113 | 692,853 | 39.4% | 1,065,670 | 60.6% |
 # MAGIC
 
@@ -14,7 +14,7 @@
 from pyspark.sql import functions as F
 
 from elmo_geo import register
-from elmo_geo.datasets import defra_priority_habitat_parcels, protected_areas_parcels, reference_parcels, wfm_parcels
+from elmo_geo.datasets import defra_priority_habitat_parcels, protected_areas_parcels, reference_parcels
 
 register()
 
