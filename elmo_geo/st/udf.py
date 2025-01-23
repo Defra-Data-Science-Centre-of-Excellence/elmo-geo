@@ -42,7 +42,12 @@ def st_clean(sdf: SparkDataFrame, column: str = "geometry", tolerance=1) -> Spar
 
     Default precision is 1m.
     """
-    return sdf.transform(st_udf, partial(clean_geometries, tolerance=tolerance), geometry_not_geoseries=False)
+    return sdf.transform(
+        st_udf,
+        partial(clean_geometries, tolerance=tolerance),
+        geometry_column=column,
+        geometry_not_geoseries=False,
+    )
 
 
 @F.udf(T.ArrayType(T.BinaryType()))
