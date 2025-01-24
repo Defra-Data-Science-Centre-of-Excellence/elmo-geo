@@ -691,7 +691,7 @@ def _add_50_year_carbon_totals_and_filter(esc_carbon_parcels: DerivedDataset) ->
 
 esc_carbon_parcels_w_50yr_total = DerivedDataset(
     name="esc_carbon_parcels_w_50yr_total",
-    medallion="gold",
+    medallion="silver",
     source="forest_research",
     restricted=False,
     is_geo=False,

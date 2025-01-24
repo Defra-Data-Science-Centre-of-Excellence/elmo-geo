@@ -135,7 +135,7 @@ def _transform(parcels: Dataset, olf: Dataset):
 
 ea_olf_parcels = DerivedDataset(
     name="ea_olf_parcels",
-    medallion="gold",
+    medallion="silver",
     source="ea",
     model=OlfParcel,
     restricted=True,
