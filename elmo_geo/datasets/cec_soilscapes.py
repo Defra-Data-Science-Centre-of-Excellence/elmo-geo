@@ -17,8 +17,12 @@ from elmo_geo.etl import DerivedDataset, SourceDataset
 from elmo_geo.etl.transformations import sjoin_parcel_proportion
 
 from .rpa_reference_parcels import reference_parcels
+from pyspark.sql import functions as F
 
-_join_parcels = partial(sjoin_parcel_proportion, columns=["unit", "natural_dr", "natural_fe"])
+_join_parcels = partial(
+    sjoin_parcel_proportion,
+    columns=["unit", "natural_dr", "natural_fe", "surf_text"],
+    fn_pre=lambda sdf: sdf.withColumn("geometry", F.expr("EXPLODE(ST_Dump(geometry))")))
 
 
 class CECSoilScapesRaw(DataFrameModel):
@@ -82,6 +86,10 @@ class CECSoilScapesParcels(DataFrameModel):
             "Mixed, lime-rich to low",
         ],
     )
+    surf_text: str = Field(
+        isin=['Loamy', 'Sandy', 'Peaty', ' ', 'Clayey'],
+    )
+    
     proportion: float = Field(ge=0, le=1)
 
 
