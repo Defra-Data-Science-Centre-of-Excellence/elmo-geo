@@ -28,7 +28,7 @@ class RPAHedgesRaw(DataFrameModel):
 rpa_hedges_raw = SourceDataset(
     name="rpa_hedges_raw",
     medallion="bronze",
-    source="rpa",
+    source="rural_payments_agency",
     model=RPAHedgesRaw,
     restricted=False,
     # BUG: using snapshot instead of latest, because DASH have saved parquet inside a *.zip!*.parquet.
