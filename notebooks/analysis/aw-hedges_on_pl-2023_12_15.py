@@ -5,14 +5,21 @@
 # COMMAND ----------
 
 from pandera import DataFrameModel, Field
+from pyspark.sql import functions as F
 
 from elmo_geo import register
-from elmo_geo.datasets import rpa_hedges_raw, protected_landscapes_tidy
+from elmo_geo.datasets import (
+    protected_landscapes_tidy,
+    protected_landscapes_parcels,
+    rpa_hedges_raw,
+    wfm_parcels,
+)
+from elmo_geo.io import download_link
 from elmo_geo.st import sjoin
-from elmo_geo.st.udf import st_clean
 from elmo_geo.etl.transformations import _st_union_right
 from elmo_geo.etl import Dataset, DerivedDataset
 from elmo_geo.utils.types import SparkDataFrame
+from elmo_geo import register
 
 register()
 
@@ -28,16 +35,24 @@ def _transform(rpa_hedges_raw: Dataset, protected_landscapes_tidy: Dataset) -> S
     return (
         sjoin(
             rpa_hedges_raw.sdf().select("geometry"),
-            protected_landscapes_tidy.sdf().select("source", "name", "geometry").limit(10),
+            protected_landscapes_tidy.sdf().select("source", "name", "geometry"),
             lsuffix="_right",
             rsuffix="_left",
         )
-        .transform(lambda sdf: sdf.groupby("source", "name").applyInPandas(_st_union_right, sdf.schema))
-        .transform(st_clean, "geometry_right")
         .selectExpr(
             "source",
             "name",
-            "ST_Length(ST_Intersection(geometry_left, geometry_right)) AS m",
+            "ST_AsBinary(geometry_left) AS geometry_left",
+            "ST_AsBinary(geometry_right) AS geometry_right",
+        )
+        .transform(lambda sdf: sdf.groupby("source", "name").applyInPandas(_st_union_right, sdf.schema))
+        .selectExpr(
+            "source",
+            "name",
+            """ST_Length(ST_Intersection(
+                ST_GeomFromWKB(geometry_left),
+                ST_GeomFromWKB(geometry_right)
+            )) AS m""",
         )
     )
 
@@ -54,13 +69,34 @@ dataset = DerivedDataset(
 )
 
 
-dataset.sdf()
-#_transform(rpa_hedges_raw, protected_landscapes_tidy).display()
+
+dataset.sdf().display()
 
 # COMMAND ----------
 
-# MAGIC %sh du -sh '/dbfs/mnt/lab-res-a1001004/restricted/elm_project/bronze/cec/cec_soilscapes_raw-2023_09_28-0ad04b4b.parquet'
-# MAGIC
+sdf = wfm_parcels.sdf().selectExpr(
+    "id_parcel",
+    "ha_parcel_geo AS ha_parcel",
+).join(
+    protected_landscapes_parcels.sdf().select("id_parcel", "source", "name", "proportion"),
+    on = "id_parcel",
+    how = "outer",
+).join(
+    protected_landscapes_tidy.sdf().selectExpr("source", "name", "ROUND(ST_Area(geometry) / 1e4) AS ha_pl"),
+    on = ["source", "name"],
+    how = "outer",
+).join(
+    dataset.sdf().selectExpr("source", "name", "m AS m_hedge"),
+    on = ["source", "name"],
+    how = "outer",
+)
+
+
+f = "/dbfs/FileStore/downloads/deft-protected_landscapes_analysis-2025_01_27.parquet"
+sdf.write.parquet(f.replace("/dbfs/", "dbfs:/"))
+download_link(f)
+
+sdf.display()
 
 # COMMAND ----------
 
