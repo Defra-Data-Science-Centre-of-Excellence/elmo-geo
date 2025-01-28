@@ -12,17 +12,18 @@ from functools import partial
 import pandas as pd
 from pandera import DataFrameModel, Field
 from pandera.engines.geopandas_engine import Geometry
+from pyspark.sql import functions as F
 
 from elmo_geo.etl import DerivedDataset, SourceDataset
 from elmo_geo.etl.transformations import sjoin_parcel_proportion
 
 from .rpa_reference_parcels import reference_parcels
-from pyspark.sql import functions as F
 
 _join_parcels = partial(
     sjoin_parcel_proportion,
     columns=["unit", "natural_dr", "natural_fe", "surf_text"],
-    fn_pre=lambda sdf: sdf.withColumn("geometry", F.expr("EXPLODE(ST_Dump(geometry))")))
+    fn_pre=lambda sdf: sdf.withColumn("geometry", F.expr("EXPLODE(ST_Dump(geometry))")),
+)
 
 
 class CECSoilScapesRaw(DataFrameModel):
@@ -67,7 +68,15 @@ class CECSoilScapesParcels(DataFrameModel):
     id_parcel: str = Field()
     unit: float = Field(isin=set(range(1, 32)).difference([29]))
     natural_dr: str = Field(
-        isin=["Freely draining", "Naturally wet", " ", "Impeded drainage", "Variable", "Slightly impeded drainage", "Surface wetness"],
+        isin=[
+            "Freely draining",
+            "Naturally wet",
+            " ",
+            "Impeded drainage",
+            "Variable",
+            "Slightly impeded drainage",
+            "Surface wetness",
+        ],
     )
     natural_fe: str = Field(
         isin=[
@@ -87,9 +96,14 @@ class CECSoilScapesParcels(DataFrameModel):
         ],
     )
     surf_text: str = Field(
-        isin=['Loamy', 'Sandy', 'Peaty', ' ', 'Clayey'],
+        isin=[
+            "Loamy",
+            "Sandy",
+            "Peaty",
+            " ",
+            "Clayey",
+        ],
     )
-    
     proportion: float = Field(ge=0, le=1)
 
 
