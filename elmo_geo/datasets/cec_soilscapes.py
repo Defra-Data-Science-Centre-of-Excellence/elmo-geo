@@ -60,6 +60,7 @@ class CECSoilScapesParcels(DataFrameModel):
         unit: Soil type category, expressed as an integer.
         natural_dr: General description of the drainage of the soil.
         natural_fe: General description of the fertility of the soil.
+        surf_text: General description of the surface texture of the soil.
         proportion: Proportion of the parcel intersected by the soil type.
     """
 
