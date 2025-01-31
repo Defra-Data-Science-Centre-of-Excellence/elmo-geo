@@ -199,32 +199,28 @@ def _calculate_historic_proportions(reference_parcels: DerivedDataset, he_combin
     sdf = None
 
     for buf in [0, 6]:
-        sdf_combined_sites = he_combined_sites.sdf()
-        if buf == 0:
-            sdf_combined_sites = sdf_combined_sites.withColumn("geometry", F.expr(f"ST_MakeValid(ST_Buffer(geometry, {buf+0.0000001}))"))
-        else:
-            sdf_combined_sites = sdf_combined_sites.withColumn("geometry", F.expr(f"ST_MakeValid(ST_Buffer(geometry, {buf}))"))
+        sdf_combined_sites = he_combined_sites.sdf().withColumn("geometry", F.expr(f"ST_MakeValid(ST_Buffer(geometry, {buf}))"))
 
         _sdf = (
             sjoin_parcel_proportion(reference_parcels, sdf_combined_sites)
-            .rename(columns={"proportion": f"proportion_hist_arch_{buf}m"})
-            .merge(
-                sjoin_parcel_proportion(reference_parcels, sdf_combined_sites.filter("source == 'scheduled_monuments'")).rename(
-                    columns={"proportion": f"proportion_sched_monuments_{buf}m"}
+            .withColumnRenamed("proportion", f"proportion_hist_arch_{buf}m")
+            .join(
+                sjoin_parcel_proportion(reference_parcels, sdf_combined_sites.filter("source == 'scheduled_monuments'")).withColumnRenamed(
+                    "proportion", f"proportion_sched_monuments_{buf}m"
                 ),
                 on="id_parcel",
                 how="outer",
             )
-            .merge(
-                sjoin_parcel_proportion(reference_parcels, sdf_combined_sites.filter("source != 'scheduled_monuments'")).rename(
-                    columns={"proportion": f"proportion_hist_arch_ex_sched_monuments_{buf}m"}
+            .join(
+                sjoin_parcel_proportion(reference_parcels, sdf_combined_sites.filter("source != 'scheduled_monuments'")).withColumnRenamed(
+                    "proportion", f"proportion_hist_arch_ex_sched_monuments_{buf}m"
                 ),
                 on="id_parcel",
                 how="outer",
             )
             .fillna(0)
         )
-        sdf = sdf.merge(_sdf, on="id_parcel", how="outer") if sdf is not None else _sdf
+        sdf = sdf.join(_sdf, on="id_parcel", how="outer") if sdf is not None else _sdf
     return sdf
 
 
@@ -233,7 +229,7 @@ he_combined_sites_parcels = DerivedDataset(
     medallion="silver",
     source="he",
     restricted=False,
-    is_geo=True,
+    is_geo=False,
     func=_calculate_historic_proportions,
     dependencies=[reference_parcels, he_combined_sites],
     model=HeCombinedSitesParcels,
