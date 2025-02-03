@@ -56,23 +56,18 @@
 
 # COMMAND ----------
 
-from pandera import DataFrameModel, Field
-from pyspark.sql import functions as F, DataFrame as SparkDataFrame
+from pyspark.sql import functions as F
 
 from elmo_geo import register
 from elmo_geo.datasets import (
-    protected_landscapes_tidy,
     protected_landscapes_parcels,
+    protected_landscapes_tidy,
     rpa_hedges_raw,
     wfm_parcels,
 )
-from elmo_geo.io import download_link, load_sdf
-from elmo_geo.st import sjoin
-from elmo_geo.st.udf import st_clean
-from elmo_geo.etl import Dataset, DerivedDataset
 from elmo_geo.etl.transformations import _st_union_right
-from elmo_geo.utils.misc import info_sdf
-
+from elmo_geo.io import download_link
+from elmo_geo.st import sjoin
 
 register()
 
@@ -105,7 +100,6 @@ sdf_hedges_on_pl = (
 )
 
 
-
 sdf_hedges_on_pl.display()
 
 # COMMAND ----------
@@ -114,22 +108,23 @@ sdf = (
     wfm_parcels.sdf()
     .join(
         protected_landscapes_parcels.sdf(),
-        on = "id_parcel",
-        how = "outer",
+        on="id_parcel",
+        how="outer",
     )
     .withColumn("ha_parcels", F.expr("ha_parcel_geo * proportion"))
-    .groupby("source", "name").agg(
+    .groupby("source", "name")
+    .agg(
         F.expr("SUM(ha_parcels) AS ha_parcels"),
     )
     .join(
         protected_landscapes_tidy.sdf(),
-        on = ["source", "name"],
-        how = "outer",
+        on=["source", "name"],
+        how="outer",
     )
     .join(
         sdf_hedges_on_pl,
-        on = ["source", "name"],
-        how = "outer",
+        on=["source", "name"],
+        how="outer",
     )
     .selectExpr(
         "source",

@@ -28,7 +28,7 @@ class RPAHedgesRaw(DataFrameModel):
 rpa_hedges_raw = SourceDataset(
     name="rpa_hedges_raw",
     medallion="bronze",
-    source="rpa",
+    source="rural_payments_agency",
     model=RPAHedgesRaw,
     restricted=False,
     source_path="/dbfs/mnt/base/unrestricted/source_rpa_spatial_data_mart/dataset_efa_control_layer/format_GEOPARQUET_efa_control_layer/LATEST_efa_control_layer/",

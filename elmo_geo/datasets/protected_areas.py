@@ -43,6 +43,7 @@ from pyspark.sql import functions as F
 
 from elmo_geo.etl import SRID, Dataset, DerivedDataset, SourceDataset
 from elmo_geo.etl.transformations import sjoin_parcel_proportion
+from elmo_geo.io.file import auto_repartition
 from elmo_geo.utils.types import SparkDataFrame
 
 from .rpa_reference_parcels import reference_parcels
@@ -272,6 +273,8 @@ class ProtectedAreasParcels(DataFrameModel):
 def _transform(reference_parcels: Dataset, protected_areas_tidy: Dataset) -> SparkDataFrame:
     """This is 2 `sjoin_parcel_proportion`s with a pivot,
     Modified to groupby source and groupby none, so "any" Protected Area is additionally available.
+
+    Due to rounding the geometries "proportion_any" can be smaller, hence the use of "GREATEST".
     """
     sdf_parcels = reference_parcels.sdf()
     sdf_pa = protected_areas_tidy.sdf()
@@ -280,12 +283,13 @@ def _transform(reference_parcels: Dataset, protected_areas_tidy: Dataset) -> Spa
             sjoin_parcel_proportion(sdf_parcels, sdf_pa, columns=["source"]),  # spa/mcz/nnr/ramsar/sac/sssi
             sjoin_parcel_proportion(sdf_parcels, sdf_pa).withColumn("source", F.lit("any")),  # any
         )
+        .transform(auto_repartition, cols=["source"])
         .groupby("id_parcel")
         .pivot("source")
-        .sum("proportion")
+        .agg(F.first("proportion"))
         .selectExpr(
             "id_parcel",
-            "COALESCE(any, 0) AS proportion_any",
+            "GREATEST(any, spa, mcz, nnr, ramsar, sac, sssi, 0) AS proportion_any",
             "COALESCE(spa, 0) AS proportion_spa",
             "COALESCE(mcz, 0) AS proportion_mcz",
             "COALESCE(nnr, 0) AS proportion_nnr",

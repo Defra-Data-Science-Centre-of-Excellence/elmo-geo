@@ -134,7 +134,7 @@ def _filter_woodland_suitability_for_elmo(esc_woodland_suitability: DerivedDatas
 
 esc_woodland_suitability_rcp45_2021_2028 = DerivedDataset(
     name="esc_woodland_suitability_rcp45_2021_2028",
-    medallion="gold",
+    medallion="silver",
     source="forest_research",
     restricted=False,
     is_geo=False,
