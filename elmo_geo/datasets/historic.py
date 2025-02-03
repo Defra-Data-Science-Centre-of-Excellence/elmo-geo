@@ -15,9 +15,13 @@ from functools import partial
 
 from pandera import DataFrameModel, Field
 from pandera.engines.geopandas_engine import Geometry
+from pyspark.sql import functions as F
 
 from elmo_geo.etl import SRID, DerivedDataset, SourceDataset
-from elmo_geo.etl.transformations import combine_long
+from elmo_geo.etl.transformations import combine_long, sjoin_parcel_proportion
+from elmo_geo.utils.types import SparkDataFrame
+
+from .rpa_reference_parcels import reference_parcels
 
 
 # Selected Heritage Inventory for Natural England (SHINE)
@@ -164,3 +168,69 @@ he_combined_sites = DerivedDataset(
 )
 """A combined dataset of historic features.
 """
+
+
+class HeCombinedSitesParcels(DataFrameModel):
+    """Model for the combined historic feature dataset joined with Rural Payment Agency parcel dataset.
+    Attributes:
+        id_parcel: 11 character RPA reference parcel ID (including the sheet ID) e.g. `SE12263419`.
+        proportion_hist_arch_0m: the proportion of the parcel that intersects with the historic sites (buffer 0m).
+        proportion_sched_monuments_0m: the proportion of the parcel that intersects with scheduled monuments (buffer 0m).
+        proportion_hist_arch_ex_sched_monuments_0m: the proportion of the parcel that intersects with historic sites other than scheduled monuments (buffer 0m).
+
+        proportion_hist_arch_6m: the proportion of the parcel that intersects with the historic sites (buffer 6m).
+        proportion_sched_monuments_6m: the proportion of the parcel that intersects with scheduled monuments (buffer 6m).
+        proportion_hist_arch_ex_sched_monuments_6m: the proportion of the parcel that intersects with historic sites other than scheduled monuments (buffer 6m).
+    """
+
+    id_parcel: str = Field()
+
+    proportion_hist_arch_0m: float = Field(ge=0, nullable=True)
+    proportion_sched_monuments_0m: float = Field(ge=0, nullable=True)
+    proportion_hist_arch_ex_sched_monuments_0m: float = Field(ge=0, nullable=True)
+
+    proportion_hist_arch_6m: float = Field(ge=0, nullable=True)
+    proportion_sched_monuments_6m: float = Field(ge=0, nullable=True)
+    proportion_hist_arch_ex_sched_monuments_6m: float = Field(ge=0, nullable=True)
+
+
+def _calculate_historic_proportions(reference_parcels: DerivedDataset, he_combined_sites: DerivedDataset) -> SparkDataFrame:
+    """Calculate the proportion of each parcel intersected by historic or archaeological features."""
+    sdf = None
+
+    for buf in [0, 6]:
+        sdf_combined_sites = he_combined_sites.sdf().withColumn("geometry", F.expr(f"ST_MakeValid(ST_Buffer(geometry, {buf}))"))
+
+        _sdf = (
+            sjoin_parcel_proportion(reference_parcels, sdf_combined_sites)
+            .withColumnRenamed("proportion", f"proportion_hist_arch_{buf}m")
+            .join(
+                sjoin_parcel_proportion(reference_parcels, sdf_combined_sites.filter("source == 'scheduled_monuments'")).withColumnRenamed(
+                    "proportion", f"proportion_sched_monuments_{buf}m"
+                ),
+                on="id_parcel",
+                how="outer",
+            )
+            .join(
+                sjoin_parcel_proportion(reference_parcels, sdf_combined_sites.filter("source != 'scheduled_monuments'")).withColumnRenamed(
+                    "proportion", f"proportion_hist_arch_ex_sched_monuments_{buf}m"
+                ),
+                on="id_parcel",
+                how="outer",
+            )
+            .fillna(0)
+        )
+        sdf = sdf.join(_sdf, on="id_parcel", how="outer") if sdf is not None else _sdf
+    return sdf
+
+
+he_combined_sites_parcels = DerivedDataset(
+    name="he_combined_sites_parcels",
+    medallion="silver",
+    source="he",
+    restricted=False,
+    is_geo=False,
+    func=_calculate_historic_proportions,
+    dependencies=[reference_parcels, he_combined_sites],
+    model=HeCombinedSitesParcels,
+)

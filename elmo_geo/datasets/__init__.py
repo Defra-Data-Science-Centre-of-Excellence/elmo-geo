@@ -145,6 +145,7 @@ from .hedges import (
 )
 from .historic import (
     he_combined_sites,
+    he_combined_sites_parcels,
     he_lb_raw,
     he_pws_raw,
     he_rb_raw,
