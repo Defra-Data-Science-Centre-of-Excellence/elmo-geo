@@ -93,15 +93,7 @@ def fn_pass(sdf: SparkDataFrame) -> SparkDataFrame:
 
 def _st_union_right(pdf: PandasDataFrame) -> PandasDataFrame:
     "Select first row with the union of geometry_right."
-    return pdf.iloc[:1].assign(
-        geometry_right=gpd.GeoSeries(
-            [
-                gpd.GeoSeries.from_wkb(pdf["geometry_right"]).union_all(),
-            ]
-        )
-        .pipe(clean_geometries)
-        .to_wkb()
-    )
+    return pdf.iloc[:1].assign(geometry_right=gpd.GeoSeries([gpd.GeoSeries.from_wkb(pdf["geometry_right"]).union_all()]).pipe(clean_geometries).to_wkb())
 
 
 def sjoin_parcels(
