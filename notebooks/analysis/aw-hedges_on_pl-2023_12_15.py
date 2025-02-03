@@ -1,11 +1,63 @@
 # Databricks notebook source
 # MAGIC %md
 # MAGIC # Hedgerows on Protected Landscapes
+# MAGIC
+# MAGIC [deft-protected_landscapes_analysis-2025_01_27.csv](^dl_link)
+# MAGIC
+# MAGIC | source             | name                                   |   ha_pl | ha_parcels |   m_hedge |
+# MAGIC | :----------------- | :------------------------------------- | ------: | ---------: | --------: |
+# MAGIC | National Park      | Dartmoor                               |  96,401 |     72,839 | 6,725,804 |
+# MAGIC | National Park      | Exmoor                                 |   9,058 |      6,701 |   357,743 |
+# MAGIC | National Park      | Lake District                          |  26,913 |     18,763 | 1,722,072 |
+# MAGIC | National Park      | Yorkshire Dales                        |  19,137 |     13,334 |   736,605 |
+# MAGIC | National Park      | New Forest                             |  55,898 |     49,777 | 2,082,540 |
+# MAGIC | National Park      | North York Moors                       |  44,591 |     29,096 | 1,218,270 |
+# MAGIC | National Park      | Northumberland                         |  17,182 |     12,435 | 1,252,258 |
+# MAGIC | National Park      | Peak District                          |  13,335 |      7,561 |   273,377 |
+# MAGIC | National Park      | South Downs                            |   9,917 |      6,847 |   385,366 |
+# MAGIC | National Park      | The Broads                             |  12,255 |      9,549 |   615,352 |
+# MAGIC | National Landscape | Cornwall                               |  42,246 |     19,086 |   608,517 |
+# MAGIC | National Landscape | Dedham Vale                            |  32,735 |     13,591 |   952,865 |
+# MAGIC | National Landscape | East Devon                             |  95,574 |     80,181 | 4,375,196 |
+# MAGIC | National Landscape | Isle Of Wight                          |  69,312 |     57,985 | 3,461,204 |
+# MAGIC | National Landscape | Lincolnshire Wolds                     | 236,239 |    194,811 | 3,524,635 |
+# MAGIC | National Landscape | Norfolk Coast                          | 218,484 |    204,391 | 1,737,630 |
+# MAGIC | National Landscape | North Devon                            |   7,587 |      3,153 |   184,985 |
+# MAGIC | National Landscape | Northumberland Coast                   |  36,959 |     28,655 | 2,829,568 |
+# MAGIC | National Landscape | Quantock Hills                         |   6,866 |      2,919 |    82,823 |
+# MAGIC | National Landscape | Solway Coast                           |   7,316 |      2,803 |   138,928 |
+# MAGIC | National Landscape | Surrey Hills                           |  83,830 |     50,957 | 2,390,487 |
+# MAGIC | National Landscape | Wye Valley                             | 204,108 |    157,324 | 8,382,849 |
+# MAGIC | National Landscape | Arnside & Silverdale                   |  98,595 |     78,106 | 3,217,552 |
+# MAGIC | National Landscape | Blackdown Hills                        | 112,933 |     88,232 | 5,448,081 |
+# MAGIC | National Landscape | Cannock Chase                          |  80,573 |     70,694 | 1,638,508 |
+# MAGIC | National Landscape | Chichester Harbour                     | 146,173 |     81,907 | 3,774,150 |
+# MAGIC | National Landscape | Chilterns                              |  20,420 |     15,939 |   784,729 |
+# MAGIC | National Landscape | Cotswolds                              |  16,831 |      1,259 |   113,908 |
+# MAGIC | National Landscape | Cranborne Chase & West Wiltshire Downs |  87,900 |     55,888 | 2,181,068 |
+# MAGIC | National Landscape | Dorset                                 |  10,664 |      6,902 |   414,812 |
+# MAGIC | National Landscape | Forest Of Bowland                      |  19,847 |     14,721 | 1,029,495 |
+# MAGIC | National Landscape | High Weald                             |  60,117 |     52,307 | 1,141,919 |
+# MAGIC | National Landscape | Howardian Hills                        | 198,517 |    188,075 | 1,116,203 |
+# MAGIC | National Landscape | Isles Of Scilly                        | 173,105 |    135,761 | 4,373,519 |
+# MAGIC | National Landscape | Kent Downs                             |  80,829 |     66,231 | 4,163,233 |
+# MAGIC | National Landscape | Malvern Hills                          |  33,973 |     24,357 | 2,601,554 |
+# MAGIC | National Landscape | Mendip Hills                           |  44,349 |     25,936 |   803,214 |
+# MAGIC | National Landscape | Nidderdale                             |  19,649 |     12,671 | 1,314,599 |
+# MAGIC | National Landscape | North Pennines                         |  56,652 |     36,939 |   856,760 |
+# MAGIC | National Landscape | North Wessex Downs                     | 144,106 |    107,807 | 3,172,064 |
+# MAGIC | National Landscape | Shropshire Hills                       | 105,094 |     80,450 |   299,412 |
+# MAGIC | National Landscape | South Devon                            | 143,783 |    124,470 | 1,763,591 |
+# MAGIC | National Landscape | Suffolk Coast & Heaths                 | 165,268 |    113,130 | 4,204,435 |
+# MAGIC | National Landscape | Tamar Valley                           |  30,188 |     21,074 |   240,233 |
+# MAGIC
+# MAGIC
+# MAGIC [dl_link]: https://adb-7422054397937474.14.azuredatabricks.net/files/downloads/deft-protected_landscapes_analysis-2025_01_27.csv
 
 # COMMAND ----------
 
 from pandera import DataFrameModel, Field
-from pyspark.sql import functions as F
+from pyspark.sql import functions as F, DataFrame as SparkDataFrame
 
 from elmo_geo import register
 from elmo_geo.datasets import (
@@ -14,337 +66,82 @@ from elmo_geo.datasets import (
     rpa_hedges_raw,
     wfm_parcels,
 )
-from elmo_geo.io import download_link
+from elmo_geo.io import download_link, load_sdf
 from elmo_geo.st import sjoin
-from elmo_geo.etl.transformations import _st_union_right
+from elmo_geo.st.udf import st_clean
 from elmo_geo.etl import Dataset, DerivedDataset
-from elmo_geo.utils.types import SparkDataFrame
-from elmo_geo import register
+from elmo_geo.etl.transformations import _st_union_right
+from elmo_geo.utils.misc import info_sdf
+
 
 register()
 
 # COMMAND ----------
 
-class Model(DataFrameModel):
-    source: str = Field()
-    name: str = Field()
-    m: float = Field()
-
-
-def _transform(rpa_hedges_raw: Dataset, protected_landscapes_tidy: Dataset) -> SparkDataFrame:
-    return (
-        sjoin(
-            rpa_hedges_raw.sdf().select("geometry"),
-            protected_landscapes_tidy.sdf().select("source", "name", "geometry"),
-            lsuffix="_right",
-            rsuffix="_left",
-        )
-        .selectExpr(
-            "source",
-            "name",
-            "ST_AsBinary(geometry_left) AS geometry_left",
-            "ST_AsBinary(geometry_right) AS geometry_right",
-        )
-        .transform(lambda sdf: sdf.groupby("source", "name").applyInPandas(_st_union_right, sdf.schema))
-        .selectExpr(
-            "source",
-            "name",
-            """ST_Length(ST_Intersection(
-                ST_GeomFromWKB(geometry_left),
-                ST_GeomFromWKB(geometry_right)
-            )) AS m""",
-        )
+sdf_hedges_on_pl = (
+    sjoin(
+        rpa_hedges_raw.sdf().select("geometry"),
+        protected_landscapes_tidy.sdf().select("source", "name", "geometry"),
+        lsuffix="_right",
+        rsuffix="_left",
     )
-
-
-dataset = DerivedDataset(
-    is_geo=False,
-    name="hedges_on_pl",
-    medallion="gold",
-    source="elmo_geo",
-    restricted=False,
-    func=_transform,
-    dependencies=[rpa_hedges_raw, protected_landscapes_tidy],
-    model=Model,
+    .selectExpr(
+        "source",
+        "name",
+        "spark_partition_id() AS pid",
+        "ST_AsBinary(geometry_left) AS geometry_left",
+        "ST_AsBinary(geometry_right) AS geometry_right",
+    )
+    .transform(lambda sdf: sdf.groupby("source", "name", "pid").applyInPandas(_st_union_right, sdf.schema))  # This is to avoid OOM.
+    .transform(lambda sdf: sdf.groupby("source", "name").applyInPandas(_st_union_right, sdf.schema))
+    .selectExpr(
+        "source",
+        "name",
+        """ST_Length(ST_Intersection(
+            ST_CollectionExtract(ST_GeomFromWKB(geometry_left), 3),
+            ST_CollectionExtract(ST_GeomFromWKB(geometry_right), 2)
+        )) AS m""",
+    )
 )
 
 
 
-dataset.sdf().display()
+sdf_hedges_on_pl.display()
 
 # COMMAND ----------
 
-sdf = wfm_parcels.sdf().selectExpr(
-    "id_parcel",
-    "ha_parcel_geo AS ha_parcel",
-).join(
-    protected_landscapes_parcels.sdf().select("id_parcel", "source", "name", "proportion"),
-    on = "id_parcel",
-    how = "outer",
-).join(
-    protected_landscapes_tidy.sdf().selectExpr("source", "name", "ROUND(ST_Area(geometry) / 1e4) AS ha_pl"),
-    on = ["source", "name"],
-    how = "outer",
-).join(
-    dataset.sdf().selectExpr("source", "name", "m AS m_hedge"),
-    on = ["source", "name"],
-    how = "outer",
+sdf = (
+    wfm_parcels.sdf()
+    .join(
+        protected_landscapes_parcels.sdf(),
+        on = "id_parcel",
+        how = "outer",
+    )
+    .withColumn("ha_parcels", F.expr("ha_parcel_geo * proportion"))
+    .groupby("source", "name").agg(
+        F.expr("SUM(ha_parcels) AS ha_parcels"),
+    )
+    .join(
+        protected_landscapes_tidy.sdf(),
+        on = ["source", "name"],
+        how = "outer",
+    )
+    .join(
+        sdf_hedges_on_pl,
+        on = ["source", "name"],
+        how = "outer",
+    )
+    .selectExpr(
+        "source",
+        "name",
+        "ROUND(ST_Area(geometry) / 1e4) AS ha_pl",
+        "ROUND(ha_parcels) AS ha_parcels",
+        "ROUND(m) AS m_hedge",
+    )
 )
 
-
-f = "/dbfs/FileStore/downloads/deft-protected_landscapes_analysis-2025_01_27.parquet"
-sdf.write.parquet(f.replace("/dbfs/", "dbfs:/"))
-download_link(f)
 
 sdf.display()
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC # Old
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC # Hedges and Parcels on Protected Landscapes
-# MAGIC **Protected Landscapes,** (PL) are both National Parks (NP) and National Landscapes (NL) (previously known as Areas of Outstanding National Beauty,
-# MAGIC AONB). An additional unified PL geometry is appended (in v2023_12_15).
-# MAGIC **Hedges,** are spatially joined to PL using ST_Intersects, but not clipped to the PL.  After joining, they are groupby PL Type + PL Name, I then
-# MAGIC calculate the area for PL and the length for all hedgerows in that PL.
-# MAGIC **Parcels,** are spatially joined to PL using the same method.  No groupby is done, but I drop the geometries only keeping unique id_parcels on each
-# MAGIC PL and the proportion of that parcel's overlap with that PL, so near zero overlaps can be filtered later.  Latest supply from RPA is used
-# MAGIC (in v2023_12_15).
-# MAGIC
-# MAGIC ### Assumptions
-# MAGIC - **Generalisations** are made to geometries, PL at 1m, parcels at 0.1m, hedges are not simplified.
-# MAGIC - The length of hedges is calculated individually and summed, assuming hedges are not **duplicated**.
-# MAGIC - Calculating the length prior also means that hedgerow the starts within the PL and ends outside is entirely included and **not clipped**.
-# MAGIC - All PL geometries are checked to be in England (BFC), but not clipped, small inconsistencies exist due to England geometry **CRS transform**.
-# MAGIC - Parcels are spatially joined to PLs and a **proportion** is calculated, where they share a border that proportion will be very small, and judgement
-# MAGIC on whether they are considered in or not is required.
-# MAGIC - Hedgerow data is sourced from RPA, utilising; OS data, agreements, and site visits.  It only contains hedgerows **attached to parcels**.
-# MAGIC
-# MAGIC ### Future
-# MAGIC RPA are developing a **new dataset** of hedgerows as polygons using aerial photography.  This dataset would provide a more accurate representation of
-# MAGIC hedges, and provide better coverage outside of farms.  Assignment to a specific parcel and linearisation of these geometries would not be necessary.
-# MAGIC
-# MAGIC ### Data
-# MAGIC - ons-countries_bfc-2022_12
-# MAGIC - ne-national_parks-2023_11_17
-# MAGIC - ne-aonb-2020_08_25
-# MAGIC - rpa-parcel-2023_12_13
-# MAGIC - rpa-hedge-2023_12_13
-# MAGIC - elmo_geo-protected-landscapes-2023_12_15
-# MAGIC
-# MAGIC ### Output
-# MAGIC - [awest-hedges_on_pl-2023_12_15.feather](https://adb-7422054397937474.14.azuredatabricks.net/files/awest-hedges_on_pl-2023_12_15.feather?o=7422054397937474)
-# MAGIC - [awest-parcels_on_pl-2023_12_15.feather](https://adb-7422054397937474.14.azuredatabricks.net/files/awest-parcels_on_pl-2023_12_15.feather?o=7422054397937474)
-
-# COMMAND ----------
-
-from glob import glob
-
-import contextily as ctx
-import geopandas as gpd
-import matplotlib.pyplot as plt
-import pandas as pd
-
-import elmo_geo
-from elmo_geo.io import download_link
-from elmo_geo.utils.misc import dbfs
-from elmo_geo.utils.settings import FOLDER_ODS, FOLDER_STG
-
-elmo_geo.register()
-
-
-def load_sdf(name):
-    name = "elmo_geo-protected_landscapes"
-    f = [
-        *glob(f"{FOLDER_STG}/{name}*"),
-        *glob(f"{FOLDER_ODS}/{name}*"),
-    ][-1]
-    elmo_geo.LOG.info(f"Reading: {f}")
-    return spark.read.format("geoparquet").load(dbfs(f, True))
-
-
-# COMMAND ----------
-
-# Protected Landscapes (PL)
-gdf_np = gpd.read_parquet("/dbfs/mnt/lab-res-a1001004/restricted/elm_project/stg/ne-national_parks-2023_11_17.parquet")
-gdf_np["PL Type"] = "National Park"
-gdf_np["PL Name"] = gdf_np["NAME"]
-gdf_np = gdf_np[["PL Type", "PL Name", "geometry"]]
-gdf_np.geometry = gdf_np.make_valid()
-
-gdf_nl = gpd.read_parquet("/dbfs/mnt/lab-res-a1001004/restricted/elm_project/stg/ne-aonb-2020_08_25.parquet").to_crs(epsg=27700)
-gdf_nl["PL Type"] = "National Landscape"
-gdf_nl["PL Name"] = gdf_nl["NAME"]
-gdf_nl = gdf_nl[["PL Type", "PL Name", "geometry"]]
-gdf_nl.geometry = gdf_nl.make_valid()
-
-gdf_pl = pd.concat(
-    [
-        gdf_np,
-        gdf_nl,
-        gpd.GeoDataFrame(
-            {
-                "PL Name": ["All Protected Landscapes", "Overlapping NP and NL"],
-                "geometry": [
-                    gpd.GeoSeries([gdf_np.unary_union]).union(gdf_nl.unary_union).unary_union,
-                    gpd.GeoSeries([gdf_np.unary_union]).intersection(gdf_nl.unary_union).unary_union,
-                ],
-            },
-            crs="EPSG:27700",
-        ),
-    ]
-).reset_index()
-gdf_pl.geometry = gdf_pl.simplify(0.001)
-
-gdf_pl.to_parquet("/dbfs/mnt/lab-res-a1001004/restricted/elm_project/ods/elmo_geo-protected_landscapes-2024_03_14.parquet")
-gdf_pl
-
-# COMMAND ----------
-
-# Hedges on PL
-f = "/dbfs/mnt/lab-res-a1001004/restricted/elm_project/out/awest-hedges_on_pl-2023_12_15.feather"
-sdf_pl = load_sdf("elmo_geo-protected_landscapes-2023_12_15")
-sdf_hedge = load_sdf("rpa-hedge-2023_12_13")
-
-
-sdf_pl.repartition(sdf_pl.count()).createOrReplaceTempView("pl")
-sdf_hedge.createOrReplaceTempView("hedge")
-sdf = spark.sql(
-    """
-    SELECT
-        l.`PL Type`,
-        l.`PL Name`,
-        FIRST(l.ha) AS ha_pl,
-        SUM(r.m) AS m_hedge
-    FROM (
-        SELECT
-            ST_Length(geometry) AS m,
-            geometry
-        FROM hedge
-    ) r
-    JOIN (
-        SELECT
-            `PL Type`,
-            `PL Name`,
-            ST_Area(geometry)/10000 AS ha,
-            ST_SubDivideExplode(ST_MakeValid(ST_SimplifyPreserveTopology(geometry, 1)), 256) AS geometry
-        FROM pl
-    ) l
-    ON l.geometry IS NULL OR ST_Intersects(l.geometry, r.geometry)
-    GROUP BY
-        l.`PL Type`,
-        l.`PL Name`
-"""
-)
-
-
-sdf.toPandas().to_feather(f)
+f = "/dbfs/FileStore/downloads/deft-protected_landscapes_analysis-2025_01_27.csv"
+sdf.toPandas().to_csv(f)
 download_link(f)
-display(sdf)
-
-# COMMAND ----------
-
-# Parcels on PL
-f = "/dbfs/mnt/lab-res-a1001004/restricted/elm_project/out/awest-parcels_on_pl-2023_12_15.feather"
-sdf_pl = load_sdf("elmo_geo-protected_landscapes-2023_12_15")
-sdf_parcel = load_sdf("rpa-parcel-2023_12_13")
-
-
-sdf_pl.repartition(sdf_pl.count()).createOrReplaceTempView("pl")
-sdf_parcel.createOrReplaceTempView("parcel")
-sdf = spark.sql(
-    """
-    SELECT
-        `PL Type`,
-        `PL Name`,
-        id_parcel,
-        ST_Area(ST_MakeValid(ST_Intersection(geometry_parcel, geometry_pl))) / ST_Area(geometry_parcel) AS proportion
-    FROM (
-        SELECT
-            l.`PL Type`,
-            l.`PL Name`,
-            r.id_parcel,
-            ST_MakeValid(ST_SimplifyPreserveTopology(ST_MakeValid(ST_Union_Aggr(l.geometry)), 1)) AS geometry_pl,
-            ST_MakeValid(ST_SimplifyPreserveTopology(ST_MakeValid(ST_Union_Aggr(r.geometry)), 0.1)) AS geometry_parcel
-        FROM (
-            SELECT
-                id_parcel,
-                geometry
-            FROM parcel
-        ) AS r
-        JOIN (
-            SELECT
-                `PL Type`,
-                `PL Name`,
-                ST_SubDivideExplode(ST_MakeValid(ST_SimplifyPreserveTopology(geometry, 1)), 256) AS geometry
-            FROM pl
-        ) AS l
-        ON ST_Intersects(l.geometry, r.geometry)
-        GROUP BY
-            l.`PL Type`,
-            l.`PL Name`,
-            r.id_parcel
-    )
-"""
-)
-
-
-sdf.toPandas().to_feather(f)
-download_link(f)
-display(sdf)
-
-# COMMAND ----------
-
-gdf_pl = gpd.read_parquet("/dbfs/mnt/lab-res-a1001004/restricted/elm_project/ods/elmo_geo-protected_landscapes-2024_03_14.parquet")
-gdf_hedge = gpd.read_parquet("/dbfs/mnt/lab-res-a1001004/restricted/elm_project/ods/rpa-hedge-2023_12_13.parquet/sindex=TG42").set_crs("EPSG:27700")
-
-gdf_pl
-
-# COMMAND ----------
-
-fig, ax = plt.subplots(figsize=[16, 9])
-ax = gdf_pl.plot(
-    ax=ax,
-    column="PL Type",
-    legend=True,
-    edgecolor="k",
-    linewidth=0.5,
-    alpha=0.5,
-    cmap="summer_r",
-)
-ctx.add_basemap(ax=ax, crs="epsg:27700")
-ax.axis("off")
-
-# COMMAND ----------
-
-fig, ax = plt.subplots(figsize=[16, 9])
-ax = gdf_pl.iloc[-1:].plot(ax=ax, column="PL Name", legend=True, edgecolor="C0", linewidth=2)
-ctx.add_basemap(ax=ax, crs="epsg:27700")
-ax.axis("off")
-
-# COMMAND ----------
-
-
-gdf_pl_sample = gdf_pl.clip(gdf_hedge.total_bounds).dissolve("PL Type").reset_index()
-gdf_hedge_duplicate = gdf_hedge[gdf_hedge.intersects(gdf_pl_sample.iloc[0:1].reset_index().intersection(gdf_pl_sample.iloc[1:2].reset_index()).unary_union)]
-
-fig, ax = plt.subplots(figsize=[16, 9])
-ax = gdf_pl_sample.plot(
-    ax=ax,
-    column="PL Type",
-    legend=True,
-    edgecolor="k",
-    linewidth=0.5,
-    alpha=0.5,
-    cmap="summer_r",
-)
-ax = gdf_hedge.plot(ax=ax, alpha=0.5, color="g", label="hedge")
-ax = gdf_hedge_duplicate.plot(ax=ax, alpha=1, color="r", label="hedge")
-ctx.add_basemap(ax=ax, crs="epsg:27700")
-ax.axis("off")
-
-f"{gdf_hedge_duplicate.length.sum():,.0f}m hedgerow in overlap"

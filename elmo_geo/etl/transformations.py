@@ -11,7 +11,7 @@ from xarray.core.dataarray import DataArray
 
 from elmo_geo.io.file import auto_repartition
 from elmo_geo.st.join import sjoin
-from elmo_geo.st.udf import st_clean, clean_geometries
+from elmo_geo.st.udf import clean_geometries
 from elmo_geo.utils.dbr import spark
 from elmo_geo.utils.types import PandasDataFrame, SparkDataFrame
 
@@ -94,8 +94,13 @@ def fn_pass(sdf: SparkDataFrame) -> SparkDataFrame:
 def _st_union_right(pdf: PandasDataFrame) -> PandasDataFrame:
     "Select first row with the union of geometry_right."
     return pdf.iloc[:1].assign(
-        geometry_right=
-        gpd.GeoSeries([gpd.GeoSeries.from_wkb(pdf["geometry_right"]).union_all(),]).pipe(clean_geometries)
+        geometry_right=gpd.GeoSeries(
+            [
+                gpd.GeoSeries.from_wkb(pdf["geometry_right"]).union_all(),
+            ]
+        )
+        .pipe(clean_geometries)
+        .to_wkb()
     )
 
 
