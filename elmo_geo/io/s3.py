@@ -110,7 +110,6 @@ def sync_datasets(catalogue: list[Dataset]):
     for dataset in catalogue:
         if not dataset.is_geo and isinstance(dataset, DerivedDataset) and dataset.is_fresh:
             path = root + dataset.path.split("ELM-Project/")[1]
-            path = path.replace("/silver/", "/gold/")  # TODO: Issue #320
             path_latest = "-".join(path.split("-")[:-2]) + "-latest.parquet"
 
             if path not in s3_files:

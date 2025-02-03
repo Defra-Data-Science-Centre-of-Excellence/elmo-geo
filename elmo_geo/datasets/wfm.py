@@ -13,7 +13,7 @@ from .rpa_reference_parcels import reference_parcels
 wfm_farms = SourceDataset(
     name="wfm_farms",
     medallion="silver",
-    source="elmo",
+    source="fcp",
     model=DataFrameModel,
     restricted=True,
     is_geo=False,
@@ -27,7 +27,7 @@ This dataset is validated by ELMO.
 wfm_parcels = SourceDataset(
     name="wfm_parcels",
     medallion="silver",
-    source="elmo",
+    source="fcp",
     model=DataFrameModel,
     restricted=True,
     is_geo=False,
@@ -127,8 +127,8 @@ def _transform_wfm_info(reference_parcels: Dataset, wfm_parcels: Dataset, wfm_fa
 
 wfm_info = DerivedDataset(
     name="wfm_info",
-    medallion="gold",
-    source="elmo",
+    medallion="silver",
+    source="fcp",
     model=WfmInfo,
     restricted=True,
     is_geo=False,

@@ -1,14 +1,13 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC # Priority Habitats on Protected Area
+# MAGIC # Priority Habitats (PHI) on Protected Area (PA)
 # MAGIC
-# MAGIC |  | Parcel Area (ha)  | Parcel Area that is PHI (ha)  | Parcel Area that is PA (ha)  | Parcel Area that is both (ha)  | PHI on PA (%) | PA on PHI (%) |
-# MAGIC |---|---|---|---|---|---|---|
-# MAGIC | Not PHI | 4,773,744  | 0 | 8,748  | 0 |  |  |
-# MAGIC | PHI | 6,116,808  | 1,758,523  | 1,059,380  | 673,838  | 38.3% | 63.6% |
-# MAGIC | > PHI contains Deciduous Woodland | 3,591,679  | 475,201  | 362,556  | 77,272  | 16.3% | 21.3% |
-# MAGIC | > PHI does not contains Deciduous Woodland | 2,525,129  | 1,283,322  | 696,824  | 596,566  | 46.5% | 85.6% |
-# MAGIC | Total | 10,890,552  | 1,758,523  | 1,068,128  | 673,838  | 38.3% | 63.1% |
+# MAGIC | | Parcels Area (ha) | PHI (ha) | PA (ha) | PHI and PA (ha) | PHI and PA (%) | PHI and not PA (ha) | PHI and not PA (%) |
+# MAGIC |---|---|---|---|---|---|---|---|
+# MAGIC | Woodland PHI | | 475,201 | | 78,371 | 16.5% | 396,830 | 83.5% |
+# MAGIC | Non Woodland PHI | | 1,283,322 | | 614,482 | 47.9% | 668,840 | 52.1% |
+# MAGIC | All | 9,780,226 | 1,758,523 | 1,087,113 | 692,853 | 39.4% | 1,065,670 | 60.6% |
+# MAGIC
 
 # COMMAND ----------
 
@@ -23,6 +22,11 @@ register()
 sdf = (
     reference_parcels.sdf()
     .select("id_parcel", "area_ha")
+    # .join(
+    #     wfm_parcels.select("id_parcel"),
+    #     on="id_parcel",
+    #     how="right",
+    # )
     .join(
         (
             defra_priority_habitat_parcels.sdf()
@@ -40,20 +44,7 @@ sdf = (
         how="outer",
     )
     .join(
-        (
-            protected_areas_parcels.sdf()
-            .unpivot(
-                "id_parcel",
-                ["proportion_sssi", "proportion_nnr", "proportion_sac", "proportion_spa", "proportion_ramsar", "proportion_mcz"],
-                "protected_area",
-                "proportion",
-            )
-            .groupby("id_parcel")
-            # Protected Areas can overlap, so we calculate the probabilistic area that is in any.
-            .agg(F.expr("1 - EXP(SUM(LOG(1 - proportion))) AS p_pa"))
-            # Assuming they don't overlap
-            # .agg(F.expr("LEAST(1, SUM(proportion)) AS p_pa"))
-        ),
+        protected_areas_parcels.sdf().selectExpr("id_parcel", "proportion_any AS p_pa"),
         on="id_parcel",
         how="outer",
     )

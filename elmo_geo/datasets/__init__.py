@@ -195,19 +195,14 @@ from .peat import (
     peaty_soils_raw,
 )
 from .protected_areas import (
-    jncc_spa_parcels,
     jncc_spa_raw,
-    ne_marine_conservation_zones_parcels,
-    ne_marine_conservation_zones_raw,
-    ne_nnr_parcels,
+    ne_mcz_raw,
     ne_nnr_raw,
-    ne_ramsar_parcels,
     ne_ramsar_raw,
-    ne_sac_parcels,
     ne_sac_raw,
-    ne_sssi_units_parcels,
-    ne_sssi_units_raw,  # snapshot
+    ne_sssi_units_raw,
     protected_areas_parcels,
+    protected_areas_tidy,
 )
 from .protected_landscapes import (
     national_landscapes_raw,

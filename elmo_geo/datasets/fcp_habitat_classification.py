@@ -607,7 +607,7 @@ class IsPHIParcelModel(DataFrameModel):
 
 fcp_is_phi_parcel = DerivedDataset(
     name="fcp_is_phi_parcel",
-    medallion="gold",
+    medallion="silver",
     source="fcp",
     restricted=False,
     is_geo=False,

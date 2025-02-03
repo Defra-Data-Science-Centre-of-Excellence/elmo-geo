@@ -56,8 +56,8 @@ def _transform_lr(reference_parcels: Dataset, wfm_parcels: Dataset, filepath: st
 # Requested: 2024-12-18
 fcp_elr = DerivedDataset(
     name="fcp_elr",
-    medallion="gold",
-    source="elmo_geo",
+    medallion="silver",
+    source="fcp",
     model=LrModel,
     restricted=True,
     is_geo=True,
@@ -75,8 +75,8 @@ fcp_elr.gdf().explore()
 # Requested: 2024-11-13
 fcp_ud = DerivedDataset(
     name="fcp_ud",
-    medallion="gold",
-    source="elmo_geo",
+    medallion="silver",
+    source="fcp",
     model=LrModel,
     restricted=True,
     is_geo=True,

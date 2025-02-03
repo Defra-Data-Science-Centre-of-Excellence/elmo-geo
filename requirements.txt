@@ -44,6 +44,8 @@ certifi==2024.8.30
     #   pyproj
     #   rasterio
     #   requests
+cffi==1.17.1
+    # via cryptography
 charset-normalizer==3.3.2
     # via requests
 click==8.1.7
@@ -69,6 +71,10 @@ contextily==1.6.2
     # via elmo_geo (pyproject.toml)
 contourpy==1.3.0
     # via matplotlib
+cryptography==44.0.0
+    # via
+    #   msal
+    #   pyjwt
 cycler==0.12.1
     # via matplotlib
 databricks-sdk==0.20.0
@@ -230,6 +236,8 @@ mkdocstrings==0.27.0
     # via mkdocstrings-python
 mkdocstrings-python==1.12.2
     # via elmo_geo (pyproject.toml)
+msal==1.31.1
+    # via office365-rest-python-client
 multimethod==1.10
     # via pandera
 mypy-extensions==1.0.0
@@ -267,6 +275,8 @@ numpy==2.1.1
     #   shapely
     #   snuggs
     #   xarray
+office365-rest-python-client==2.5.14
+    # via elmo_geo (pyproject.toml)
 packaging==24.1
     # via
     #   build
@@ -339,6 +349,8 @@ pyasn1==0.6.0
     #   rsa
 pyasn1-modules==0.4.0
     # via google-auth
+pycparser==2.22
+    # via cffi
 pydantic==2.9.0
     # via pandera
 pydantic-core==2.23.2
@@ -350,6 +362,10 @@ pygments==2.18.0
     #   mkdocs-material
     #   nbconvert
     #   rich
+pyjwt[crypto]==2.10.1
+    # via
+    #   msal
+    #   pyjwt
 pymdown-extensions==10.12
     # via
     #   mkdocs-material
@@ -384,7 +400,9 @@ python-dateutil==2.9.0.post0
 python-dotenv==1.0.1
     # via elmo_geo (pyproject.toml)
 pytz==2024.1
-    # via pandas
+    # via
+    #   office365-rest-python-client
+    #   pandas
 pyyaml==6.0.2
     # via
     #   jupytext
@@ -415,6 +433,8 @@ requests==2.32.3
     #   databricks-sdk
     #   folium
     #   mkdocs-material
+    #   msal
+    #   office365-rest-python-client
 rich==13.8.0
     # via elmo_geo (pyproject.toml)
 rioxarray==0.17.0
@@ -474,6 +494,7 @@ typeguard==4.3.0
 typing-extensions==4.12.2
     # via
     #   ipython
+    #   office365-rest-python-client
     #   pydantic
     #   pydantic-core
     #   typeguard
