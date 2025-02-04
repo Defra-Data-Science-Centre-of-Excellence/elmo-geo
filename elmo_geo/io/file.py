@@ -108,7 +108,7 @@ def read_file(source_path: str, is_geo: bool, layer: int | str | None = None, su
                 df = gpd.read_file(path, layer=layer, use_arrow=True)
         if df.geometry.name != "geometry":
             df = df.rename_geometry("geometry")
-        df = to_sdf(df.to_crs(27700))
+        df = to_sdf(df.to_crs(27700) if df.crs else df.set_crs(27700))
     else:
         if path.suffix == ".parquet" or list(path.glob("*.parquet")):
             df = spark.read.parquet(dbfs(str(path), True))
