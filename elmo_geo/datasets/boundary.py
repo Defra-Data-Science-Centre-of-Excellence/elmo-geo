@@ -313,7 +313,7 @@ class BoundaryMerger(DataFrameModel):
     m_adj_wall_or_hedgerow: float = Field()
     m_adj_wall_or_hedgerow_or_water: float = Field()
     m_adj_none: float = Field()
-    
+
 
 boundary_merger = DerivedDataset(
     medallion="silver",
