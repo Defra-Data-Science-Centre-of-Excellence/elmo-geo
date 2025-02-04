@@ -11,7 +11,7 @@ from xarray.core.dataarray import DataArray
 
 from elmo_geo.io.file import auto_repartition
 from elmo_geo.st.join import sjoin
-from elmo_geo.st.udf import st_clean
+from elmo_geo.st.udf import clean_geometries
 from elmo_geo.utils.dbr import spark
 from elmo_geo.utils.types import PandasDataFrame, SparkDataFrame
 
@@ -93,7 +93,7 @@ def fn_pass(sdf: SparkDataFrame) -> SparkDataFrame:
 
 def _st_union_right(pdf: PandasDataFrame) -> PandasDataFrame:
     "Select first row with the union of geometry_right."
-    return pdf.iloc[:1].assign(geometry_right=gpd.GeoSeries.from_wkb(pdf["geometry_right"]).union_all().wkb)
+    return pdf.iloc[:1].assign(geometry_right=gpd.GeoSeries([gpd.GeoSeries.from_wkb(pdf["geometry_right"]).union_all()]).pipe(clean_geometries).to_wkb())
 
 
 def sjoin_parcels(
@@ -133,7 +133,6 @@ def sjoin_parcels(
             "ST_GeomFromWKB(geometry_left) AS geometry_left",
             "ST_GeomFromWKB(geometry_right) AS geometry_right",
         )
-        .transform(st_clean, "geometry_right")  # TODO: Add inside _st_union_right
         .transform(fn_post)
     )
 
