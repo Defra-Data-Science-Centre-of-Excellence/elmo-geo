@@ -11,16 +11,15 @@
 
 # COMMAND ----------
 
-from pyspark.sql import functions as F
 from pyspark.sql import DataFrame as SparkDataFrame
+from pyspark.sql import functions as F
 
 from elmo_geo import register
 from elmo_geo.datasets import (
     defra_priority_habitat_parcels,
     protected_areas_parcels,
     reference_parcels,
-    rpa_hedges_raw,
-    # wfm_parcels,
+    rpa_hedges_raw,  # wfm_parcels,
 )
 
 register()
@@ -42,10 +41,12 @@ sdf = (
                 "'hedges' AS habitat_name",
                 "ST_Length(geometry) AS m",
             ),
-            defra_priority_habitat_parcels.sdf().groupby(
+            defra_priority_habitat_parcels.sdf()
+            .groupby(
                 "id_parcel",
                 "habitat_name",
-            ).agg(
+            )
+            .agg(
                 F.expr("LEAST(1, SUM(proportion)) AS p_phi"),
             ),
             allowMissingColumns=True,
@@ -55,8 +56,7 @@ sdf = (
     )
     .join(
         (
-            protected_areas_parcels.sdf()
-            .selectExpr(
+            protected_areas_parcels.sdf().selectExpr(
                 "id_parcel",
                 "proportion_any AS p_pa",
             )
