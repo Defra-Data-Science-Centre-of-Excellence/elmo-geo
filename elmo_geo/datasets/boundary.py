@@ -259,6 +259,7 @@ def _transform_boundary_merger(
             F.expr("SUM(m * bool_water) AS m_water"),
             F.expr("SUM(m * bool_hedgerow_wall) AS m_wall_or_hedgerow"),
             F.expr("SUM(m * bool_hedgerow_wall_water) AS m_wall_or_hedgerow_or_water"),
+            F.expr("SUM(m_adj) AS m_adj"),
             F.expr("SUM(m_adj * bool_hedgerow) AS m_adj_hedgerow"),
             F.expr("SUM(m_adj * bool_relict) AS m_adj_relict"),
             F.expr("SUM(m_adj * bool_wall) AS m_adj_wall"),
@@ -266,6 +267,7 @@ def _transform_boundary_merger(
             F.expr("SUM(m_adj * bool_hedgerow_wall) AS m_adj_wall_or_hedgerow"),
             F.expr("SUM(m_adj * bool_hedgerow_wall_water) AS m_adj_wall_or_hedgerow_or_water"),
         )
+        .withColumn("m_adj_none", F.expr("m_adj - m_adj_hedge - m_adj_relict - m_adj_wall - m_adj_water"))
         .filter("id_parcel IS NOT NULL")  # one row has a null parcel ID and 0 for tree counts, exclude this
         .na.fill(0)
     )
@@ -285,12 +287,14 @@ class BoundaryMerger(DataFrameModel):
             Boundary segments can be classified as both hedge and wall so the combined length is aggregated as a separate variable.
         m_wall_or_hedgerow_or_water: Length of boundary classified as either wall or hedgerow or water.
             Boundary segments can be classified as both hedge, wall and water so the combined length is aggregated as a separate variable.
+        m_adj: The length of parcel boundary adjusted for adjacency.
         m_adj_hedgerow: This is the length of boundary segments suitable for hedgerow actions, but adjusted for adjacency for approximating the payment rate.
         m_adj_relict: Same as above for relict hedgerow features.
         m_adj_wall: Same as above for OSM Wall features.
         m_adj_water: Same as above for OS Water features.
         m_adj_wall_or_hedgerow: Same as above for hedgerow or wall boundaries.
         m_adj_wall_or_hedgerow_or_water: Same as above for hedgerow, wall, or water boundaries.
+        m_adj_none: The length of parcel boundary that isn't used for any specific boundary.
     """
 
     id_parcel: str = Field()
@@ -301,13 +305,15 @@ class BoundaryMerger(DataFrameModel):
     m_water: float = Field()
     m_wall_or_hedgerow: float = Field()
     m_wall_or_hedgerow_or_water: float = Field()
+    m_adj: float = Field()
     m_adj_hedgerow: float = Field()
     m_adj_relict: float = Field()
     m_adj_wall: float = Field()
     m_adj_water: float = Field()
     m_adj_wall_or_hedgerow: float = Field()
     m_adj_wall_or_hedgerow_or_water: float = Field()
-
+    m_adj_none: float = Field()
+    
 
 boundary_merger = DerivedDataset(
     medallion="silver",
